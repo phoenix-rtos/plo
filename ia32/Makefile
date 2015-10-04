@@ -3,7 +3,7 @@
 # (c) Pawel Pisarczyk, 2004
 #
 
-BCC ?= bcc
+BCC ?= /Users/ppisarczyk/devel/dev86-0.16.17/bin/ncc
 # on mac use: make BCC=/Users/ppisarczyk/devel/dev86-0.16.17/bin/ncc
 
 CFLAGS = -ansi -I.
@@ -23,7 +23,7 @@ all: plo
 	
 plo: $(OBJS)
 	$(LD) -T0 -d -o plo.bin $(OBJS)
-	@./mkimg.sh ./plo.bin
+#	@./mkimg.sh ./plo.bin
 
 clean:
 	rm -f *.o *~ core *.s

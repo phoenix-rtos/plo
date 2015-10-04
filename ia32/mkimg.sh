@@ -1,6 +1,6 @@
 #!/bin/sh
 
-kernel="../../build/$TARGET/kernel/phoenix"
+kernel="../../phoenix-rtos-kernel/phoenix-ia32-qemu.elf"
 
 bin="plo.bin"
 binsz=`ls -al $bin | awk '{ print $5 }'`
