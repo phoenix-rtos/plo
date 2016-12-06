@@ -22,6 +22,8 @@ if [ $padsz -lt 0 ]; then
 	padsz=0
 fi
 
+padsz=128000
+
 echo "Adding $padsz zeros to $bin"
 if ! dd if=/dev/zero of=plo.bin seek=$binsz bs=1 count=$padsz >/dev/null 2>&1; then
 	echo "Can't correct $bin size!"
