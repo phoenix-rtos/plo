@@ -1,12 +1,13 @@
 /* 
  * Phoenix-RTOS
  *
- * plo - operating system loader
+ * plo - perating system loader
  *
  * Loader commands
  *
  * Copyright 2012 Phoenix Systems
  * Copyright 2001, 2005 Pawel Pisarczyk
+ * Author: Pawel Pisarczyk, Pawel Kolodziej
  *
  * %LICENSE%
  */
@@ -264,14 +265,20 @@ void cmd_loadkernel(unsigned int pdn, char *arg)
 	Elf32_Word size, l;
 	u8 buff[384];
 	int err;
-	u32 minaddr = 0xffffffff, maxaddr = 0;
-	
-	plostd_printf(ATTR_LOADER, "\n");
+	u32 minaddr = 0xffffffff, maxaddr = 0, start = KERNEL_BASE;
 
 	path = arg ? arg : KERNEL_PATH;
 	if ((h = phfs_open(pdn, path, 0)) < 0) {
 		plostd_printf(ATTR_ERROR, "Kernel not found!\n");
 		return;
+	}
+	
+	if (arg != NULL) {
+		h = plostd_ahtoi(arg);
+		minaddr = low_getfar(SYSPAGE_SEG, SYSPAGE_OFFS_KERNEL) | ((u32)low_getfar(SYSPAGE_SEG, SYSPAGE_OFFS_KERNEL + 2) << 16);
+		maxaddr = minaddr + (low_getfar(SYSPAGE_SEG, SYSPAGE_OFFS_KERNELSIZE) | ((u32)low_getfar(SYSPAGE_SEG, SYSPAGE_OFFS_KERNELSIZE + 2) << 16));
+		start = (maxaddr + 0xfff) & (u32)0xfffff000;
+		maxaddr = start;
 	}
 
 	/* Read ELF header */
@@ -280,12 +287,11 @@ void cmd_loadkernel(unsigned int pdn, char *arg)
 		plostd_printf(ATTR_ERROR, "Can't read ELF header!\n");
 		return;
 	}
-	if ((hdr.e_ident[0] != 0x7f) && (hdr.e_ident[1] != 'E') &&
-			(hdr.e_ident[2] != 'L') && (hdr.e_ident[3] != 'F')) {
-		plostd_printf(ATTR_ERROR, "Kernel file isn't ELF object!\n");
+	if ((hdr.e_ident[0] != 0x7f) && (hdr.e_ident[1] != 'E') && (hdr.e_ident[2] != 'L') && (hdr.e_ident[3] != 'F')) {
+		plostd_printf(ATTR_ERROR, "File isn't ELF object!\n");
 		return;
 	}
-
+	
 	/* Read program segments */
 	for (k = 0; k < hdr.e_phnum; k++) {
 		p = hdr.e_phoff + k * sizeof(Elf32_Phdr);
@@ -293,20 +299,23 @@ void cmd_loadkernel(unsigned int pdn, char *arg)
 			plostd_printf(ATTR_ERROR, "Can't read Elf32_Phdr, k=%d!\n", k);
 			return;
 		}
- 
+		
 		if ((phdr.p_type == PT_LOAD) && (phdr.p_vaddr != 0)) {
+		
+			if (start == maxaddr)
+				start = phdr.p_vaddr - maxaddr;
 			
 			/* Calculate kernel memory parameters */
-			if (minaddr > phdr.p_vaddr - KERNEL_BASE)
-				minaddr = phdr.p_vaddr - KERNEL_BASE;
-			if (maxaddr < phdr.p_vaddr - KERNEL_BASE + phdr.p_memsz)
-				maxaddr = phdr.p_vaddr - KERNEL_BASE + phdr.p_memsz;
-		
-			plostd_printf(ATTR_LOADER, "Reading segment %p%p:  ",
-				(u16)(phdr.p_vaddr >> 16), (u16)(phdr.p_vaddr & 0xffff));
+			if (minaddr > phdr.p_vaddr - start)
+				minaddr = phdr.p_vaddr - start;
+			if (maxaddr < phdr.p_vaddr - start + phdr.p_memsz)
+				maxaddr = phdr.p_vaddr - start + phdr.p_memsz;
+
+			loffs = phdr.p_vaddr - start;
 			
-			loffs = phdr.p_vaddr - KERNEL_BASE;
-			
+			plostd_printf(ATTR_LOADER, "Reading segment %p%p at %p%p:  ",
+				(u16)(phdr.p_vaddr >> 16), (u16)(phdr.p_vaddr & 0xffff), (u16)(loffs >> 16), (u16)(loffs & 0xffff));
+				
 			for (i = 0; i < phdr.p_filesz / sizeof(buff); i++) {				
 				seg = loffs / 16;
 				offs = loffs % 16;
@@ -316,6 +325,7 @@ void cmd_loadkernel(unsigned int pdn, char *arg)
 					plostd_printf(ATTR_ERROR, "\nCan't read segment data, k=%d!\n", k);
 					return;
 				}
+
 				low_copyto(seg, offs, buff, sizeof(buff));
 				loffs += sizeof(buff);
 				cmd_progress(i);
@@ -331,6 +341,8 @@ void cmd_loadkernel(unsigned int pdn, char *arg)
 				}
 			}
 			
+			p = phdr.p_offset + i * sizeof(buff) + size;
+
 			seg = loffs / 16;
 			offs = loffs % 16;
 			
@@ -338,28 +350,29 @@ void cmd_loadkernel(unsigned int pdn, char *arg)
 			loffs += size;
 			cmd_progress(i);
 
-			// zero uninitialized memory
-			for(i=0; i<sizeof(buff); i++)
-				buff[i]=0;
-			for(i=0; i < phdr.p_memsz - phdr.p_filesz; )
-			{
+			/* zero uninitialized memory */
+			for (i = 0; i < sizeof(buff); i++)
+				buff[i] = 0;
+			
+			for (i = 0; i < phdr.p_memsz - phdr.p_filesz;) {
 				int len = min(phdr.p_memsz - phdr.p_filesz - i, sizeof(buff)); 
 				seg = loffs / 16;
 				offs = loffs % 16;
-				low_copyto(seg, offs, buff, len );
-				loffs+=len;
-				i+=len;
+				low_copyto(seg, offs, buff, len);
+				loffs += len;
+				i += len;
 			}
 			plostd_printf(ATTR_LOADER, "%c[ok]\n", 8);
 		}
 	}
 
-plostd_printf(ATTR_LOADER, "maxaddr %p%p\n", (u16)(maxaddr >> 16), (u16)(maxaddr & 0xffff));
+/* plostd_printf(ATTR_LOADER, "maxaddr %p%p\n", (u16)(maxaddr >> 16), (u16)(maxaddr & 0xffff)); */
 
 	low_setfar(SYSPAGE_SEG, SYSPAGE_OFFS_KERNEL + 0, (u16)(minaddr & 0xffff));
 	low_setfar(SYSPAGE_SEG, SYSPAGE_OFFS_KERNEL + 2, (u16)(minaddr >> 16));
 	low_setfar(SYSPAGE_SEG, SYSPAGE_OFFS_KERNELSIZE + 0, (u16)((maxaddr - minaddr) & 0xffff));
 	low_setfar(SYSPAGE_SEG, SYSPAGE_OFFS_KERNELSIZE + 2, (u16)((maxaddr - minaddr) >> 16));
+
 	return;
 }
 
@@ -395,7 +408,25 @@ void cmd_load(char *s)
 		return;
 	}
 	
-	cmd_loadkernel(devices[dn].pdn, NULL);	
+	/* Load kernel */
+	plostd_printf(ATTR_LOADER, "\nLoading kernel\n");	
+	cmd_loadkernel(devices[dn].pdn, NULL);
+		
+	/* Load programs */
+	for (;;) {
+		cmd_skipblanks(s, &p, DEFAULT_BLANKS);	
+		if (cmd_getnext(s, &p, DEFAULT_BLANKS, NULL, word, sizeof(word)) == NULL) {
+			plostd_printf(ATTR_ERROR, "\nSize error!\n");
+			return;
+		}
+		
+		if (*word == 0)
+			break;
+		
+		plostd_printf(ATTR_LOADER, "\nLoading program (offs=%s)\n", word);
+		cmd_loadkernel(devices[dn].pdn, word);
+	}
+
 	return;
 }
 
@@ -420,9 +451,9 @@ void cmd_memmap(char *s)
 		else
 			stat = "reserved";
 		plostd_printf(ATTR_LOADER, "%P%P  +%P%P  -  %s\n", mmitem.addr_hi, mmitem.addr_lo,
-								  mmitem.len_hi, mmitem.len_lo, stat);
+			mmitem.len_hi, mmitem.len_lo, stat);
 	}
-	
+
 	plostd_printf(ATTR_LOADER, "\n");
 	plostd_printf(ATTR_LOADER, "plo map\n");
 	plostd_printf(ATTR_LOADER, "-------\n");

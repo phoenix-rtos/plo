@@ -1,9 +1,11 @@
 #
-# Phoenix-RTOS loader, version: 2.0
-# (c) Pawel Pisarczyk, 2004
+# plo - operating system loader, version: 2.0
+#
+# Copyright 2012,2017 Phoenix Systems
+# Copyright 2004 Pawel Pisarczyk
 #
 
-BCC ?= /Users/ppisarczyk/devel/dev86-0.16.17/bin/ncc
+BCC ?= /Users/pawel/devel/dev86-0.16.17/bin/ncc
 # on mac use: make BCC=/Users/ppisarczyk/devel/dev86-0.16.17/bin/ncc
 
 CFLAGS = -ansi -I.
@@ -27,3 +29,4 @@ plo: $(OBJS)
 
 clean:
 	rm -f *.o *~ core *.s
+

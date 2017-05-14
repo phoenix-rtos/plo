@@ -1,34 +1,20 @@
 #!/bin/sh
 
-kernel="../../phoenix-rtos-kernel/phoenix-ia32-qemu.elf"
+function add2img {
+	echo "Copying $1 (offs=$offs)"
+	sz=`du -k $1 | awk '{ print $1 }'`
+	dd if=$1 of=plo.bin seek=$offs >/dev/null 2>&1
+	offs=`expr $offs + $sz`
+}
 
-bin="plo.bin"
-binsz=`ls -al $bin | awk '{ print $5 }'`
+plo="plo.bin"
+sz=`du $plo | awk '{ print $1 }'`
+echo "Loader size: $sz blocks"
 
-nsec=`expr $binsz / 512`
-imgsz=`expr $nsec \* 512`
+echo "Adding padding to $plo"
+padsz=64
+dd if=/dev/zero of=$plo seek=$sz bs=1024 count=$padsz >/dev/null 2>&1
 
-echo "$bin size: $binsz"
-echo "boot image size: $imgsz"
-
-# Calculate padding size
-if [ $binsz -gt $imgsz ]; then
-	padsz=`expr $imgsz + 512 - $binsz`
-else
-	padsz=0
-fi
-
-if [ $padsz -lt 0 ]; then
-	padsz=0
-fi
-
-padsz=128000
-
-echo "Adding $padsz zeros to $bin"
-if ! dd if=/dev/zero of=plo.bin seek=$binsz bs=1 count=$padsz >/dev/null 2>&1; then
-	echo "Can't correct $bin size!"
-	exit 1
-fi
-
-echo "Copying kernel"
-dd if=$kernel of=plo.bin seek=64
+offs=64
+add2img "../../phoenix-rtos-kernel/phoenix-ia32-qemu.elf"
+add2img "../../phoenix-rtos-filesystems/meterfs/meterfs"
