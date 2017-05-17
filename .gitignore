@@ -5,6 +5,7 @@
 *.flash
 *.cmd
 *~
+*.bin
 .depend
 .DS_Store
 toolchain/
