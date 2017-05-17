@@ -337,6 +337,12 @@ void cmd_loadkernel(unsigned int pdn, char *arg, u16 *po)
 			low_setfar(SYSPAGE_SEG, *po, (u16)(phdr.p_vaddr & 0xffff));
 			low_setfar(SYSPAGE_SEG, (*po) + 2, (u16)(phdr.p_vaddr >> 16));
 			*po += 4;
+			low_setfar(SYSPAGE_SEG, *po, (u16)(phdr.p_filesz & 0xffff));
+			low_setfar(SYSPAGE_SEG, (*po) + 2, (u16)(phdr.p_filesz >> 16));
+			*po += 4;
+			low_setfar(SYSPAGE_SEG, *po, (u16)(phdr.p_align & 0xffff));
+			low_setfar(SYSPAGE_SEG, (*po) + 2, (u16)(phdr.p_align >> 16));
+			*po += 4;
 
 			plostd_printf(ATTR_LOADER, "Reading segment %p%p at %p%p:  ",
 				(u16)(phdr.p_vaddr >> 16), (u16)(phdr.p_vaddr & 0xffff), (u16)(loffs >> 16), (u16)(loffs & 0xffff));

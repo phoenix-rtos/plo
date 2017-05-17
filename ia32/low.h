@@ -5,6 +5,7 @@
  *
  * Low-level routines
  *
+ * Copyright 2012 Phoenix Systems
  * Copyright 2001, 2005, 2012 Pawel Pisarczyk
  *
  * %LICENSE%
@@ -43,6 +44,8 @@ typedef struct syspage_program_t {
 		u32 size;
 		u32 flags;
 		u32 vaddr;
+		u32 filesz;
+		u32 padding;
 	} hdrs[];
 } syspage_program_t;
 

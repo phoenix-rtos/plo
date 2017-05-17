@@ -5,6 +5,7 @@
 ;
 ; Interrupt stubs
 ;
+; Copyright 2012 Phoenix Systems
 ; Copyright 2005 Pawel Pisarczyk
 ;
 ; This file is part of Phoenix-RTOS

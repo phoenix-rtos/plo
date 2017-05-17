@@ -5,6 +5,7 @@
  *
  * Disk routines
  *
+ * Copyright 2012 Phoenix Systems
  * Copyright 2001, 2005, 2006 Pawel Pisarczyk
  *
  * This file is part of Phoenix-RTOS.
