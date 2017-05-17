@@ -1,20 +1,22 @@
 #!/bin/sh
 
 function add2img {
-	echo "Copying $1 (offs=$offs)"
+	sector=`expr $offs \* 2`
+	printf "Copying %s (%d, 0x%x)\n" $1 $offs $sector
+
 	sz=`du -k $1 | awk '{ print $1 }'`
-	dd if=$1 of=plo.bin seek=$offs >/dev/null 2>&1
-	offs=`expr $offs + $sz`
+	dd if=$1 of=plo.bin seek=$offs bs=1024 >/dev/null 2>&1
+	offs=`expr $offs + $sz + 1`
 }
 
 plo="plo.bin"
-sz=`du $plo | awk '{ print $1 }'`
+sz=`du -k $plo | awk '{ print $1 }'`
 echo "Loader size: $sz blocks"
 
 echo "Adding padding to $plo"
-padsz=64
+padsz=32
 dd if=/dev/zero of=$plo seek=$sz bs=1024 count=$padsz >/dev/null 2>&1
 
-offs=64
+offs=32
 add2img "../../phoenix-rtos-kernel/phoenix-ia32-qemu.elf"
 add2img "../../phoenix-rtos-filesystems/meterfs/meterfs"

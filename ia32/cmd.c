@@ -5,7 +5,7 @@
  *
  * Loader commands
  *
- * Copyright 2012 Phoenix Systems
+ * Copyright 2012,2017 Phoenix Systems
  * Copyright 2001, 2005 Pawel Pisarczyk
  * Author: Pawel Pisarczyk, Pawel Kolodziej
  *
@@ -253,11 +253,12 @@ void cmd_help(char *s)
 }
 
 
-void cmd_loadkernel(unsigned int pdn, char *arg)
+void cmd_loadkernel(unsigned int pdn, char *arg, u16 *po)
 {
 	char *path;
 	s32 h;
-	u32 p, loffs;
+	u32 p, loffs, hdrsz;
+	u16 hdrszo;
 	Elf32_Ehdr hdr;
 	Elf32_Phdr phdr;
 	Elf32_Word i, k;
@@ -277,7 +278,7 @@ void cmd_loadkernel(unsigned int pdn, char *arg)
 		h = plostd_ahtoi(arg);
 		minaddr = low_getfar(SYSPAGE_SEG, SYSPAGE_OFFS_KERNEL) | ((u32)low_getfar(SYSPAGE_SEG, SYSPAGE_OFFS_KERNEL + 2) << 16);
 		maxaddr = minaddr + (low_getfar(SYSPAGE_SEG, SYSPAGE_OFFS_KERNELSIZE) | ((u32)low_getfar(SYSPAGE_SEG, SYSPAGE_OFFS_KERNELSIZE + 2) << 16));
-		start = (maxaddr + 0xfff) & (u32)0xfffff000;
+		start = ((maxaddr + 0xfff) & (u32)0xfffff000) + 0x1000;		
 		maxaddr = start;
 	}
 
@@ -292,6 +293,14 @@ void cmd_loadkernel(unsigned int pdn, char *arg)
 		return;
 	}
 	
+	low_setfar(SYSPAGE_SEG, *po, (u16)(hdr.e_entry & 0xffff));
+	low_setfar(SYSPAGE_SEG, *po + 2, (u16)(hdr.e_entry >> 16));
+	(*po) += 4;
+
+	hdrsz = 0;
+	hdrszo = (*po);
+	(*po) += 4;
+
 	/* Read program segments */
 	for (k = 0; k < hdr.e_phnum; k++) {
 		p = hdr.e_phoff + k * sizeof(Elf32_Phdr);
@@ -302,6 +311,8 @@ void cmd_loadkernel(unsigned int pdn, char *arg)
 		
 		if ((phdr.p_type == PT_LOAD) && (phdr.p_vaddr != 0)) {
 		
+			hdrsz++;
+
 			if (start == maxaddr)
 				start = phdr.p_vaddr - maxaddr;
 			
@@ -313,6 +324,20 @@ void cmd_loadkernel(unsigned int pdn, char *arg)
 
 			loffs = phdr.p_vaddr - start;
 			
+			/* Update segment addr, size, flags */ 
+			low_setfar(SYSPAGE_SEG, *po, (u16)(loffs & 0xffff));
+			low_setfar(SYSPAGE_SEG, *po + 2, (u16)(loffs >> 16));
+			*po += 4;
+			low_setfar(SYSPAGE_SEG, *po, (u16)(phdr.p_memsz & 0xffff));
+			low_setfar(SYSPAGE_SEG, *po + 2, (u16)(phdr.p_memsz >> 16));
+			*po += 4;
+			low_setfar(SYSPAGE_SEG, *po, (u16)(phdr.p_flags & 0xffff));
+			low_setfar(SYSPAGE_SEG, *po + 2, (u16)(phdr.p_flags >> 16));
+			*po += 4;
+			low_setfar(SYSPAGE_SEG, *po, (u16)(phdr.p_vaddr & 0xffff));
+			low_setfar(SYSPAGE_SEG, (*po) + 2, (u16)(phdr.p_vaddr >> 16));
+			*po += 4;
+
 			plostd_printf(ATTR_LOADER, "Reading segment %p%p at %p%p:  ",
 				(u16)(phdr.p_vaddr >> 16), (u16)(phdr.p_vaddr & 0xffff), (u16)(loffs >> 16), (u16)(loffs & 0xffff));
 				
@@ -365,7 +390,11 @@ void cmd_loadkernel(unsigned int pdn, char *arg)
 			plostd_printf(ATTR_LOADER, "%c[ok]\n", 8);
 		}
 	}
-
+	
+	/* Update hdrsz */
+	low_setfar(SYSPAGE_SEG, hdrszo, (u16)(hdrsz & 0xffff));
+	low_setfar(SYSPAGE_SEG, hdrszo + 2, (u16)(hdrsz >> 16));
+	
 /* plostd_printf(ATTR_LOADER, "maxaddr %p%p\n", (u16)(maxaddr >> 16), (u16)(maxaddr & 0xffff)); */
 
 	low_setfar(SYSPAGE_SEG, SYSPAGE_OFFS_KERNEL + 0, (u16)(minaddr & 0xffff));
@@ -380,8 +409,8 @@ void cmd_loadkernel(unsigned int pdn, char *arg)
 void cmd_load(char *s)
 {
 	char word[LINESZ + 1];
-	unsigned int p = 0;
-	unsigned int dn;
+	unsigned int p = 0, dn;
+	u16 i, po;
 	
 	cmd_skipblanks(s, &p, DEFAULT_BLANKS);	
 	if (cmd_getnext(s, &p, DEFAULT_BLANKS, NULL, word, sizeof(word)) == NULL) {
@@ -409,11 +438,14 @@ void cmd_load(char *s)
 	}
 	
 	/* Load kernel */
-	plostd_printf(ATTR_LOADER, "\nLoading kernel\n");	
-	cmd_loadkernel(devices[dn].pdn, NULL);
-		
-	/* Load programs */
-	for (;;) {
+	plostd_printf(ATTR_LOADER, "\nLoading kernel\n");
+	
+	po = SYSPAGE_OFFS_PROGS;
+	cmd_loadkernel(devices[dn].pdn, NULL, &po);
+	po = SYSPAGE_OFFS_PROGS;
+
+	/* Load programs */	
+	for (i = 0;; i++) {
 		cmd_skipblanks(s, &p, DEFAULT_BLANKS);	
 		if (cmd_getnext(s, &p, DEFAULT_BLANKS, NULL, word, sizeof(word)) == NULL) {
 			plostd_printf(ATTR_ERROR, "\nSize error!\n");
@@ -424,8 +456,10 @@ void cmd_load(char *s)
 			break;
 		
 		plostd_printf(ATTR_LOADER, "\nLoading program (offs=%s)\n", word);
-		cmd_loadkernel(devices[dn].pdn, word);
+		cmd_loadkernel(devices[dn].pdn, word, &po);
 	}
+	
+	low_setfar(SYSPAGE_SEG, SYSPAGE_OFFS_PROGSSZ, i);
 
 	return;
 }
