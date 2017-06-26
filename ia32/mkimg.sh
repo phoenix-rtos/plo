@@ -19,4 +19,5 @@ dd if=/dev/zero of=$plo seek=$sz bs=1024 count=$padsz >/dev/null 2>&1
 
 offs=32
 add2img "../../phoenix-rtos-kernel/phoenix-ia32-qemu.elf"
+#add2img "../../phoenix-rtos-devices/tty/ttypc/ttypc"
 add2img "../../phoenix-rtos-filesystems/meterfs/meterfs"
