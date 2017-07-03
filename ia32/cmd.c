@@ -314,7 +314,7 @@ void cmd_loadkernel(unsigned int pdn, char *arg, u16 *po)
 			hdrsz++;
 
 			if (start == maxaddr)
-				start = phdr.p_vaddr - maxaddr;
+				start = (phdr.p_vaddr & ~0xfff) - maxaddr;
 			
 			/* Calculate kernel memory parameters */
 			if (minaddr > phdr.p_vaddr - start)
