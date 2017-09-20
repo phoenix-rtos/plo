@@ -5,7 +5,7 @@
 # Copyright 2004 Pawel Pisarczyk
 #
 
-BCC ?= /Users/pawel/devel/dev86-0.16.17/bin/ncc
+BCC ?= bcc
 # on mac use: make BCC=/Users/ppisarczyk/devel/dev86-0.16.17/bin/ncc
 
 CFLAGS = -ansi -I.

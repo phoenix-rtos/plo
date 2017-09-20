@@ -1,4 +1,4 @@
-#!/bin/sh
+#!/bin/bash
 
 function add2img {
 	sector=`expr $offs \* 2`
