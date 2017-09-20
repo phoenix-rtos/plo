@@ -1,4 +1,4 @@
-/* 
+/*
  * Phoenix-RTOS
  *
  * armplo - operating system loader for ARM7TDMI
@@ -27,17 +27,17 @@
  * along with Phoenix-RTOS kernel; if not, write to the Free Software
  * Foundation, Inc., 59 Temple Place, Suite 330, Boston, MA  02111-1307  USA
  */
-  
+
 /* The LPC2138 has 512kB of Flash , and 32kB SRAM */
 MEMORY
-{ 
+{
 	flash (rx)	: org = 0x00000000 , len = 0x00080000
 	sram (rw)	: org = 0x40000000 , len = 0x00008000
 }
 
 SECTIONS
-{ 
-	/* 
+{
+	/*
 	 * --------------------------------------------------------------------
 	 * . text section (executable code)
 	 * --------------------------------------------------------------------
@@ -50,7 +50,7 @@ SECTIONS
 	} > flash
 	. = ALIGN(4);
 
-	/* 
+	/*
 	 * --------------------------------------------------------------------
 	 * .rodata section (read/only (const) initialized variables)
 	 * --------------------------------------------------------------------
@@ -60,7 +60,7 @@ SECTIONS
 		*(.rodata)
 	} > flash
 	. = ALIGN(4);
-	
+
 	/* End-of-text symbols */
 	_etext = . ;
 	PROVIDE (etext = .);
@@ -76,15 +76,15 @@ SECTIONS
 	 * and are copied to SRAM address _data to _edata.
 	 */
 	.data : AT (_etext)
-	{ 
+	{
 		_data = . ;
 		*(.data)
 	} > sram
 	. = ALIGN(4);
-	
+
 	_edata = . ;
 	PROVIDE (edata = .);
-	
+
 	/*
 	 * --------------------------------------------------------------------
 	 * .bss section (uninitialized variables)
@@ -94,17 +94,17 @@ SECTIONS
 	 * need to be zeroed.
 	 */
 	.bss :
-	{ 
+	{
 		_bss = . ;
 		*(.bss)
 		*(COMMON)
 	} > sram
 	. = ALIGN(4);
 	_ebss = . ;
-	
+
 	_end = . ;
 	PROVIDE (end = .);
-	
+
 	/* Stabs debugging sections. */
 	.stab			0 : { *(.stab) }
 	.stabstr		0 : { *(.stabstr) }

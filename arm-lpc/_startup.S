@@ -1,4 +1,4 @@
-# 
+#
 # Phoenix-RTOS
 #
 # armplo - operating system loader for ARM7TDMI
@@ -35,7 +35,7 @@
 		.equ	ABT_MODE,		0x17
 		.equ	UND_MODE,		0x1B
 		.equ	SYS_MODE,		0x1F
-		
+
 		/* Stack sizes */
 		.equ	FIQ_STACK_SIZE,	0x00000080 /* 32x32-bit words */
 		.equ	IRQ_STACK_SIZE,	0x00000400
@@ -94,7 +94,7 @@ _start:
 #  Absolute addressing mode must be used.
 #  Dummy Handlers are implemented as infinite loops which can be modified.
 
-Vectors:        ldr     pc, Reset_Addr         
+Vectors:        ldr     pc, Reset_Addr
                 ldr     pc, Undef_Addr
                 ldr     pc, SWI_Addr
                 ldr     pc, PAbt_Addr
@@ -124,17 +124,17 @@ STACK_START:	.word	0x40007fe0
 
 # Reset Handler
 
-Reset_Handler:  
+Reset_Handler:
 
 # INITIALISE PLL
 pll_init:
 				/* Use r0 for indirect addressing */
 				ldr		r0, PLLBASE
-				
+
 				/* PLLCFG = PLLCFG_VALUE */
 				mov		r3, #PLLCFG_VALUE
 				str		r3, [r0, #PLLCFG_OFFSET]
-				
+
 				/* PLLCON = PLLCON_PLLE */
 				mov		r3, #PLLCON_PLLE
 				str		r3, [r0, #PLLCON_OFFSET]
@@ -167,7 +167,7 @@ mam_init:
 				/* MAMTIM = MAMTIM_VALUE */
 				mov		r1, #MAMTIM_VALUE
 				str		r1, [r0, #MAMTIM_OFFSET]
-				
+
 				/* MAMCR = MAMCR_VALUE */
 				mov		r1, #MAMCR_VALUE
 				str		r1, [r0, #MAMCR_OFFSET]
@@ -207,7 +207,7 @@ mam_init:
 
 				/* Leave the processor in system mode */
 
-	
+
 #  Setup a default Stack Limit (when compiled with "-mapcs-stack-check")
                 SUB     SL, SP, #SYS_STACK_SIZE
 
@@ -233,11 +233,11 @@ LoopZI:         CMP     R1, R2
 
 # Enter the C code
                 b       plo_init
-				
+
 loop:			b		loop
 
         .endfunc
-        
+
 #
 # IRQ handler
 #
@@ -245,18 +245,18 @@ loop:			b		loop
 irq_handler:
 				sub		lr, lr, #4
 				stmfd	sp!, {r0-r12, lr}
-				
+
 				mvn		r11, #4032				/* prepare VICVectAddr address	*/
-				sub		r11, r11, #15			/* 0xffff ff030					*/	
+				sub		r11, r11, #15			/* 0xffff ff030					*/
 				ldr		r2, ih_itab				/* get isr table pointer		*/
 				ldr		r1, ih_dtab				/* get isr data table pointer	*/
 				ldr		r0, [r11]				/* get irq number (isr arg 1)	*/
 				ldr		r3, [r2, r0, lsl #2]	/* get isr address				*/
 				ldr		r1, [r1, r0, lsl #2]	/* get isr data (isr arg 2)		*/
-								
+
 				add		lr, pc, #4				/* call isr(irq_no, irq_data)	*/
 				bx		r3
-				
+
 				mov	r2, #255					/* VICVectAddr = 0xff			*/
 				str	r2, [r11]					/* update priority hardware		*/
 				ldmfd	sp!, {r0-r12, pc}^		/* return from interrupt		*/
@@ -264,7 +264,7 @@ ih_itab:		.word	vic_data+4+4+4
 ih_dtab:		.word	vic_data+4+4+4+64
 
 		.endfunc
-        
+
         .data
         .global SYSPAGE
 SYSPAGE:		.word	syspage

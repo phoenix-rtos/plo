@@ -1,4 +1,4 @@
-/* 
+/*
  * Phoenix-RTOS
  *
  * plo - operating system loader
@@ -62,7 +62,7 @@ s32 disk_read(u16 dn, s32 handle, u32 *pos, u8 *buff, u32 len)
 		s = 1 + (sb % secs);
 
 		offs = 1 + ((s - 1) / CACHE_SIZE) * CACHE_SIZE;
-		
+
 		/* Read track from disk from cache */
 		if (empty || (dn != ldn) || (c != lc) || (h != lh) || (offs != loffs)) {
 			if ((err = low_int13read(dn, c, h, offs, min(CACHE_SIZE, secs), cache))) {
@@ -70,7 +70,7 @@ s32 disk_read(u16 dn, s32 handle, u32 *pos, u8 *buff, u32 len)
 			}
 
 			/* plostd_printf(ATTR_DEBUG, "disk_read: empty=%d ldn=%d lc=%d lh=%d loffs=%d dn=%d c=%d h=%d offs=%d\n", empty, ldn, lc, lh, loffs, dn, c, h, offs); */
-			
+
 			empty = 0;
 			ldn = dn;
 			lc = c;
@@ -78,21 +78,21 @@ s32 disk_read(u16 dn, s32 handle, u32 *pos, u8 *buff, u32 len)
 			loffs = offs;
 		}
 		sector = &cache[((s - 1) % CACHE_SIZE) * SECTOR_SIZE];
-		
+
 		if (sb == eb)
 			size = ((*pos + len - 1) % SECTOR_SIZE) - boffs + 1;
 		else
 			size = SECTOR_SIZE - boffs;
 
 		low_memcpy(buff, (char *)(sector + boffs), size);
-		
+
 		buff += size;
 		boffs = 0;
-		
+
 		if (sb++ == eb)
 			break;
 	}
-	
+
 	*pos += size;
 	return 0;
 }

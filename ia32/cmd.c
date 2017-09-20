@@ -1,4 +1,4 @@
-/* 
+/*
  * Phoenix-RTOS
  *
  * plo - perating system loader
@@ -72,8 +72,8 @@ struct {
 /* Function prints progress indicator */
 void cmd_progress(u32 p)
 {
-	char *states = "-\\|/"; 
-	
+	char *states = "-\\|/";
+
 	plostd_printf(ATTR_LOADER, "%c%c", 8, states[p % plostd_strlen(states)]);
 	return;
 }
@@ -84,7 +84,7 @@ void cmd_skipblanks(char *line, unsigned int *pos, char *blanks)
 {
 	char c, blfl;
 	unsigned int i;
-	
+
 	while ((c = *((char *)(line + *pos))) != 0) {
 		blfl = 0;
 		for (i = 0; i < plostd_strlen(blanks); i++) {
@@ -112,7 +112,7 @@ char *cmd_getnext(char *line, unsigned int *pos, char *blanks, char *cites, char
 
 	wp = 0;
 	while ((c = *(char *)(line + *pos)) != 0) {
-		
+
 		/* Test cite characters */
 		if (cites) {
 			for (i = 0; cites[i]; i++) {
@@ -121,34 +121,34 @@ char *cmd_getnext(char *line, unsigned int *pos, char *blanks, char *cites, char
 				citefl ^= 1;
 				break;
 			}
-			
+
 			/* Go to next iteration if cite character found */
 			if (cites[i]) {
-				(*pos)++;				
+				(*pos)++;
 				continue;
 			}
 		}
-				
+
 		/* Test separators */
 		for (i = 0; blanks[i]; i++) {
 			if (c != blanks[i])
 				continue;
 			break;
-		}		
+		}
 		if (!citefl && blanks[i])
 			break;
 
 		word[wp++] = c;
 		if (wp == len)
 			return NULL;
-	
+
 		(*pos)++;
 	}
-	
+
 	if (citefl)
 		return NULL;
 
-	word[wp] = 0;	
+	word[wp] = 0;
 	return word;
 }
 
@@ -165,7 +165,7 @@ void cmd_dump(char *s)
 
 	/* Get address */
 	cmd_skipblanks(s, &p, DEFAULT_BLANKS);
-	
+
 	if (cmd_getnext(s, &p, ":", NULL, word, sizeof(word)) == NULL) {
 		plostd_printf(ATTR_ERROR, "\nSize error!\n");
 		return;
@@ -175,7 +175,7 @@ void cmd_dump(char *s)
 		return;
 	}
 	segm = plostd_ahtoi(word);
-	
+
 	/* Skip colon */
 	cmd_skipblanks(s, &p, DEFAULT_BLANKS ":");
 
@@ -186,9 +186,9 @@ void cmd_dump(char *s)
 	if (*word == 0) {
 		plostd_printf(ATTR_ERROR, "\nBad offset!\n");
 		return;
-	}	
+	}
 	offs = plostd_ahtoi(word);
-	
+
 	plostd_printf(ATTR_LOADER, "\n");
 	plostd_printf(ATTR_LOADER, "Memory dump from %p:%p\n", segm, offs);
 	plostd_printf(ATTR_LOADER, "--------------------------\n");
@@ -205,7 +205,7 @@ void cmd_dump(char *s)
 				plostd_printf(ATTR_LOADER, "%x ", b);
 			else
 				plostd_printf(ATTR_LOADER, "0%x ", b);
-			
+
 			if (offs++ == 0xffff)
 				segm++;
 		}
@@ -221,7 +221,7 @@ void cmd_dump(char *s)
 				plostd_printf(ATTR_LOADER, ".", b);
 			else
 				plostd_printf(ATTR_LOADER, "%c", b);
-			
+
 			if (offs++ == 0xffff)
 				segm++;
 		}
@@ -273,12 +273,12 @@ void cmd_loadkernel(unsigned int pdn, char *arg, u16 *po)
 		plostd_printf(ATTR_ERROR, "Kernel not found!\n");
 		return;
 	}
-	
+
 	if (arg != NULL) {
 		h = plostd_ahtoi(arg);
 		minaddr = low_getfar(SYSPAGE_SEG, SYSPAGE_OFFS_KERNEL) | ((u32)low_getfar(SYSPAGE_SEG, SYSPAGE_OFFS_KERNEL + 2) << 16);
 		maxaddr = minaddr + (low_getfar(SYSPAGE_SEG, SYSPAGE_OFFS_KERNELSIZE) | ((u32)low_getfar(SYSPAGE_SEG, SYSPAGE_OFFS_KERNELSIZE + 2) << 16));
-		start = ((maxaddr + 0xfff) & (u32)0xfffff000) + 0x1000;		
+		start = ((maxaddr + 0xfff) & (u32)0xfffff000) + 0x1000;
 		maxaddr = start;
 	}
 
@@ -292,7 +292,7 @@ void cmd_loadkernel(unsigned int pdn, char *arg, u16 *po)
 		plostd_printf(ATTR_ERROR, "File isn't ELF object!\n");
 		return;
 	}
-	
+
 	low_setfar(SYSPAGE_SEG, *po, (u16)(hdr.e_entry & 0xffff));
 	low_setfar(SYSPAGE_SEG, *po + 2, (u16)(hdr.e_entry >> 16));
 	(*po) += 4;
@@ -308,14 +308,14 @@ void cmd_loadkernel(unsigned int pdn, char *arg, u16 *po)
 			plostd_printf(ATTR_ERROR, "Can't read Elf32_Phdr, k=%d!\n", k);
 			return;
 		}
-		
+
 		if ((phdr.p_type == PT_LOAD) && (phdr.p_vaddr != 0)) {
-		
+
 			hdrsz++;
 
 			if (start == maxaddr)
 				start = (phdr.p_vaddr & ~0xfff) - maxaddr;
-			
+
 			/* Calculate kernel memory parameters */
 			if (minaddr > phdr.p_vaddr - start)
 				minaddr = phdr.p_vaddr - start;
@@ -323,8 +323,8 @@ void cmd_loadkernel(unsigned int pdn, char *arg, u16 *po)
 				maxaddr = phdr.p_vaddr - start + phdr.p_memsz;
 
 			loffs = phdr.p_vaddr - start;
-			
-			/* Update segment addr, size, flags */ 
+
+			/* Update segment addr, size, flags */
 			low_setfar(SYSPAGE_SEG, *po, (u16)(loffs & 0xffff));
 			low_setfar(SYSPAGE_SEG, *po + 2, (u16)(loffs >> 16));
 			*po += 4;
@@ -346,11 +346,11 @@ void cmd_loadkernel(unsigned int pdn, char *arg, u16 *po)
 
 			plostd_printf(ATTR_LOADER, "Reading segment %p%p at %p%p:  ",
 				(u16)(phdr.p_vaddr >> 16), (u16)(phdr.p_vaddr & 0xffff), (u16)(loffs >> 16), (u16)(loffs & 0xffff));
-				
-			for (i = 0; i < phdr.p_filesz / sizeof(buff); i++) {				
+
+			for (i = 0; i < phdr.p_filesz / sizeof(buff); i++) {
 				seg = loffs / 16;
 				offs = loffs % 16;
-				
+
 				p = phdr.p_offset + i * sizeof(buff);
 				if ((err = phfs_read(pdn, h, &p, buff, (u32)sizeof(buff))) < 0) {
 					plostd_printf(ATTR_ERROR, "\nCan't read segment data, k=%d!\n", k);
@@ -361,7 +361,7 @@ void cmd_loadkernel(unsigned int pdn, char *arg, u16 *po)
 				loffs += sizeof(buff);
 				cmd_progress(i);
 			}
-			
+
 			/* Last segment part */
 			size = phdr.p_filesz % sizeof(buff);
 			if (size != 0) {
@@ -371,12 +371,12 @@ void cmd_loadkernel(unsigned int pdn, char *arg, u16 *po)
 					return;
 				}
 			}
-			
+
 			p = phdr.p_offset + i * sizeof(buff) + size;
 
 			seg = loffs / 16;
 			offs = loffs % 16;
-			
+
 			low_copyto(seg, offs, buff, size);
 			loffs += size;
 			cmd_progress(i);
@@ -384,9 +384,9 @@ void cmd_loadkernel(unsigned int pdn, char *arg, u16 *po)
 			/* zero uninitialized memory */
 			for (i = 0; i < sizeof(buff); i++)
 				buff[i] = 0;
-			
+
 			for (i = 0; i < phdr.p_memsz - phdr.p_filesz;) {
-				int len = min(phdr.p_memsz - phdr.p_filesz - i, sizeof(buff)); 
+				int len = min(phdr.p_memsz - phdr.p_filesz - i, sizeof(buff));
 				seg = loffs / 16;
 				offs = loffs % 16;
 				low_copyto(seg, offs, buff, len);
@@ -396,11 +396,11 @@ void cmd_loadkernel(unsigned int pdn, char *arg, u16 *po)
 			plostd_printf(ATTR_LOADER, "%c[ok]\n", 8);
 		}
 	}
-	
+
 	/* Update hdrsz */
 	low_setfar(SYSPAGE_SEG, hdrszo, (u16)(hdrsz & 0xffff));
 	low_setfar(SYSPAGE_SEG, hdrszo + 2, (u16)(hdrsz >> 16));
-	
+
 /* plostd_printf(ATTR_LOADER, "maxaddr %p%p\n", (u16)(maxaddr >> 16), (u16)(maxaddr & 0xffff)); */
 
 	low_setfar(SYSPAGE_SEG, SYSPAGE_OFFS_KERNEL + 0, (u16)(minaddr & 0xffff));
@@ -417,54 +417,54 @@ void cmd_load(char *s)
 	char word[LINESZ + 1];
 	unsigned int p = 0, dn;
 	u16 i, po;
-	
-	cmd_skipblanks(s, &p, DEFAULT_BLANKS);	
+
+	cmd_skipblanks(s, &p, DEFAULT_BLANKS);
 	if (cmd_getnext(s, &p, DEFAULT_BLANKS, NULL, word, sizeof(word)) == NULL) {
 		plostd_printf(ATTR_ERROR, "\nSize error!\n");
 		return;
 	}
-	
+
 	/* Show boot devices if parameter is empty */
 	if (*word == 0) {
-		plostd_printf(ATTR_LOADER, "\nBoot devices: ");	
+		plostd_printf(ATTR_LOADER, "\nBoot devices: ");
 		for (dn = 0; devices[dn].name; dn++)
 			plostd_printf(ATTR_LOADER, "%s ", devices[dn].name);
 		plostd_printf(ATTR_LOADER, "\n");
 		return;
 	}
-	
+
 	for (dn = 0; devices[dn].name; dn++)  {
 		if (!plostd_strcmp(word, devices[dn].name))
 			break;
 	}
-	
+
 	if (!devices[dn].name) {
 		plostd_printf(ATTR_ERROR, "\n'%s' - unknown boot device!\n", word);
 		return;
 	}
-	
+
 	/* Load kernel */
 	plostd_printf(ATTR_LOADER, "\nLoading kernel\n");
-	
+
 	po = SYSPAGE_OFFS_PROGS;
 	cmd_loadkernel(devices[dn].pdn, NULL, &po);
 	po = SYSPAGE_OFFS_PROGS;
 
-	/* Load programs */	
+	/* Load programs */
 	for (i = 0;; i++) {
-		cmd_skipblanks(s, &p, DEFAULT_BLANKS);	
+		cmd_skipblanks(s, &p, DEFAULT_BLANKS);
 		if (cmd_getnext(s, &p, DEFAULT_BLANKS, NULL, word, sizeof(word)) == NULL) {
 			plostd_printf(ATTR_ERROR, "\nSize error!\n");
 			return;
 		}
-		
+
 		if (*word == 0)
 			break;
-		
+
 		plostd_printf(ATTR_LOADER, "\nLoading program (offs=%s)\n", word);
 		cmd_loadkernel(devices[dn].pdn, word, &po);
 	}
-	
+
 	low_setfar(SYSPAGE_SEG, SYSPAGE_OFFS_PROGSSZ, i);
 
 	return;
@@ -485,7 +485,7 @@ void cmd_memmap(char *s)
 	for (k = 0; k < MM_MAXSZ; k++) {
 		if (low_mmget(k, &mmitem) == ERR_LOW_MMSIZE)
 			break;
-		
+
 		if (mmitem.attr == 1)
 			stat = "free";
 		else
@@ -516,18 +516,18 @@ void cmd_cmd(char *s)
 {
 	unsigned int p = 0;
 	int l;
-	
+
 	plostd_printf(ATTR_LOADER, "\n");
 	cmd_skipblanks(s, &p, DEFAULT_BLANKS);
 	s += p;
-	
+
 	if (*s) {
 		low_memcpy(_plo_command, s, l = min(plostd_strlen(s), CMD_SIZE - 1));
 		*((char *)_plo_command + l) = 0;
 	}
 
 	plostd_printf(ATTR_LOADER, "cmd=%s\n", (char *)_plo_command);
-	
+
 	return;
 }
 
@@ -537,18 +537,18 @@ void cmd_timeout(char *s)
 {
 	char word[LINESZ + 1];
 	unsigned int p = 0;
-	
+
 	plostd_printf(ATTR_LOADER, "\n");
 	cmd_skipblanks(s, &p, DEFAULT_BLANKS);
-	
+
 	if (cmd_getnext(s, &p, DEFAULT_BLANKS, DEFAULT_CITES, word, sizeof(word)) == NULL) {
 		plostd_printf(ATTR_ERROR, "Syntax error!\n");
 		return;
 	}
 	if (*word)
 		_plo_timeout = plostd_ahtoi(word);
-	
-	plostd_printf(ATTR_LOADER, "timeout=0x%x\n", _plo_timeout);	
+
+	plostd_printf(ATTR_LOADER, "timeout=0x%x\n", _plo_timeout);
 	return;
 }
 
@@ -557,13 +557,13 @@ void cmd_timeout(char *s)
 void cmd_save(char *s)
 {
 	u16 err;
-	
+
 	plostd_printf(ATTR_LOADER, "\n");
 	if (err = _plo_save())
 		plostd_printf(ATTR_ERROR, "Can't save configuration [err=0x%x]!\n", err);
 	else
 		plostd_printf(ATTR_LOADER, "Configuration saved\n");
-	
+
 	return;
 }
 
@@ -580,7 +580,7 @@ void cmd_lspci(char *s)
 	u16 cl;
 	u8 irq;
 	u8 type;
-	plostd_printf(ATTR_LOADER, "\n");	
+	plostd_printf(ATTR_LOADER, "\n");
 	plostd_printf(ATTR_LOADER, "PCI devices:\n");
 	plostd_printf(ATTR_LOADER, "------------\n");
 
@@ -594,19 +594,19 @@ void cmd_lspci(char *s)
 
 				low_outd(0xcf8, PCI_CREG(b, d, f, 0));
 				dv = low_ind(0xcfc);
-				
+
 				low_outd(0xcf8, PCI_CREG(b, d, f, 2));
 				cl = (u16)(low_ind(0xcfc) >> 16);
-				
+
 				low_outd(0xcf8, PCI_CREG(b, d, f, 4));
 				base = low_ind(0xcfc);
-				
+
 				low_outd(0xcf8, PCI_CREG(b, d, f, 3));
 				type = (u8)(low_ind(0xcfc) >> 16 & 0xff);
-				
+
 				low_outd(0xcf8, PCI_CREG(b, d, f, 15));
 				irq = (u8)(low_ind(0xcfc) & 0xff);
-				
+
 				plostd_printf(ATTR_LOADER, "%p:%p.%x, vd=%p:%p, class=%p, base=%p%p, irq=%d mf=%s\n",
 					b, d, f, dv, cl, (u16)(base >> 16), (u16)(base & 0xffff), irq, (type & 0x80 ?"true":"false"));
 
@@ -622,36 +622,36 @@ void cmd_lspci(char *s)
 /* Function parses loader commands */
 void cmd_parse(char *line)
 {
-	int size, k;	
+	int size, k;
 	char word[LINESZ + 1], cmd[LINESZ + 1];
 	unsigned int p = 0, wp;
 
-	for (;;) {		
+	for (;;) {
 		if (cmd_getnext(line, &p, ";", DEFAULT_CITES, word, sizeof(word)) == NULL) {
 			plostd_printf(ATTR_ERROR, "\nSyntax error!\n");
 			return;
 		}
 		if (*word == 0)
 			break;
-		
+
 		wp = 0;
 		cmd_skipblanks(word, &wp, DEFAULT_BLANKS);
 		if (cmd_getnext(word, &wp, DEFAULT_BLANKS, DEFAULT_CITES, cmd, sizeof(cmd)) == NULL) {
 			plostd_printf(ATTR_ERROR, "\nSyntax error!\n");
 			return;
 		}
-				
+
 		/* Find command and launch associated function */
 		for (k = 0; cmds[k].cmd != NULL; k++) {
 			if (!plostd_strcmp(cmd, cmds[k].cmd)) {
 				cmds[k].f(word + wp);
 				break;
 			}
-		}			
+		}
 		if (!cmds[k].cmd)
 			plostd_printf(ATTR_ERROR, "\n'%s' - unknown command!\n", cmd);
 	}
-		
+
 	return;
 }
 

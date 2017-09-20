@@ -1,4 +1,4 @@
-# 
+#
 # Phoenix-RTOS
 #
 # armplo - operating system loader for ARM7TDMI
@@ -26,7 +26,7 @@
 
         .text
         .arm
-        
+
         .global irq_enable
         .global fiq_enable
         .global irq_disable
@@ -38,8 +38,8 @@
 irq_enable:
 				mrs		r0, cpsr
 				bic		r0, r0, #0x80
-				msr		cpsr_c, r0				
-				
+				msr		cpsr_c, r0
+
 				bx		lr
 				nop
 		.endfunc
@@ -48,8 +48,8 @@ irq_enable:
 fiq_enable:
 				mrs		r0, cpsr
 				bic		r0, r0, #0x40
-				msr		cpsr_c, r0				
-				
+				msr		cpsr_c, r0
+
 				bx		lr
 		.endfunc
 
@@ -57,8 +57,8 @@ fiq_enable:
 irq_disable:
 				mrs		r0, cpsr
 				orr		r0, r0, #0x80
-				msr		cpsr_c, r0				
-				
+				msr		cpsr_c, r0
+
 				bx		lr
 				nop
 		.endfunc
@@ -67,12 +67,12 @@ irq_disable:
 fiq_disable:
 				mrs		r0, cpsr
 				orr		r0, r0, #0x40
-				msr		cpsr_c, r0				
+				msr		cpsr_c, r0
 				bx		lr
 		.endfunc
 
 		.func low_getregs
-low_getregs:	
+low_getregs:
 				stmia	r0, {r0-r15}
 				mrs		r2, cpsr
 				str		r2, [r1]

@@ -9,7 +9,7 @@
  * Author: Jacek Popko, Katarzyna Baranowska
  *
  * This file is part of Phoenix-RTOS.
- * 
+ *
  * %LICENSE%
  */
 
@@ -103,7 +103,7 @@ SECTIONS
 	PROVIDE (edata = .);
 
 	_plo_img_end = .;
-	
+
 	/* BSS */
     .bss           :
 	{
@@ -113,16 +113,16 @@ SECTIONS
 		*(.scommon)
 		*(.dynbss)
 		*(.bss .bss.* .gnu.linkonce.b.*)
-		*(COMMON)	
+		*(COMMON)
 		. = ALIGN(2);
 		_ebss = .;
 		_fheap = .;
 	} = 0
-	
+
 	_fbss_phy = LOADADDR(.bss);
 	_ebss_phy = LOADADDR(.bss) + SIZEOF(.bss);
 	_plo_img_size = _plo_img_end - _plo_img_begin;
-	
+
 	/* Stabs debugging sections.  */
 	.stab          0 : { *(.stab) }
 	.stabstr       0 : { *(.stabstr) }

@@ -22,7 +22,7 @@ all: plo
 
 .S.o:
 	$(AS) -o $*.o $<
-	
+
 plo: $(OBJS)
 	$(LD) -T0 -d -o plo.bin $(OBJS)
 #	@./mkimg.sh ./plo.bin

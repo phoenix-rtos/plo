@@ -1,4 +1,4 @@
-/* 
+/*
  * Phoenix-RTOS
  *
  * plo - operating system loader
@@ -184,7 +184,7 @@ iap_copyto(void* dst, void* src, u32 len)
 	if(out.status != IAP_CMD_SUCCESS){
 		return -out.status;
 	}
-	
+
 
 	in.code = IAP_RAM_FLASH;
 	in.dst = dst;

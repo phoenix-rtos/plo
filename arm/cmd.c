@@ -1,4 +1,4 @@
-/* 
+/*
  * Phoenix-RTOS
  *
  * plo - operating system loader
@@ -86,7 +86,7 @@ const struct {
 void cmd_progress(u32 p)
 {
 	char *states = "-\\|/";
-	
+
 	plostd_printf(ATTR_LOADER, "%c%c", 8, states[p % 4]);
 	return;
 }
@@ -97,7 +97,7 @@ void cmd_skipblanks(char *line, unsigned int *pos, char *blanks)
 {
 	char c, blfl;
 	unsigned int i;
-	
+
 	while ((c = *((char *)(line + *pos))) != 0) {
 		blfl = 0;
 		for (i = 0; i < plostd_strlen(blanks); i++) {
@@ -125,7 +125,7 @@ char *cmd_getnext(char *line, unsigned int *pos, char *blanks, char *cites, char
 
 	wp = 0;
 	while ((c = *(char *)(line + *pos)) != 0) {
-		
+
 		/* Test cite characters */
 		if (cites) {
 			for (i = 0; cites[i]; i++) {
@@ -134,34 +134,34 @@ char *cmd_getnext(char *line, unsigned int *pos, char *blanks, char *cites, char
 				citefl ^= 1;
 				break;
 			}
-			
+
 			/* Go to next iteration if cite character found */
 			if (cites[i]) {
-				(*pos)++;				
+				(*pos)++;
 				continue;
 			}
 		}
-				
+
 		/* Test separators */
 		for (i = 0; blanks[i]; i++) {
 			if (c != blanks[i])
 				continue;
 			break;
-		}		
+		}
 		if (!citefl && blanks[i])
 			break;
 
 		word[wp++] = c;
 		if (wp == len)
 			return NULL;
-	
+
 		(*pos)++;
 	}
-	
+
 	if (citefl)
 		return NULL;
 
-	word[wp] = 0;	
+	word[wp] = 0;
 	return word;
 }
 
@@ -237,9 +237,9 @@ void cmd_dump(char *s)
 	if (*word == 0) {
 		plostd_printf(ATTR_ERROR, "\nBad offset!\n");
 		return;
-	}	
+	}
 	addr = plostd_ahtoi(word);
-	
+
 	plostd_printf(ATTR_LOADER, "\n");
 	plostd_printf(ATTR_LOADER, "Memory dump from %p\n", addr);
 	plostd_printf(ATTR_LOADER, "--------------------------\n");
@@ -255,7 +255,7 @@ void cmd_dump(char *s)
 				plostd_printf(ATTR_LOADER, "%x ", b);
 			else
 				plostd_printf(ATTR_LOADER, "0%x ", b);
-			
+
 			addr++;
 		}
 		plostd_printf(ATTR_LOADER, "  ");
@@ -269,7 +269,7 @@ void cmd_dump(char *s)
 				plostd_printf(ATTR_LOADER, ".", b);
 			else
 				plostd_printf(ATTR_LOADER, "%c", b);
-			
+
 			addr++;
 		}
 		plostd_printf(ATTR_LOADER, "\n");
@@ -328,7 +328,7 @@ void cmd_loadkernel(unsigned int pdn, char *arg)
 	u8 buff[384];
 	int err;
 	u32 minaddr = 0xffffffff, maxaddr = 0;
-	
+
 	plostd_printf(ATTR_LOADER, "\n");
 
 	path = arg ? arg : KERNEL_PATH;
@@ -356,20 +356,20 @@ void cmd_loadkernel(unsigned int pdn, char *arg)
 			plostd_printf(ATTR_ERROR, "Can't read Elf32_Phdr, k=%d!\n", k);
 			return;
 		}
- 
+
 		if ((phdr.p_type == PT_LOAD) && (phdr.p_paddr != 0)) {
-			
+
 			/* Calculate kernel memory parameters */
 			if (minaddr > phdr.p_paddr)
 				minaddr = phdr.p_paddr;
 			if (maxaddr < phdr.p_paddr + phdr.p_memsz)
 				maxaddr = phdr.p_paddr + phdr.p_memsz;
-		
+
 			loffs = phdr.p_paddr;
 			plostd_printf(ATTR_LOADER, "Reading segment %p and writing it to %p:  ", phdr.p_paddr, loffs);
-			
+
 			for (i = 0; i < phdr.p_filesz / sizeof(buff); i++) {
-								
+
 				p = phdr.p_offset + i * sizeof(buff);
 				if ((err = phfs_read(pdn, h, &p, buff, (u32)sizeof(buff))) < 0) {
 					plostd_printf(ATTR_ERROR, "\nCan't read segment data, k=%d!\n", k);
@@ -379,7 +379,7 @@ void cmd_loadkernel(unsigned int pdn, char *arg)
 				loffs += sizeof(buff);
 				cmd_progress(i);
 			}
-			
+
 			/* Last segment part */
 			size = phdr.p_filesz % sizeof(buff);
 			if (size != 0) {
@@ -389,7 +389,7 @@ void cmd_loadkernel(unsigned int pdn, char *arg)
 					return;
 				}
 			}
-			
+
 			low_memcpy((void *)loffs, buff, size);
 			cmd_progress(i);
 			plostd_printf(ATTR_LOADER, "%c[ok]\n", 8);
@@ -409,33 +409,33 @@ void cmd_load(char *s)
 	char word[LINESZ + 1];
 	unsigned int p = 0;
 	unsigned int dn;
-	
-	cmd_skipblanks(s, &p, DEFAULT_BLANKS);	
+
+	cmd_skipblanks(s, &p, DEFAULT_BLANKS);
 	if (cmd_getnext(s, &p, DEFAULT_BLANKS, NULL, word, sizeof(word)) == NULL) {
 		plostd_printf(ATTR_ERROR, "\nSize error!\n");
 		return;
 	}
-	
+
 	/* Show boot devices if parameter is empty */
 	if (*word == 0) {
-		plostd_printf(ATTR_LOADER, "\nBoot devices: ");	
+		plostd_printf(ATTR_LOADER, "\nBoot devices: ");
 		for (dn = 0; devices[dn].name; dn++)
 			plostd_printf(ATTR_LOADER, "%s ", devices[dn].name);
 		plostd_printf(ATTR_LOADER, "\n");
 		return;
 	}
-	
+
 	for (dn = 0; devices[dn].name; dn++)  {
 		if (!plostd_strcmp(word, devices[dn].name))
 			break;
 	}
-	
+
 	if (!devices[dn].name) {
 		plostd_printf(ATTR_ERROR, "\n'%s' - unknown boot device!\n", word);
 		return;
 	}
-	
-	cmd_loadkernel(devices[dn].pdn, NULL);	
+
+	cmd_loadkernel(devices[dn].pdn, NULL);
 	return;
 }
 
@@ -470,18 +470,18 @@ void cmd_cmd(char *s)
 {
 	unsigned int p = 0;
 	int l;
-	
+
 	plostd_printf(ATTR_LOADER, "\n");
 	cmd_skipblanks(s, &p, DEFAULT_BLANKS);
 	s += p;
-	
+
 	if (*s) {
 		low_memcpy(_plo_command, s, l = min(plostd_strlen(s), CMD_SIZE - 1));
 		*((char *)_plo_command + l) = 0;
 	}
 
 	plostd_printf(ATTR_LOADER, "cmd=%s\n", (char *)_plo_command);
-	
+
 	return;
 }
 
@@ -491,18 +491,18 @@ void cmd_timeout(char *s)
 {
 	char word[LINESZ + 1];
 	unsigned int p = 0;
-	
+
 	plostd_printf(ATTR_LOADER, "\n");
 	cmd_skipblanks(s, &p, DEFAULT_BLANKS);
-	
+
 	if (cmd_getnext(s, &p, DEFAULT_BLANKS, DEFAULT_CITES, word, sizeof(word)) == NULL) {
 		plostd_printf(ATTR_ERROR, "Syntax error!\n");
 		return;
 	}
 	if (*word)
 		_plo_timeout = plostd_ahtoi(word);
-	
-	plostd_printf(ATTR_LOADER, "timeout=0x%x\n", _plo_timeout);	
+
+	plostd_printf(ATTR_LOADER, "timeout=0x%x\n", _plo_timeout);
 	return;
 }
 
@@ -530,7 +530,7 @@ void cmd_save(char *s)
 		plostd_printf(ATTR_ERROR, "\nCan't save configuration [err=0x%x]!\n", err);
 	else
 		plostd_printf(ATTR_LOADER, "\nConfiguration saved!\n", err);
-	
+
 	return;
 }
 
@@ -558,35 +558,35 @@ void cmd_info(char *s)
 /* Function parses loader commands */
 void cmd_parse(char *line)
 {
-	int size, k;	
+	int size, k;
 	char word[LINESZ + 1], cmd[LINESZ + 1];
 	unsigned int p = 0, wp;
-	
-	for (;;) {		
+
+	for (;;) {
 		if (cmd_getnext(line, &p, ";", DEFAULT_CITES, word, sizeof(word)) == NULL) {
 			plostd_printf(ATTR_ERROR, "\nSyntax error!\n");
 			return;
 		}
 		if (*word == 0)
 			break;
-		
+
 		wp = 0;
 		cmd_skipblanks(word, &wp, DEFAULT_BLANKS);
 		if (cmd_getnext(word, &wp, DEFAULT_BLANKS, DEFAULT_CITES, cmd, sizeof(cmd)) == NULL) {
 			plostd_printf(ATTR_ERROR, "\nSyntax error!\n");
 			return;
 		}
-				
+
 		/* Find command and launch associated function */
 		for (k = 0; cmds[k].cmd != NULL; k++) {
 			if (!plostd_strcmp(cmd, cmds[k].cmd)) {
 				cmds[k].f(word + wp);
 				break;
 			}
-		}		
+		}
 		if (!cmds[k].cmd)
 			plostd_printf(ATTR_ERROR, "\n'%s' - unknown command!\n", cmd);
 	}
-		
+
 	return;
 }

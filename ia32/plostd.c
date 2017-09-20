@@ -1,4 +1,4 @@
-/* 
+/*
  * Phoenix-RTOS
  *
  * plo - operating system loader
@@ -87,17 +87,17 @@ char *plostd_itoah(u8 *ip, u8 is, char *buff, int lz)
 	int l, offs, i, nz = 0;
 
 	for (i = 0, l = 0; i < is; i++) {
-		offs = (ip[is - 1 - i] >> 4) & 0xf;		
+		offs = (ip[is - 1 - i] >> 4) & 0xf;
 		nz |= offs;
 		if (lz || nz)
 			buff[l++] = digitsh[offs];
-		
-		offs = (ip[is - 1 - i]) & 0xf;		
+
+		offs = (ip[is - 1 - i]) & 0xf;
 		nz |= offs;
 		if (lz || nz || (i == is - 1))
-			buff[l++] = digitsh[offs];		
+			buff[l++] = digitsh[offs];
 	}
-	
+
 	buff[l] = 0;
 	return buff;
 }
@@ -153,7 +153,7 @@ void plostd_printf(char attr, char *fmt, ...)
 	long l;
 
 	ap = (u8 *)&fmt + sizeof(fmt);
-	
+
 	for (p = fmt; *p; p++) {
 		if (*p != '%') {
 			low_putc(attr, *p);
@@ -171,7 +171,7 @@ void plostd_printf(char attr, char *fmt, ...)
 		case 'p':
 			i = va_arg(ap, int);
 			plostd_puts(attr, plostd_itoah(&i, 2, buff, 1));
-			break;		
+			break;
 		case 'P':
 			l = va_arg(ap, long);
 			plostd_puts(attr, plostd_itoah(&l, 4, buff, 1));
@@ -188,6 +188,6 @@ void plostd_printf(char attr, char *fmt, ...)
 		}
 	}
 	va_end(ap);
-	
+
 	return;
 }

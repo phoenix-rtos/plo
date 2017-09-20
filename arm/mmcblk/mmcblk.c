@@ -385,7 +385,7 @@ s32 mmcblk_read(u16 bn, s32 handle, u32 *offs_ptr, u8 *buff, u32 len)
 		plostd_printf(ATTR_ERROR, "MMCBLK: Improper read buffer alignment\n");
 		return ERR_ARG;
 	}
-	
+
 	if (len == 0)
 		return 0;
 

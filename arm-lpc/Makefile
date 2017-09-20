@@ -10,19 +10,19 @@ OBJS =  _startup.o _low.o $(SRCS:.c=.o)
 
 
 all: arm-plo.hex
-	
+
 .c.o:
 	$(CC) $(TIS) $(CFLAGS) $<
 
 .S.o:
 	$(CC) $(AIS) $(CFLAGS) $<
-	
+
 exceptions.o: exceptions.c
 	$(CC) $(AIS) $(CFLAGS) exceptions.c
 
 arm-plo.hex: arm-plo.elf
 	arm-elf-objcopy -O ihex arm-plo.elf arm-plo.hex
-	
+
 arm-plo.elf: $(OBJS)
 	$(LD) $(LFLAGS) -o arm-plo.elf $(OBJS)
 

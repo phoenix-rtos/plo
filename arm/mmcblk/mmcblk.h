@@ -673,7 +673,7 @@ typedef struct MmcblkCardOps_t{
 // 	void (*deinit)(MmcblkCard_t *card);
 // 	int (*inserted)(MmcblkCard_t *card);
 // 	int (*switchHighSpeed)(MmcblkCard_t *card);
-// 
+//
 // 	int (*write)(MmcblkCard_t *card, unsigned int offs, char *buff, unsigned int len);
 	int (*read)(MmcblkCard_t *card, unsigned int offs, char *headbuff, char *bodybuff, char *tailbuff, unsigned int len);
 

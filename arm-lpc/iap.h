@@ -1,4 +1,4 @@
-/* 
+/*
  * Phoenix-RTOS
  *
  * armplo - operating system loader for ARM7TDMI

@@ -1,4 +1,4 @@
-/* 
+/*
  * Phoenix-RTOS
  *
  * armplo - operating system loader for ARM7TDMI
@@ -107,7 +107,7 @@ typedef struct {
 
 typedef struct{
 	union{				/* 0x00 */
-		vu32	rbr; 
+		vu32	rbr;
 		vu32 	thr;
 		vu32	lsb;
 	};
@@ -117,7 +117,7 @@ typedef struct{
 	};
 	vu32		fcr;		/* 0x08 */
 	vu32		lcr;		/* 0x0C */
-	const vu32	pad1;	
+	const vu32	pad1;
 	vu32		lsr;		/* 0x14 */
 	const vu32	pad2[4];
 	vu32		fdr;		/* 0x28 */
@@ -246,12 +246,12 @@ void low_init()
 {
 
  	GPIO1->dir = 0x00FF0000; /* set LED output */
-	
+
 	low_rtcInit();
 	low_consoleInit();
 	low_extintInit();
 	low_dbg(0x00);
-	
+
 	if(pdata_ptr->magic == PDATA_MAGIC){
 		_plo_timeout = pdata_ptr->timeout;
 		low_memcpy(_plo_command, pdata_ptr->command, CMD_SIZE);

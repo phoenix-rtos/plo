@@ -1,4 +1,4 @@
-/* 
+/*
  * Phoenix-RTOS
  *
  * plo - operating system loader
@@ -54,7 +54,7 @@ int serial_isr(u16 irq, void *data)
 				serial->rb = (++serial->rb % RBUFFSZ);
 			}
 		}
-			
+
 		/* Transmit */
 		if ((iir & IIR_THRE) == IIR_THRE) {
 			serial->sp = (++serial->sp % SBUFFSZ);
@@ -131,7 +131,7 @@ int serial_write(unsigned int pn, u8 *buff, u16 len)
 	/* Initialize sending process */
 	if (serial->se == serial->sp)
 		low_outb(serial->base, serial->sbuff[serial->sp]);
-	
+
 	serial->se = ((serial->se + cnt) % SBUFFSZ);
 	low_sti();
 
@@ -157,7 +157,7 @@ void serial_initone(unsigned int pn, u16 base, u16 irq, u16 speed, serial_t *ser
 	low_cli();
 	low_irqinst(serial->irq, serial_isr, (void *)serial);
 	low_maskirq(serial->irq, 0);
-	
+
 	/* Set speed */
 	low_outb(serial->base + REG_LCR, LCR_DLAB);
 	low_outb(serial->base + REG_LSB, speed);
@@ -171,7 +171,7 @@ void serial_initone(unsigned int pn, u16 base, u16 irq, u16 speed, serial_t *ser
 
 	/* Set interrupt mask */
 	low_outb(serial->base + REG_IMR, IMR_THRE | IMR_DR);
-	
+
 	low_sti();
 	return;
 }

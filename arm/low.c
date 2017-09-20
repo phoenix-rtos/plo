@@ -1,4 +1,4 @@
-/* 
+/*
  * Phoenix-RTOS
  *
  * plo - operating system loader
@@ -38,11 +38,11 @@
     #define DEFAULT_SYSTEM_CLOCK            264000000u /* Default System clock value */
 #elif (CLOCK_SETUP == 1) //500 MHz A5 Core - Max speed
     #define DEFAULT_SYSTEM_CLOCK            264000000u /* Default System clock value */
-#elif (CLOCK_SETUP == 2) //264 MHz A5 Core - BootROM default 
+#elif (CLOCK_SETUP == 2) //264 MHz A5 Core - BootROM default
     #define DEFAULT_SYSTEM_CLOCK            264000000u /* Default System clock value */
 #elif (CLOCK_SETUP == 3) //396 MHz A5 Core setup that assumes BootROM did not run
     #define DEFAULT_SYSTEM_CLOCK            24000000u /* Default System clock value */
-#endif 
+#endif
 
 #define CR		0x0D
 #define CSI		"\x1B["
@@ -137,13 +137,13 @@ void low_consoleInit()
 // 	CCM->CCGR0 |= CCM_CCGR0_CG7(CG_CLK_ON_RUN_OFF_WAIT_STOP_MODES);     //Ungate UART0 clock
 // 	IOMUXC->SINGLE.PTB10 = 0x001011A2;  //TX
 // 	IOMUXC->SINGLE.PTB11 = 0x001011A1;  //RX
-// 
+//
 // 	CCM->CCGR0 |= CCM_CCGR0_CG8(CG_CLK_ON_RUN_OFF_WAIT_STOP_MODES);     //Ungate UART1 clock
 // 	IOMUXC->SINGLE.PTB4 = 0x002011A2;   //TX, mux mode ALT2, speed 100MHz, drive strength 75R, pull-up 100KR, output
 // 	IOMUXC->SINGLE.PTB5 = 0x002011A1;   //RX, mux mode ALT2, speed 100MHz, drive strength 75R, pull-up 100KR, input
 // 	/*RTS and RCS not configured*/
 // 	IOMUXC->SCI_FLX1_IPP_IND_SCI_RX_SELECT_INPUT=0;  //Select PTB5 as RX input
-// 
+//
 // 	CCM->CCGR0 |= CCM_CCGR0_CG9(CG_CLK_ON_RUN_OFF_WAIT_STOP_MODES);   //Ungate UART2 clock
 // 	IOMUXC->SINGLE.PTB6 = 0x007011A2; //TX
 // 	IOMUXC->SINGLE.PTB7 = 0x007011A1; //RX
@@ -158,9 +158,9 @@ void low_consoleInit()
 		return;
 
 	/* Enable the pins for the selected UART */
-	CONSOLE_UART_PORT->MODEM=0; //Need to clear MODEM register in case BootROM sets it  
+	CONSOLE_UART_PORT->MODEM=0; //Need to clear MODEM register in case BootROM sets it
 
-	/* Make sure that the transmitter and receiver are disabled while we 
+	/* Make sure that the transmitter and receiver are disabled while we
 	 * change settings->
 	 */
 	CONSOLE_UART_PORT->C2 &= ~UART_C2_RE_MASK;
@@ -183,7 +183,7 @@ void low_consoleInit()
     brfa = (u16)(sbr64 / 2) & 0x1f;
 
 	CONSOLE_UART_PORT->BDH |= UART_BDH_SBR((sbr & 0x1F00) >> 8);
-	CONSOLE_UART_PORT->BDL = UART_BDL_SBR((u8)(sbr & 0x00FF));  
+	CONSOLE_UART_PORT->BDL = UART_BDL_SBR((u8)(sbr & 0x00FF));
 	CONSOLE_UART_PORT->C4 &= ~UART_C4_BRFA_MASK;
 	CONSOLE_UART_PORT->C4 |= UART_C4_BRFA(brfa);
 
@@ -491,7 +491,7 @@ void low_clocksInit(void)
   CCM->CCGR3 |= CCM_CCGR4_CG0(CG_CLK_ON_ALL_MODES); // ANADIG ungate
   CCM->CCGR3 |= CCM_CCGR4_CG2(CG_CLK_ON_ALL_MODES); // SCSC ungate
   CCM->CCGR1 |= CCM_CCGR1_CG7(CG_CLK_ON_RUN_OFF_WAIT_STOP_MODES);		/* Enable PIT clock */
-	  
+
   /*
    * Enable IOMUX modules
    */
@@ -513,11 +513,11 @@ void low_clocksInit(void)
   CCM->CCGR6 = 0xFFFFFFFF;
   CCM->CCGR7 = 0xFFFFFFFF;
   CCM->CCGR8 = 0x3FFFFFFF;	//Turn off GPU since causes immediate interrupt
-  CCM->CCGR9 = 0xFFFFFFFF; 
+  CCM->CCGR9 = 0xFFFFFFFF;
   CCM->CCGR10 = 0xFFFFFFFF;
   CCM->CCGR11 = 0xFFFFFFFF;
 */
-  
+
   //Enable external 32kHz clock
   SCSC->SOSC_CTR|=SCSC_SOSC_CTR_SOSC_EN_MASK;
 
@@ -529,9 +529,9 @@ void low_clocksInit(void)
    * Setup the clocks to run in synchronous mode
    * using PLL1 PFD3
    ********************************************************/
-  //PLL1 uses PLL1_PFD3, enable all PLL1 and PLL2, enable PLL3_PFD4 for QSPI, select Fast Clock, and sys_clock_sel use PLL1  
+  //PLL1 uses PLL1_PFD3, enable all PLL1 and PLL2, enable PLL3_PFD4 for QSPI, select Fast Clock, and sys_clock_sel use PLL1
   CCM->CCSR = (CCM_CCSR_PLL3_PFD4_EN_MASK | CCM_CCSR_PLL1_PFD_CLK_SEL(3) | \
-		  	   0x0000FF00 | CCM_CCSR_FAST_CLK_SEL_MASK | (CCM_CCSR_SYS_CLK_SEL(4)));   
+		  	   0x0000FF00 | CCM_CCSR_FAST_CLK_SEL_MASK | (CCM_CCSR_SYS_CLK_SEL(4)));
   CCM->CACRR=0x00000810; //ARM_DIV=0 (div by 1), BUS_DIV=2 (div by 3), ipg_div value is 1 (div by 2)
 
   /* enable all the PLLs in Anadig */
@@ -542,9 +542,9 @@ void low_clocksInit(void)
   ANADIG->PLL5_CTRL=0x00002001; //PLL5 (ENET PLL) --> POWERDOWN=0, BYPASS=0, ENABLE=1, DIV_SELECT=0b01 (50MHz)
   ANADIG->PLL6_CTRL=0x00002028; //PLL6 (Video PLL) --> POWERDOWN=0, BYPASS=0, ENABLE=1, DIV_SELECT=0x28 (24M*40=960M, range 600M-1300M)
 
-//500 MHz A5   
+//500 MHz A5
 #elif (CLOCK_SETUP == 1)
-  
+
   /*******************************************************
    * Setup the clocks to run in asynchronous mode
    *
@@ -565,12 +565,12 @@ void low_clocksInit(void)
   /*****************************************************************************
    * PLL1 PFD1 (500MHz CA5), PLL2 PFD2 (396MHz DDR), 24MHz XOSC clock source
    *****************************************************************************/
-  
+
   //Work-around for errata e6235
-  CCM->CCSR&=~CCM_CCSR_SYS_CLK_SEL_MASK; //Select 24MHz external crystal as clock source instead of PLL   
+  CCM->CCSR&=~CCM_CCSR_SYS_CLK_SEL_MASK; //Select 24MHz external crystal as clock source instead of PLL
   CCM->CCSR = (CCM_CCSR_PLL3_PFD4_EN_MASK | CCM_CCSR_PLL1_PFD_CLK_SEL(0) | \
-		  	   0x0000FF00 | CCM_CCSR_FAST_CLK_SEL_MASK | (CCM_CCSR_SYS_CLK_SEL(0)));  
-  ANADIG->PLL1_CTRL&=~ANADIG_PLL1_CTRL_DIV_SELECT_MASK; //Change PLL multiplier (MFI) to 20 
+		  	   0x0000FF00 | CCM_CCSR_FAST_CLK_SEL_MASK | (CCM_CCSR_SYS_CLK_SEL(0)));
+  ANADIG->PLL1_CTRL&=~ANADIG_PLL1_CTRL_DIV_SELECT_MASK; //Change PLL multiplier (MFI) to 20
   ANADIG->PLL1_DENOM=100; //Set MFD to 100
   ANADIG->PLL1_NUM=83;    //Set MFN to 83
   CCM->CCSR|=CCM_CCSR_SYS_CLK_SEL(0x4); //Select PLL1 as clock source again
@@ -591,7 +591,7 @@ void low_clocksInit(void)
   ANADIG->PLL4_CTRL=0x00002031; //PLL4 (Audio PLL) --> POWERDOWN=0, BYPASS=0, ENABLE=1, DIV_SELECT=0x31 (24M*49=1176MHz, range 600M-1300M)
   ANADIG->PLL5_CTRL=0x00002001; //PLL5 (ENET PLL) --> POWERDOWN=0, BYPASS=0, ENABLE=1, DIV_SELECT=0b01 (50MHz)
   ANADIG->PLL6_CTRL=0x00002028; //PLL6 (Video PLL) --> POWERDOWN=0, BYPASS=0, ENABLE=1, DIV_SELECT=0x28 (24M*40=960M, range 600M-1300M)
-  
+
 //264 MHz A5 - No clock init after BootROM
 #elif (CLOCK_SETUP == 2)
   //Do nothing
@@ -669,26 +669,26 @@ void low_clocksInit(void)
 
   /* Enable CCM Reference Clock Enable */
   CCM->CCR |= CCM_CCR_FXOSC_EN_MASK;
-  
+
   /* PLL lock depends on this bit, so make sure it is enabled (is enabled by default) */
-  //SCSC->SIRC_CTR |= SCSC_SIRC_CTR_SIRC_EN_MASK;  
+  //SCSC->SIRC_CTR |= SCSC_SIRC_CTR_SIRC_EN_MASK;
 
   /* Diable Crystal Power Down Bit in LPCR register */
   CCM->CLPCR &= ~CCM_CLPCR_FXOSC_PWRDWN_MASK;
-  
+
   /* Wait for Oscillator timeout to occur */
   while((CCM->CSR & CCM_CSR_FXOSC_RDY_MASK)  == 0)
   {}
-  
+
   ANADIG->PLL1_CTRL=0x00002001;	//PLL1 (System PLL) --> POWERDOWN=0, BYPASS=0, ENABLE=1, DIV_SELECT=1 (1->Fout=Fref*22, 0->Fout=Fref*22=>24M*22=528MHz)
   ANADIG->PLL3_CTRL=0x00003040; //PLL3 (USB PLL)
 
     /*******************************************************
    * Setup the clocks to run in synchronous mode
-   * using PLL1 PFD3 
+   * using PLL1 PFD3
    * 396MHz CA5, 396 MHz DDR, 132MHz CM4, and 66MHz bus
-   ********************************************************/   
-  
+   ********************************************************/
+
   CCM->CCGR4 |= CCM_CCGR4_CG11(CG_CLK_ON_ALL_MODES); // CCM ungate
   CCM->CCSR=0xF003FF64;
   CCM->CACRR=0x00000810;
@@ -700,6 +700,6 @@ void low_clocksInit(void)
   ANADIG->PLL4_CTRL=0x00002031; //PLL4 (Audio PLL) --> POWERDOWN=0, BYPASS=0, ENABLE=1, DIV_SELECT=0x31 (24M*49=1176MHz, range 600M-1300M)
   ANADIG->PLL5_CTRL=0x00002001; //PLL5 (ENET PLL) --> POWERDOWN=0, BYPASS=0, ENABLE=1, DIV_SELECT=0b01 (50MHz)
   ANADIG->PLL6_CTRL=0x00002028; //PLL6 (Video PLL) --> POWERDOWN=0, BYPASS=0, ENABLE=1, DIV_SELECT=0x28 (24M*40=960M, range 600M-1300M)
-#endif 
+#endif
 }
 

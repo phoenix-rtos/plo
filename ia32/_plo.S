@@ -1,4 +1,4 @@
-; 
+;
 ; Phoenix-RTOS
 ;
 ; plo - operating system loader
@@ -57,7 +57,7 @@ __plo_pos:
 ; Loader initialization
 .globl __plo_start
 __plo_start:
-	cli	
+	cli
 	mov ax, #0x7c0
 	mov ds, ax
 	mov es, ax

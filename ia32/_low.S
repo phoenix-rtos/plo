@@ -1,4 +1,4 @@
-; 
+;
 ; Phoenix-RTOS
 ;
 ; plo - operating system loader
@@ -82,7 +82,7 @@ IRQ 15
 
 .globl __irq_stub
 __irq_stub:
-	cli 
+	cli
 	push bx
 	mov bx, sp
 	seg ss

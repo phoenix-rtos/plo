@@ -54,7 +54,7 @@ typedef s16 int16_t;
 typedef u8  uint8_t;
 
 /* Define Clock Setup for system */
-/* The BootROM by default will modify registers to set the system clock to 264MHz. 
+/* The BootROM by default will modify registers to set the system clock to 264MHz.
    Clock Setup #1 and #2 assume BootROM has ran and now want to go to higher clock speed
    Clock Setup #3 is a no_init case which leaves the default BootROM values
    Clock Setup #4 is a special debug case if the core was halted immediatly after reset so that the BootROM never ran.
@@ -99,7 +99,7 @@ typedef u8  uint8_t;
   #error "CLOCK_SETUP not supported"
 #endif
 
-	
+
 /**
  * @brief System clock frequency (core clock)
  *

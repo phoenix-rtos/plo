@@ -1,4 +1,4 @@
-/* 
+/*
  * Phoenix-RTOS
  *
  * armplo - operating system loader for ARM7TDMI
@@ -50,7 +50,7 @@ void Undef_Handler(void)
 				"mrs %1, cpsr\n\t"
 				"mrs %2, spsr\n\t"
 				"stmia %3, {r0-r15}^"
-				: "=&r" (ip), "=&r" (cpsr.all), "=&r" (spsr.all) 
+				: "=&r" (ip), "=&r" (cpsr.all), "=&r" (spsr.all)
 				: "r" (regs)
 			);
 
@@ -85,7 +85,7 @@ void PAbt_Handler(void)
 				"mrs %1, cpsr\n\t"
 				"mrs %2, spsr\n\t"
 				"stmia %3, {r0-r15}^"
-				: "=&r" (ip), "=&r" (cpsr), "=&r" (spsr) 
+				: "=&r" (ip), "=&r" (cpsr), "=&r" (spsr)
 				: "r" (regs)
 			);
 
@@ -114,7 +114,7 @@ void DAbt_Handler(void)
 				"mrs %1, cpsr\n\t"
 				"mrs %2, spsr\n\t"
 				"stmia %3, {r0-r15}^"
-				: "=&r" (ip), "=&r" (cpsr), "=&r" (spsr) 
+				: "=&r" (ip), "=&r" (cpsr), "=&r" (spsr)
 				: "r" (regs)
 			);
 
@@ -161,7 +161,7 @@ void memory_dump(u32 addr, u32 max)
 				plostd_printf(ATTR_DEBUG, "%x ", b);
 			else
 				plostd_printf(ATTR_DEBUG, "0%x ", b);
-			
+
 			addr++;
 		}
 		plostd_printf(ATTR_DEBUG, "  ");
@@ -180,7 +180,7 @@ void memory_dump(u32 addr, u32 max)
 				plostd_printf(ATTR_DEBUG, ".", b);
 			else
 				plostd_printf(ATTR_DEBUG, "%c", b);
-			
+
 			addr++;
 		}
 		plostd_printf(ATTR_DEBUG, "\n");

@@ -1,4 +1,4 @@
-/* 
+/*
  * Phoenix-RTOS
  *
  * plo - operating system loader
@@ -99,10 +99,10 @@ void plo_cmdloop(void)
 
 			case 80:
 				ncl = ((history.cl + 1) % HISTSZ);
-				if (history.cl != history.ll) { 
+				if (history.cl != history.ll) {
 					history.cl = ncl;
 					chgfl = 1;
-					
+
 					if (ncl != history.ll)
 						low_memcpy(history.lines[history.ll], history.lines[history.cl], plostd_strlen(history.lines[history.cl]) + 1);
 					else
@@ -129,32 +129,32 @@ void plo_init(void)
 {
 	u16 t;
 
-	low_init();	
+	low_init();
 	plostd_printf(ATTR_LOADER, "%s\n", WELCOME);
-	
+
 	timer_init();
 	serial_init(BPS_115200);
 	phfs_init();
 
 	/* Execute loader command */
 	for (t = _plo_timeout; t; t--) {
-		plostd_printf(ATTR_INIT, "\r%d seconds to automatic boot      ", t);		
+		plostd_printf(ATTR_INIT, "\r%d seconds to automatic boot      ", t);
 		if (timer_wait(1000, TIMER_KEYB, NULL, 0))
 			break;
 	}
-	
+
 	if (t == 0) {
 		plostd_printf(ATTR_INIT, "\n%s%s", PROMPT, _plo_command);
 		cmd_parse(_plo_command);
-	}	
+	}
 	plostd_printf(ATTR_INIT, "\n");
-		
+
 	/* Enter to interactive mode */
 	plo_cmdloop();
-	
+
 	serial_done();
 	timer_done();
-	
+
 	low_done();
 	return;
 }

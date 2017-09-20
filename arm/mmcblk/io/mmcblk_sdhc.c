@@ -787,7 +787,7 @@ int mmcblk_sdhc_sendCommandWithTransfer(void *cardPtr, u32 cmd, u32 cmd_arg, s32
 	return mmcblk_sdhc_sendCommand(cardPtr, cmd, cmd_arg, block_count, block_size);
 }
 
-// 
+//
 // int mmcblk_sdhc_switchHighSpeed(void *cardPtr, u32 baudrate) {
 // 	MmcblkCard_t *card = (MmcblkCard_t *) cardPtr;
 // 	void *freeptr=NULL;
@@ -796,7 +796,7 @@ int mmcblk_sdhc_sendCommandWithTransfer(void *cardPtr, u32 cmd, u32 cmd_arg, s32
 // 	void *dmaDesc = NULL;
 // 	MmcblkResponse_t response;
 // 	assert(card != NULL);
-// 
+//
 // 	if(MMCBLK_CSD20_GET_CSD_STRUCTURE(card->CSD.csd20))  {
 // 		if(!(MMCBLK_CSD20_GET_CCC(card->CSD.csd20) & 0x200)) {
 // 			LOG("High speed mode not supported");
@@ -809,33 +809,33 @@ int mmcblk_sdhc_sendCommandWithTransfer(void *cardPtr, u32 cmd, u32 cmd_arg, s32
 // 			return -1;
 // 		}
 // 	}
-// 
+//
 // 	//4 - aligned buffer required, length - multiplicity of 512
 // 	assert(!((u32)sfb & 0x3));
-// 
+//
 // 	sfb = vm_dokmallocaligned(64, SIZE_CACHE_LINE, &freeptr);
 // 	if(sfb == NULL)
 // 		return -ENOMEM;
-// 
+//
 // 	dmaDesc = card->port->ioOps.setupDMA(card, sfb, 64, &fp, NULL);
 // 	if(dmaDesc == NULL) {
 // 		vm_kfree(freeptr);
 // 		return -ENOMEM;
 // 	}
-// 
+//
 // 	card->port->ioOps.sendCommand(card, MMCBLK_COMM_SWITCH_FUNC, 0x00FFFFF1, 1, 64, dmaDesc);
 // 	response = card->port->ioOps.waitForResponse(card, MMCBLK_COMM_SWITCH_FUNC);
-// 
+//
 // 	if(mmcblk_evaluateResponse(&response) != -EBUSY) {
 // 		vm_kfree(freeptr);
 // 		card->port->ioOps.freeDMA(fp);
 // 		return -1;
 // 	}
-// 
+//
 // 	card->port->ioOps.transferWait(card);
-// 
+//
 // 	hal_cpuInvalCache(sfb, 64);
-// 
+//
 // 	/*checking bit 401 of sfb buffer - it corresponds to high speed mode support status*/
 // 	if(!(sfb[13] & 0x01))
 // 	{
@@ -846,15 +846,15 @@ int mmcblk_sdhc_sendCommandWithTransfer(void *cardPtr, u32 cmd, u32 cmd_arg, s32
 // 	}
 // 	else
 // 		LOG("HIGH SPEED MODE SUPPORTED!");
-// 
-// 
+//
+//
 // 	// Set the high speed of bus
-// 
-// 
-// 
+//
+//
+//
 // 	card->port->ioOps.sendCommand(card, MMCBLK_COMM_SWITCH_FUNC, 0x10FFFFF1, 1, 64, dmaDesc);
 // 	response = card->port->ioOps.waitForResponse(card, MMCBLK_COMM_SWITCH_FUNC);
-// 
+//
 // 	if(mmcblk_evaluateResponse(&response) != -EBUSY)
 // 	{
 // 		LOG("FAILED TO SWITCH TO HIGH SPEED MODE!");
@@ -862,11 +862,11 @@ int mmcblk_sdhc_sendCommandWithTransfer(void *cardPtr, u32 cmd, u32 cmd_arg, s32
 // 		card->port->ioOps.freeDMA(fp);
 // 		return -1;
 // 	}
-// 
+//
 // 	card->port->ioOps.transferWait(card);
-// 
+//
 // 	hal_cpuInvalCache(sfb, 64);
-// 
+//
 // 	if(!(sfb[13] & 0x01))
 // 	{
 // 		LOG("FAILED TO SWITCH TO HIGH SPEED MODE!");
@@ -878,10 +878,10 @@ int mmcblk_sdhc_sendCommandWithTransfer(void *cardPtr, u32 cmd, u32 cmd_arg, s32
 // 		LOG("SWITCHED TO HIGH SPEED MODE!");
 // 	card->baudRate = card->port->ioOps.setupBaudRate(card, baudrate);
 // 	card->speed = eSDHighSpeed;
-// 
+//
 // 	vm_kfree(freeptr);
 // 	card->port->ioOps.freeDMA(fp);
-// 
+//
 // 	return card->baudRate;
 // }
 

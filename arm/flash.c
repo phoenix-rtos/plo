@@ -1,4 +1,4 @@
-/* 
+/*
  * Phoenix-RTOS
  *
  * plo - operating system loader
@@ -74,7 +74,7 @@
 	#define INIT_FLASH_CONFIG 0x00020000 /* enable flash quad mode */
 	#define INIT_QUADSPI_DDR
 #endif
-   
+
 
 #ifdef FLASH_S25FL132K
 	#define FLASH_STATUS_MASK  0x01000000

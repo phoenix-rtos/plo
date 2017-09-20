@@ -1,4 +1,4 @@
-/* 
+/*
  * Phoenix-RTOS
  *
  * armplo - operating system loader for ARM7TDMI
@@ -63,7 +63,7 @@ char *plostd_itoa(unsigned int i, char *buff, int x)
 	int l = 0;
 	int div, offs;
 	int nz = 0;
-	
+
 	switch (sizeof(i)) {
 	case 1:
 		div = 100;
@@ -77,7 +77,7 @@ char *plostd_itoa(unsigned int i, char *buff, int x)
 	default:
 		return NULL;
 	}
-	
+
 	while (div) {
 		if ((offs = i / div) != 0)
 			nz = 1;
@@ -90,7 +90,7 @@ char *plostd_itoa(unsigned int i, char *buff, int x)
 	}
 	if (!l)
 		buff[l++] = digitsh[offs];
-							
+
 	buff[l] = 0;
 	return buff;
 }
@@ -100,7 +100,7 @@ char *plostd_itoah(unsigned int i, char *buff, int lz)
 {
 	int l, offs, k, shn;
 	int nz = 0;
-	
+
 	switch (sizeof(i)) {
 	case 1:
 		shn = 2;
@@ -180,7 +180,7 @@ void plostd_printf(char attr, char *fmt, ...)
 	char buff[16];
 
 	ap = (u8 *)&fmt + sizeof(fmt);
-	
+
 	for (p = fmt; *p; p++) {
 		if (*p != '%') {
 			low_putc(attr, *p);
@@ -209,6 +209,6 @@ void plostd_printf(char attr, char *fmt, ...)
 		}
 	}
 	va_end(ap);
-	
+
 	return;
 }

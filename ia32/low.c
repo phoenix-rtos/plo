@@ -1,4 +1,4 @@
-/* 
+/*
  * Phoenix-RTOS
  *
  * plo - operating system loader
@@ -73,10 +73,10 @@ u8 low_inb(u16 addr)
 	push bp
 	mov bp, sp
 	push dx
-	
+
 	mov dx, 4[bp]
 	in al, dx
-	
+
 	pop dx
 	pop bp
 #endasm
@@ -89,11 +89,11 @@ void low_outb(u16 addr, u8 b)
 	push bp
 	mov bp, sp
 	push dx
-	
+
 	mov dx, 4[bp]
 	mov al, 6[bp]
 	out dx, al
-	
+
 	pop dx
 	pop bp
 #endasm
@@ -105,10 +105,10 @@ u32 low_ind(u16 addr)
 #asm
 	push bp
 	mov bp, sp
-	
+
 	mov dx, 4[bp]
 	in eax, dx
-	
+
 	pop bp
 	mov edx, eax
 	shr edx, 16
@@ -122,11 +122,11 @@ void low_outd(u16 addr, u32 d)
 	push bp
 	mov bp, sp
 	push dx
-	
+
 	mov dx, 4[bp]
 	mov eax, 6[bp]
 	out dx, eax
-	
+
 	pop dx
 	pop bp
 #endasm
@@ -142,7 +142,7 @@ void low_setfar(u16 segm, u16 offs, u16 v)
 	push cx
 	push dx
 	push es
-	
+
 	mov dx, es
 	mov ax, 4[bp]
 	mov es, ax
@@ -151,7 +151,7 @@ void low_setfar(u16 segm, u16 offs, u16 v)
 	seg es
 	mov word ptr [bx], cx
 	mov es, dx
-	
+
 	pop es
 	pop dx
 	pop cx
@@ -168,7 +168,7 @@ u16 low_getfar(u16 segm, u16 offs)
 	mov bp, sp
 	push bx
 	push dx
-	
+
 	mov dx, es
 	mov ax, 4[bp]
 	mov es, ax
@@ -176,11 +176,11 @@ u16 low_getfar(u16 segm, u16 offs)
 	seg es
 	mov ax, word ptr [bx]
 	mov es, dx
-	
+
 	pop dx
 	pop bx
 	pop bp
-#endasm	
+#endasm
 }
 
 
@@ -193,7 +193,7 @@ void low_copyto(u16 segm, u16 offs, void *src, unsigned int l)
 	push dx
 	push si
 	push di
-	
+
 	mov dx, es
 	mov ax, 4[bp]
 	mov es, ax
@@ -203,7 +203,7 @@ void low_copyto(u16 segm, u16 offs, void *src, unsigned int l)
 	rep
 	movsb
 	mov es, dx
-	
+
 	pop di
 	pop si
 	pop dx
@@ -222,7 +222,7 @@ void low_copyfrom(u16 segm, u16 offs, void *dst, unsigned int l)
 	push dx
 	push si
 	push di
-	
+
 	mov dx, ds
 	mov ax, 4[bp]
 	mov ds, ax
@@ -232,13 +232,13 @@ void low_copyfrom(u16 segm, u16 offs, void *dst, unsigned int l)
 	rep
 	movsb
 	mov ds, dx
-	
+
 	pop di
 	pop si
 	pop dx
 	pop cx
 	pop bp
-#endasm	
+#endasm
 }
 
 
@@ -246,7 +246,7 @@ void low_memcpy(char *dst, char *src, unsigned int l)
 {
 #asm
 	push bp
-	mov bp, sp	
+	mov bp, sp
 	push cx
 	push si
 	push di
@@ -277,10 +277,10 @@ void low_setmode(u8 m)
 {
 #asm
 	push bp
-	mov bp, sp	
+	mov bp, sp
 	mov ah, #0
 	mov al, 4[bp]
-	int 0x10	
+	int 0x10
 	pop bp
 #endasm
 }
@@ -296,7 +296,7 @@ void low_putc(char attr, char c)
 
 	cmp 6[bp], #0x0a
 	jnz low_putc_l1
-	
+
 ; Perform carriage return
 	xor bx, bx
 	mov bl, 4[bp]
@@ -304,7 +304,7 @@ void low_putc(char attr, char c)
 	mov ah, #0x0e
 	mov cx, #1
 	int 0x10
-	
+
 low_putc_l1:
 	xor bx, bx
 	mov bl, 4[bp]
@@ -326,14 +326,14 @@ void low_getc(char *c, char *sc)
 	push bp
 	mov bp, sp
 	push bx
-	
+
 	mov ax, #0
 	int 0x16
 	mov bx, 4[bp]
 	mov [bx], al
 	mov bx, 6[bp]
 	mov [bx], ah
-	
+
 	pop bx
 	pop bp
 #endasm
@@ -360,7 +360,7 @@ int low_int13read(u8 drive, u16 c, u8 h, u8 s, u8 n, u8 *buff)
 #asm
 	push bp
 	mov bp, sp
-	
+
 	push bx
 	push dx
 	push cx
@@ -398,7 +398,7 @@ int low_int13param(u8 drive, u16 *mc, u8 *mh, u8 *ms)
 #asm
 	push bp
 	mov bp, sp
-	
+
 	push bx
 	push dx
 	push cx
@@ -408,7 +408,7 @@ int low_int13param(u8 drive, u16 *mc, u8 *mh, u8 *ms)
 	mov ah, #0x08
 	mov dl, 4[bp] /* drive */
 	int 0x13
-	jc low_int13param_l0	
+	jc low_int13param_l0
 
 	mov bx, 6[bp]
 	mov [bx], ch
@@ -416,15 +416,15 @@ int low_int13param(u8 drive, u16 *mc, u8 *mh, u8 *ms)
 	and dl, #0xc0
 	rol dl, #2
 	mov 1[bx], dl  /* C */
-	
+
 	mov bx, 8[bp]
 	mov [bx], dh   /* H */
-	
+
 	mov bx, 10[bp]
 	and cl, #0x3f
 	mov [bx], cl   /* S */
 
-	mov ax, #0	
+	mov ax, #0
 	jmp low_int13param_l1
 
 low_int13param_l0:
@@ -449,7 +449,7 @@ int low_irqdispatch(u16 irq)
 
 	if (irqdata.isr[irq] == NULL)
 		return IRQ_DEFAULT;
-	
+
 	isr = irqdata.isr[irq];
 	return isr(irq, irqdata.data[irq]);
 }
@@ -471,7 +471,7 @@ int low_irqinst(u16 irq, int (*isr)(u16, void *), void *data)
 {
 	if (irq > 15)
 		return ERR_ARG;
-	
+
 	low_cli();
 	irqdata.isr[irq] = (void *)isr;
 	irqdata.data[irq] = data;
@@ -484,7 +484,7 @@ int low_irquninst(u16 irq)
 {
 	if (irq > 15)
 		return ERR_ARG;
-	
+
 	low_cli();
 	irqdata.isr[irq] = NULL;
 	irqdata.data[irq] = NULL;
@@ -498,17 +498,17 @@ void low_irqinit(void)
 	unsigned int k;
 
 	/* Install IRQ stubs */
-	low_cli();  
+	low_cli();
 	for (k = 0; k < 16; k++) {
 		irqdata.irqoffs[k] = (void *)low_getfar(0, (k + (k < 8 ? 8 : 0x68)) * 4);
 		irqdata.irqseg[k] = (void *)low_getfar(0, (k + (k < 8 ? 8 : 0x68)) * 4 + 2);
-		
+
 		low_setfar(0, (k + (k < 8 ? 8 : 0x68)) * 4, (u16)irqstubs[k]);
 		low_setfar(0,  (k + (k < 8 ? 8 : 0x68)) * 4 + 2, low_getcs());
-		
+
 		irqdata.isr[k] = NULL;
 		irqdata.data[k] = NULL;
-	} 
+	}
 	low_sti();
 	return;
 }
@@ -519,13 +519,13 @@ void low_irqdone(void)
 	unsigned int k;
 
 	low_cli();
-	
+
 	/* Restore interrupt vector table */
 	for (k = 0; k < 8; k++) {
 		low_setfar(0, (k + (k < 8 ? 8 : 0x68)) * 4, (u16)irqdata.irqoffs[k]);
 		low_setfar(0, (k + (k < 8 ? 8 : 0x68)) * 4 + 2, (u16)irqdata.irqseg[k]);
 	}
-	
+
 	low_sti();
 	return;
 }
@@ -544,13 +544,13 @@ int low_launch(void)
 	low_setfar(GDT_SEG, 10, 0x0000);
 	low_setfar(GDT_SEG, 12, 0x9a00);
 	low_setfar(GDT_SEG, 14, 0x00cf);
-		
+
 	/* Prepare ring 0 data segment descriptor - selector 0x10 */
 	low_setfar(GDT_SEG, 16, 0xffff);
 	low_setfar(GDT_SEG, 18, 0x0000);
 	low_setfar(GDT_SEG, 20, 0x9200);
 	low_setfar(GDT_SEG, 22, 0x00cf);
-	
+
 	/* Prepare GDTR pseudodescriptor */
 	low_setfar(SYSPAGE_SEG, SYSPAGE_OFFS_GDTR + 0, GDT_SIZE - 1);
 	low_setfar(SYSPAGE_SEG, SYSPAGE_OFFS_GDTR + 2, GDT_SEG << 4);
@@ -560,13 +560,13 @@ int low_launch(void)
 	low_setfar(SYSPAGE_SEG, SYSPAGE_OFFS_IDTR + 0, IDT_SIZE - 1);
 	low_setfar(SYSPAGE_SEG, SYSPAGE_OFFS_IDTR + 2, IDT_SEG << 4);
 	low_setfar(SYSPAGE_SEG, SYSPAGE_OFFS_IDTR + 4, IDT_SEG >> 12);
-	
+
 	/* Prepare paging parameters */
 	low_setfar(SYSPAGE_SEG, SYSPAGE_OFFS_PDIR + 0, PDIR_SEG << 4);
 	low_setfar(SYSPAGE_SEG, SYSPAGE_OFFS_PDIR + 2, PDIR_SEG >> 12);
 	low_setfar(SYSPAGE_SEG, SYSPAGE_OFFS_PTABLE + 0, PTABLE_SEG << 4);
 	low_setfar(SYSPAGE_SEG, SYSPAGE_OFFS_PTABLE + 2, PTABLE_SEG >> 12);
-	
+
 	/* Prepare kernel parameters */
 	low_setfar(SYSPAGE_SEG, SYSPAGE_OFFS_STACK + 0, INIT_ESP);
 	low_setfar(SYSPAGE_SEG, SYSPAGE_OFFS_STACK + 2, 0);
@@ -582,7 +582,7 @@ int low_launch(void)
 	mov es, ax
 	seg es
 	lgdt 0
-	
+
 	mov ax, #0
 	mov ss, ax
 	mov esp, #INIT_ESP
@@ -607,7 +607,7 @@ int low_launch(void)
 }
 
 
-/* Function retrieves memory map item and returns id for next call */ 
+/* Function retrieves memory map item and returns id for next call */
 int low_int15e820(u32 id, low_mmitem_t *mmitem, u32 *nid)
 {
 #asm
@@ -617,7 +617,7 @@ int low_int15e820(u32 id, low_mmitem_t *mmitem, u32 *nid)
 	push ecx
 	push edx
 	push di
-	
+
 	mov eax, #0xe820
 	mov ebx, 4[bp]
 	mov ecx, #20
@@ -633,7 +633,7 @@ bios15e820_success:
 	mov di, 10[bp]
 	mov [di], ebx
 	xor ax, ax
-	
+
 bios15e820_ret:
 	pop di
 	pop edx
@@ -652,7 +652,7 @@ int low_mmcreate(void)
 	u32 id;
 
 	low_setfar(SYSPAGE_SEG, SYSPAGE_OFFS_MMSIZE, 0);
-	
+
 	for (id = 0, k = 0; k < MM_MAXSZ; k++) {
 		if (low_int15e820(id, &mmitem, &id) < 0)
 			return ERR_LOW_BIOS;
@@ -691,7 +691,7 @@ void low_init(void)
 
 	/* Set graphics mode */
 	low_setmode(0x12);
-	
+
 	if ((res = low_mmcreate()) < 0) {
 		plostd_printf(ATTR_ERROR, "Problem in memory map creation [res=%x]!\n", res);
 		if (res == ERR_LOW_BIOS)

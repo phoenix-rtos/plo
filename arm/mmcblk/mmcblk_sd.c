@@ -178,12 +178,12 @@ int mmcblk_sd_init(MmcblkCard_t *card) {
 // 	assert(!"Not implemented");
 // 	return 0;
 // }
-// 
+//
 // int mmcblk_sd_switchHighSpeed(MmcblkCard_t *card) {
 // 	assert(!"Not implemented");
 // 	return 0;
 // }
-// 
+//
 // int mmcblk_sd_write(MmcblkCard_t *card, offs_t offs, char *buff, unsigned int len) {
 // 	s32 ret=0;
 // 	FreePtr *fp;
@@ -194,11 +194,11 @@ int mmcblk_sd_init(MmcblkCard_t *card) {
 // 	u32 sizeHead=SIZE_CACHE_LINE - ((u32)buff & (SIZE_CACHE_LINE-1));
 // 	u32 sizeTail=(u32)buff & (SIZE_CACHE_LINE-1);
 // 	status=status;
-// 
+//
 // 	/* head/tail buffer - for cache management purposes */
 // 	char *ht=NULL;
 // 	void *headFreePtr=NULL;
-// 
+//
 // 	/* 4 - aligned buffer required, length - multiplicity of 512 */
 // 	assert(!((u32)buff & 0x3) && !(len & (MMCBLK_BLOCK_LENGTH-1)));
 // 	assert(!(offs & (MMCBLK_BLOCK_LENGTH-1)));
@@ -206,36 +206,36 @@ int mmcblk_sd_init(MmcblkCard_t *card) {
 // 		return ERR_ARG;
 // 	if(len == 0)
 // 		return ret;
-// 
+//
 // 	sectorNum = len >> 9;
-// 
+//
 // 	ht = vm_dokmallocaligned(2 * SIZE_CACHE_LINE, SIZE_CACHE_LINE, &headFreePtr);
 // 	if(ht == NULL) {
 // 		assert(0);
 // 		return -ENOMEM;
 // 	}
-// 
+//
 // 	dmaDesc = card->port->ioOps.setupDMA(card, buff, len, &fp, ht);
 // 	if(dmaDesc == NULL) {
 // 		vm_kfree(headFreePtr);
 // 		assert(0);
 // 		return -ENOMEM;
 // 	}
-// 
+//
 // 	hal_cpuFlushCache( (char *)(((u32) buff & ~(SIZE_CACHE_LINE-1))+SIZE_CACHE_LINE), len-SIZE_CACHE_LINE);
-// 
+//
 // 	memcpy(ht, buff, sizeHead);
 // 	if(sizeTail > 0)
 // 		memcpy(ht+SIZE_CACHE_LINE, buff+len-sizeTail, sizeTail);
-// 
+//
 // 	hal_cpuFlushCache(ht, SIZE_CACHE_LINE*2);
-// 
+//
 // 	do {
 // 		hal_cpuReschedule();
 // 		card->port->ioOps.sendCommand(card, MMCBLK_COMM_SEND_STATUS, card->RCA, 0, 0, NULL);
 // 		response = card->port->ioOps.waitForResponse(card, MMCBLK_COMM_SEND_STATUS);
 // 	} while(response.response.r1.bits.CURRENT_STATE != 4);
-// 
+//
 // 	if(len == MMCBLK_BLOCK_LENGTH) {
 // 		card->port->ioOps.sendCommand(card, MMCBLK_COMM_WRITE_BLOCK, offs>>9, 1, MMCBLK_BLOCK_LENGTH, dmaDesc);
 // 		response = card->port->ioOps.waitForResponse(card, MMCBLK_COMM_WRITE_BLOCK);
@@ -245,7 +245,7 @@ int mmcblk_sd_init(MmcblkCard_t *card) {
 // 		response = card->port->ioOps.waitForResponse(card, MMCBLK_COMM_WRITE_MULTIPLE_BLOCK);
 // 	}
 // 	status = mmcblk_evaluateResponse(&response);
-// 
+//
 // 	if(response.error || (status != 0 && status != ERR_BUSY && status != -ETIMEDOUT)) {
 // 		LOG("Write cmd error: %d", status);
 // 		assert(0);

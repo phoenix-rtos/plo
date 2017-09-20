@@ -1,4 +1,4 @@
-/* 
+/*
  * Phoenix-RTOS
  *
  * plo - operating system loader
@@ -29,7 +29,7 @@ timer_t timer;
 int timer_isr(u16 irq, void *data)
 {
 	timer_t *timer = data;
-	
+
 	timer->jiffies += 62;
 	return IRQ_DEFAULT;
 }

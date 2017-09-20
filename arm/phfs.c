@@ -1,4 +1,4 @@
-/* 
+/*
  * Phoenix-RTOS
  *
  * plo - operating system loader
@@ -47,7 +47,7 @@ s32 phfs_open(u16 pdn, char *name, u32 flags)
 {
 	if (pdn > 2)
 		return ERR_ARG;
-	
+
 	return phfs_handlers[pdn].open(phfs_handlers[pdn].dn, name, flags);
 }
 
@@ -65,7 +65,7 @@ s32 phfs_close(u16 pdn, s32 handle)
 {
 	if (pdn > 2)
 		return ERR_ARG;
-	
+
 	return phfs_handlers[pdn].close(phfs_handlers[pdn].dn, handle);
 }
 
@@ -73,7 +73,7 @@ s32 phfs_close(u16 pdn, s32 handle)
 void phfs_init(void)
 {
 	unsigned int i;
-	
+
 	/* Handlers for com devices */
 	phfs_handlers[PDN_FLASH].open = flash_open;
 	phfs_handlers[PDN_FLASH].read = flash_read;
@@ -83,6 +83,6 @@ void phfs_init(void)
 	phfs_handlers[PDN_MMCBLK].read = mmcblk_read;
 	phfs_handlers[PDN_MMCBLK].close = mmcblk_close;
 	phfs_handlers[PDN_MMCBLK].dn = 0;
-	
+
 	return;
 }

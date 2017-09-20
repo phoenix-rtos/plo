@@ -1,4 +1,4 @@
-/* 
+/*
  * Phoenix-RTOS
  *
  * plo - operating system loader
@@ -49,7 +49,7 @@ typedef vu32 *reg32;
 
 
 /* stdarg definitions */
-typedef u8 *va_list; 
+typedef u8 *va_list;
 
 #define va_start(ap, parmN) ((void)((ap) = (va_list)((char *)(&parmN) + sizeof(parmN))))
 #define va_arg(ap, type) (*(type *)(((*(char **)&(ap)) += sizeof(type)) - (sizeof(type))))

@@ -1,4 +1,4 @@
-/* 
+/*
  * Phoenix-RTOS
  *
  * plo - operating system loader
@@ -61,7 +61,7 @@
 
 
 /* Boot command size */
-#define CMD_SIZE     64 
+#define CMD_SIZE     64
 
 
 /* Disk cache */

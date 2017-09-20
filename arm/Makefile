@@ -14,7 +14,7 @@ OBJS =  _startup.o  $(SRCS:.c=.o)
 
 
 all: arm-plo.hex arm-plo.img
-	
+
 
 .S.o:
 	$(CC) $(CFLAGS) $<

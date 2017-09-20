@@ -1,4 +1,4 @@
-; 
+;
 ; Phoenix-RTOS
 ;
 ; plo - operating system loader

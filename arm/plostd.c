@@ -1,4 +1,4 @@
-/* 
+/*
  * Phoenix-RTOS
  *
  * plo - operating system loader
@@ -88,7 +88,7 @@ char *plostd_itoah(unsigned int i, char *buff, int lz)
 {
 	int l, offs, k, shn;
 	int nz = 0;
-	
+
 	switch (sizeof(i)) {
 	case 1:
 		shn = 2;
@@ -168,7 +168,7 @@ void plostd_printf(char attr, char *fmt, ...)
 	char buff[16];
 
 	ap = (u8 *)&fmt + sizeof(fmt);
-	
+
 	for (p = fmt; *p; p++) {
 		if (*p != '%') {
 			low_putc(attr, *p);
@@ -197,6 +197,6 @@ void plostd_printf(char attr, char *fmt, ...)
 		}
 	}
 	va_end(ap);
-	
+
 	return;
 }

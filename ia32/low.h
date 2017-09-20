@@ -1,4 +1,4 @@
-/* 
+/*
  * Phoenix-RTOS
  *
  * plo - operating system loader
@@ -67,7 +67,7 @@ typedef struct _syspage_t {
 
 	u16 mmsize;
 	low_mmitem_t mm[MM_MAXSZ];
-	
+
 	u16 progssz;
 	syspage_program_t progs[];
 } syspage_t;

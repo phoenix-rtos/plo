@@ -1,4 +1,4 @@
-/* 
+/*
  * Phoenix-RTOS
  *
  * plo - operating system loader
@@ -30,12 +30,12 @@
 
 #define  COMAND_SEQ_LEN            128 /**< interms of instruction word size */
 
-typedef struct 
+typedef struct
 {
 	u32 rsvd0;
 	u8 hold_delay;
-	u8 hsps; 
-	u8 hsds; 
+	u8 hsps;
+	u8 hsds;
 	u8 rsvd1;
 	u32 rsvd[3];
 	u32 cs_hold_time; /**< CS hold time in terms of serial clock.(for example 1 serial clock cyle) */
@@ -143,14 +143,14 @@ const volatile bootrom_data_t __attribute__ ((section (".bootrom_data"))) bootro
 		 QuadSPI_LUT_INSTR0(LUT_CMD_READ) |QuadSPI_LUT_PAD0(LUT_PAD4)|QuadSPI_LUT_OPRND0(0x80),
 		 QuadSPI_LUT_INSTR0(LUT_CMD_JMP_ON_CS) |QuadSPI_LUT_PAD0(LUT_PAD1)|QuadSPI_LUT_OPRND0(0x01)}
 	},
-	
+
 	.image_vector_table = {
 		.hdr = IVT_HEADER,                              /* IVT Header */
 		.entry = (u32) _start,                          /* Image  Entry Function */
 		.boot_data = (u32) &bootrom_data.boot_data,     /* Address where BOOT Data Structure is stored */
 		.self = (u32) &bootrom_data.image_vector_table, /* Pointer to IVT Self (absolute address */
 	},
-	
+
 	.boot_data = {
 		.start = (u32) _ram_begin,
 		.size  = (u32) _plo_img_size,

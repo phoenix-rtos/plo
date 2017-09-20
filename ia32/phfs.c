@@ -1,4 +1,4 @@
-/* 
+/*
  * Phoenix-RTOS
  *
  * plo - operating system loader
@@ -34,7 +34,7 @@ s32 phfs_open(u16 pdn, char *name, u32 flags)
 {
 	if (pdn > PDN_HD3)
 		return ERR_ARG;
-	
+
 	return phfs_handlers[pdn].open(phfs_handlers[pdn].dn, name, flags);
 }
 
@@ -52,7 +52,7 @@ s32 phfs_close(u16 pdn, s32 handle)
 {
 	if (pdn > PDN_HD3)
 		return ERR_ARG;
-	
+
 	return phfs_handlers[pdn].close(phfs_handlers[pdn].dn, handle);
 }
 
@@ -60,7 +60,7 @@ s32 phfs_close(u16 pdn, s32 handle)
 void phfs_init(void)
 {
 	unsigned int i;
-	
+
 	/* Handlers for com devices */
 	for (i = 0; i < 2; i++) {
 		phfs_handlers[PDN_COM1 + i].open = phoenixd_open;
@@ -68,13 +68,13 @@ void phfs_init(void)
 		phfs_handlers[PDN_COM1 + i].close = phoenixd_close;
 		phfs_handlers[PDN_COM1 + i].dn = i;
 	}
-	
+
 	/* Handlers for floppy disks */
 	phfs_handlers[PDN_FLOPPY].open = disk_open;
 	phfs_handlers[PDN_FLOPPY].read = disk_read;
 	phfs_handlers[PDN_FLOPPY].close = disk_close;
 	phfs_handlers[PDN_FLOPPY].dn = 0;
-	
+
 	/* Handlers for hard disks */
 	for (i = 0; i < 4; i++) {
 		phfs_handlers[PDN_HD0 + i].open = disk_open;
@@ -82,6 +82,6 @@ void phfs_init(void)
 		phfs_handlers[PDN_HD0 + i].close = disk_close;
 		phfs_handlers[PDN_HD0 + i].dn = 0x80 + i;
 	}
-	
+
 	return;
 }
