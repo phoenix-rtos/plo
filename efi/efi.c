@@ -83,7 +83,6 @@ static void efi_printHex(efi_params_t *efi, u32 value)
 {
 	wchar_t buf[2+8+1];
 	wchar_t *p = buf + sizeof(buf)/sizeof(buf[0]);
-	int i;
 
 	*--p = 0;
 
@@ -607,7 +606,7 @@ static void plo_appendCmdline(efi_params_t *efi, multiboot_info_t *mb, const cha
 static void plo_parseConfig(efi_params_t *efi, multiboot_info_t *mb, char *config, const char **kname)
 {
 	multiboot_module_t *mod;
-	char *p, *fn, *kernel, *kernel_args;
+	char *fn, *kernel, *kernel_args;
 	size_t n_cmds, fn_len;
 	int i;
 
@@ -759,7 +758,6 @@ static void plo_buildBootData(efi_params_t *efi, multiboot_info_t **out_mb, cons
 	const wchar_t *cfgname;
 	const char *cmdline;
 	char *config;
-	void *entry;
 
 	efi_processCommandLine(efi, &cfgname, &cmdline);
 

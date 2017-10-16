@@ -83,7 +83,7 @@
 #define SEL_UDATA    35
 
 
-#define NULL 0
+#define NULL ((void *)0)
 
 
 #ifndef __ASSEMBLY__

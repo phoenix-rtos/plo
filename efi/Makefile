@@ -6,7 +6,7 @@ CC := $(CROSS)gcc
 LD := $(CROSS)ld
 OBJCOPY := $(CROSS)objcopy
 
-CFLAGS = -m32 -march=i586 -g -Os -DHAL=\"hal.h\" \
+CFLAGS = -m32 -march=i586 -g -Os -Wall -DHAL=\"hal.h\" \
 	-fpie -ffreestanding -fomit-frame-pointer -fno-asynchronous-unwind-tables -fshort-wchar
 
 LDFLAGS = -T plo.lds -static
@@ -41,4 +41,4 @@ plo.efi: plo.coff
 
 .PHONY: clean
 clean:
-	rm -f plo.coff plo.efi .*.d
+	rm -f plo.coff plo.efi *.o .*.d
