@@ -1,1 +1,1 @@
-../../kernel/src/hal/ia32/string.h
+kernel/string.h

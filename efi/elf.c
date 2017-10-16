@@ -1,1 +1,1 @@
-../../kernel/src/proc/elf.c
+kernel/elf.c

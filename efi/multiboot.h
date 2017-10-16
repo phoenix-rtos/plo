@@ -1,1 +1,1 @@
-../../kernel/src/hal/ia32/multiboot.h
+kernel/multiboot.h
