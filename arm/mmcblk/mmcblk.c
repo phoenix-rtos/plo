@@ -5,7 +5,17 @@
 #include "../errors.h"
 #include "../timer.h"
 #include "../config.h"
+#include "../low.h"
 #include "../MVF50GS10MK50.h"
+
+#ifndef MMCBLK_CD_LEVEL
+/* CARD DETECT LEVEL
+ * 0 - active low
+ * 1 - active high
+ * 2 - ignored
+ */
+  #define MMCBLK_CD_LEVEL		2
+#endif
 
 static MmcblkPortDesc_t mmcblkPorts[] = {
 	{
@@ -26,6 +36,7 @@ static MmcblkPortDesc_t mmcblkPorts[] = {
 		},
 		.CSPort = -1,
 		.CDPort = 0x86,
+		.CDActive = MMCBLK_CD_LEVEL,
 	}
 };
 
@@ -36,7 +47,7 @@ static MmcblkCard_t card[MMCBL_PORTS_COUNT];
 static struct MmcblkCardOps_t cardOps[eCardTypeNum] = {
 	{
 		.init = NULL,
-// 		.deinit = NULL,
+		.deinit = NULL,
 // 		.inserted = NULL,
 // 		.switchHighSpeed = NULL,
 // 		.write = NULL,
@@ -44,7 +55,7 @@ static struct MmcblkCardOps_t cardOps[eCardTypeNum] = {
 	},
 	{
 		.init = mmcblk_sd_init,
-// 		.deinit = mmcblk_sd_deinit,
+		.deinit = mmcblk_sd_deinit,
 // 		.inserted = mmcblk_sd_inserted,
 // 		.switchHighSpeed = mmcblk_sd_switchHighSpeed,
 // 		.write = mmcblk_sd_write,
@@ -52,7 +63,7 @@ static struct MmcblkCardOps_t cardOps[eCardTypeNum] = {
 	},
 	{
 		.init = NULL,
-// 		.deinit = NULL,
+		.deinit = NULL,
 // 		.inserted = NULL,
 // 		.switchHighSpeed = NULL,
 // 		.write = NULL,
@@ -60,7 +71,7 @@ static struct MmcblkCardOps_t cardOps[eCardTypeNum] = {
 	},
 	{
 		.init = NULL,
-// 		.deinit = NULL,
+		.deinit = NULL,
 // 		.inserted = NULL,
 // 		.switchHighSpeed = NULL,
 // 		.write = NULL,
@@ -68,7 +79,7 @@ static struct MmcblkCardOps_t cardOps[eCardTypeNum] = {
 	},
 	{
 		.init = NULL,
-// 		.deinit = NULL,
+		.deinit = NULL,
 // 		.inserted = NULL,
 // 		.switchHighSpeed = NULL,
 // 		.write = NULL,
@@ -76,7 +87,7 @@ static struct MmcblkCardOps_t cardOps[eCardTypeNum] = {
 	},
 	{
 		.init = NULL,
-// 		.deinit = NULL,
+		.deinit = NULL,
 // 		.inserted = NULL,
 // 		.switchHighSpeed = NULL,
 // 		.write = NULL,
@@ -309,11 +320,27 @@ static const GPIO_Type *GPIOs[] = GPIO_BASES;
 static int mmcblk_cardInit(MmcblkCard_t *card){
 	int inserted;
 	int status = 0;
-	inserted = !((GPIOs[card->port->CDPort / 32]->PDIR >> (card->port->CDPort % 32)) & 1);
+	MmcblkResponse_t res;
+
+	if(card->port->CDActive == 2)
+		inserted = 1;
+	else {
+		inserted = (!! ((GPIOs[card->port->CDPort / 32]->PDIR >> (card->port->CDPort % 32)) & 1)) == (!! card->port->CDActive);
+	}
+
 	if(inserted)
 	{
 		LOG("Mmcblk card init");
 		card->port->ioOps.reset(card);
+		card->port->ioOps.setupBusWidth(card, eMmcblkBusWidth1b);
+		card->port->ioOps.setupEndian(card, eLittleEndian);
+		card->port->ioOps.setupBaudRate(card, MMCBLK_MAX_BASIC_BAUDRATE);
+
+		/* reset the card with CMD0 */
+		card->port->ioOps.sendCommand(card, MMCBLK_COMM_GO_IDLE_STATE, 0, 0, 0);
+		card->port->ioOps.waitForResponse(card, MMCBLK_COMM_GO_IDLE_STATE, &res);
+		LOG("Card in idle state");
+		timer_wait(100, TIMER_EXPIRE, NULL, 0, NULL);
 		status = cardIdentify(card);
 		if(status != 0 ) {
 			return status;
@@ -339,6 +366,63 @@ static int mmcblk_cardInit(MmcblkCard_t *card){
 	return 0;
 }
 
+static int mmcblk_cardReinit(MmcblkCard_t *card){
+	int inserted = 0;
+	int status = 0;
+	MmcblkResponse_t res;
+	timer_wait(100, TIMER_EXPIRE, NULL, 0, NULL);
+
+	if(card->port->CDActive == 2)
+		inserted = 1;
+	else {
+		inserted = (!! ((GPIOs[card->port->CDPort / 32]->PDIR >> (card->port->CDPort % 32)) & 1)) == (!! card->port->CDActive);
+	}
+
+	if(inserted)
+	{
+		LOG("Mmcblk card reinit: %d", cardIdx);
+		card->port->ioOps.reset(card);
+		card->port->ioOps.setupBusWidth(card, eMmcblkBusWidth1b);
+		card->port->ioOps.setupEndian(card, eLittleEndian);
+		card->port->ioOps.setupBaudRate(card, MMCBLK_MAX_BASIC_BAUDRATE);
+
+		/* reset the card with CMD0 */
+		card->port->ioOps.sendCommand(card, MMCBLK_COMM_GO_IDLE_STATE, 0, 0, 0);
+		card->port->ioOps.waitForResponse(card, MMCBLK_COMM_GO_IDLE_STATE, &res);
+		LOG("Card in idle state");
+		timer_wait(100, TIMER_EXPIRE, NULL, 0, NULL);
+
+		status = cardIdentify(card);
+		if(status != 0 || card->label == eCardUnknown || card->label == eCardUnsupported)
+			LOG("Card identification failure");
+		else {
+			LOG("Card identification success");
+			assert(card->label < eCardTypeNum && card->label > 0);
+			if(card->label != eCardSDCombo)
+			{
+				card->cardOps = &cardOps[card->label];
+				if(0 == card->cardOps->init(card))
+				{
+					LOG("Card initialized");
+				}
+				else
+				{
+					LOG("Card initialization failure");
+					return ERR_MMC_IO;
+				}
+			}
+			else
+			{
+				assert(!"COMBO card support Not implemented");
+			}
+		}
+	}
+	else {
+		return ERR_ARG;
+	}
+	return 0;
+}
+
 void  cardDeInit(MmcblkCard_t *card) {
 	card->baudRate = 0;
 	card->capacity = 0;
@@ -355,19 +439,16 @@ void  cardDeInit(MmcblkCard_t *card) {
 	card->sectorSize = 512;
 }
 
-s32 mmcblk_open(u16 bn, char *name, u32 flags)
-{
-	s32 ret;
-
-	if ((ret = mmcblk_cardInit(&card[bn])) < 0)
-		return ret;
-	if (ret == 1)
-		return bn;
-	plostd_printf(ATTR_ERROR, "MMCBLK: No card inserted\n");
-	return ERR_ARG;
+static int mmcblk_totalCardReset(MmcblkCard_t *card) {
+	int ret = 0;
+	LOG("SD card reset\n");
+	cardDeInit(card);
+	card->cardOps->deinit(card);
+	ret = mmcblk_cardReinit(card);
+	return ret;
 }
 
-s32 mmcblk_read(u16 bn, s32 handle, u32 *offs_ptr, u8 *buff, u32 len)
+s32 mmcblk_read(u16 bn, s32 handle, u64 *offs_ptr, u8 *buff, u32 len)
 {
 	unsigned int head_len, tail_len;
 	char head[MMCBLK_BLOCK_LENGTH] __attribute__(( aligned(4) ));
@@ -375,8 +456,8 @@ s32 mmcblk_read(u16 bn, s32 handle, u32 *offs_ptr, u8 *buff, u32 len)
 	static u32 tail_addr = -1;
 	char *head_ptr = head;
 	char *tail_ptr = tail;
-	int ret;
-	u32 offs = *offs_ptr;
+	int ret, retry = 5;
+	u32 offs = (u32)*offs_ptr;
 
 	if (handle != bn)
 		return ERR_ARG;
@@ -385,11 +466,10 @@ s32 mmcblk_read(u16 bn, s32 handle, u32 *offs_ptr, u8 *buff, u32 len)
 		plostd_printf(ATTR_ERROR, "MMCBLK: Improper read buffer alignment\n");
 		return ERR_ARG;
 	}
-
+	
 	if (len == 0)
 		return 0;
 
-	offs += MMCBLK_KERNEL_OFFSET;
 	head_len = offs % MMCBLK_BLOCK_LENGTH;
 	tail_len = (len + head_len) % MMCBLK_BLOCK_LENGTH;
 	if (head_len == 0) {
@@ -416,11 +496,11 @@ s32 mmcblk_read(u16 bn, s32 handle, u32 *offs_ptr, u8 *buff, u32 len)
 
 	if (head_len >= len) {
 		tail_addr = offs + head_len - MMCBLK_BLOCK_LENGTH;
-		ret = card->cardOps->read(&(card[bn]), offs + head_len, tail, NULL, NULL, 0);
+		while (((ret = card->cardOps->read(&(card[bn]), offs + head_len, tail, NULL, NULL, 0)) < 0) && retry-- > 0);
 	} else {
 		if (tail_ptr != NULL)
 			tail_addr = offs + len - tail_len;
-		ret = card->cardOps->read(&(card[bn]), offs + head_len, head_ptr, buff + head_len, tail_ptr, len - head_len - tail_len);
+		while (((ret = card->cardOps->read(&(card[bn]), offs + head_len, head_ptr, buff + head_len, tail_ptr, len - head_len - tail_len)) < 0) && retry-- > 0);
 	}
 	if (ret < 0) {
 		if (tail_ptr != NULL)
@@ -441,6 +521,21 @@ s32 mmcblk_read(u16 bn, s32 handle, u32 *offs_ptr, u8 *buff, u32 len)
 
 	return ret;
 }
+
+s32 mmcblk_open(u16 bn, char *name, u32 flags)
+{
+	s32 ret;
+
+	if ((ret = mmcblk_cardInit(&card[bn])) < 0) {
+		plostd_printf(ATTR_ERROR, "MMCBLK: Error %d in card initialization\n", ret);
+		return ret;
+	}
+	if (ret == 1)
+		return bn;
+	plostd_printf(ATTR_ERROR, "MMCBLK: No card inserted\n");
+	return ERR_ARG;
+}
+
 
 s32 mmcblk_close(u16 bn, s32 handle)
 {
@@ -487,7 +582,7 @@ static void clocks_init(void) {
 	/*Although SDHC_DCLK is output-only signal, ibe needs to be enabled as the module
 	requires output clock to be looped-back through the pad’s input buffer to ease timing
 	requirements.*/
-
+#if MMCBLK_ENABLED
 	u32 val =  (IOMUXC_RGPIO_MUX_MODE(5))		|	/* SDHC mode*/
 				(IOMUXC_RGPIO_DSE(7))			|	/* 20 ohm driver*/
 				(IOMUXC_RGPIO_SPEED(3)	)		| 	/* 200 MHz */
@@ -504,6 +599,7 @@ static void clocks_init(void) {
 	IOMUXC->RGPIO[17] = val;
 	IOMUXC->RGPIO[18] = val;
 	IOMUXC->RGPIO[19] = val;
+#endif
 }
 
 
@@ -512,7 +608,7 @@ void mmcblk_init() {
 	clocks_init();
 
 	low_memset(card, 0x0, sizeof(card));
-
+#if MMCBLK_ENABLED
 	/* card detect */
 	u32 val = IOMUXC_PTA7_MUX_MODE(0)
 			| IOMUXC_PTA7_IBE_MASK
@@ -522,6 +618,7 @@ void mmcblk_init() {
 			| IOMUXC_PTA7_PUS(2);
 	for(i=0; i < MMCBL_PORTS_COUNT; ++i)
 	{
+
 		card[i].port  = &mmcblkPorts[i];
 
 		cardDeInit(&card[i]);
@@ -531,5 +628,6 @@ void mmcblk_init() {
 		/* initialize card detect */
 		IOMUXC->RGPIO[card[i].port->CDPort] = val;
 	}
+#endif
 
 }

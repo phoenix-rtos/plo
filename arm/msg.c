@@ -1,4 +1,4 @@
-/*
+/* 
  * Phoenix-RTOS
  *
  * plo - operating system loader
@@ -99,7 +99,7 @@ int msg_read(u16 pn, msg_t *msg, u16 timeout, int *state)
 	int escfl = 0;
 	unsigned int l = 0;
 	u8 c;
-
+	
 	for (;;) {
 		if (serial_read(pn, &c, 1, timeout) < 0) {
 			*state = MSGREAD_DESYN;
@@ -107,7 +107,7 @@ int msg_read(u16 pn, msg_t *msg, u16 timeout, int *state)
 		}
 
 		if (*state == MSGREAD_FRAME) {
-
+			
 			/* Return error if frame is to long */
 			if (l == MSG_HDRSZ + MSG_MAXLEN) {
 				*state = MSGREAD_DESYN;
@@ -117,7 +117,7 @@ int msg_read(u16 pn, msg_t *msg, u16 timeout, int *state)
 			/* Return error if terminator discovered */
 			if (c == MSG_MARK)
 				return ERR_MSG_IO;
-
+			
 			if (!escfl && (c == MSG_ESC)) {
 				escfl = 1;
 				continue;
@@ -156,7 +156,7 @@ int msg_send(u16 pn, msg_t *smsg, msg_t *rmsg)
 {
 	unsigned int retr;
 	int state = MSGREAD_DESYN;
-
+	
 	smsg->csum = msg_csum(smsg);
 	for (retr = 0; retr < MSGRECV_MAXRETR; retr++) {
 		if (msg_write(pn, smsg) < 0)

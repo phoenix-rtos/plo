@@ -1,4 +1,4 @@
-/*
+/* 
  * Phoenix-RTOS
  *
  * plo - operating system loader
@@ -31,15 +31,19 @@
 #define NULL ((void *) 0)
 
 
-extern int plostd_strlen(char *s);
+extern int plostd_strlen(const char *s);
 
-extern int plostd_strcmp(char *s1, char *s2);
+extern int plostd_strcmp(const char *s1, const char *s2);
+
+extern char *plostd_strstr(const char *s1, const char *s2);
 
 extern char *plostd_itoa(unsigned int i, char *buff, int x);
 
 extern char *plostd_itoah(unsigned int i, char *buff, int lz);
 
-extern unsigned int plostd_ahtoi(char *s);
+extern int plostd_atoi(const char *s);
+
+extern unsigned int plostd_ahtoi(const char *s);
 
 extern void plostd_puts(char attr, char *s);
 

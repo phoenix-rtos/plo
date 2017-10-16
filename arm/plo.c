@@ -1,4 +1,4 @@
-/*
+/* 
  * Phoenix-RTOS
  *
  * plo - operating system loader
@@ -33,10 +33,9 @@
 #include "plostd.h"
 #include "cmd.h"
 #include "flash.h"
+#include "phfs.h"
 #include "mmcblk/mmcblk.h"
 
-
-extern cmds;
 
 struct {
 	int ll;
@@ -63,7 +62,7 @@ void plo_cmdloop(void)
 
 	history.ll = 0;
 	history.cl = 0;
-
+	
 	for (k = 0; k < HISTSZ; k++)
 		history.lines[k][0] = 0;
 
@@ -114,10 +113,10 @@ void plo_cmdloop(void)
 
 			case 0x42:
 				ncl = ((history.cl + 1) % HISTSZ);
-				if (history.cl != history.ll) {
+				if (history.cl != history.ll) { 
 					history.cl = ncl;
 					chgfl = 1;
-
+					
 					if (ncl != history.ll)
 						low_memcpy(history.lines[history.ll], history.lines[history.cl], plostd_strlen(history.lines[history.cl]) + 1);
 					else
@@ -146,23 +145,24 @@ void plo_init(void)
 	u16 t;
 	int i, act;
 	const char digits[] = "0123456789abcdef";
-
+	
 	low_init();
-	flash_init();
 	timer_init();
+	flash_init();
 	mmcblk_init();
 // 	serial_init(BPS_115200);
 	phfs_init();
+	low_memset((char *)&plo_syspage, 0, sizeof(plo_syspage));
 
 	plostd_printf(ATTR_LOADER, "%s\n", WELCOME);
 
 	/* Execute loader command */
 	for (t = 0 /* _plo_timeout */; t; t--) {
-		plostd_printf(ATTR_INIT, "\r%d seconds to automatic boot      ", t);
+		plostd_printf(ATTR_INIT, "\r%d seconds to automatic boot      ", t);		
 		if (timer_wait(1000, TIMER_KEYB, NULL, 0, NULL))
 			break;
 	}
-
+	
 	if (t == 0) {
 		plostd_printf(ATTR_INIT, "\n%s%s", PROMPT, _plo_command);
 		cmd_parse(_plo_command);
@@ -172,7 +172,7 @@ void plo_init(void)
 
 	/* Enter to interactive mode */
 	plo_cmdloop();
-
+	
 	low_done();
 	return;
 }

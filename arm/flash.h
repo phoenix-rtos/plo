@@ -1,4 +1,4 @@
-/*
+/* 
  * Phoenix-RTOS
  *
  * plo - operating system loader
@@ -31,7 +31,7 @@
 #include "types.h"
 
 extern s32 flash_open(u16 fn, char *name, u32 flags);
-extern s32 flash_read(u16 fn, s32 handle, u32 *pos, u8 *buff, u32 len);
+extern s32 flash_read(u16 fn, s32 handle, u64 *pos, u8 *buff, u32 len);
 extern s32 flash_close(u16 fn, s32 handle);
 extern void flash_init(void);
 extern void flash_done(void);

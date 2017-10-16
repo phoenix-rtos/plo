@@ -60,6 +60,7 @@ typedef union SdhcAdma2Desc_u SdhcAdma2Desc_t;
 	}while(0)
 
 
+
 #define PRINT_SD_STATUS(r1) do{\
 	if((r1).bits.ADDRESS_ERROR)\
 	LOG("Address error");\
@@ -112,7 +113,8 @@ static int mmcblk_sdhc_waitFor(MmcblkCard_t* card, u32 eventMask, u32 timeout_us
 	u16 timeout_ms = timeout_us / 1000;
 	sdhc = (SDHC_Type *) card->port->ioBase;
 	while((ret = (card->eventReg & eventMask)) == 0) {
-		if(!timer_wait(timeout_ms, TIMER_VALCHG, &sdhc->IRQSTAT, 0, &timeout_ms)) {
+		// NOTE: is it safe to read IRQSTAT as 16-bit???
+		if(!timer_wait(timeout_ms, TIMER_VALCHG, (volatile u16*)&sdhc->IRQSTAT, 0, &timeout_ms)) {
 			if(eventMask & MMCBLK_EVENT_COMMAND_TIMEOUT) ret |= MMCBLK_EVENT_COMMAND_TIMEOUT;
 			if(eventMask & MMCBLK_EVENT_TRANSFER_TIMEOUT) ret |= MMCBLK_EVENT_TRANSFER_TIMEOUT;
 			break;
@@ -146,8 +148,7 @@ static void mmcblk_sdhc_processIrq(MmcblkCard_t* card)
 	  boundary. The address of the block boundary can be calculated either from the current DSADDR value or
 	  from the remaining number of blocks and the block size.
 	*/
-	if((sdhc->IRQSIGEN & SDHC_IRQSIGEN_DMAEIEN_MASK) && (sdhc_irqstat & SDHC_IRQSTAT_DMAE_MASK))
-	{
+	if((sdhc->IRQSIGEN & SDHC_IRQSIGEN_DMAEIEN_MASK) && (sdhc_irqstat & SDHC_IRQSTAT_DMAE_MASK)) {
 		card->eventReg |= MMCBLK_EVENT_TRANSFER_ERROR;
 		served=1;
 	}
@@ -158,8 +159,7 @@ static void mmcblk_sdhc_processIrq(MmcblkCard_t* card)
 	  1. This bit is set to 1, not only when the errors in Auto CMD12 occur, but also when the Auto CMD12 is
 	  not executed due to the previous command error.
 	*/
-	if((sdhc->IRQSIGEN & SDHC_IRQSIGEN_AC12EIEN_MASK) && (sdhc_irqstat & SDHC_IRQSTAT_AC12E_MASK))
-	{
+	if((sdhc->IRQSIGEN & SDHC_IRQSIGEN_AC12EIEN_MASK) && (sdhc_irqstat & SDHC_IRQSTAT_AC12E_MASK)) {
 		//_lwevent_set( &esdhc_device_ptr->LWEVENT, (ESDHC_LWEVENT_CMD_ERROR | ESDHC_LWEVENT_TRANSFER_ERROR));
 		card->eventReg |= (MMCBLK_EVENT_TRANSFER_ERROR | MMCBLK_EVENT_COMMAND_ERROR);
 		served=1;
@@ -170,8 +170,7 @@ static void mmcblk_sdhc_processIrq(MmcblkCard_t* card)
 	  Occurs either when detecting 0 at the end bit position of read data, which uses the DAT line, or at the end
 	  bit position of the CRC.
 	*/
-	if((sdhc->IRQSIGEN & SDHC_IRQSIGEN_DEBEIEN_MASK) && (sdhc_irqstat & SDHC_IRQSTAT_DEBE_MASK))
-	{
+	if((sdhc->IRQSIGEN & SDHC_IRQSIGEN_DEBEIEN_MASK) && (sdhc_irqstat & SDHC_IRQSTAT_DEBE_MASK)) {
 		card->eventReg |= MMCBLK_EVENT_TRANSFER_ERROR;
 		served=1;
 	}
@@ -181,8 +180,7 @@ static void mmcblk_sdhc_processIrq(MmcblkCard_t* card)
 	  Occurs when detecting a CRC error when transferring read data, which uses the DAT line, or when
 	  detecting the Write CRC status having a value other than 010.
 	*/
-	if((sdhc->IRQSIGEN & SDHC_IRQSIGEN_DCEIEN_MASK) && (sdhc_irqstat & SDHC_IRQSTAT_DCE_MASK))
-	{
+	if((sdhc->IRQSIGEN & SDHC_IRQSIGEN_DCEIEN_MASK) && (sdhc_irqstat & SDHC_IRQSTAT_DCE_MASK)) {
 		card->eventReg |= MMCBLK_EVENT_TRANSFER_ERROR;
 		served=1;
 	}
@@ -194,8 +192,7 @@ static void mmcblk_sdhc_processIrq(MmcblkCard_t* card)
 		\95 Busy time-out after Write CRC status
 		\95 Read Data time-out
 	*/
-	if((sdhc->IRQSIGEN & SDHC_IRQSIGEN_DTOEIEN_MASK) && (sdhc_irqstat & SDHC_IRQSTAT_DTOE_MASK))
-	{
+	if((sdhc->IRQSIGEN & SDHC_IRQSIGEN_DTOEIEN_MASK) && (sdhc_irqstat & SDHC_IRQSTAT_DTOE_MASK)) {
 		card->eventReg |= MMCBLK_EVENT_TRANSFER_TIMEOUT;
 		served=1;
 	}
@@ -204,8 +201,7 @@ static void mmcblk_sdhc_processIrq(MmcblkCard_t* card)
 		Command Index Error
 	  Occurs if a Command Index error occurs in the command response.
 	*/
-	if((sdhc->IRQSIGEN & SDHC_IRQSIGEN_CIEIEN_MASK) && (sdhc_irqstat & SDHC_IRQSTAT_CIE_MASK))
-	{
+	if((sdhc->IRQSIGEN & SDHC_IRQSIGEN_CIEIEN_MASK) && (sdhc_irqstat & SDHC_IRQSTAT_CIE_MASK)) {
 		card->eventReg |= MMCBLK_EVENT_COMMAND_ERROR;
 		served=1;
 	}
@@ -214,8 +210,7 @@ static void mmcblk_sdhc_processIrq(MmcblkCard_t* card)
 		Command End Bit Error
 	  Occurs when detecting that the end bit of a command response is 0.
 	*/
-	if((sdhc->IRQSIGEN & SDHC_IRQSIGEN_CEBEIEN_MASK) && (sdhc_irqstat & SDHC_IRQSTAT_CEBE_MASK))
-	{
+	if((sdhc->IRQSIGEN & SDHC_IRQSIGEN_CEBEIEN_MASK) && (sdhc_irqstat & SDHC_IRQSTAT_CEBE_MASK)) {
 		card->eventReg |= MMCBLK_EVENT_COMMAND_ERROR;
 		served=1;
 	}
@@ -232,8 +227,7 @@ static void mmcblk_sdhc_processIrq(MmcblkCard_t* card)
 	  the SDHC shall abort the command (Stop driving CMD line) and set this bit to 1. The Command
 	  Timeout Error shall also be set to 1 to distinguish CMD line conflict.
 	*/
-	if((sdhc->IRQSIGEN & SDHC_IRQSIGEN_CCEIEN_MASK) && (sdhc_irqstat & SDHC_IRQSTAT_CCE_MASK))
-	{
+	if((sdhc->IRQSIGEN & SDHC_IRQSIGEN_CCEIEN_MASK) && (sdhc_irqstat & SDHC_IRQSTAT_CCE_MASK)) {
 		card->eventReg |= MMCBLK_EVENT_COMMAND_ERROR;
 		served=1;
 	}
@@ -245,8 +239,7 @@ static void mmcblk_sdhc_processIrq(MmcblkCard_t* card)
 	  SDHC detects a CMD line conflict, in which case a Command CRC Error shall also be set, this bit shall be
 	  set without waiting for 64 SDCLK cycles. This is because the command will be aborted by the SDHC.
 	*/
-	if((sdhc->IRQSIGEN & SDHC_IRQSIGEN_CTOEIEN_MASK) && (sdhc_irqstat & SDHC_IRQSTAT_CTOE_MASK))
-	{
+	if((sdhc->IRQSIGEN & SDHC_IRQSIGEN_CTOEIEN_MASK) && (sdhc_irqstat & SDHC_IRQSTAT_CTOE_MASK)) {
 		card->eventReg |= MMCBLK_EVENT_COMMAND_TIMEOUT;
 		served=1;
 	}
@@ -266,8 +259,7 @@ static void mmcblk_sdhc_processIrq(MmcblkCard_t* card)
 	  card and the interrupt signal may not be asserted), write 1 to clear this bit, set the Card Interrupt Signal
 	  Enable to 1, and start sampling the interrupt signal again.
 	*/
-	if((sdhc->IRQSIGEN & SDHC_IRQSIGEN_CINTIEN_MASK) && (sdhc_irqstat & SDHC_IRQSTAT_CINT_MASK))
-	{
+	if((sdhc->IRQSIGEN & SDHC_IRQSIGEN_CINTIEN_MASK) && (sdhc_irqstat & SDHC_IRQSTAT_CINT_MASK)) {
 		//LOG("CARD INTERRUPT");
 		served=1;
 		//if(esdhc_device_ptr->IO_CALLBACK_STR.CALLBACK)
@@ -282,8 +274,7 @@ static void mmcblk_sdhc_processIrq(MmcblkCard_t* card)
 	  data transfer, this bit will not be set. Instead, the DMAE bit will be set. Either Simple DMA or ADMA
 	  finishes data transferring, this bit will be set.
 	*/
-	if((sdhc->IRQSIGEN & SDHC_IRQSIGEN_DINTIEN_MASK) && (sdhc_irqstat & SDHC_IRQSTAT_DINT_MASK))
-	{
+	if((sdhc->IRQSIGEN & SDHC_IRQSIGEN_DINTIEN_MASK) && (sdhc_irqstat & SDHC_IRQSTAT_DINT_MASK)) {
 		card->eventReg |= MMCBLK_EVENT_TRANSFER_COMPLETED;
 		//LOG("TRANSFER COMPLETED");
 		served=1;
@@ -298,8 +289,7 @@ static void mmcblk_sdhc_processIrq(MmcblkCard_t* card)
 	  In the case of write transaction: This bit is set at the falling edge of write transfer active status (After
 	  getting CRC status at SD bus timing).
 	*/
-	if((sdhc->IRQSIGEN & SDHC_IRQSIGEN_BGEIEN_MASK) && (sdhc_irqstat & SDHC_IRQSTAT_BGE_MASK))
-	{
+	if((sdhc->IRQSIGEN & SDHC_IRQSIGEN_BGEIEN_MASK) && (sdhc_irqstat & SDHC_IRQSTAT_BGE_MASK)) {
 		card->eventReg |= MMCBLK_EVENT_TRANSFER_ERROR;
 		served=1;
 	}
@@ -318,8 +308,7 @@ static void mmcblk_sdhc_processIrq(MmcblkCard_t* card)
 	  stopped at the block gap, by setting the PROCTL[SABGREQ], and the data transfers are completed.
 	  (after valid data is written to the SD card and the busy signal released).
 	*/
-	if((sdhc->IRQSIGEN & SDHC_IRQSIGEN_TCIEN_MASK) && (sdhc_irqstat & SDHC_IRQSTAT_TC_MASK))
-	{
+	if((sdhc->IRQSIGEN & SDHC_IRQSIGEN_TCIEN_MASK) && (sdhc_irqstat & SDHC_IRQSTAT_TC_MASK)) {
 		//LOG("TC");
 		served=1;
 		//card->eventReg |= MMCBLK_EVENT_TRANSFER_COMPLETED;
@@ -330,8 +319,7 @@ static void mmcblk_sdhc_processIrq(MmcblkCard_t* card)
 	  This bit is set when you receive the end bit of the command response (except Auto CMD12). Refer to the
 	  PRSSTAT[CIHB].
 	*/
-	if((sdhc->IRQSIGEN & SDHC_IRQSIGEN_CCIEN_MASK) && (sdhc_irqstat & SDHC_IRQSTAT_CC_MASK))
-	{
+	if((sdhc->IRQSIGEN & SDHC_IRQSIGEN_CCIEN_MASK) && (sdhc_irqstat & SDHC_IRQSTAT_CC_MASK)) {
 		//LOG("CC");
 		card->eventReg |= MMCBLK_EVENT_COMMAND_COMPLETED;
 		served=1;
@@ -344,22 +332,17 @@ static void mmcblk_sdhc_processIrq(MmcblkCard_t* card)
 	return;
 }
 
-void mmcblk_sdhc_init(void *cardPtr) {
+int mmcblk_sdhc_init(void *cardPtr) {
 	int status=0;
 	SDHC_Type *sdhc = NULL;
 	MmcblkCard_t *card = NULL;
 
 	assert(cardPtr != NULL);
 	card = (MmcblkCard_t *) cardPtr;
+
 	assert(card->port->ioBase == (void *)SDHC1_BASE);/* function not reentrant - invoke only once */
 
 	sdhc = card->port->ioBase;
-
-	sdhc->SYSCTL = SDHC_SYSCTL_RSTA_MASK | (0x80 << SDHC_SYSCTL_SDCLKFS_SHIFT);
-
-	while(sdhc->SYSCTL & SDHC_SYSCTL_RSTA_MASK);
-
-	sdhc->SYSCTL = SDHC_SYSCTL_PEREN_MASK;
 
 	LOG("sdhc controller initialized");
 }
@@ -370,9 +353,10 @@ int mmcblk_sdhc_sendCommand(void *cardPtr, u32 cmd, u32 cmd_arg, s32 block_num, 
 	SDHC_Type *sdhc = NULL;
 	int cmdIdx = (cmd & MMCBLK_COMM_INDEX_MASK);
 	u32 wCmd = cmdIdx << 24;
-	int status = 0;
 	u32 waitOn=SDHC_PRSSTAT_CIHB_MASK;
 	u32 blkAttr=0;
+	int retry;
+	int status;
 
 	assert(card != NULL);
 	sdhc = card->port->ioBase;
@@ -381,8 +365,7 @@ int mmcblk_sdhc_sendCommand(void *cardPtr, u32 cmd, u32 cmd_arg, s32 block_num, 
 	LOG("Send cmd: %x %x", cmd, cmd_arg);
 
 	/* check if command value is in valid boundaries */
-	if(cmdIdx > 0x64 || cmd > 0xFFFFU)
-	{
+	if(cmdIdx > 0x64 || cmd > 0xFFFFU) {
 		/* error - invalid command */
 		LOG("Invalid command");
 		return ERR_ARG;
@@ -392,36 +375,34 @@ int mmcblk_sdhc_sendCommand(void *cardPtr, u32 cmd, u32 cmd_arg, s32 block_num, 
 	switch(cmd & MMCBLK_COMM_RESPONSE_TYPE_MASK)
 	{
 		case MMCBLK_COMM_RESPONSE_NO_RESPONSE:
-		break;
+			break;
 		case MMCBLK_COMM_RESPONSE_R2:
 			wCmd |= (1 << SDHC_XFERTYP_RSPTYP_SHIFT) | (1 << SDHC_XFERTYP_CCCEN_SHIFT);
-		break;
+			break;
 		case MMCBLK_COMM_RESPONSE_R3:
 		case MMCBLK_COMM_RESPONSE_R4:
 			wCmd |= (2 << SDHC_XFERTYP_RSPTYP_SHIFT);
-		break;
+			break;
 		case MMCBLK_COMM_RESPONSE_R1:
 		case MMCBLK_COMM_RESPONSE_R5:
 		case MMCBLK_COMM_RESPONSE_R6:
 		case MMCBLK_COMM_RESPONSE_R7:
 			wCmd |= (2 << SDHC_XFERTYP_RSPTYP_SHIFT) | (1 << SDHC_XFERTYP_CCCEN_SHIFT) | (1 << SDHC_XFERTYP_CICEN_SHIFT);
-		break;
+			break;
 		case MMCBLK_COMM_RESPONSE_R1b:
 		case MMCBLK_COMM_RESPONSE_R5b:
 			wCmd |= (3 << SDHC_XFERTYP_RSPTYP_SHIFT) | (1 << SDHC_XFERTYP_CCCEN_SHIFT) | (1 << SDHC_XFERTYP_CICEN_SHIFT);
-		break;
+			break;
 	}
 
 	/* set CMDTYP bits */
 	if(cmdIdx == 52 || cmdIdx == 12)
 	{
-		if(cmdIdx == 52 && 0)
-		{
+		if(cmdIdx == 52 && 0) {
 			assert(!"suspend command not implemented");
 			wCmd |= (0x1U << SDHC_XFERTYP_CMDTYP_SHIFT);
 		}
-		else if(cmdIdx == 52 && 0)
-		{
+		else if(cmdIdx == 52 && 0) {
 			assert(!"resume command not implemented");
 			wCmd |= (0x2U << SDHC_XFERTYP_CMDTYP_SHIFT);
 		}
@@ -462,8 +443,7 @@ int mmcblk_sdhc_sendCommand(void *cardPtr, u32 cmd, u32 cmd_arg, s32 block_num, 
 				wCmd |= (SDHC_XFERTYP_AC12EN_MASK | SDHC_XFERTYP_BCEN_MASK);
 			}
 		}
-		if(block_num == -1)
-		{
+		if(block_num == -1) {
 			/* infinite transfer */
 			blkAttr = SDHC_BLKATTR_BLKCNT(0xFFFF) | SDHC_BLKATTR_BLKSIZE(block_size);
 			wCmd |=  SDHC_XFERTYP_BCEN_MASK;
@@ -488,17 +468,18 @@ int mmcblk_sdhc_sendCommand(void *cardPtr, u32 cmd, u32 cmd_arg, s32 block_num, 
 		card->port->ioOps.waitForResponse(card, MMCBLK_COMM_APP_CMD, &resp);
 	}
 
-	if(cmdIdx != 0 && cmdIdx != 12 && cmdIdx != 13 && cmdIdx != 52)
-	{
+	if(cmdIdx != 0 && cmdIdx != 12 && cmdIdx != 13 && cmdIdx != 52) {
 		waitOn |= SDHC_PRSSTAT_CDIHB_MASK;
 		sdhc->SYSCTL |= (SDHC_SYSCTL_PEREN_MASK | SDHC_SYSCTL_HCKEN_MASK | SDHC_SYSCTL_IPGEN_MASK);
 	}
 
-
-	while(sdhc->PRSSTAT & waitOn) {
+	retry = 100000;
+	while((sdhc->PRSSTAT & waitOn) && (retry-- > 0))
 		timer_wait(1, TIMER_EXPIRE, NULL, 0, NULL);
-	}
-	//card->port->ioOps.reset(card);
+
+	if (sdhc->PRSSTAT & waitOn)
+		return ERR_MMC_IO;
+
 	sdhc->IRQSTATEN &= ~SDHC_IRQSTATEN_DINTSEN_MASK;
 
 	if((cmd & MMCBLK_COMM_RESPONSE_R1b) || (cmd & MMCBLK_COMM_RESPONSE_R5b) || (wCmd & SDHC_XFERTYP_AC12EN_MASK) )
@@ -518,7 +499,7 @@ int mmcblk_sdhc_sendCommand(void *cardPtr, u32 cmd, u32 cmd_arg, s32 block_num, 
 
 	sdhc->IRQSTATEN |= SDHC_IRQSTATEN_DINTSEN_MASK;
 
-	return status;
+	return 0;
 }
 
 void mmcblk_sdhc_waitForResponse(void *cardPtr, int cmd, MmcblkResponse_t *ret) {
@@ -531,27 +512,24 @@ void mmcblk_sdhc_waitForResponse(void *cardPtr, int cmd, MmcblkResponse_t *ret) 
 	sdhc = card->port->ioBase;
 	low_memset((char *) ret, 0x0, sizeof(ret));
 
-	 if(!(sdhc->PRSSTAT &  SDHC_PRSSTAT_DLSL(1))) {
-		 LOG("Command busy");
-	 }
+	if(!(sdhc->PRSSTAT &  SDHC_PRSSTAT_DLSL(1)))
+		LOG("Command busy");
 
-	 sdhc->IRQSTAT = sdhc->IRQSTAT;
+	sdhc->IRQSTAT = sdhc->IRQSTAT;
 
-	if( ((cmd & (MMCBLK_COMM_TYPE_MASK)) == MMCBLK_COMM_ADTC) || (cmd == (MMCBLK_COMM_STOP_TRANSMISSION)) )
-	{
+	if( ((cmd & (MMCBLK_COMM_TYPE_MASK)) == MMCBLK_COMM_ADTC) || (cmd == (MMCBLK_COMM_STOP_TRANSMISSION)) ) {
 		stat = mmcblk_sdhc_waitFor(card,
-					MMCBLK_EVENT_CARD_REMOVED |
-					MMCBLK_EVENT_COMMAND_COMPLETED |
-					MMCBLK_EVENT_COMMAND_ERROR |
-					MMCBLK_EVENT_COMMAND_TIMEOUT, MMCBLK_CMD12_TIMEOUT_US);
+								   MMCBLK_EVENT_CARD_REMOVED |
+								   MMCBLK_EVENT_COMMAND_COMPLETED |
+								   MMCBLK_EVENT_COMMAND_ERROR |
+								   MMCBLK_EVENT_COMMAND_TIMEOUT, MMCBLK_CMD12_TIMEOUT_US);
 	}
-	else
-	{
+	else {
 		stat = mmcblk_sdhc_waitFor(card,
-					MMCBLK_EVENT_CARD_REMOVED |
-					MMCBLK_EVENT_COMMAND_COMPLETED |
-					MMCBLK_EVENT_COMMAND_ERROR |
-					MMCBLK_EVENT_COMMAND_TIMEOUT, MMCBLK_CMD_TIMEOUT_US);
+								   MMCBLK_EVENT_CARD_REMOVED |
+								   MMCBLK_EVENT_COMMAND_COMPLETED |
+								   MMCBLK_EVENT_COMMAND_ERROR |
+								   MMCBLK_EVENT_COMMAND_TIMEOUT, MMCBLK_CMD_TIMEOUT_US);
 	}
 
 	LOG("Event: %d", stat);
@@ -597,12 +575,12 @@ void mmcblk_sdhc_waitForResponse(void *cardPtr, int cmd, MmcblkResponse_t *ret) 
 	switch(ret->responseType)
 	{
 		case MMCBLK_COMM_RESPONSE_NO_RESPONSE:
-		break;
+			break;
 		case MMCBLK_COMM_RESPONSE_R1:
 			ret->response.r1.response = resp[0];
 			PRINT_SD_STATE(ret->response.r1);
 			PRINT_SD_STATUS(ret->response.r1);
-		break;
+			break;
 		case MMCBLK_COMM_RESPONSE_R1b:
 			//TODO CMD12 auto response os in CMDRSP3
 			if(0)
@@ -611,82 +589,94 @@ void mmcblk_sdhc_waitForResponse(void *cardPtr, int cmd, MmcblkResponse_t *ret) 
 				ret->response.r1b.response = resp[0];
 			PRINT_SD_STATE(ret->response.r1);
 			PRINT_SD_STATUS(ret->response.r1);
-		break;
+			break;
 		case MMCBLK_COMM_RESPONSE_R2:
 			ret->response.r2.cid.cid[0] = resp[3] & 0x00FFFFFF;
 			ret->response.r2.cid.cid[1] = resp[2];
 			ret->response.r2.cid.cid[2] = resp[1];
 			ret->response.r2.cid.cid[3] = resp[0];
-		break;
+			break;
 		case MMCBLK_COMM_RESPONSE_R3:
 			ret->response.r3.ocr = resp[0];
-		break;
+			break;
 		case MMCBLK_COMM_RESPONSE_R4:
 			ret->response.r4.ocr = resp[0];
-		break;
+			break;
 		case MMCBLK_COMM_RESPONSE_R5:
 			ret->response.r5.response = resp[0];
-		break;
+			break;
 		case MMCBLK_COMM_RESPONSE_R5b:
 			ret->response.r5b.response = resp[0];
-		break;
+			break;
 		case MMCBLK_COMM_RESPONSE_R6:
 			ret->response.r6.response = resp[0];
 			PRINT_SD_STATE(ret->response.r1);
 			PRINT_SD_STATUS(ret->response.r1);
-		break;
+			break;
 		case MMCBLK_COMM_RESPONSE_R7:
 			ret->response.r7.response = resp[0];
-		break;
+			break;
 	}
 }
 
-int mmcblk_sdhc_transferWait(void *cardPtr) {
+int mmcblk_sdhc_transferWait(void *cardPtr, u32 bytes) {
+	int ret = 0;
 	MmcblkCard_t *card = (MmcblkCard_t *) cardPtr;
 	SDHC_Type *sdhc = NULL;
 	u32 stat=0;
+	u32 timeout=0;
+
 	assert(card != NULL);
 	sdhc = card->port->ioBase;
-
+	timeout = (1+((1000 * bytes) / (card->baudRate / 1000))) + MMCBLK_TRANSFER_TIMEOUT_US;
+	u32 dt;
 	sdhc->SYSCTL |= (SDHC_SYSCTL_PEREN_MASK | SDHC_SYSCTL_HCKEN_MASK | SDHC_SYSCTL_IPGEN_MASK);
 	stat = mmcblk_sdhc_waitFor(card,
-				MMCBLK_EVENT_CARD_REMOVED |
-				MMCBLK_EVENT_TRANSFER_COMPLETED |
-				MMCBLK_EVENT_TRANSFER_ERROR |
-				MMCBLK_EVENT_TRANSFER_TIMEOUT
-				,
-				MMCBLK_TRANSFER_TIMEOUT_US);
+							   MMCBLK_EVENT_CARD_REMOVED |
+							   MMCBLK_EVENT_TRANSFER_COMPLETED |
+							   MMCBLK_EVENT_TRANSFER_ERROR |
+							   MMCBLK_EVENT_TRANSFER_TIMEOUT
+							   ,
+							   timeout);
 	card->eventReg &= ~stat;
-
-	while(!(sdhc->PRSSTAT & SDHC_PRSSTAT_DLSL(1))) {
+	dt = 0;
+	timeout = timeout / 1000 + 1;
+	do {
 		sdhc->SYSCTL |= (SDHC_SYSCTL_PEREN_MASK | SDHC_SYSCTL_HCKEN_MASK | SDHC_SYSCTL_IPGEN_MASK);
 		timer_wait(1, TIMER_EXPIRE, NULL, 0, NULL);
-	};
+		dt++;
+	}while ( !(sdhc->PRSSTAT & SDHC_PRSSTAT_DLSL(1)) && dt < timeout );
+	if(dt > timeout)
+		ret = ERR_TIMEOUT;
 
 	sdhc->SYSCTL &= ~(SDHC_SYSCTL_PEREN_MASK | SDHC_SYSCTL_HCKEN_MASK | SDHC_SYSCTL_IPGEN_MASK);
 
 	if(stat & MMCBLK_EVENT_TRANSFER_ERROR) {
 		LOG("Transfer error");
-		assert(0);
-		return -1;
+		return ERR_MMC_IO;
 	}
 	return 0;
 
 }
 
-int mmcblk_sdhc_waitBusy(void *cardPtr) {
+int mmcblk_sdhc_waitBusy(void *cardPtr, u32 bytes) {
+	int ret = 0;
 	MmcblkCard_t *card = (MmcblkCard_t *) cardPtr;
 	SDHC_Type *sdhc = NULL;
 	assert(card != NULL);
 	sdhc = card->port->ioBase;
-	/*TODO - timeout */
-	while(!(sdhc->PRSSTAT & SDHC_PRSSTAT_DLSL(1)))
-	{
+	u32 timeout = ((1+((1000 * bytes) / (card->baudRate / 1000))) + MMCBLK_TRANSFER_TIMEOUT_US) / 1000 + 1;
+	u32 dt = 0;
+	do {
 		sdhc->SYSCTL |= (SDHC_SYSCTL_PEREN_MASK | SDHC_SYSCTL_HCKEN_MASK | SDHC_SYSCTL_IPGEN_MASK);
 		timer_wait(1, TIMER_EXPIRE, NULL, 0, NULL);
-	}
+		dt++;
+	} while(!(sdhc->PRSSTAT & SDHC_PRSSTAT_DLSL(1)) && dt < timeout);
+	if(dt > timeout)
+		ret = ERR_TIMEOUT;
 	sdhc->SYSCTL &= ~(SDHC_SYSCTL_PEREN_MASK | SDHC_SYSCTL_HCKEN_MASK | SDHC_SYSCTL_IPGEN_MASK);
-	return 0;
+
+	return ret;
 }
 
 
@@ -728,6 +718,11 @@ int mmcblk_sdhc_sendCommandWithTransfer(void *cardPtr, u32 cmd, u32 cmd_arg, s32
 	* ----------------------------
 	* DATAPTR, DATA_LEN, TRAN, END
 	* ----------------------------
+	*
+	*
+	* descriptor has 8 bytes, allocation forses alignment to bigger of:
+	*  2*sizeof(descriptor) and SIZE_CACHE_LINE
+	* so there always will be contignuous area for at leas two descriptors(TRAN and LINK)
 	*/
 
 	/* check buffer alignment */
@@ -787,103 +782,6 @@ int mmcblk_sdhc_sendCommandWithTransfer(void *cardPtr, u32 cmd, u32 cmd_arg, s32
 	return mmcblk_sdhc_sendCommand(cardPtr, cmd, cmd_arg, block_count, block_size);
 }
 
-//
-// int mmcblk_sdhc_switchHighSpeed(void *cardPtr, u32 baudrate) {
-// 	MmcblkCard_t *card = (MmcblkCard_t *) cardPtr;
-// 	void *freeptr=NULL;
-// 	u8 *sfb=NULL;
-// 	FreePtr *fp;
-// 	void *dmaDesc = NULL;
-// 	MmcblkResponse_t response;
-// 	assert(card != NULL);
-//
-// 	if(MMCBLK_CSD20_GET_CSD_STRUCTURE(card->CSD.csd20))  {
-// 		if(!(MMCBLK_CSD20_GET_CCC(card->CSD.csd20) & 0x200)) {
-// 			LOG("High speed mode not supported");
-// 			return -1;
-// 		}
-// 	}
-// 	else {
-// 		if(!(MMCBLK_CSD10_GET_CCC(card->CSD.csd20) & 0x200)) {
-// 			LOG("High speed mode not supported");
-// 			return -1;
-// 		}
-// 	}
-//
-// 	//4 - aligned buffer required, length - multiplicity of 512
-// 	assert(!((u32)sfb & 0x3));
-//
-// 	sfb = vm_dokmallocaligned(64, SIZE_CACHE_LINE, &freeptr);
-// 	if(sfb == NULL)
-// 		return -ENOMEM;
-//
-// 	dmaDesc = card->port->ioOps.setupDMA(card, sfb, 64, &fp, NULL);
-// 	if(dmaDesc == NULL) {
-// 		vm_kfree(freeptr);
-// 		return -ENOMEM;
-// 	}
-//
-// 	card->port->ioOps.sendCommand(card, MMCBLK_COMM_SWITCH_FUNC, 0x00FFFFF1, 1, 64, dmaDesc);
-// 	response = card->port->ioOps.waitForResponse(card, MMCBLK_COMM_SWITCH_FUNC);
-//
-// 	if(mmcblk_evaluateResponse(&response) != -EBUSY) {
-// 		vm_kfree(freeptr);
-// 		card->port->ioOps.freeDMA(fp);
-// 		return -1;
-// 	}
-//
-// 	card->port->ioOps.transferWait(card);
-//
-// 	hal_cpuInvalCache(sfb, 64);
-//
-// 	/*checking bit 401 of sfb buffer - it corresponds to high speed mode support status*/
-// 	if(!(sfb[13] & 0x01))
-// 	{
-// 		LOG("HIGH SPEED MODE NOT SUPPORTED!");
-// 		vm_kfree(freeptr);
-// 		card->port->ioOps.freeDMA(fp);
-// 		return -1;
-// 	}
-// 	else
-// 		LOG("HIGH SPEED MODE SUPPORTED!");
-//
-//
-// 	// Set the high speed of bus
-//
-//
-//
-// 	card->port->ioOps.sendCommand(card, MMCBLK_COMM_SWITCH_FUNC, 0x10FFFFF1, 1, 64, dmaDesc);
-// 	response = card->port->ioOps.waitForResponse(card, MMCBLK_COMM_SWITCH_FUNC);
-//
-// 	if(mmcblk_evaluateResponse(&response) != -EBUSY)
-// 	{
-// 		LOG("FAILED TO SWITCH TO HIGH SPEED MODE!");
-// 		vm_kfree(freeptr);
-// 		card->port->ioOps.freeDMA(fp);
-// 		return -1;
-// 	}
-//
-// 	card->port->ioOps.transferWait(card);
-//
-// 	hal_cpuInvalCache(sfb, 64);
-//
-// 	if(!(sfb[13] & 0x01))
-// 	{
-// 		LOG("FAILED TO SWITCH TO HIGH SPEED MODE!");
-// 		vm_kfree(freeptr);
-// 		card->port->ioOps.freeDMA(fp);
-// 		return -1;
-// 	}
-// 	else
-// 		LOG("SWITCHED TO HIGH SPEED MODE!");
-// 	card->baudRate = card->port->ioOps.setupBaudRate(card, baudrate);
-// 	card->speed = eSDHighSpeed;
-//
-// 	vm_kfree(freeptr);
-// 	card->port->ioOps.freeDMA(fp);
-//
-// 	return card->baudRate;
-// }
 
 int mmcblk_sdhc_setupBaudRate(void *cardPtr, u32 baudrate) {
 	MmcblkCard_t *card = (MmcblkCard_t *) cardPtr;
@@ -900,13 +798,10 @@ int mmcblk_sdhc_setupBaudRate(void *cardPtr, u32 baudrate) {
 	if(baudrate > MMCBLK_SDHC_MAX_BAUDRATE)
 		baudrate = MMCBLK_SDHC_MAX_BAUDRATE;
 
-	for(pres = 2; pres <= 256; pres <<= 1)
-	{
-		for(div=1; div <= 16; ++div)
-		{
+	for(pres = 2; pres <= 256; pres <<= 1) {
+		for(div=1; div <= 16; ++div) {
 			val = pres * div * baudrate - BUS_CLK_KHZ * 1000UL;
-			if(val < mindiff)
-			{
+			if(val < mindiff) {
 				minpres = pres;
 				mindiv = div;
 				mindiff = val;
@@ -924,17 +819,25 @@ int mmcblk_sdhc_setupBaudRate(void *cardPtr, u32 baudrate) {
 	sdhc->SYSCTL = div | (SDHC_SYSCTL_DTOCV(0x0E) | SDHC_SYSCTL_SDCLKFS(minpres >> 1) | SDHC_SYSCTL_DVS(mindiv - 1));
 
 	/* Wait for stable clock */
-	while (0 == (sdhc->PRSSTAT & SDHC_PRSSTAT_SDSTB_MASK))
-	{
+	u32 dt = 0;
+	while (0 == (sdhc->PRSSTAT & SDHC_PRSSTAT_SDSTB_MASK)) {
 		timer_wait(1, TIMER_EXPIRE, NULL, 0, NULL);
+		dt++;
+		if(dt > 100)
+			return ERR_TIMEOUT;
 #if defined (M53015EVB) || (MPC8377RDB)
 		break;
 #endif
 	};
 
 	/* poll bits CIHB and CDIHB bits of PRSSTAT to wait both bits are cleared */
-	while(sdhc->PRSSTAT &  (SDHC_PRSSTAT_CIHB_MASK | SDHC_PRSSTAT_CDIHB_MASK))
+	dt = 0;
+	while(sdhc->PRSSTAT &  (SDHC_PRSSTAT_CIHB_MASK | SDHC_PRSSTAT_CDIHB_MASK)) {
 		timer_wait(1, TIMER_EXPIRE, NULL, 0, NULL);
+		dt++;
+		if(dt > 100)
+			return ERR_TIMEOUT;
+	}
 
 	/* Enable ESDHC clocks */
 	sdhc->SYSCTL |= SDHC_SYSCTL_SDCLKEN_MASK | SDHC_SYSCTL_PEREN_MASK;
@@ -944,7 +847,7 @@ int mmcblk_sdhc_setupBaudRate(void *cardPtr, u32 baudrate) {
 
 }
 
-void mmcblk_sdhc_reset(void *cardPtr) {
+int mmcblk_sdhc_reset(void *cardPtr) {
 	MmcblkResponse_t resp;
 	MmcblkCard_t *card = (MmcblkCard_t *) cardPtr;
 	SDHC_Type *sdhc = NULL;
@@ -968,6 +871,18 @@ void mmcblk_sdhc_reset(void *cardPtr) {
 	card->speed=eBasicSpeed;
 	card->RCA=0;
 	card->voltage=0;
+
+	sdhc->SYSCTL = SDHC_SYSCTL_RSTA_MASK | (0x80 << SDHC_SYSCTL_SDCLKFS_SHIFT);
+
+	u32 dt;
+	while(sdhc->SYSCTL & SDHC_SYSCTL_RSTA_MASK) {
+		timer_wait(1, TIMER_EXPIRE, NULL, 0, NULL);
+		dt++;
+		if(dt > 100)
+			return ERR_TIMEOUT;
+	}
+
+	sdhc->SYSCTL = SDHC_SYSCTL_PEREN_MASK;
 
 	sdhc->WML = (1 << SDHC_WML_RDWML_SHIFT) | (1 << SDHC_WML_WRWML_SHIFT) | (1 << SDHC_WML_RDBRSTLEN_SHIFT) | (1 << SDHC_WML_WRBRSTLEN_SHIFT);
 
@@ -1008,16 +923,14 @@ void mmcblk_sdhc_reset(void *cardPtr) {
 
 	/* send 80 clock ticks for card to power up */
 	sdhc->SYSCTL |= SDHC_SYSCTL_INITA_MASK;
-	/* TODO - timeout */
-	while(sdhc->SYSCTL & SDHC_SYSCTL_INITA_MASK)
+	dt = 0;
+	while(sdhc->SYSCTL & SDHC_SYSCTL_INITA_MASK) {
 		timer_wait(1, TIMER_EXPIRE, NULL, 0, NULL);
-
-	/* reset the card with CMD0 */
-	card->port->ioOps.sendCommand(card, MMCBLK_COMM_GO_IDLE_STATE, 0, 0, 0);
-	card->port->ioOps.waitForResponse(card, MMCBLK_COMM_GO_IDLE_STATE, &resp);
-	LOG("Card in idle state");
-	//TODO - mark card as uninitialized
-	timer_wait(1000, TIMER_EXPIRE, NULL, 0, NULL);
+		dt++;
+		if(dt > 100)
+			return ERR_TIMEOUT;
+	}
+	return 0;
 }
 
 
@@ -1032,13 +945,13 @@ int mmcblk_sdhc_setupBusWidth(void *cardPtr, MmcblkBusWidth_t width)
 	switch(width) {
 		case eMmcblkBusWidth1b:
 			sdhc->PROCTL |= SDHC_PROCTL_DTW(0);
-		break;
+			break;
 		case eMmcblkBusWidth4b:
 			sdhc->PROCTL |= SDHC_PROCTL_DTW(1);
-		break;
+			break;
 		case eMmcblkBusWidth8b:
 			sdhc->PROCTL |= SDHC_PROCTL_DTW(2);
-		break;
+			break;
 	}
 	return 0;
 }
@@ -1054,13 +967,13 @@ int mmcblk_sdhc_setupEndian(void *cardPtr, MmcblkEndian_t endian)
 	switch(endian) {
 		case eLittleEndian:
 			sdhc->PROCTL |= (2 << SDHC_PROCTL_EMODE_SHIFT);
-		break;
+			break;
 		case eBigEndian:
 			sdhc->PROCTL |= (0 << SDHC_PROCTL_EMODE_SHIFT);
-		break;
+			break;
 		case eBigEndianHalfWords:
 			sdhc->PROCTL |= (1 << SDHC_PROCTL_EMODE_SHIFT);
-		break;
+			break;
 		default:
 			return -1;
 	}

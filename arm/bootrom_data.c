@@ -1,4 +1,4 @@
-/*
+/* 
  * Phoenix-RTOS
  *
  * plo - operating system loader
@@ -25,17 +25,18 @@
  * Foundation, Inc., 59 Temple Place, Suite 330, Boston, MA  02111-1307  USA
  */
 
+#include "config.h"
 #include "MVF50GS10MK50.h"
 #include "lut.h"
 
 #define  COMAND_SEQ_LEN            128 /**< interms of instruction word size */
 
-typedef struct
+typedef struct 
 {
 	u32 rsvd0;
 	u8 hold_delay;
-	u8 hsps;
-	u8 hsds;
+	u8 hsps; 
+	u8 hsds; 
 	u8 rsvd1;
 	u32 rsvd[3];
 	u32 cs_hold_time; /**< CS hold time in terms of serial clock.(for example 1 serial clock cyle) */
@@ -128,29 +129,42 @@ extern const char _plo_img_size[];
 const volatile bootrom_data_t __attribute__ ((section (".bootrom_data"))) bootrom_data = {
 	.quadspi_conf = {
 		.sflash_A1_size = 0x400000, /* Flash A1 Size in Bytes */
+#ifdef FLASH_MAX_DUAL_SPI
+		.sflash_type = 2, /**< 01-Single,02--Dual 04--Quad */
+#else
 		.sflash_type = 4, /**< 01-Single,02--Dual 04--Quad */
+#endif
 		.sflash_port = 0, /**< 0--Only Port-A,1--Both PortA and PortB */
 		.ddr_mode_enable = 0, /* DDR Mode Enable (0=disabled, 1=enabled) */
 		.dqs_enable = 0, /**< Enable DQS mode if set to TRUE. */
 		.parallel_mode_enable = 0, /**< Enable Individual or parrallel mode. */
-		.sclk_freq = 2, /**< In  00 - 18MHz, 01 - 60MHz, 02 - 74MHz, 03 - 99MHz (only for SDR Mode) */
+		.sclk_freq = 3, /**< In  00 - 18MHz, 01 - 60MHz, 02 - 74MHz, 03 - 99MHz (only for SDR Mode) */
 		.command_seq =
-		/* LUT Programming (Quad IO example) */
+#ifdef FLASH_MAX_DUAL_SPI
+		/* LUT Programming (Dual IO ) */
+		{QuadSPI_LUT_INSTR0(LUT_CMD_CMD)  |QuadSPI_LUT_PAD0(LUT_PAD1)|QuadSPI_LUT_OPRND0(FLASH_SPANSION_CMD_DIOR),
+		 QuadSPI_LUT_INSTR0(LUT_CMD_ADDR) |QuadSPI_LUT_PAD0(LUT_PAD2)|QuadSPI_LUT_OPRND0(24),
+		 QuadSPI_LUT_INSTR0(LUT_CMD_MODE) |QuadSPI_LUT_PAD0(LUT_PAD2)|QuadSPI_LUT_OPRND0(FLASH_SPANSION_MODE_REPEAT),
+		 QuadSPI_LUT_INSTR0(LUT_CMD_READ) |QuadSPI_LUT_PAD0(LUT_PAD2)|QuadSPI_LUT_OPRND0(0x80),
+		 QuadSPI_LUT_INSTR0(LUT_CMD_JMP_ON_CS) |QuadSPI_LUT_PAD0(LUT_PAD1)|QuadSPI_LUT_OPRND0(0x01)}
+#else
+		/* LUT Programming (Quad IO) */
 		{QuadSPI_LUT_INSTR0(LUT_CMD_CMD)  |QuadSPI_LUT_PAD0(LUT_PAD1)|QuadSPI_LUT_OPRND0(FLASH_SPANSION_CMD_QIOR),
 		 QuadSPI_LUT_INSTR0(LUT_CMD_ADDR) |QuadSPI_LUT_PAD0(LUT_PAD4)|QuadSPI_LUT_OPRND0(24),
 		 QuadSPI_LUT_INSTR0(LUT_CMD_MODE) |QuadSPI_LUT_PAD0(LUT_PAD4)|QuadSPI_LUT_OPRND0(FLASH_SPANSION_MODE_REPEAT),
 		 QuadSPI_LUT_INSTR0(LUT_CMD_DUMMY)|QuadSPI_LUT_PAD0(LUT_PAD4)|QuadSPI_LUT_OPRND0(0x04),
 		 QuadSPI_LUT_INSTR0(LUT_CMD_READ) |QuadSPI_LUT_PAD0(LUT_PAD4)|QuadSPI_LUT_OPRND0(0x80),
 		 QuadSPI_LUT_INSTR0(LUT_CMD_JMP_ON_CS) |QuadSPI_LUT_PAD0(LUT_PAD1)|QuadSPI_LUT_OPRND0(0x01)}
+#endif
 	},
-
+	
 	.image_vector_table = {
 		.hdr = IVT_HEADER,                              /* IVT Header */
 		.entry = (u32) _start,                          /* Image  Entry Function */
 		.boot_data = (u32) &bootrom_data.boot_data,     /* Address where BOOT Data Structure is stored */
 		.self = (u32) &bootrom_data.image_vector_table, /* Pointer to IVT Self (absolute address */
 	},
-
+	
 	.boot_data = {
 		.start = (u32) _ram_begin,
 		.size  = (u32) _plo_img_size,

@@ -651,13 +651,13 @@ typedef struct FreePtr{
 } FreePtr;
 
 typedef struct MmcblkIoOps_t{
-	void (*init)(void *card);
-	void (*reset)(void *card);
+	int (*init)(void *card);
+	int (*reset)(void *card);
 	int (*sendCommand)(void *card, u32 cmd, u32 cmd_arg, s32 block_num, u16 block_size);
 	int (*sendCommandWithTransfer)(void *card, u32 cmd, u32 cmd_arg, s32 block_num, u16 block_size, void *headbuff, void *bodybuff, void *tailbuff, u32 bufsize);
 	void (*waitForResponse)(void *card, int cmd, MmcblkResponse_t *ret);
-	int (*transferWait)(void *card);
-	int (*waitBusy)(void *card);
+	int (*transferWait)(void *card, u32 bytes);
+	int (*waitBusy)(void *card, u32 bytes);
 	int (*switchHighSpeed)(void *card, u32 baudrate);
 	int (*setupBaudRate)(void *card, u32 baudrate);
 	int (*setupBusWidth)(void *cardPtr, MmcblkBusWidth_t width);
@@ -670,10 +670,10 @@ typedef struct MmcblkCard_t MmcblkCard_t;
 typedef struct MmcblkCardOps_t{
 
 	int (*init)(MmcblkCard_t *card);
-// 	void (*deinit)(MmcblkCard_t *card);
+	void (*deinit)(MmcblkCard_t *card);
 // 	int (*inserted)(MmcblkCard_t *card);
 // 	int (*switchHighSpeed)(MmcblkCard_t *card);
-//
+// 
 // 	int (*write)(MmcblkCard_t *card, unsigned int offs, char *buff, unsigned int len);
 	int (*read)(MmcblkCard_t *card, unsigned int offs, char *headbuff, char *bodybuff, char *tailbuff, unsigned int len);
 
@@ -686,6 +686,11 @@ typedef struct MmcblkPortDesc_t{
 	MmcblkIoOps_t ioOps;
 	int CSPort;
 	int CDPort;
+	/* CDActive == 0 means low state indicates card inserted
+	   CDActive == 1 means high state indicates card inserted
+	   CDActive == 2 means ignore card detect state
+	 */
+	int CDActive;
 } MmcblkPortDesc_t;
 
 
@@ -715,7 +720,7 @@ struct MmcblkCard_t {
 
 void mmcblk_init(void);
 s32 mmcblk_open(u16 bn, char *name, u32 flags);
-s32 mmcblk_read(u16 bn, s32 handle, u32 *offs, u8 *buff, u32 len);
+s32 mmcblk_read(u16 bn, s32 handle, u64 *offs, u8 *buff, u32 len);
 s32 mmcblk_close(u16 bn, s32 handle);
 int mmcblk_evaluateResponse(MmcblkResponse_t *response);
 

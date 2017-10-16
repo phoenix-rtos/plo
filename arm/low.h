@@ -1,4 +1,4 @@
-/*
+/* 
  * Phoenix-RTOS
  *
  * plo - operating system loader
@@ -32,11 +32,14 @@
 
 #define min(a, b)   ((a > b) ? b : a)
 
-typedef struct _syspage_t {
+typedef struct __attribute__((packed)) _plo_syspage_t {
 	u32 entry;
 	u32 kernel;
 	u32 ksize;
-} syspage_t;
+	u32 argc;
+	u32 argsize;
+	char args[256];
+} plo_syspage_t;
 
 typedef struct{
 	u32 magic;
@@ -46,7 +49,7 @@ typedef struct{
 }pdata_t;
 
 extern time_st now;
-extern syspage_t syspage;
+extern plo_syspage_t plo_syspage;
 extern u16 _plo_timeout;
 extern char _plo_command[];
 extern pdata_t *pdata_ptr;
@@ -56,8 +59,8 @@ extern void low_init(void);
 extern void low_cli(void);
 extern void low_sti(void);
 extern int low_keypressed();
-extern void low_memcpy(char *dst, char *src, unsigned int l);
-extern void low_memset(char *dst, char c, unsigned int l);
+extern void low_memcpy(void *dst_, const void *src_, unsigned int l);
+extern void low_memset(void *dst_, char c, unsigned int l);
 extern void low_putc(const char attr, const char c);
 extern void low_getc(char *c, char *sc);
 extern void low_irqinst(u8, u16, int (*)(u16, void*), void*);
@@ -73,4 +76,9 @@ extern void irq_disable(void);
 extern void low_ddrInit(void);
 extern void low_clocksInit(void);
 
+extern u32 low_persistGet();
+extern void low_persistSet(const u32 val);
+extern u16 low_crc16(u16 *data, unsigned count);
+extern u32 low_crc32(u32 data[], unsigned count);
+extern void low_reset(void);
 #endif

@@ -1,4 +1,4 @@
-/*
+/* 
  * Phoenix-RTOS
  *
  * plo - operating system loader
@@ -34,7 +34,7 @@
 
 typedef struct{
 	union{				/* 0x00 */
-		vu32	rbr;
+		vu32	rbr; 
 		vu32 	thr;
 		vu32	lsb;
 	};
@@ -47,7 +47,7 @@ typedef struct{
 		vu32	fcr;
 	};
 	vu32		lcr;		/* 0x0C */
-	const vu32	pad1;
+	const vu32	pad1;	
 	vu32		lsr;		/* 0x14 */
 	const vu32	pad2[4];
 	vu32		fdr;		/* 0x28 */
@@ -86,7 +86,7 @@ int serial_isr(u16 irq, void *data)
 				serial->rb = (++serial->rb % RBUFFSZ);
 			}
 		}
-
+			
 		/* Transmit */
 		if ((iir & IIR_THRE) == IIR_THRE) {
 			serial->sp = (++serial->sp % SBUFFSZ);
@@ -155,18 +155,18 @@ int serial_write(unsigned int pn, u8 *buff, u16 len)
 		l = min(SBUFFSZ - serial->se, len);
 
 	low_memcpy(&serial->sbuff[serial->se], buff, l);
-
+	
 	cnt = l;
 	if ((len > l) && (serial->se >= serial->sp)) {
 		low_memcpy(serial->sbuff, buff + l, min(len - l, serial->sp));
 		cnt += min(len - l, serial->sp);
 	}
-
+	
 	/* Initialize sending process */
 	if (serial->se == serial->sp){
 		serial->cntl->thr = serial->sbuff[serial->sp];
 	}
-
+	
 	serial->se = ((serial->se + cnt) % SBUFFSZ);
 	low_sti();
 
@@ -198,7 +198,7 @@ void serial_initone(unsigned int pn, u32 base, u8 src, u16 irq, u16 speed, seria
 
 	low_irqinst(serial->src, serial->irq, serial_isr, (void *)serial);
 	low_irqen(serial->irq, 1);
-
+	
 	/* Set speed */
 	serial->cntl->lcr = LCR_DLAB;
 	serial->cntl->lsb = speed;
@@ -212,7 +212,7 @@ void serial_initone(unsigned int pn, u32 base, u8 src, u16 irq, u16 speed, seria
 
 	/* Set interrupt mask */
 	serial->cntl->imr = IMR_THRE | IMR_DR;
-
+	
 	low_sti();
 	return;
 }
@@ -220,7 +220,7 @@ void serial_initone(unsigned int pn, u32 base, u8 src, u16 irq, u16 speed, seria
 
 void serial_init(u16 speed)
 {
-	/* serial_initone(0, COM1_BASE, COM2_SRC, COM1_IRQ, speed, &serials[0]); */
+	serial_initone(0, COM1_BASE, COM2_SRC, COM1_IRQ, speed, &serials[0]);
 	serial_initone(1, COM2_BASE, COM2_SRC, COM2_IRQ, speed, &serials[1]);
 	return;
 }

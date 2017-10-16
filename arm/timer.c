@@ -1,4 +1,4 @@
-/*
+/* 
  * Phoenix-RTOS
  *
  * plo - operating system loader
@@ -28,6 +28,7 @@
 #include "types.h"
 #include "timer.h"
 #include "plostd.h"
+#include "low.h"
 #include "MVF50GS10MK50.h"
 
 struct time_s {

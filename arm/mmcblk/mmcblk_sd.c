@@ -131,7 +131,7 @@ int mmcblk_sd_init(MmcblkCard_t *card) {
 			card->port->ioOps.reset(card);
 			return ERR_MMC_IO;
 		}
-		if(card->port->ioOps.transferWait(card) != 0) {
+		if(card->port->ioOps.transferWait(card, sizeof(scr)) != 0) {
 			LOG("Failed to get SCR register");
 			return ERR_MMC_IO;
 		}
@@ -168,22 +168,23 @@ int mmcblk_sd_init(MmcblkCard_t *card) {
 	LOG("Card baudrate: %d", card->baudRate);
 	return 0;
 
+
 }
 
-// void mmcblk_sd_deinit(MmcblkCard_t *card) {
-// 	assert(!"Not implemented");
-// }
+void mmcblk_sd_deinit(MmcblkCard_t *card) {
+	assert(!"Not implemented");
+}
 
 // int mmcblk_sd_inserted(MmcblkCard_t *card) {
 // 	assert(!"Not implemented");
 // 	return 0;
 // }
-//
-// int mmcblk_sd_switchHighSpeed(MmcblkCard_t *card) {
-// 	assert(!"Not implemented");
-// 	return 0;
-// }
-//
+
+int mmcblk_sd_switchHighSpeed(MmcblkCard_t *card) {
+	assert(!"Not implemented");
+	return 0;
+}
+
 // int mmcblk_sd_write(MmcblkCard_t *card, offs_t offs, char *buff, unsigned int len) {
 // 	s32 ret=0;
 // 	FreePtr *fp;
@@ -194,48 +195,48 @@ int mmcblk_sd_init(MmcblkCard_t *card) {
 // 	u32 sizeHead=SIZE_CACHE_LINE - ((u32)buff & (SIZE_CACHE_LINE-1));
 // 	u32 sizeTail=(u32)buff & (SIZE_CACHE_LINE-1);
 // 	status=status;
-//
+// 
 // 	/* head/tail buffer - for cache management purposes */
 // 	char *ht=NULL;
 // 	void *headFreePtr=NULL;
-//
+// 
 // 	/* 4 - aligned buffer required, length - multiplicity of 512 */
 // 	assert(!((u32)buff & 0x3) && !(len & (MMCBLK_BLOCK_LENGTH-1)));
 // 	assert(!(offs & (MMCBLK_BLOCK_LENGTH-1)));
 // 	if(offs > card->capacity)
-// 		return ERR_ARG;
+// 		return -EINVAL;
 // 	if(len == 0)
 // 		return ret;
-//
+// 
 // 	sectorNum = len >> 9;
-//
+// 
 // 	ht = vm_dokmallocaligned(2 * SIZE_CACHE_LINE, SIZE_CACHE_LINE, &headFreePtr);
 // 	if(ht == NULL) {
 // 		assert(0);
 // 		return -ENOMEM;
 // 	}
-//
+// 
 // 	dmaDesc = card->port->ioOps.setupDMA(card, buff, len, &fp, ht);
 // 	if(dmaDesc == NULL) {
 // 		vm_kfree(headFreePtr);
 // 		assert(0);
 // 		return -ENOMEM;
 // 	}
-//
+// 
 // 	hal_cpuFlushCache( (char *)(((u32) buff & ~(SIZE_CACHE_LINE-1))+SIZE_CACHE_LINE), len-SIZE_CACHE_LINE);
-//
+// 
 // 	memcpy(ht, buff, sizeHead);
 // 	if(sizeTail > 0)
 // 		memcpy(ht+SIZE_CACHE_LINE, buff+len-sizeTail, sizeTail);
-//
+// 
 // 	hal_cpuFlushCache(ht, SIZE_CACHE_LINE*2);
-//
+// 
 // 	do {
 // 		hal_cpuReschedule();
 // 		card->port->ioOps.sendCommand(card, MMCBLK_COMM_SEND_STATUS, card->RCA, 0, 0, NULL);
 // 		response = card->port->ioOps.waitForResponse(card, MMCBLK_COMM_SEND_STATUS);
 // 	} while(response.response.r1.bits.CURRENT_STATE != 4);
-//
+// 
 // 	if(len == MMCBLK_BLOCK_LENGTH) {
 // 		card->port->ioOps.sendCommand(card, MMCBLK_COMM_WRITE_BLOCK, offs>>9, 1, MMCBLK_BLOCK_LENGTH, dmaDesc);
 // 		response = card->port->ioOps.waitForResponse(card, MMCBLK_COMM_WRITE_BLOCK);
@@ -245,15 +246,15 @@ int mmcblk_sd_init(MmcblkCard_t *card) {
 // 		response = card->port->ioOps.waitForResponse(card, MMCBLK_COMM_WRITE_MULTIPLE_BLOCK);
 // 	}
 // 	status = mmcblk_evaluateResponse(&response);
-//
-// 	if(response.error || (status != 0 && status != ERR_BUSY && status != -ETIMEDOUT)) {
+// 
+// 	if(response.error || (status != EOK && status != -EBUSY && status != -ETIMEDOUT)) {
 // 		LOG("Write cmd error: %d", status);
 // 		assert(0);
 // 		ret = -1;
 // 	}
 // 	else {
 // 		ret = card->port->ioOps.transferWait(card);
-// 		if(ret == 0)
+// 		if(ret == EOK)
 // 			ret = len;
 // 		else {
 // 			LOG("Write error");
@@ -300,7 +301,7 @@ int mmcblk_sd_read(MmcblkCard_t *card, u32 offs, char *headbuff, char *bodybuff,
 		ret = ERR_MMC_IO;
 	}
 	else {
-		ret = card->port->ioOps.transferWait(card);
+		ret = card->port->ioOps.transferWait(card, len);
 		if(ret == 0)
 			ret = len;
 		else {
@@ -309,7 +310,7 @@ int mmcblk_sd_read(MmcblkCard_t *card, u32 offs, char *headbuff, char *bodybuff,
 			if((len > MMCBLK_BLOCK_LENGTH) || (headbuff != NULL) || (tailbuff != NULL)) {
 				card->port->ioOps.sendCommand(card, MMCBLK_COMM_STOP_TRANSMISSION, 0, 0, 0);
 				card->port->ioOps.waitForResponse(card, MMCBLK_COMM_STOP_TRANSMISSION, &response);
-				card->port->ioOps.waitBusy(card);
+				card->port->ioOps.waitBusy(card, len);
 				/* TODO - calculate number of blocks read properly */
 			}
 			/* TODO - appropriate reset operation sdhc->SYSCTL |= SDHC_SYSCTL_RSTD_MASK; */

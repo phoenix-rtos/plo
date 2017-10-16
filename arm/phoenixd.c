@@ -1,4 +1,4 @@
-/*
+/* 
  * Phoenix-RTOS
  *
  * plo - operating system loader
@@ -38,7 +38,7 @@ s32 phoenixd_open(u16 dn, char *name, u32 flags)
 	msg_t smsg, rmsg;
 	u16 l;
 	u32 h;
-
+	
 	l = plostd_strlen(name) + 1;
 
 	*(u32 *)smsg.data = flags;
@@ -68,7 +68,7 @@ s32 phoenixd_read(u16 dn, s32 handle, u32 *pos, u8 *buff, u32 len)
 	u16 hdrsz;
 	u32 l;
 	int k;
-
+	
 	/* Read from serial */
 	io = (msg_phoenixd_t *)smsg.data;
 	hdrsz = (u16)((u32)io->data - (u32)io);
@@ -82,14 +82,14 @@ s32 phoenixd_read(u16 dn, s32 handle, u32 *pos, u8 *buff, u32 len)
 
 	msg_settype(&smsg, MSG_READ);
 	msg_setlen(&smsg, hdrsz);
-
+	
 	if (msg_send(dn, &smsg, &rmsg) < 0)
 		return ERR_PHFS_IO;
-
+	
 	if (msg_gettype(&rmsg) != MSG_READ) {
 		return ERR_PHFS_PROTO;
 	}
-	io = (msg_phoenixd_t *)rmsg.data;
+	io = (msg_phoenixd_t *)rmsg.data;  
 
 	if ((long)io->len < 0) {
 		return ERR_PHFS_FILE;

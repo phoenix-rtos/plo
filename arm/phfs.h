@@ -1,4 +1,4 @@
-/*
+/* 
  * Phoenix-RTOS
  *
  * plo - operating system loader
@@ -28,15 +28,16 @@
 #define _PHFS_H_
 
 
-#define PDN_FLASH    0
-#define PDN_MMCBLK   1
+#define PDN_FLASH   0
+#define PDN_MMCBLK  1
+#define PDN_AUTO    2
 
 
 
 extern s32 phfs_open(u16 dn, char *name, u32 flags);
 
 
-extern s32 phfs_read(u16 dn, s32 handle, u32 *pos, u8 *buff, u32 len);
+extern s32 phfs_read(u16 dn, s32 handle, u64 *pos, u8 *buff, u32 len);
 
 
 extern s32 phfs_close(u16 dn, s32 handle);

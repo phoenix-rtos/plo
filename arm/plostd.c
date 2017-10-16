@@ -1,4 +1,4 @@
-/*
+/* 
  * Phoenix-RTOS
  *
  * plo - operating system loader
@@ -34,9 +34,9 @@ const char digits[] = "0123456789";
 const char digitsh[] = "0123456789abcdef";
 
 
-int plostd_strlen(char *s)
+int plostd_strlen(const char *s)
 {
-	char *p;
+	const char *p;
 	unsigned int k = 0;
 
 	for (p = s; *p; p++)
@@ -45,7 +45,7 @@ int plostd_strlen(char *s)
 }
 
 
-int plostd_strcmp(char *s1, char *s2)
+int plostd_strcmp(const char *s1, const char *s2)
 {
 	unsigned int k = 0;
 	for (k = 0; s1[k] && s2[k]; k++) {
@@ -58,6 +58,21 @@ int plostd_strcmp(char *s1, char *s2)
 }
 
 
+char *plostd_strstr(const char *s1, const char *s2)
+{
+	unsigned i, j;
+
+	for (i = 0; s1[i]; i++) {
+		for (j = 0; s1[i + j] && s2[j]; j++)
+			if (s1[i + j] != s2[j])
+				break;
+		if (s2[j] == '\0')
+			return (char *)s1 + i;
+	}
+	return NULL;
+}
+
+
 char *plostd_itoa(unsigned int i, char *buff, int x)
 {
 	int l = 0;
@@ -65,8 +80,12 @@ char *plostd_itoa(unsigned int i, char *buff, int x)
 	int nz = 0;
 	char c;
 
+	if(buff == 0)
+		return buff;
+
 	if (i == 0) {
-		buff = "0";
+		buff[0] = '0';
+		buff[1] = 0;
 		return buff;
 	}
 	while (i != 0) {
@@ -88,7 +107,7 @@ char *plostd_itoah(unsigned int i, char *buff, int lz)
 {
 	int l, offs, k, shn;
 	int nz = 0;
-
+	
 	switch (sizeof(i)) {
 	case 1:
 		shn = 2;
@@ -121,7 +140,7 @@ char *plostd_itoah(unsigned int i, char *buff, int lz)
 }
 
 
-unsigned int plostd_ahtoi(char *s)
+unsigned int plostd_ahtoi(const char *s)
 {
 	char *p;
 	int k, i, found;
@@ -150,6 +169,35 @@ unsigned int plostd_ahtoi(char *s)
 	return v;
 }
 
+int plostd_atoi(const char *s)
+{
+	int i = 0, sign = 1;
+	const char *p = s;
+
+	while (*p) {
+		if (*p >= '0' && *p <= '9')
+			break;
+		if (*p == '-') {
+			sign = -1;
+			p++;
+			break;
+		}
+		if (*p != ' ')
+			return 0;
+		p++;
+	}
+
+	while (*p) {
+		if (*p >= '0' && *p <= '9')
+			i = i * 10 + *p - '0';
+		else
+			break;
+		p++;
+	}
+
+	return sign * i;
+}
+
 
 void plostd_puts(char attr, char *s)
 {
@@ -168,7 +216,7 @@ void plostd_printf(char attr, char *fmt, ...)
 	char buff[16];
 
 	ap = (u8 *)&fmt + sizeof(fmt);
-
+	
 	for (p = fmt; *p; p++) {
 		if (*p != '%') {
 			low_putc(attr, *p);
@@ -197,6 +245,6 @@ void plostd_printf(char attr, char *fmt, ...)
 		}
 	}
 	va_end(ap);
-
+	
 	return;
 }

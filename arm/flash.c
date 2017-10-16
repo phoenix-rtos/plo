@@ -1,4 +1,4 @@
-/*
+/* 
  * Phoenix-RTOS
  *
  * plo - operating system loader
@@ -47,6 +47,7 @@
 #define SEQID_P4E    10
 #define SEQID_RDID   11
 #define SEQID_CLSR   12
+#define SEQID_DIOR   13
 
 #define RX_BUF_SIZE 0x80
 #define CFI_TX_BUF_SIZE 6
@@ -74,7 +75,7 @@
 	#define INIT_FLASH_CONFIG 0x00020000 /* enable flash quad mode */
 	#define INIT_QUADSPI_DDR
 #endif
-
+   
 
 #ifdef FLASH_S25FL132K
 	#define FLASH_STATUS_MASK  0x01000000
@@ -119,6 +120,38 @@
 	#define INIT_FLASH_CONFIG 0x00020000 /* enable flash quad mode */
 #endif
 
+#ifdef FLASH_S25FL127S
+	#define FLASH_STATUS_MASK  0x01000000
+	#define FLASH_STATUS_READY 0x00000000
+	#define FLASH_STATUS_BUSY  0x01000000
+
+	#define SEQID_CFI_READ        SEQID_RDID
+	#define SEQID_WRITE_ENABLE    SEQID_WREN
+	#define SEQID_READ_STATUS     SEQID_RDSR1
+	#define SEQID_FLASH_CONFIGURE SEQID_WRR
+
+#ifdef FLASH_MAX_DUAL_SPI
+	#define SEQID_PROGRAM_PAGE    SEQID_PP
+	#define SEQID_READ            SEQID_DIOR
+#else
+	#define SEQID_PROGRAM_PAGE    SEQID_QPP
+	#define SEQID_READ            SEQID_QIOR
+#endif
+
+	#define SEQID_ERASE1          SEQID_P4E
+	#define SEQID_ERASE2          SEQID_SE
+	#define SEQID_ERASE_UNIFORM   SEQID_SE
+	#define SEQID_ERASE_ALL       SEQID_BE
+	#define SEQID_CLEAR_ERRORS    SEQID_CLSR
+
+	#define ERASE_CHANGE 0x10000
+#ifdef FLASH_MAX_DUAL_SPI
+	#define INIT_FLASH_CONFIG 0x00000000 /* disable flash quad mode */
+#else
+	#define INIT_FLASH_CONFIG 0x00020000 /* enable flash quad mode */
+#endif
+#endif
+
 static inline u32 _quadspi_isBusy(QuadSPI_Type *quadspi)
 {
 	return (quadspi->SR & (QuadSPI_SR_AHBGNT_MASK | QuadSPI_SR_AHB_ACC_MASK | QuadSPI_SR_IP_ACC_MASK));
@@ -129,9 +162,9 @@ static inline void _quadspi_doIpSeq(QuadSPI_Type *quadspi, u32 seqid, u16 transf
 	quadspi->IPCR = seqid << 24 | transferSize;
 }
 
-static inline void _quadspi_setFlashAddr(QuadSPI_Type *quadspi, u32 addr)
+static inline void _quadspi_setFlashAddr(QuadSPI_Type *quadspi, u64 addr)
 {
-	quadspi->SFAR = addr;
+	quadspi->SFAR = (u32) addr;
 }
 
 static inline u16 _quadspi_RXfillLevel(QuadSPI_Type *quadspi)
@@ -181,6 +214,13 @@ static void _quadspi_LUTfill(QuadSPI_Type *quadspi)
 										| QuadSPI_LUT_INSTR1(LUT_CMD_DUMMY)|QuadSPI_LUT_PAD1(LUT_PAD4)|QuadSPI_LUT_OPRND1(0x04);
 	quadspi->LUT[(SEQID_QIOR << 2) + 2] = QuadSPI_LUT_INSTR0(LUT_CMD_READ) |QuadSPI_LUT_PAD0(LUT_PAD4)|QuadSPI_LUT_OPRND0(0x01)
 										| QuadSPI_LUT_INSTR1(LUT_CMD_STOP) |QuadSPI_LUT_PAD1(LUT_PAD1)|QuadSPI_LUT_OPRND1(0x00);
+
+
+	quadspi->LUT[(SEQID_DIOR << 2) + 0] = QuadSPI_LUT_INSTR0(LUT_CMD_CMD)  |QuadSPI_LUT_PAD0(LUT_PAD1)|QuadSPI_LUT_OPRND0(FLASH_SPANSION_CMD_DIOR)
+										| QuadSPI_LUT_INSTR1(LUT_CMD_ADDR) |QuadSPI_LUT_PAD1(LUT_PAD2)|QuadSPI_LUT_OPRND1(24);
+	quadspi->LUT[(SEQID_DIOR << 2) + 1] = QuadSPI_LUT_INSTR0(LUT_CMD_MODE)|QuadSPI_LUT_PAD0(LUT_PAD2)|QuadSPI_LUT_OPRND0(FLASH_SPANSION_MODE_ONCE)
+										| QuadSPI_LUT_INSTR1(LUT_CMD_READ) |QuadSPI_LUT_PAD1(LUT_PAD2)|QuadSPI_LUT_OPRND1(0x01);
+	quadspi->LUT[(SEQID_DIOR << 2) + 2] = QuadSPI_LUT_INSTR0(LUT_CMD_STOP) |QuadSPI_LUT_PAD0(LUT_PAD1)|QuadSPI_LUT_OPRND0(0x00);
 
 
 	quadspi->LUT[(SEQID_WREN << 2) + 0] = QuadSPI_LUT_INSTR0(LUT_CMD_CMD)   |QuadSPI_LUT_PAD0(LUT_PAD1)|QuadSPI_LUT_OPRND0(FLASH_SPANSION_CMD_WREN)
@@ -326,7 +366,7 @@ s32 flash_open(u16 fn, char *name, u32 flags) {
 		switch (fn >> 1) {
 			case 0:
 				if (QuadSPI0->SFA1AD > QuadSPI0_FLASH_BASE_ADDR)
-					return QuadSPI0_FLASH_BASE_ADDR + 512 * 1024;
+					return QuadSPI0_FLASH_BASE_ADDR;
 				break;
 			case 1:
 				if (QuadSPI0->SFA2AD > QuadSPI0->SFA1AD)
@@ -349,10 +389,10 @@ s32 flash_open(u16 fn, char *name, u32 flags) {
 	return ERR_FLASH_IO;
 }
 
-s32 flash_read(u16 fn, s32 handle, u32 *pos, u8 *buff, u32 len)
+s32 flash_read(u16 fn, s32 handle, u64 *pos, u8 *buff, u32 len)
 {
 	u16 toRead;
-	u32 offs = *pos;
+	u64 offs = *pos;
 	QuadSPI_Type *quadspi = QuadSPI0;
 
 	while(_quadspi_isBusy(quadspi));
@@ -362,7 +402,7 @@ s32 flash_read(u16 fn, s32 handle, u32 *pos, u8 *buff, u32 len)
 		} else {
 			toRead = len;
 		}
-		_quadspi_setFlashAddr(quadspi, (u32) handle + offs);
+		_quadspi_setFlashAddr(quadspi, (u64) handle + offs);
 		_quadspi_receiveFlashData(quadspi, SEQID_READ, buff, toRead);
 		len -= toRead;
 		offs += toRead;
@@ -393,7 +433,12 @@ static int _quadspi_flashInit(QuadSPI_Type *quadspi, u32 flashAddress)
 
 static void _quadspi_configure(QuadSPI_Type *quadspi)
 {
+	/* (0xF << 16) - reserved bits that has to be 1 */
+	quadspi->MCR = (0xF << 16) | QuadSPI_MCR_SWRSTSD_MASK | QuadSPI_MCR_SWRSTHD_MASK;
 	quadspi->MCR |= QuadSPI_MCR_MDIS_MASK;
+	quadspi->FR = 0xFFFFFFFF;
+	quadspi->SMPR = 0x0;
+
 #ifdef INIT_QUADSPI_DDR
 	quadspi->MCR |= QuadSPI_MCR_DDR_EN_MASK;
 	quadspi->SMPR = QuadSPI_SMPR_DDRSMP(0x3);
@@ -401,6 +446,7 @@ static void _quadspi_configure(QuadSPI_Type *quadspi)
 	quadspi->RBCT |= QuadSPI_RBCT_RXBRD_MASK;
 
 	quadspi->MCR &= ~QuadSPI_MCR_MDIS_MASK;
+	quadspi->MCR &= ~(QuadSPI_MCR_SWRSTSD_MASK | QuadSPI_MCR_SWRSTHD_MASK);
 	quadspi->MCR |= QuadSPI_MCR_CLR_TXF_MASK | QuadSPI_MCR_CLR_RXF_MASK;
 }
 

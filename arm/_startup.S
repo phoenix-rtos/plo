@@ -1,4 +1,4 @@
-/*
+/* 
  * Phoenix-RTOS
  *
  * plo - operating system loader
@@ -69,7 +69,7 @@
 
 # Interrupt and exception vectors remapped to address 0
 vectors:
-        ldr     pc, reset_addr
+        ldr     pc, reset_addr         
 		ldr     pc, undef_addr
 		ldr     pc, swi_addr
 		ldr     pc, pabt_addr
@@ -145,7 +145,7 @@ _stack_init:
 
 		#  Setup a default Stack Limit (when compiled with "-mapcs-stack-check")
 		sub     sl, sp, #SYS_STACK_SIZE
-
+		
 		ldr		lr, =plo_init
 		bx		lr
 1:
