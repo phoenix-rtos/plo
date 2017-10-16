@@ -15,7 +15,7 @@
  */
 
 #include HAL
-#include "../../include/errno.h"
+#include "errno.h"
 #include "elf.h"
 
 #define ELFCLASS_VALUE 1	/* ELFCLASS32 */
