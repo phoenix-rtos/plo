@@ -408,6 +408,9 @@ void cmd_loadkernel(unsigned int pdn, char *arg, u16 *po)
 	low_setfar(SYSPAGE_SEG, SYSPAGE_OFFS_KERNELSIZE + 0, (u16)((maxaddr - minaddr) & 0xffff));
 	low_setfar(SYSPAGE_SEG, SYSPAGE_OFFS_KERNELSIZE + 2, (u16)((maxaddr - minaddr) >> 16));
 
+	low_setfar(SYSPAGE_SEG, SYSPAGE_OFFS_CONSOLE + 0, 0);
+	low_setfar(SYSPAGE_SEG, SYSPAGE_OFFS_CONSOLE + 2, 0);
+
 	return;
 }
 

@@ -40,11 +40,11 @@ __plo_size:
 
 .globl __plo_timeout
 __plo_timeout:
-	dw 0002
+	dw 0001
 
 .globl __plo_command
 __plo_command:
-.ascii "load hd0; go!"
+.ascii "load floppy 20e; go!"
 .zerow 50
 
 __plo_digitsh:

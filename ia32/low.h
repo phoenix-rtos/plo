@@ -64,6 +64,7 @@ typedef struct _syspage_t {
 	u32 kernel;
 	u32 kernelsize;
 	char arg[256];
+	u32 console;
 
 	u16 mmsize;
 	low_mmitem_t mm[MM_MAXSZ];
@@ -82,10 +83,11 @@ typedef struct _syspage_t {
 #define SYSPAGE_OFFS_KERNEL      (8 + 8 + 4 + 4 + 4 + 4)
 #define SYSPAGE_OFFS_KERNELSIZE  (8 + 8 + 4 + 4 + 4 + 4 + 4)
 #define SYSPAGE_OFFS_ARG         (8 + 8 + 4 + 4 + 4 + 4 + 4 + 4)
-#define SYSPAGE_OFFS_MMSIZE      (8 + 8 + 4 + 4 + 4 + 4 + 4 + 4 + 256)
-#define SYSPAGE_OFFS_MM          (8 + 8 + 4 + 4 + 4 + 4 + 4 + 4 + 256 + 2)
-#define SYSPAGE_OFFS_PROGSSZ     (8 + 8 + 4 + 4 + 4 + 4 + 4 + 4 + 256 + 2 + MM_MAXSZ * 20)
-#define SYSPAGE_OFFS_PROGS       (8 + 8 + 4 + 4 + 4 + 4 + 4 + 4 + 256 + 2 + MM_MAXSZ * 20 + 2)
+#define SYSPAGE_OFFS_CONSOLE     (8 + 8 + 4 + 4 + 4 + 4 + 4 + 4 + 4)
+#define SYSPAGE_OFFS_MMSIZE      (8 + 8 + 4 + 4 + 4 + 4 + 4 + 4 + 4 + 256)
+#define SYSPAGE_OFFS_MM          (8 + 8 + 4 + 4 + 4 + 4 + 4 + 4 + 4 + 256 + 2)
+#define SYSPAGE_OFFS_PROGSSZ     (8 + 8 + 4 + 4 + 4 + 4 + 4 + 4 + 4 + 256 + 2 + MM_MAXSZ * 20)
+#define SYSPAGE_OFFS_PROGS       (8 + 8 + 4 + 4 + 4 + 4 + 4 + 4 + 4 + 256 + 2 + MM_MAXSZ * 20 + 2)
 
 #define IRQ_HANDLED   0
 #define IRQ_DEFAULT   1
