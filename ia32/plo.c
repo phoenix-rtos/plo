@@ -204,7 +204,7 @@ void plo_init(void)
 	phfs_init();
 
 #ifdef CONSOLE_SERIAL
-	serial_write(0, "\033c", 2);
+	serial_write(0, "\033[?25h", 6);
 #endif
 
 	plostd_printf(ATTR_LOADER, "%s\n", WELCOME);
