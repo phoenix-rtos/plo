@@ -196,19 +196,30 @@ void plo_cmdloop(void)
 void plo_init(void)
 {
 	u16 t;
+	u8 c;
 
 	low_init();
 	timer_init();
 	serial_init(BPS_115200);
 	phfs_init();
 
+#ifdef CONSOLE_SERIAL
+	serial_write(0, "\033c", 2);
+#endif
+
 	plostd_printf(ATTR_LOADER, "%s\n", WELCOME);
 
-	/* Execute loader command */
+	/* Wait and execute saved loader command */
 	for (t = _plo_timeout; t; t--) {
 		plostd_printf(ATTR_INIT, "\r%d seconds to automatic boot      ", t);
+
+#ifdef CONSOLE_SERIAL
+		if (serial_read(0, &c, 1, 1000) > 0)
+			break;
+#else
 		if (timer_wait(1000, TIMER_KEYB, NULL, 0))
 			break;
+#endif
 	}
 
 	if (t == 0) {
