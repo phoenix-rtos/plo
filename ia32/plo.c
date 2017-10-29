@@ -5,7 +5,7 @@
  *
  * Loader console
  *
- * Copyright 2012 Phoenix Systems
+ * Copyright 2012, 2017 Phoenix Systems
  * Copyright 2001, 2005 Pawel Pisarczyk
  * Author: Pawel Pisarczyk
  *
@@ -27,6 +27,74 @@ struct {
 	int  cl;
 	char lines[HISTSZ][LINESZ + 1];
 } history;
+
+
+#ifdef CONSOLE_SERIAL
+void low_putc(char attr, char c)
+{
+	static lattr = 0;
+
+	if (attr == lattr) {
+		serial_write(0, &c, 1);
+		return;
+	}
+
+	switch (attr) {
+	case ATTR_DEBUG:
+		serial_write(0, "\033[0m\033[32m", 9);
+		break;
+	case ATTR_USER:
+		serial_write(0, "\033[0m", 4);
+		break;
+	case ATTR_INIT:
+		serial_write(0, "\033[0m\033[35m", 9);
+		break;
+	case ATTR_LOADER:
+		serial_write(0, "\033[0m\033[1m", 8);
+		break;
+	case ATTR_ERROR:
+		serial_write(0, "\033[0m\033[31m", 9);
+		break;
+	}
+
+	lattr = attr;
+	serial_write(0, &c, 1);
+}
+
+
+void low_getc(char *c, char *sc)
+{
+	u8 buff[3];
+
+	serial_read(0, c, 1, -1);
+	*sc = 0;
+
+	/* Translate backspace */
+	if (*c == 127)
+		*c = 8;
+
+	/* Simple parser for VT100 commands */
+	else if (*c == 27) {
+		serial_read(0, c, 1, -1);
+
+		switch (*c) {
+		case 91:
+			serial_read(0, c, 1, -1);
+
+			switch (*c) {	
+			case 'A':             /* UP */
+				*sc = 72;
+				break;
+			case 'B':             /* DOWN */
+				*sc = 80;
+				break;
+			}
+			break;
+		}
+		*c = 0;
+	}
+}
+#endif
 
 
 void plo_drawspaces(char attr, unsigned int len)
@@ -130,11 +198,11 @@ void plo_init(void)
 	u16 t;
 
 	low_init();
-	plostd_printf(ATTR_LOADER, "%s\n", WELCOME);
-
 	timer_init();
 	serial_init(BPS_115200);
 	phfs_init();
+
+	plostd_printf(ATTR_LOADER, "%s\n", WELCOME);
 
 	/* Execute loader command */
 	for (t = _plo_timeout; t; t--) {

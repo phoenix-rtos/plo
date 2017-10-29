@@ -286,6 +286,7 @@ void low_setmode(u8 m)
 }
 
 
+#ifndef CONSOLE_SERIAL
 void low_putc(char attr, char c)
 {
 #asm
@@ -338,6 +339,7 @@ void low_getc(char *c, char *sc)
 	pop bp
 #endasm
 }
+#endif
 
 
 int low_keypressed(void)

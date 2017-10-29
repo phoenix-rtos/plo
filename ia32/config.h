@@ -18,7 +18,7 @@
 #define _CONFIG_H_
 
 
-#define VERSION "1.2"
+#define VERSION "1.3"
 
 
 /* User interface */

@@ -5,10 +5,12 @@
 # Copyright 2004 Pawel Pisarczyk
 #
 
-BCC ?= bcc
+BCC ?= /Users/pawel/devel/dev86-0.16.17/bin/ncc
 # on mac use: make BCC=/Users/ppisarczyk/devel/dev86-0.16.17/bin/ncc
 
 CFLAGS = -ansi -I.
+CFLAGS += -DCONSOLE_SERIAL
+
 AS = as86
 LD = ld86
 

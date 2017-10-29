@@ -646,6 +646,7 @@ void cmd_parse(char *line)
 
 		/* Find command and launch associated function */
 		for (k = 0; cmds[k].cmd != NULL; k++) {
+
 			if (!plostd_strcmp(cmd, cmds[k].cmd)) {
 				cmds[k].f(word + wp);
 				break;
