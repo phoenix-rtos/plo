@@ -268,7 +268,7 @@ void cmd_loadkernel(unsigned int pdn, char *arg, u16 *po)
 	int err;
 	u32 minaddr = 0xffffffff, maxaddr = 0, start = KERNEL_BASE;
 
-	path = arg ? arg : KERNEL_PATH;
+	path = arg != NULL ? arg : KERNEL_PATH;
 	if ((h = phfs_open(pdn, path, 0)) < 0) {
 		plostd_printf(ATTR_ERROR, "Kernel not found!\n");
 		return;
@@ -420,6 +420,7 @@ void cmd_load(char *s)
 	char word[LINESZ + 1];
 	unsigned int p = 0, dn;
 	u16 i, po;
+	u32 kernel, kernelsize;
 
 	cmd_skipblanks(s, &p, DEFAULT_BLANKS);
 	if (cmd_getnext(s, &p, DEFAULT_BLANKS, NULL, word, sizeof(word)) == NULL) {
@@ -451,6 +452,11 @@ void cmd_load(char *s)
 
 	po = SYSPAGE_OFFS_PROGS;
 	cmd_loadkernel(devices[dn].pdn, NULL, &po);
+
+	/* Store kernel size */
+	kernel = low_getfar(SYSPAGE_SEG, SYSPAGE_OFFS_KERNEL) | ((u32)low_getfar(SYSPAGE_SEG, SYSPAGE_OFFS_KERNEL + 2) << 16);
+	kernelsize = low_getfar(SYSPAGE_SEG, SYSPAGE_OFFS_KERNELSIZE) | ((u32)low_getfar(SYSPAGE_SEG, SYSPAGE_OFFS_KERNELSIZE + 2) << 16);
+
 	po = SYSPAGE_OFFS_PROGS;
 
 	/* Load programs */
@@ -469,6 +475,12 @@ void cmd_load(char *s)
 	}
 
 	low_setfar(SYSPAGE_SEG, SYSPAGE_OFFS_PROGSSZ, i);
+
+	/* Update kernel size */
+	low_setfar(SYSPAGE_SEG, SYSPAGE_OFFS_KERNEL + 0, (u16)(kernel & 0xffff));
+	low_setfar(SYSPAGE_SEG, SYSPAGE_OFFS_KERNEL + 2, (u16)(kernel >> 16));
+	low_setfar(SYSPAGE_SEG, SYSPAGE_OFFS_KERNELSIZE + 0, (u16)(kernelsize & 0xffff));
+	low_setfar(SYSPAGE_SEG, SYSPAGE_OFFS_KERNELSIZE + 2, (u16)(kernelsize >> 16));
 
 	return;
 }
@@ -500,12 +512,15 @@ void cmd_memmap(char *s)
 	plostd_printf(ATTR_LOADER, "\n");
 	plostd_printf(ATTR_LOADER, "plo map\n");
 	plostd_printf(ATTR_LOADER, "-------\n");
-	plostd_printf(ATTR_LOADER, "%p%p  +0000%p  -  syspage\n", SYSPAGE_SEG >> 12, SYSPAGE_SEG << 4, 0x1000);
+
 	plostd_printf(ATTR_LOADER, "%p%p  +0000%p  -  GDT\n", GDT_SEG >> 12, GDT_SEG << 4, GDT_SIZE);
 	plostd_printf(ATTR_LOADER, "%p%p  +0000%p  -  IDT\n", IDT_SEG >> 12, IDT_SEG << 4, IDT_SIZE);
+	plostd_printf(ATTR_LOADER, "%p%p  +0000%p  -  syspage\n", SYSPAGE_SEG >> 12, SYSPAGE_SEG << 4, 0x1000);
 	plostd_printf(ATTR_LOADER, "%p%p  +0000%p  -  pdir\n", PDIR_SEG >> 12, PDIR_SEG << 4, 0x1000);
 	plostd_printf(ATTR_LOADER, "%p%p  +0000%p  -  ptable\n", PTABLE_SEG >> 12, PTABLE_SEG << 4, 0x1000);
 	plostd_printf(ATTR_LOADER, "0000%p  +0000%p  -  stack\n", INIT_ESP - STACK_SIZE, STACK_SIZE);
+
+	plostd_printf(ATTR_LOADER, "0000%p  +0000%p  -  plo\n", 0x7c00, CACHE_OFFS - 0x7c00 + CACHE_SIZE * SECTOR_SIZE);
 
 	plostd_printf(ATTR_LOADER, "%p%p  +%p%p  -  kernel\n",
 	              low_getfar(SYSPAGE_SEG, SYSPAGE_OFFS_KERNEL + 2), low_getfar(SYSPAGE_SEG, SYSPAGE_OFFS_KERNEL),

@@ -56,8 +56,8 @@
 #define PDIR_SEG     0x0300
 #define PTABLE_SEG   0x0400
 
-#define INIT_ESP     0x7c00
-#define STACK_SIZE   0x2000
+#define INIT_ESP     0x6000
+#define STACK_SIZE   0x1000
 
 
 /* Boot command size */
