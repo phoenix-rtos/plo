@@ -19,10 +19,8 @@ dd if=/dev/zero of=$plo seek=$sz bs=1024 count=$padsz >/dev/null 2>&1
 
 offs=32
 add2img "../../phoenix-rtos-kernel/phoenix-ia32-qemu.elf"
-add2img "../../libphoenix/test/test_mmap"
-add2img "../../libphoenix/test/test_malloc"
-add2img "../../libphoenix/test/test_threads"
-add2img "../../libphoenix/test/test_str2num"
+add2img "../../phoenix-rtos-devices/tty/pc-tty/pc-tty"
+add2img "../../libphoenix/test/psh"
 
 #add2img "../../phoenix-rtos-devices/tty/ttypc/ttypc"
 #add2img "../../phoenix-rtos-filesystems/meterfs/meterfs"
