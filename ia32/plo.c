@@ -19,6 +19,7 @@
 #include "plostd.h"
 #include "timer.h"
 #include "serial.h"
+#include "a20.h"
 
 extern cmds;
 
@@ -193,6 +194,57 @@ void plo_cmdloop(void)
 }
 
 
+void plo_unlimitfs(void)
+{
+	/* Prepare ring 0 code segment descriptor - selector 0x08 */
+	low_setfar(GDT_SEG, 8, 0xffff);
+	low_setfar(GDT_SEG, 10, 0x0000);
+	low_setfar(GDT_SEG, 12, 0x9a00);
+	low_setfar(GDT_SEG, 14, 0x00cf);
+
+	/* Prepare ring 0 data segment descriptor - selector 0x10 */
+	low_setfar(GDT_SEG, 16, 0xffff);
+	low_setfar(GDT_SEG, 18, 0x0000);
+	low_setfar(GDT_SEG, 20, 0x9200);
+	low_setfar(GDT_SEG, 22, 0x00cf);
+
+	/* Prepare GDTR pseudodescriptor */
+	low_setfar(SYSPAGE_SEG, SYSPAGE_OFFS_GDTR + 0, GDT_SIZE - 1);
+	low_setfar(SYSPAGE_SEG, SYSPAGE_OFFS_GDTR + 2, GDT_SEG << 4);
+	low_setfar(SYSPAGE_SEG, SYSPAGE_OFFS_GDTR + 4, GDT_SEG >> 12);
+
+	/* Disable interrupts */
+	low_cli();
+
+#asm
+	push bx
+
+	; Load gdt register
+	mov eax, #SYSPAGE_SEG
+	lgdt [eax]
+	
+	; Switch to pmode by setting pmode bit
+	mov eax, cr0
+	or al, 1
+	mov cr0, eax
+
+	; Select descriptor 1 (0x08 = 1000b)
+	mov bx, #0x08
+
+	; Back to realmode by toggling bit again
+	and al, #0xfe
+	mov cr0, eax
+
+	pop bx
+#endasm
+
+	/* Enable A20 line */
+	a20_enable();
+	/* Enable interrupts */
+	low_sti();
+}
+
+
 void plo_init(void)
 {
 	u16 t;
@@ -202,6 +254,9 @@ void plo_init(void)
 	timer_init();
 	serial_init(BPS_115200);
 	phfs_init();
+
+	/* Enter unreal mode */
+	plo_unlimitfs();
 
 #ifdef CONSOLE_SERIAL
 	serial_write(0, "\033[?25h", 6);
