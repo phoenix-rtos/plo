@@ -28,10 +28,13 @@ u8 a20_test(void)
 	push edi
 	push fs
 
+	xor ax, ax
+	mov fs, ax
+	seg fs
+
 	mov esi, #0x00000900
 	mov edi, #0x00100900
 
-	seg fs
 	; Read and store the original dword at [edi]
 	mov eax, dword ptr [edi]
 	; Save the current value
@@ -71,15 +74,29 @@ l2:
 }
 
 
-static u8 wait_kbd_status(u8 bit)
+static u8 wait_kbd_status(u8 bit, u8 state)
 {
 	u16 i;
 
-	for (i = 0; i < 65535; i++)
-		if (!(low_inb(0x64) & (1 << bit)))
+	for (i = 0; i < 0xffff; i++)
+		if (!(low_inb(0x64) & (1 << bit) ^ (state << bit)))
 			return 1;
 
 	return 0;
+}
+
+
+/* Wait for kbd output buffer to be full, so we can read */
+static u8 wait_kbd_read(void)
+{
+	return wait_kbd_status(0, 1);
+}
+
+
+/* Wait for kbd input buffer to be empty, so we can write */
+static u8 wait_kbd_write(void)
+{
+	return wait_kbd_status(1, 0);
 }
 
 
@@ -92,22 +109,22 @@ u8 a20_enable(void)
 		return 1;
 
 	/* Enable A20 using keyboard controller */
-	if (!wait_kbd_status(1))
+	if (!wait_kbd_write())
 		return 0;
 
 	low_outb(0x64, 0xd0);
 
-	if (!wait_kbd_status(0))
+	if (!wait_kbd_read())
 		return 0;
 	
 	byte = low_inb(0x60);
 
-	if (!wait_kbd_status(1))
+	if (!wait_kbd_write())
 		return 0;
 
 	low_outb(0x64, 0xd1);
 
-	if (!wait_kbd_status(1))
+	if (!wait_kbd_write())
 		return 0;
 
 	low_outb(0x60, byte | 2);
@@ -115,7 +132,7 @@ u8 a20_enable(void)
 	/* Send 0xff (Pulse Output Port NULL) */
 	low_outb(0x64, 0xff);
 
-	if (!wait_kbd_status(1))
+	if (!wait_kbd_write())
 		return 0;
 
 	/* Now test the A20 line */
