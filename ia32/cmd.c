@@ -9,6 +9,8 @@
  * Copyright 2001, 2005 Pawel Pisarczyk
  * Author: Pawel Pisarczyk, Pawel Kolodziej
  *
+ * This file is part of Phoenix-RTOS.
+ *
  * %LICENSE%
  */
 
@@ -262,7 +264,6 @@ void cmd_loadkernel(unsigned int pdn, char *arg, u16 *po)
 	Elf32_Ehdr hdr;
 	Elf32_Phdr phdr;
 	Elf32_Word i, k;
-	Elf32_Half seg, offs;
 	Elf32_Word size, l;
 	u8 buff[384];
 	int err;
@@ -348,8 +349,6 @@ void cmd_loadkernel(unsigned int pdn, char *arg, u16 *po)
 				(u16)(phdr.p_vaddr >> 16), (u16)(phdr.p_vaddr & 0xffff), (u16)(loffs >> 16), (u16)(loffs & 0xffff));
 
 			for (i = 0; i < phdr.p_filesz / sizeof(buff); i++) {
-				seg = loffs / 16;
-				offs = loffs % 16;
 
 				p = phdr.p_offset + i * sizeof(buff);
 				if ((err = phfs_read(pdn, h, &p, buff, (u32)sizeof(buff))) < 0) {
@@ -357,7 +356,7 @@ void cmd_loadkernel(unsigned int pdn, char *arg, u16 *po)
 					return;
 				}
 
-				low_copyto(seg, offs, buff, sizeof(buff));
+				low_copytoabs(loffs, buff, sizeof(buff));
 				loffs += sizeof(buff);
 				cmd_progress(i);
 			}
@@ -374,10 +373,7 @@ void cmd_loadkernel(unsigned int pdn, char *arg, u16 *po)
 
 			p = phdr.p_offset + i * sizeof(buff) + size;
 
-			seg = loffs / 16;
-			offs = loffs % 16;
-
-			low_copyto(seg, offs, buff, size);
+			low_copytoabs(loffs, buff, size);
 			loffs += size;
 			cmd_progress(i);
 
@@ -387,9 +383,8 @@ void cmd_loadkernel(unsigned int pdn, char *arg, u16 *po)
 
 			for (i = 0; i < phdr.p_memsz - phdr.p_filesz;) {
 				int len = min(phdr.p_memsz - phdr.p_filesz - i, sizeof(buff));
-				seg = loffs / 16;
-				offs = loffs % 16;
-				low_copyto(seg, offs, buff, len);
+
+				low_copytoabs(loffs, buff, len);
 				loffs += len;
 				i += len;
 			}
@@ -673,4 +668,3 @@ void cmd_parse(char *line)
 
 	return;
 }
-
