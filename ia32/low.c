@@ -5,8 +5,9 @@
  *
  * Low-level routines
  *
- * Copyright 2012 Phoenix Systems
+ * Copyright 2012, 2020 Phoenix Systems
  * Copyright 2001, 2005 Pawel Pisarczyk
+ * Author: Pawel Pisarczyk, Lukasz Kosinski
  *
  * This file is part of Phoenix-RTOS.
  *
@@ -184,6 +185,92 @@ u16 low_getfar(u16 segm, u16 offs)
 }
 
 
+void low_setfarbabs(u32 addr, u8 v)
+{
+#asm
+	push bp
+	mov bp, sp
+	push ebx
+	push fs
+
+	xor ax, ax
+	mov fs, ax
+	mov eax, 4[bp]
+	mov bl, 8[bp]
+	seg fs
+	mov byte ptr [eax], bl
+
+	pop fs
+	pop ebx
+	pop bp
+#endasm
+}
+
+
+u8 low_getfarbabs(u32 addr)
+{
+#asm
+	push bp
+	mov bp, sp
+	push ebx
+	push fs
+
+	xor ax, ax
+	mov fs, ax
+	mov ebx, 4[bp]
+	seg fs
+	mov al, byte ptr [ebx]
+
+	pop fs
+	pop ebx
+	pop bp
+#endasm
+}
+
+
+void low_setfarabs(u32 addr, u32 v)
+{
+#asm
+	push bp
+	mov bp, sp
+	push ebx
+	push fs
+
+	xor ax, ax
+	mov fs, ax
+	mov eax, 4[bp]
+	mov ebx, 8[bp]
+	seg fs
+	mov dword ptr [eax], ebx
+
+	pop fs
+	pop ebx
+	pop bp
+#endasm
+}
+
+
+u32 low_getfarabs(u32 addr)
+{
+#asm
+	push bp
+	mov bp, sp
+	push ebx
+	push fs
+
+	xor ax, ax
+	mov fs, ax
+	mov ebx, 4[bp]
+	seg fs
+	mov eax, dword ptr [ebx]
+
+	pop fs
+	pop ebx
+	pop bp
+#endasm
+}
+
+
 void low_copyto(u16 segm, u16 offs, void *src, unsigned int l)
 {
 #asm
@@ -262,6 +349,30 @@ void low_memcpy(char *dst, char *src, unsigned int l)
 	pop cx
 	pop bp
 #endasm
+}
+
+
+void low_copytoabs(u32 addr, void *src, unsigned int l)
+{
+	unsigned int i;
+
+	for (i = 0; i < l / sizeof(u32); i++)
+		low_setfarabs(addr + i * sizeof(u32), *((u32 *)src + i));
+	
+	for (i *= sizeof(u32); i < l; i++)
+		low_setfarbabs(addr + i, *((u8 *)src + i));
+}
+
+
+void low_copyfromabs(u32 addr, void *dst, unsigned int l)
+{
+	unsigned int i;
+
+	for (i = 0; i < l / sizeof(u32); i++)
+		*((u32 *)dst + i) = low_getfarabs(addr + i * sizeof(u32));
+	
+	for (i *= sizeof(u32); i < l; i++)
+		*((u8 *)dst + i) = low_getfarbabs(addr + i);
 }
 
 

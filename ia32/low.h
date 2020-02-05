@@ -5,8 +5,11 @@
  *
  * Low-level routines
  *
- * Copyright 2012 Phoenix Systems
+ * Copyright 2012, 2020 Phoenix Systems
  * Copyright 2001, 2005, 2012 Pawel Pisarczyk
+ * Author: Pawel Pisarczyk, Lukasz Kosinski
+ *
+ * This file is part of Phoenix-RTOS.
  *
  * %LICENSE%
  */
@@ -113,11 +116,23 @@ extern void low_setfar(u16 segm, u16 offs, u16 v);
 
 extern u16 low_getfar(u16 segm, u16 offs);
 
+extern void low_setfarbabs(u32 addr, u8 v);
+
+extern u8 low_getfarbabs(u32 addr);
+
+extern void low_setfarabs(u32 addr, u32 v);
+
+extern u32 low_getfarabs(u32 addr);
+
 extern void low_copyto(u16 segm, u16 offs, void *src, unsigned int l);
 
 extern void low_copyfrom(u16 segm, u16 offs, void *dst, unsigned int l);
 
 extern void low_memcpy(char *dst, char *src, unsigned int l);
+
+extern void low_copytoabs(u32 addr, void *src, unsigned int l);
+
+extern void low_copyfromabs(u32 addr, void *dst, unsigned int l);
 
 extern u16 low_getcs(void);
 
