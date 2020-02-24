@@ -31,9 +31,12 @@ all: plo
 	$(AS) -o $*.o $<
 
 plo: $(OBJS)
-	$(LD) -T0 -d -o plo.bin $(OBJS)
-#	@./mkimg.sh ./plo.bin
+	$(LD) -T0 -d -o plo $(OBJS)
 
+.PHONY: clean
 clean:
-	rm -f *.o *~ core *.s
+	echo "rm -f *.o *~ core *.s"
 
+ifneq ($(filter clean,$(MAKECMDGOALS)),)
+	$(shell rm -f *.o *~ core *.s)
+endif
