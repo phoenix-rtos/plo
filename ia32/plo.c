@@ -5,9 +5,9 @@
  *
  * Loader console
  *
- * Copyright 2012, 2017 Phoenix Systems
+ * Copyright 2012, 2017, 2020 Phoenix Systems
  * Copyright 2001, 2005 Pawel Pisarczyk
- * Author: Pawel Pisarczyk
+ * Author: Pawel Pisarczyk, Lukasz Kosinski
  *
  * This file is part of Phoenix-RTOS.
  *
@@ -194,13 +194,13 @@ void plo_cmdloop(void)
 }
 
 
-void plo_unlimitfs(void)
+void plo_unreal(void)
 {
-	/* Prepare ring 0 code segment descriptor - selector 0x08 */
+	/* Prepare ring 0 code segment descriptor (16-bit) - selector 0x08 */
 	low_setfar(GDT_SEG, 8, 0xffff);
 	low_setfar(GDT_SEG, 10, 0x0000);
 	low_setfar(GDT_SEG, 12, 0x9a00);
-	low_setfar(GDT_SEG, 14, 0x00cf);
+	low_setfar(GDT_SEG, 14, 0x0000);
 
 	/* Prepare ring 0 data segment descriptor - selector 0x10 */
 	low_setfar(GDT_SEG, 16, 0xffff);
@@ -213,34 +213,53 @@ void plo_unlimitfs(void)
 	low_setfar(SYSPAGE_SEG, SYSPAGE_OFFS_GDTR + 2, GDT_SEG << 4);
 	low_setfar(SYSPAGE_SEG, SYSPAGE_OFFS_GDTR + 4, GDT_SEG >> 12);
 
-	/* Disable interrupts */
 	low_cli();
 
 #asm
-	push bx
+	; Save real mode segment registers
+	push ds
+	push es
+	push fs
+	push gs
 
-	; Load gdt register
-	mov eax, #SYSPAGE_SEG
-	lgdt [eax]
-	
+	; Load GDT into GDTR
+	mov ax, #SYSPAGE_SEG
+	mov es, ax
+	seg es
+	lgdt 0
+
 	; Switch to pmode by setting pmode bit
 	mov eax, cr0
-	or al, 1
+	inc eax
 	mov cr0, eax
 
-	; Select descriptor 1 (0x08 = 1000b)
-	mov bx, #0x08
+	; jmp far prot
+	db 0x66, 0xea
+	dd prot + 0x7c00
+	dw 0x08
+
+prot:
+	; Reload the segment registers to activate the new segment limits
+	mov ax, #0x10
+	mov ds, ax
+	mov es, ax
+	mov fs, ax
+	mov gs, ax
 
 	; Back to realmode by toggling bit again
-	and al, #0xfe
+	mov eax, cr0
+	dec eax
 	mov cr0, eax
+	jmp 0x7c0:real
 
-	pop bx
+real:
+	; Reload the segment registers to match the base address and the selector
+	pop gs
+	pop fs
+	pop es
+	pop ds
 #endasm
 
-	/* Enable A20 line */
-	a20_enable();
-	/* Enable interrupts */
 	low_sti();
 }
 
@@ -250,13 +269,17 @@ void plo_init(void)
 	u16 t;
 	u8 c;
 
+	/* Enter unreal mode */
+	plo_unreal();
+	/* Enable A20 line */
+	a20_enable();
+	/* From now on we should have access to 4GB of memory */
+	/* through zeroed segment registers ds, es, fs and gs */
+
 	low_init();
 	timer_init();
 	serial_init(BPS_115200);
 	phfs_init();
-
-	/* Enter unreal mode */
-	plo_unlimitfs();
 
 #ifdef CONSOLE_SERIAL
 	serial_write(0, "\033[?25h", 6);
