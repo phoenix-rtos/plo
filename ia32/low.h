@@ -167,6 +167,12 @@ extern int low_irqinst(u16 irq, int (*isr)(u16, void *), void *data);
 extern int low_irquninst(u16 irq);
 
 
+/* Function enables upper memory access in the real mode (a.k.a big unreal mode) */
+extern void low_unreal(void);
+
+/* Function enables A20 line */
+extern u8 low_a20(void);
+
 extern void low_init(void);
 
 extern void low_done(void);
