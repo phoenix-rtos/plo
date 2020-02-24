@@ -686,6 +686,9 @@ int low_launch(void)
 	low_setfar(SYSPAGE_SEG, SYSPAGE_OFFS_STACKSIZE + 0, STACK_SIZE);
 	low_setfar(SYSPAGE_SEG, SYSPAGE_OFFS_STACKSIZE + 2, 0);
 
+	/* Set kernel args */
+	low_copyto(SYSPAGE_SEG, SYSPAGE_OFFS_ARG, KERNEL_ARGS, plostd_strlen(KERNEL_ARGS) + 1);
+
 	/* Set text mode */
 	low_setmode(0x03);
 
