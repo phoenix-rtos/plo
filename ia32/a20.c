@@ -17,23 +17,21 @@
 #include "a20.h"
 
 
-u8 a20_test(void)
+static u8 a20_dotest(void)
 {
 #asm
-	push bp
-	mov bp, sp
 	push ebx
 	push ecx
-	push esi
 	push edi
+	push esi
 	push fs
 
 	xor ax, ax
 	mov fs, ax
 	seg fs
 
-	mov esi, #0x00000900
 	mov edi, #0x00100900
+	mov esi, #0x00000900
 
 	; Read and store the original dword at [edi]
 	mov eax, dword ptr [edi]
@@ -51,7 +49,7 @@ l1:
 	loope l1
 
 	; If equal jmp over (return 1)
-	je word l2
+	je near l2
 	; al = 1, A20 is set
 	inc al
 
@@ -65,12 +63,23 @@ l2:
 	mov dword ptr [edi], ebx
 
 	pop fs
-	pop edi
 	pop esi
+	pop edi
 	pop ecx
 	pop ebx
-	pop bp
 #endasm
+}
+
+
+u8 a20_test(void)
+{
+	u8 ret;
+
+	low_cli();
+	ret = a20_dotest();
+	low_sti();
+
+	return ret;
 }
 
 
@@ -104,37 +113,55 @@ u8 a20_enable(void)
 {
 	u8 byte;
 
+	low_cli();
+
 	/* A20 already active */
-	if (a20_test())
+	if (a20_dotest()) {
+		low_sti();
 		return 1;
+	}
 
 	/* Enable A20 using keyboard controller */
-	if (!wait_kbd_write())
+	if (!wait_kbd_write()) {
+		low_sti();
 		return 0;
+	}
 
 	low_outb(0x64, 0xd0);
 
-	if (!wait_kbd_read())
+	if (!wait_kbd_read()) {
+		low_sti();
 		return 0;
+	}
 	
 	byte = low_inb(0x60);
 
-	if (!wait_kbd_write())
+	if (!wait_kbd_write()) {
+		low_sti();
 		return 0;
+	}
 
 	low_outb(0x64, 0xd1);
 
-	if (!wait_kbd_write())
+	if (!wait_kbd_write()) {
+		low_sti();
 		return 0;
+	}
 
 	low_outb(0x60, byte | 2);
 	/* Wait for the A20 line to settle down (up to 20usecs) */
 	/* Send 0xff (Pulse Output Port NULL) */
 	low_outb(0x64, 0xff);
 
-	if (!wait_kbd_write())
+	if (!wait_kbd_write()) {
+		low_sti();
 		return 0;
+	}
 
 	/* Now test the A20 line */
-	return a20_test();
+	byte = a20_dotest();
+
+	low_sti();
+
+	return byte;
 }
