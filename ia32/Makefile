@@ -19,7 +19,7 @@ CFLAGS = -ansi -I.
 AS = as86
 LD = ld86
 
-SRCS = plo.c low.c plostd.c cmd.c timer.c serial.c msg.c phfs.c phoenixd.c disk.c a20.c
+SRCS = plo.c low.c plostd.c cmd.c timer.c serial.c msg.c phfs.c phoenixd.c disk.c
 OBJS = _plo.o _lib.o _low.o $(SRCS:.c=.o)
 
 all: plo

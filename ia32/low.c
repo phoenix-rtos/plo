@@ -800,10 +800,137 @@ int low_mmget(unsigned int n, low_mmitem_t *mmitem)
 /* Initialization */
 
 
+void low_unreal(void)
+{
+	/* Prepare ring 0 code segment descriptor (16-bit) - selector 0x08 */
+	low_setfar(GDT_SEG, 8, 0xffff);
+	low_setfar(GDT_SEG, 10, 0x0000);
+	low_setfar(GDT_SEG, 12, 0x9a00);
+	low_setfar(GDT_SEG, 14, 0x0000);
+
+	/* Prepare ring 0 data segment descriptor - selector 0x10 */
+	low_setfar(GDT_SEG, 16, 0xffff);
+	low_setfar(GDT_SEG, 18, 0x0000);
+	low_setfar(GDT_SEG, 20, 0x9200);
+	low_setfar(GDT_SEG, 22, 0x00cf);
+
+	/* Prepare GDTR pseudodescriptor */
+	low_setfar(SYSPAGE_SEG, SYSPAGE_OFFS_GDTR + 0, GDT_SIZE - 1);
+	low_setfar(SYSPAGE_SEG, SYSPAGE_OFFS_GDTR + 2, GDT_SEG << 4);
+	low_setfar(SYSPAGE_SEG, SYSPAGE_OFFS_GDTR + 4, GDT_SEG >> 12);
+
+	low_cli();
+
+#asm
+	; Save real mode segment registers
+	push ds
+	push es
+	push fs
+	push gs
+
+	; Load GDT into GDTR
+	mov ax, #SYSPAGE_SEG
+	mov es, ax
+	seg es
+	lgdt 0
+
+	; Switch to pmode by setting pmode bit
+	mov eax, cr0
+	inc eax
+	mov cr0, eax
+
+	; jmp far prot
+	db 0x66, 0xea
+	dd prot + 0x7c00
+	dw 0x08
+
+prot:
+	; Reload the segment registers to activate the new segment limits
+	mov ax, #0x10
+	mov ds, ax
+	mov es, ax
+	mov fs, ax
+	mov gs, ax
+
+	; Back to realmode by toggling bit again
+	mov eax, cr0
+	dec eax
+	mov cr0, eax
+	jmp 0x7c0:real
+
+real:
+	; Reload the segment registers to match the base address and the selector
+	pop gs
+	pop fs
+	pop es
+	pop ds
+#endasm
+
+	low_sti();
+}
+
+
+/* Wait for kbd status bits with timeout */
+static u8 low_waitkbdstatus(u8 bit, u8 state)
+{
+	u16 i;
+
+	for (i = 0; i < 0xffffu; i++)
+		if (!(low_inb(0x64) & (1 << bit) ^ (state << bit)))
+			return 1;
+
+	return 0;
+}
+
+
+/* Wait for kbd input buffer to be empty, so we can write */
+static u8 low_waitkbdwrite(void)
+{
+	return low_waitkbdstatus(1, 0);
+}
+
+
+u8 low_a20(void)
+{
+	low_cli();
+
+	/* Enable A20 using keyboard controller */
+	if (!low_waitkbdwrite()) {
+		low_sti();
+		return 0;
+	}
+
+	low_outb(0x64, 0xd1);
+
+	if (!low_waitkbdwrite()) {
+		low_sti();
+		return 0;
+	}
+
+	low_outb(0x60, 0xdf);
+
+	if (!low_waitkbdwrite()) {
+		low_sti();
+		return 0;
+	}
+
+	low_sti();
+
+	return 1;
+}
+
+
 void low_init(void)
 {
 	int res;
 	int k;
+
+	/* Enter unreal mode */
+	low_unreal();
+	/* Enable A20 line */
+	low_a20();
+	/* From now on we should have access to 4GB of memory */
+	/* through zeroed out segment registers ds, es, fs and gs */
 
 	/* Set graphics mode */
 	low_setmode(0x12);

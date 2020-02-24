@@ -19,7 +19,6 @@
 #include "plostd.h"
 #include "timer.h"
 #include "serial.h"
-#include "a20.h"
 
 extern cmds;
 
@@ -194,87 +193,10 @@ void plo_cmdloop(void)
 }
 
 
-void plo_unreal(void)
-{
-	/* Prepare ring 0 code segment descriptor (16-bit) - selector 0x08 */
-	low_setfar(GDT_SEG, 8, 0xffff);
-	low_setfar(GDT_SEG, 10, 0x0000);
-	low_setfar(GDT_SEG, 12, 0x9a00);
-	low_setfar(GDT_SEG, 14, 0x0000);
-
-	/* Prepare ring 0 data segment descriptor - selector 0x10 */
-	low_setfar(GDT_SEG, 16, 0xffff);
-	low_setfar(GDT_SEG, 18, 0x0000);
-	low_setfar(GDT_SEG, 20, 0x9200);
-	low_setfar(GDT_SEG, 22, 0x00cf);
-
-	/* Prepare GDTR pseudodescriptor */
-	low_setfar(SYSPAGE_SEG, SYSPAGE_OFFS_GDTR + 0, GDT_SIZE - 1);
-	low_setfar(SYSPAGE_SEG, SYSPAGE_OFFS_GDTR + 2, GDT_SEG << 4);
-	low_setfar(SYSPAGE_SEG, SYSPAGE_OFFS_GDTR + 4, GDT_SEG >> 12);
-
-	low_cli();
-
-#asm
-	; Save real mode segment registers
-	push ds
-	push es
-	push fs
-	push gs
-
-	; Load GDT into GDTR
-	mov ax, #SYSPAGE_SEG
-	mov es, ax
-	seg es
-	lgdt 0
-
-	; Switch to pmode by setting pmode bit
-	mov eax, cr0
-	inc eax
-	mov cr0, eax
-
-	; jmp far prot
-	db 0x66, 0xea
-	dd prot + 0x7c00
-	dw 0x08
-
-prot:
-	; Reload the segment registers to activate the new segment limits
-	mov ax, #0x10
-	mov ds, ax
-	mov es, ax
-	mov fs, ax
-	mov gs, ax
-
-	; Back to realmode by toggling bit again
-	mov eax, cr0
-	dec eax
-	mov cr0, eax
-	jmp 0x7c0:real
-
-real:
-	; Reload the segment registers to match the base address and the selector
-	pop gs
-	pop fs
-	pop es
-	pop ds
-#endasm
-
-	low_sti();
-}
-
-
 void plo_init(void)
 {
 	u16 t;
 	u8 c;
-
-	/* Enter unreal mode */
-	plo_unreal();
-	/* Enable A20 line */
-	a20_enable();
-	/* From now on we should have access to 4GB of memory */
-	/* through zeroed segment registers ds, es, fs and gs */
 
 	low_init();
 	timer_init();
