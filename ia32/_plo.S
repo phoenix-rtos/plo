@@ -5,8 +5,9 @@
 ;
 ; Loader startup code
 ;
-; Copyright 2012 Phoenix Systems
+; Copyright 2012, 2020 Phoenix Systems
 ; Copyright 2001, 2005, 2006 Pawel Pisarczyk
+; Author: Pawel Pisarczyk, Lukasz Kosinski
 ;
 ; This file is part of Phoenix-RTOS.
 ;
@@ -44,8 +45,8 @@ __plo_timeout:
 
 .globl __plo_command
 __plo_command:
-.ascii "load floppy 20e; go!"
-.zerow 50
+.ascii "load hd0; go!\0"
+.zerow 60
 
 __plo_digitsh:
 .ascii "0123456789abcdef"
@@ -181,22 +182,8 @@ __plo_read_l1:
 
 ; Get offset
 	pop bx
-
 	push ax
-
-call __plo_debug
-mov ax, cx
-call __plo_debug
-mov ax, dx
-call __plo_debug
-mov ax, #0xabcd
-call __plo_debug
-
-pop ax
-push ax
-
 	int 0x13
-
 	jc __plo_read_l3
 	pop ax
 
