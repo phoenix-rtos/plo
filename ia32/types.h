@@ -5,8 +5,9 @@
  *
  * Common types
  *
- * Copyright 2012 Pawel Pisarczyk
- * Copyright 2001, 2005 Pawel Pisarczyk
+ * Copyright 2020 Phoenix Systems
+ * Copyright 2001, 2005, 2012 Pawel Pisarczyk
+ * Author: Pawel Pisarczyk, Lukasz Kosinski
  *
  * This file is part of Phoenix-RTOS.
  *
@@ -21,6 +22,11 @@ typedef unsigned char u8;
 typedef unsigned int  u16;
 typedef unsigned long u32;
 typedef long          s32;
+
+typedef struct {
+	u32 lo;
+	u32 hi;
+} u64;
 
 
 /* stdarg definitions */
