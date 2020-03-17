@@ -73,7 +73,7 @@
 
 
 /* Baud rates */
-typedef enum {
+enum {
 	BPS_50,     BPS_75,     BPS_110,    BPS_135,    BPS_150,
 	BPS_300,    BPS_600,    BPS_1200,   BPS_1800,   BPS_2000,
 	BPS_2400,   BPS_3600,   BPS_4800,   BPS_7200,   BPS_9600,
