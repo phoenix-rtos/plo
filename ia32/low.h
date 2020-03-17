@@ -66,8 +66,8 @@ typedef struct _syspage_t {
 
 	u32 kernel;
 	u32 kernelsize;
-	char arg[256];
 	u32 console;
+	char arg[256];
 
 	u16 mmsize;
 	low_mmitem_t mm[MM_MAXSZ];
