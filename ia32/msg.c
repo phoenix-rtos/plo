@@ -158,4 +158,3 @@ int msg_send(u16 pn, msg_t *smsg, msg_t *rmsg)
 
 	return ERR_MSG_IO;
 }
-
