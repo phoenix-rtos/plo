@@ -454,6 +454,16 @@ void cmd_load(char *s)
 
 	po = SYSPAGE_OFFS_PROGS;
 
+	/* Get kernel args */
+	cmd_skipblanks(s, &p, DEFAULT_BLANKS);
+	if (cmd_getnext(s, &p, DEFAULT_BLANKS, NULL, word, sizeof(word)) == NULL) {
+		plostd_printf(ATTR_ERROR, "\nSize error!\n");
+		return;
+	}
+	/* Set kernel args */
+	plostd_printf(ATTR_DEBUG, "arg=%s\n", word);
+	low_copyto(SYSPAGE_SEG, SYSPAGE_OFFS_ARG, word, plostd_strlen(word) + 1);
+
 	/* Load programs */
 	for (i = 0;; i++) {
 		cmd_skipblanks(s, &p, DEFAULT_BLANKS);

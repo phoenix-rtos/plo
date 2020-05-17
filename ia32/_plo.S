@@ -41,7 +41,7 @@ __plo_size:
 
 .globl __plo_timeout
 __plo_timeout:
-	dw 0001
+	dw 0003
 
 .globl __plo_command
 __plo_command:

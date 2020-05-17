@@ -41,7 +41,7 @@
 #define KERNEL_PATH  "phoenix"
 
 /* Kernel args */
-#define KERNEL_ARGS  "Xpinit"
+#define KERNEL_ARGS  ""
 
 /* Kernel adresses and sizes */
 #define KERNEL_BASE  0xc0000000
