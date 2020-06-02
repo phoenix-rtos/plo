@@ -10,8 +10,13 @@
 # %LICENSE%
 #
 
-BCC ?= /Users/pawel/devel/dev86-0.16.17/bin/ncc
-# on mac use: make BCC=/Users/ppisarczyk/devel/dev86-0.16.17/bin/ncc
+ifneq (, $(shell which ncc))
+	BCC ?= ncc
+else ifneq (, $(shell which bcc))
+	BCC ?= bcc
+else
+	$(error "No BCC nor NCC found in PATH. Consider apt-get install bcc.")
+endif
 
 CFLAGS = -ansi -I.
 #CFLAGS += -DCONSOLE_SERIAL
