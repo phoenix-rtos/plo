@@ -286,12 +286,20 @@ static void serial_initone(unsigned int pn, u16 base, u16 irq, u8 baud, serial_t
 }
 
 
-void serial_init(u8 baud)
+void serial_init(u8 baud, u8 *st)
 {
 	if (serial_SCH311Xdetect(SCH311X_PORT) >= 0) {
+		*st = 1;
+		if (baud == 0xff)
+			baud = BPS_460800;
 		serial_SCH311X_UARTsetmode(SCH311X_PORT, SCH311X_UART1, bauds[baud].mode);
 		serial_SCH311X_UARTsetmode(SCH311X_PORT, SCH311X_UART2, bauds[baud].mode);
 	}
+	else {
+		*st = 0;
+		baud = BPS_115200;
+	}
+
 	serial_initone(0, COM1_BASE, COM1_IRQ, baud, &serials[0]);
 	serial_initone(1, COM2_BASE, COM2_IRQ, baud, &serials[1]);
 

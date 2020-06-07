@@ -196,11 +196,11 @@ void plo_cmdloop(void)
 void plo_init(void)
 {
 	u16 t;
-	u8 c;
+	u8 c, st;
 
 	low_init();
 	timer_init();
-	serial_init(BPS_115200);
+	serial_init(-1, &st);
 	phfs_init();
 
 #ifdef CONSOLE_SERIAL
@@ -208,6 +208,7 @@ void plo_init(void)
 #endif
 
 	plostd_printf(ATTR_LOADER, "%s\n", WELCOME);
+	plostd_printf(ATTR_INIT, "Detected UART=%d, setting to maximal speed\n", st);
 
 	/* Wait and execute saved loader command */
 	for (t = _plo_timeout; t; t--) {
