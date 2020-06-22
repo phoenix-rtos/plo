@@ -24,16 +24,17 @@
 #define MSGREAD_FRAME   1
 
 
-u32 msg_csum(msg_t *msg)
+static u32 msg_csum(msg_t *msg)
 {
-	unsigned int k;
-	u32 csum;
+	u32 k;
+	u16 csum;
 
 	csum = 0;
 	for (k = 0; k < MSG_HDRSZ + msg_getlen(msg); k++) {
 		if (k >= sizeof(msg->csum))
-			csum += (u32)(*((u8 *)msg + k));
+			csum += *((u8 *)msg + k);
 	}
+	csum += msg_getseq(msg);
 	return csum;
 }
 
@@ -134,7 +135,7 @@ int msg_read(u16 pn, msg_t *msg, u16 timeout, int *state)
 	}
 
 	/* Verify received message */
-	if (msg->csum != msg_csum(msg))
+	if (msg_getcsum(msg) != msg_csum(msg))
 		return ERR_MSG_IO;
 
 	return l;
@@ -146,7 +147,7 @@ int msg_send(u16 pn, msg_t *smsg, msg_t *rmsg)
 	unsigned int retr;
 	int state = MSGREAD_DESYN;
 
-	smsg->csum = msg_csum(smsg);
+	msg_setcsum(smsg, msg_csum(smsg));
 	for (retr = 0; retr < MSGRECV_MAXRETR; retr++) {
 		if (msg_write(pn, smsg) < 0)
 			continue;
