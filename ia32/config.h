@@ -40,8 +40,6 @@
 /* Kernel file */
 #define KERNEL_PATH  "phoenix"
 
-/* Kernel args */
-#define KERNEL_ARGS  ""
 
 /* Kernel adresses and sizes */
 #define KERNEL_BASE  0xc0000000
@@ -68,8 +66,10 @@
 
 /* Disk cache */
 #define SECTOR_SIZE  512
-#define CACHE_SIZE   32
-#define CACHE_OFFS   0x9000
+#define RCACHE_SIZE  32
+#define WCACHE_SIZE  24
+#define RCACHE_OFFS  0x9000
+#define WCACHE_OFFS  (RCACHE_OFFS + RCACHE_SIZE * SECTOR_SIZE)
 
 
 #endif

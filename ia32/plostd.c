@@ -18,6 +18,21 @@
 #include "plostd.h"
 
 
+int plostd_isalnum(char c)
+{
+	/* test digit */
+	if ((c >= '0') && (c <= '9'))
+		return 1;
+
+	/* test letter */
+	c &= ~0x20;
+	if ((c >= 'A') && (c <= 'Z'))
+		return 1;
+
+	return 0;
+}
+
+
 int plostd_strlen(char *s)
 {
 	char *p;
@@ -103,6 +118,39 @@ char *plostd_itoah(u8 *ip, u8 is, char *buff, int lz)
 }
 
 
+static unsigned int _plostd_ltoa(unsigned long n, unsigned int base, char *buff)
+{
+	static char *digits = "0123456789abcdef";
+	unsigned int i = (n < base) ? 0 : _plostd_ltoa(n / base, base, buff);
+
+	buff[i] = digits[n % base];
+	return i + 1;
+}
+
+
+char *plostd_ltoa(unsigned long n, unsigned int base, char *buff)
+{
+	if (base == 2) {
+		buff[0] = '0';
+		buff[1] = 'b';
+		buff += 2;
+	}
+	else if (base == 8) {
+		buff[0] = '0';
+		buff[1] = 'o';
+		buff += 2;
+	}
+	else if (base == 16) {
+		buff[0] = '0';
+		buff[1] = 'x';
+		buff += 2;
+	}
+
+	buff[_plostd_ltoa(n, base, buff)] = '\0';
+	return buff;
+}
+
+
 unsigned int plostd_ahtoi(char *s)
 {
 	static char *digitsh = "0123456789abcdef";
@@ -131,6 +179,47 @@ unsigned int plostd_ahtoi(char *s)
 		v += (i << (pow * 4));
 	}
 	return v;
+}
+
+
+static unsigned long _plostd_atol(char *s, unsigned int base, unsigned long n)
+{
+	unsigned int x;
+
+	if (plostd_isalnum(*s)) {
+		if ((x = *s - '0') > 9)
+			x = (*s | 0x20) - 'a' + 10;
+		
+		if (x >= base)
+			return ERR_ARG;
+		
+		return _plostd_atol(s + 1, base, n * base + x);
+	}
+
+	return n;
+}
+
+
+unsigned long plostd_atol(char *s)
+{
+	unsigned int base = 10;
+
+	if (s[0] == '0') {
+		if (s[1] == 'b') {
+			base = 2;
+			s += 2;
+		}
+		else if (s[1] == 'x') {
+			base = 16;
+			s += 2;
+		}
+		else if (s[1] == 'o') {
+			base = 8;
+			s += 2;
+		}
+	}
+
+	return _plostd_atol(s, base, 0UL);
 }
 
 
