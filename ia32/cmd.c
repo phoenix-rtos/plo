@@ -583,7 +583,7 @@ void cmd_copy(char *s)
 	for (l = 0; !err && l < len;) {
 		if ((sl = phfs_read(devices[sdn].pdn, sh, &pos, buff, min(sizeof(buff), len - l))) <= 0) {
 			if (sl < 0) {
-				plostd_printf(ATTR_ERROR, "\nFailed to read data from %s!\nError code: %d", devices[sdn].name, sl);
+				plostd_printf(ATTR_ERROR, "\nFailed to read data from %s!", devices[sdn].name);
 				err = 1;
 			}
 			break;
@@ -592,7 +592,7 @@ void cmd_copy(char *s)
 		pos -= sl;
 		for (i = 0; i < sl; i += dl) {
 			if ((dl = phfs_write(devices[ddn].pdn, dh, &pos, buff, sl - i, 0)) < 0) {
-				plostd_printf(ATTR_ERROR, "\nFailed to write data to %s!\nError code: %d", devices[ddn].name, dl);
+				plostd_printf(ATTR_ERROR, "\nFailed to write data to %s!", devices[ddn].name);
 				err = 1;
 				break;
 			}
