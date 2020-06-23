@@ -209,12 +209,12 @@ unsigned long plostd_atol(char *s)
 			base = 2;
 			s += 2;
 		}
-		else if (s[1] == 'x') {
-			base = 16;
-			s += 2;
-		}
 		else if (s[1] == 'o') {
 			base = 8;
+			s += 2;
+		}
+		else if (s[1] == 'x') {
+			base = 16;
 			s += 2;
 		}
 	}
