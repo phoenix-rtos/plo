@@ -25,6 +25,7 @@
 struct {
 	s32 (*open)(u16, char *, u32);
 	s32 (*read)(u16, s32, u32 *, u8 *, u32);
+	s32 (*write)(u16, s32, u32 *, u8 *, u32, u8);
 	s32 (*close)(u16, s16);
 	unsigned int dn;
 } phfs_handlers[PDN_HD3 + 1];
@@ -48,6 +49,15 @@ s32 phfs_read(u16 pdn, s32 handle, u32 *pos, u8 *buff, u32 len)
 }
 
 
+s32 phfs_write(u16 pdn, s32 handle, u32 *pos, u8 *buff, u32 len, u8 sync)
+{
+	if (pdn > PDN_HD3)
+		return ERR_ARG;
+
+	return phfs_handlers[pdn].write(phfs_handlers[pdn].dn, handle, pos, buff, len, sync);
+}
+
+
 s32 phfs_close(u16 pdn, s32 handle)
 {
 	if (pdn > PDN_HD3)
@@ -65,6 +75,7 @@ void phfs_init(void)
 	for (i = 0; i < 2; i++) {
 		phfs_handlers[PDN_COM1 + i].open = phoenixd_open;
 		phfs_handlers[PDN_COM1 + i].read = phoenixd_read;
+		phfs_handlers[PDN_COM1 + i].write = phoenixd_write;
 		phfs_handlers[PDN_COM1 + i].close = phoenixd_close;
 		phfs_handlers[PDN_COM1 + i].dn = i;
 	}
@@ -72,6 +83,7 @@ void phfs_init(void)
 	/* Handlers for floppy disks */
 	phfs_handlers[PDN_FLOPPY].open = disk_open;
 	phfs_handlers[PDN_FLOPPY].read = disk_read;
+	phfs_handlers[PDN_FLOPPY].write = disk_write;
 	phfs_handlers[PDN_FLOPPY].close = disk_close;
 	phfs_handlers[PDN_FLOPPY].dn = 0;
 
@@ -79,6 +91,7 @@ void phfs_init(void)
 	for (i = 0; i < 4; i++) {
 		phfs_handlers[PDN_HD0 + i].open = disk_open;
 		phfs_handlers[PDN_HD0 + i].read = disk_read;
+		phfs_handlers[PDN_HD0 + i].write = disk_write;
 		phfs_handlers[PDN_HD0 + i].close = disk_close;
 		phfs_handlers[PDN_HD0 + i].dn = 0x80 + i;
 	}

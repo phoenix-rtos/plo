@@ -30,6 +30,7 @@
 void cmd_dump(char *s);
 void cmd_go(char *s);
 void cmd_help(char *s);
+void cmd_copy(char *s);
 void cmd_load(char *s);
 void cmd_memmap(char *s);
 void cmd_cmd(char *s);
@@ -46,6 +47,7 @@ struct {
 	{ cmd_dump,    "dump", "    - dumps memory, usage: dump <segment>:<offset>" },
 	{ cmd_go,      "go!", "     - starts Phoenix-RTOS loaded into memory" },
 	{ cmd_help,    "help", "    - prints this message" },
+	{ cmd_copy,    "copy", "    - copies data between devices, usage:\n           copy <src device> <src file/LBA> <dst device> <dst file/LBA> [<len>]" },
 	{ cmd_load,    "load", "    - loads Phoenix-RTOS, usage: load [<boot device>]" },
 	{ cmd_memmap,  "mem", "     - prints physical memory map" },
 	{ cmd_cmd,     "cmd", "     - boot command, usage: cmd [<command>]" },
@@ -152,6 +154,39 @@ char *cmd_getnext(char *line, unsigned int *pos, char *blanks, char *cites, char
 
 	word[wp] = 0;
 	return word;
+}
+
+
+/* Function parses device name and returns its number */
+static unsigned int cmd_getdevice(char *line, unsigned int *pos, char *blanks, char *cites, char *word, unsigned int len)
+{
+	unsigned int dn;
+
+	if (cmd_getnext(line, pos, blanks, cites, word, len) == NULL)
+		return ERR_ARG;
+
+	for (dn = 0; devices[dn].name; dn++) {
+		if (!plostd_strcmp(word, devices[dn].name))
+			break;
+	}
+
+	if (!devices[dn].name)
+		return ERR_ARG;
+
+	return dn;
+}
+
+
+/* Function parses file name / LBA and returns its handle */
+static s32 cmd_gethandle(unsigned int dn, char *line, unsigned int *pos, char *blanks, char *cites, char *word, unsigned int len)
+{
+	if (cmd_getnext(line, pos, blanks, cites, word, len) == NULL)
+		return ERR_ARG;
+
+	if (*word == '\0')
+		return ERR_ARG;
+
+	return (dn >= PDN_COM1 && dn <= PDN_COM2) ? phfs_open(devices[dn].pdn, word, 0) : (s32)plostd_atol(word);
 }
 
 
@@ -491,6 +526,99 @@ void cmd_load(char *s)
 }
 
 
+void cmd_copy(char *s)
+{
+	char word[LINESZ + 1];
+	u8 buff[384], err = 0;
+	unsigned int sdn, ddn, p = 0;
+	u32 i, l, len = -1, pos = 0;
+	s32 sh, dh, sl, dl;
+
+	if ((sdn = cmd_getdevice(s, &p, DEFAULT_BLANKS, NULL, word, sizeof(word))) == -1) {
+		plostd_printf(ATTR_ERROR, "\n'%s' - unknown src device!\n", word);
+		return;
+	}
+
+	if ((sh = cmd_gethandle(sdn, s, &p, DEFAULT_BLANKS, NULL, word, sizeof(word))) < 0) {
+		plostd_printf(ATTR_ERROR, "\nBad src file/LBA specified!\n");
+		return;
+	}
+
+	if ((ddn = cmd_getdevice(s, &p, DEFAULT_BLANKS, NULL, word, sizeof(word))) == -1) {
+		plostd_printf(ATTR_ERROR, "\n'%s' - unknown dst device!\n", word);
+		
+		if (phfs_close(devices[sdn].pdn, sh) < 0)
+			plostd_printf(ATTR_LOADER, "Failed to sync with %s!\n", devices[sdn].name);
+
+		return;
+	}
+
+	if ((dh = cmd_gethandle(ddn, s, &p, DEFAULT_BLANKS, NULL, word, sizeof(word))) < 0) {
+		plostd_printf(ATTR_ERROR, "\nBad dst file/LBA specified!\n");
+
+		if (phfs_close(devices[sdn].pdn, sh) < 0)
+			plostd_printf(ATTR_LOADER, "Failed to sync with %s!\n", devices[sdn].name);
+
+		return;
+	}
+
+	if ((cmd_getnext(s, &p, DEFAULT_BLANKS, NULL, word, sizeof(word)) == NULL) || ((sdn > PDN_COM2) && (*word == '\0')) || ((*word != '\0') && ((len = plostd_atol(word)) == ERR_ARG))) {
+		plostd_printf(ATTR_ERROR, "\nBad len!\n");
+
+		if (phfs_close(devices[sdn].pdn, sh) < 0)
+			plostd_printf(ATTR_LOADER, "Failed to sync with %s!\n", devices[sdn].name);
+
+		if (phfs_close(devices[ddn].pdn, dh) < 0)
+			plostd_printf(ATTR_LOADER, "Failed to sync with %s!\n", devices[ddn].name);
+
+		return;
+	}
+
+	plostd_printf(ATTR_LOADER, "\nCopied 0B");
+	if (len != -1) {
+		len *= SECTOR_SIZE;
+		plostd_printf(ATTR_LOADER, " / %sB", plostd_ltoa(len, 10, buff));
+	}
+
+	for (l = 0; !err && l < len;) {
+		if ((sl = phfs_read(devices[sdn].pdn, sh, &pos, buff, min(sizeof(buff), len - l))) <= 0) {
+			if (sl < 0) {
+				plostd_printf(ATTR_ERROR, "\nFailed to read data from %s!", devices[sdn].name);
+				err = 1;
+			}
+			break;
+		}
+
+		pos -= sl;
+		for (i = 0; i < sl; i += dl) {
+			if ((dl = phfs_write(devices[ddn].pdn, dh, &pos, buff, sl - i, 0)) < 0) {
+				plostd_printf(ATTR_ERROR, "\nFailed to write data to %s!", devices[ddn].name);
+				err = 1;
+				break;
+			}
+		}
+		l += i;
+
+		plostd_printf(ATTR_LOADER, "\rCopied %sB", plostd_ltoa(l, 10, buff));
+		if (len != -1)
+			plostd_printf(ATTR_LOADER, " / %sB", plostd_ltoa(len, 10, buff));
+	}
+
+	plostd_printf(ATTR_LOADER, "\n");
+	
+	if (!err)
+		plostd_printf(ATTR_LOADER, "Finished copying\n");
+
+	if (phfs_close(devices[sdn].pdn, sh) < 0)
+		plostd_printf(ATTR_LOADER, "Failed to sync with %s!\n", devices[sdn].name);
+
+	if (phfs_close(devices[ddn].pdn, dh) < 0)
+		plostd_printf(ATTR_LOADER, "Failed to sync with %s!\n", devices[ddn].name);
+
+	return;
+}
+
+
 void cmd_memmap(char *s)
 {
 	int k, i;
@@ -525,7 +653,7 @@ void cmd_memmap(char *s)
 	plostd_printf(ATTR_LOADER, "%p%p  +0000%p  -  ptable\n", PTABLE_SEG >> 12, PTABLE_SEG << 4, 0x1000);
 	plostd_printf(ATTR_LOADER, "0000%p  +0000%p  -  stack\n", INIT_ESP - STACK_SIZE, STACK_SIZE);
 
-	plostd_printf(ATTR_LOADER, "0000%p  +0000%p  -  plo\n", 0x7c00, CACHE_OFFS - 0x7c00 + CACHE_SIZE * SECTOR_SIZE);
+	plostd_printf(ATTR_LOADER, "0000%p  +0000%p  -  plo\n", 0x7c00, WCACHE_OFFS - 0x7c00 + WCACHE_SIZE * SECTOR_SIZE);
 
 	plostd_printf(ATTR_LOADER, "%p%p  +%p%p  -  kernel\n",
 	              low_getfar(SYSPAGE_SEG, SYSPAGE_OFFS_KERNEL + 2), low_getfar(SYSPAGE_SEG, SYSPAGE_OFFS_KERNEL),

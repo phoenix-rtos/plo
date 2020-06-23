@@ -95,6 +95,8 @@ typedef struct _syspage_t {
 #define IRQ_HANDLED   0
 #define IRQ_DEFAULT   1
 
+#define INT13_READ    0x02
+#define INT13_WRITE   0x03
 
 #define min(a, b)   ((a > b) ? b : a)
 
@@ -145,7 +147,7 @@ extern void low_getc(char *c, char *sc);
 
 extern int low_keypressed(void);
 
-extern int low_int13read(u8 drive, u16 c, u8 h, u8 s, u8 n, u8 *buff);
+extern int low_int13access(u8 mode, u8 drive, u16 c, u8 h, u8 s, u8 n, u8 *buff);
 
 extern int low_int13param(u8 drive, u16 *mc, u8 *mh, u8 *ms);
 

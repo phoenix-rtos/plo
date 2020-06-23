@@ -468,36 +468,36 @@ low_keypressed_l2:
 }
 
 
-int low_int13read(u8 drive, u16 c, u8 h, u8 s, u8 n, u8 *buff)
+int low_int13access(u8 mode, u8 drive, u16 c, u8 h, u8 s, u8 n, u8 *buff)
 {
 #asm
 	push bp
 	mov bp, sp
 
 	push bx
-	push dx
 	push cx
+	push dx
 
-; read sector
-	mov ah, #0x02
-
-	mov cx, 6[bp]
+	mov cx, 8[bp]
 	xchg ch, cl
 	ror cl, #2     /* C */
 
 	xor dx, dx
-	mov dl, 10[bp]
+	mov dl, 12[bp]
 	and dl, #0x3f
 	or cx, dx      /* S */
 
-	mov dh, 8[bp]  /* H */
-	mov dl, 4[bp]  /* drive */
-	mov al, 12[bp] /* n */
-	mov bx, 14[bp] /* buffer */
+	mov dh, 10[bp] /* H */
+	mov dl, 6[bp]  /* drive */
+	mov ah, 4[bp]  /* mode */
+	mov al, 14[bp] /* n */
+	mov bx, 16[bp] /* buffer */
+
 	int 0x13
-	jc low_int13read_l1
+	jc low_int13access_l1
 	mov ax, #0
-low_int13read_l1:
+
+low_int13access_l1:
 	pop cx
 	pop dx
 	pop bx

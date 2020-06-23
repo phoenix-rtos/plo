@@ -39,6 +39,9 @@ extern s32 phoenixd_open(u16 dn, char *name, u32 flags);
 extern s32 phoenixd_read(u16 dn, s32 handle, u32 *pos, u8 *buff, u32 len);
 
 
+extern s32 phoenixd_write(u16 dn, s32 handle, u32 *pos, u8 *buff, u32 len, u8 sync);
+
+
 extern s32 phoenixd_close(u16 dn, s32 handle);
 
 
