@@ -48,7 +48,7 @@ struct {
 	{ cmd_go,      "go!", "     - starts Phoenix-RTOS loaded into memory" },
 	{ cmd_help,    "help", "    - prints this message" },
 	{ cmd_copy,    "copy", "    - copies data between devices, usage:\n           copy <src device> <src file/LBA> <dst device> <dst file/LBA> [<len>]" },
-	{ cmd_load,    "load", "    - loads Phoenix-RTOS, usage: load [<boot device>]" },
+	{ cmd_load,    "load", "    - loads Phoenix-RTOS, usage: load [<boot device>] [<kernel args>]" },
 	{ cmd_memmap,  "mem", "     - prints physical memory map" },
 	{ cmd_cmd,     "cmd", "     - boot command, usage: cmd [<command>]" },
 	{ cmd_timeout, "timeout", " - boot timeout, usage: timeout [<timeout>]" },
@@ -449,10 +449,9 @@ void cmd_load(char *s)
 {
 	char word[LINESZ + 1];
 	unsigned int p = 0, dn;
-	u16 i, po;
+	u16 i, po, len;
 	u32 kernel, kernelsize;
 
-	cmd_skipblanks(s, &p, DEFAULT_BLANKS);
 	if (cmd_getnext(s, &p, DEFAULT_BLANKS, NULL, word, sizeof(word)) == NULL) {
 		plostd_printf(ATTR_ERROR, "\nSize error!\n");
 		return;
@@ -490,18 +489,34 @@ void cmd_load(char *s)
 	po = SYSPAGE_OFFS_PROGS;
 
 	/* Get kernel args */
-	cmd_skipblanks(s, &p, DEFAULT_BLANKS);
-	if (cmd_getnext(s, &p, DEFAULT_BLANKS, NULL, word, sizeof(word)) == NULL) {
-		plostd_printf(ATTR_ERROR, "\nSize error!\n");
-		return;
+	for (i = 0;; i += len + 1) {
+		if (cmd_getnext(s, &p, DEFAULT_BLANKS ",", NULL, word, sizeof(word)) == NULL) {
+			plostd_printf(ATTR_ERROR, "\nSize error!\n");
+			return;
+		}
+
+		if (!(len = plostd_strlen(word)))
+			break;
+
+		if ((s[p] == ' ') || (s[p] == '\t')) {
+			word[len] = ';';
+			word[len + 1] = '\0';
+		}
+		else if (s[p] == ',') {
+			word[len] = ' ';
+			word[len + 1] = '\0';
+		}
+
+		low_copyto(SYSPAGE_SEG, SYSPAGE_OFFS_ARG + i, word, len + 1);
 	}
-	/* Set kernel args */
-	plostd_printf(ATTR_DEBUG, "arg=%s\n", word);
-	low_copyto(SYSPAGE_SEG, SYSPAGE_OFFS_ARG, word, plostd_strlen(word) + 1);
+
+	if (i) {
+		low_copyfrom(SYSPAGE_SEG, SYSPAGE_OFFS_ARG, word, i);
+		plostd_printf(ATTR_DEBUG, "arg=%s\n", word);
+	}
 
 	/* Load programs */
 	for (i = 0;; i++) {
-		cmd_skipblanks(s, &p, DEFAULT_BLANKS);
 		if (cmd_getnext(s, &p, DEFAULT_BLANKS, NULL, word, sizeof(word)) == NULL) {
 			plostd_printf(ATTR_ERROR, "\nSize error!\n");
 			return;
@@ -690,7 +705,6 @@ void cmd_timeout(char *s)
 	unsigned int p = 0;
 
 	plostd_printf(ATTR_LOADER, "\n");
-	cmd_skipblanks(s, &p, DEFAULT_BLANKS);
 
 	if (cmd_getnext(s, &p, DEFAULT_BLANKS, DEFAULT_CITES, word, sizeof(word)) == NULL) {
 		plostd_printf(ATTR_ERROR, "Syntax error!\n");
@@ -786,7 +800,6 @@ void cmd_parse(char *line)
 			break;
 
 		wp = 0;
-		cmd_skipblanks(word, &wp, DEFAULT_BLANKS);
 		if (cmd_getnext(word, &wp, DEFAULT_BLANKS, DEFAULT_CITES, cmd, sizeof(cmd)) == NULL) {
 			plostd_printf(ATTR_ERROR, "\nSyntax error!\n");
 			return;
