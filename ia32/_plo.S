@@ -277,6 +277,15 @@ __plo_debug_l0:
 	pop es
 	ret
 
+; MBR partition table
+.org 0x1be
+	db 0x80
+	db 0, 0, 0
+	db 0x83
+	db 0, 0, 0
+	dd 0x1000
+	dd 0x40000
+
 ; MBR magic value
 .org 0x1fe
 	db 0x55, 0xaa
