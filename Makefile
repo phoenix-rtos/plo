@@ -26,7 +26,7 @@ include ../phoenix-rtos-build/Makefile.$(TARGET_SUFF)
 OBJS = $(PREFIX_O)plo.o $(PREFIX_O)plostd.o $(PREFIX_O)cmd.o
 
 
-all: $(PREFIX_PROG_STRIPPED)plo-$(TARGET).elf
+all: $(PREFIX_PROG_STRIPPED)plo-$(TARGET).elf $(PREFIX_PROG_STRIPPED)plo-$(TARGET).hex $(PREFIX_PROG_STRIPPED)plo-$(TARGET).img
 
 
 include $(TARGET)/Makefile
@@ -36,11 +36,15 @@ $(PREFIX_PROG)plo-$(TARGET).elf: $(OBJS)
 	@(printf "LD  %-24s\n" "$(@F)");
 	$(SIL)$(LD) $(LDFLAGS) -e _start --section-start .init=0 -o $(PREFIX_PROG)plo-$(TARGET).elf $(OBJS) $(GCCLIB)
 
-#$(ARCH).hex: $(ARCH).elf
-#	$(OBJCOPY) -O ihex $(ARCH).elf $(ARCH).hex
-#
-#$(ARCH).img: $(ARCH).elf
-#	$(OBJCOPY) -O binary $(ARCH).elf $(ARCH).img
+
+$(PREFIX_PROG_STRIPPED)plo-$(TARGET).hex: $(PREFIX_PROG_STRIPPED)plo-$(TARGET).elf
+	@(printf "HEX %s\n" "$(@F)");
+	$(SIL)$(OBJCOPY) -O ihex $(PREFIX_PROG_STRIPPED)plo-$(TARGET).elf $(PREFIX_PROG_STRIPPED)plo-$(TARGET).hex
+
+
+$(PREFIX_PROG_STRIPPED)plo-$(TARGET).img: $(PREFIX_PROG_STRIPPED)plo-$(TARGET).elf
+	@(printf "BIN %s\n" "$(@F)");
+	$(SIL)$(OBJCOPY) -O binary $(PREFIX_PROG_STRIPPED)plo-$(TARGET).elf $(PREFIX_PROG_STRIPPED)plo-$(TARGET).img
 
 
 .PHONY: clean
