@@ -9,6 +9,8 @@
 SIL ?= @
 MAKEFLAGS += --no-print-directory
 
+KERNEL=1
+
 #TARGET ?= ia32-generic
 #TARGET ?= armv7m3-stm32l152xd
 #TARGET ?= armv7m3-stm32l152xe
