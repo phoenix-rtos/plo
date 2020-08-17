@@ -55,7 +55,7 @@ typedef vu32 *reg32;
 typedef u8 *va_list;
 
 #define va_start(ap, parmN) ((void)((ap) = (va_list)((char *)(&parmN) + sizeof(parmN))))
-#define va_arg(ap, type) (*(type *)(((*(char **)&(ap)) += sizeof(type)) - (sizeof(type))))
+#define va_arg(ap, type) (*(type *)(((*(u8 **)&(ap)) += sizeof(type)) - (sizeof(type))))
 #define va_end(ap) ((void)0)
 
 typedef volatile struct {
