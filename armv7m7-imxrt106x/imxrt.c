@@ -1573,8 +1573,9 @@ int _imxrt_systickInit(u32 interval)
 
 void _imxrt_systickSet(u8 state)
 {
-    *(imxrt_common.stk + stk_ctrl) &= ~(!state);
-    *(imxrt_common.stk + stk_ctrl) |= !!state;
+    state = !state;
+    *(imxrt_common.stk + stk_ctrl) &= ~state;
+    *(imxrt_common.stk + stk_ctrl) |= !state;
 }
 
 
