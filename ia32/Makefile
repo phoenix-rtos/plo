@@ -11,11 +11,11 @@
 #
 
 ifneq (, $(shell which ncc))
-	BCC ?= ncc
+BCC ?= ncc
 else ifneq (, $(shell which bcc))
-	BCC ?= bcc
+BCC ?= bcc
 else
-	$(error "No BCC nor NCC found in PATH. Consider apt-get install bcc.")
+$(error "No BCC nor NCC found in PATH. Consider apt-get install bcc.")
 endif
 
 CFLAGS = -ansi -I.
