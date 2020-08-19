@@ -106,11 +106,11 @@ _syspage:
 
 ivt_flash:
     .word 0x412000d1                         /* hdr */
-    .word _start + FLEXSPI2_BASE             /* entry */
+    .word _start                             /* entry */
     .word 0                                  /* reserved 1 */
     .word 0                                  /* dcd */
-    .word flash_boot_data + FLEXSPI2_BASE    /* boot_data */
-    .word ivt_flash + FLEXSPI2_BASE          /* self */
+    .word flash_boot_data                    /* boot_data */
+    .word ivt_flash                          /* self */
     .word 0                                  /* csf */
     .word 0                                  /* reserved 2 */
 
@@ -179,20 +179,6 @@ _init_vectors:
 _start:
     cpsid if
 
-    /* Check kernel localization */
-    ldr r0, =FLEXSPI2_BASE
-    mov r1, pc
-    cmp r0, r1
-    bgt _plo
-
-    /* Prepare registers to kernel copy */
-    ldr r5, =__bss_start__
-    ldr r6, =_fcfb
-    sub r1, r5, r6
-    ldr r2, =FLEXSPI2_BASE
-    add r1, r1, r2
-    ldr r3, =ADDR_ITCM
-
     /* Configure FLEX RAM */
     ldr r8, =IOMUXC_GPR
     ldr r9, =0x00200007
@@ -200,15 +186,6 @@ _start:
 
     ldr r9, =0xaabfffff
     str r9, [r8, #0x44]
-
-/* TODO: launch plo directly from flash instead of copying it to ITCM */
-_start_copy:
-    /* Copy kernel from internal flash to ITCM */
-    ldr r0, [r2], #4
-    str r0, [r3], #4
-
-    cmp r2, r1
-    blt _start_copy
 
 _plo:
     /* Init vector table and stack pointer */

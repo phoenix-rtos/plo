@@ -24,6 +24,12 @@ TARGET ?= armv7m7-imxrt106x
 include ../phoenix-rtos-build/Makefile.common
 include ../phoenix-rtos-build/Makefile.$(TARGET_SUFF)
 
+ifeq ($(TARGET_SUBFAMILY), imxrt106x)
+	INIT=.init=0x70000000
+else
+    INIT=.init=0
+endif
+
 
 OBJS = $(PREFIX_O)plo.o $(PREFIX_O)plostd.o $(PREFIX_O)cmd.o
 
@@ -36,7 +42,7 @@ include $(TARGET)/Makefile
 
 $(PREFIX_PROG)plo-$(TARGET).elf: $(OBJS)
 	@(printf "LD  %-24s\n" "$(@F)");
-	$(SIL)$(LD) $(LDFLAGS) -e _start --section-start .init=0 -o $(PREFIX_PROG)plo-$(TARGET).elf $(OBJS) $(GCCLIB)
+	$(SIL)$(LD) $(LDFLAGS) -e _start --section-start $(INIT) -Tbss=20000000 -o $(PREFIX_PROG)plo-$(TARGET).elf $(OBJS) $(GCCLIB)
 
 
 $(PREFIX_PROG_STRIPPED)plo-$(TARGET).hex: $(PREFIX_PROG_STRIPPED)plo-$(TARGET).elf
