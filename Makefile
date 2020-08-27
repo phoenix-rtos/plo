@@ -26,6 +26,7 @@ include ../phoenix-rtos-build/Makefile.$(TARGET_SUFF)
 
 ifeq ($(TARGET_SUBFAMILY), imxrt106x)
 	INIT=.init=0x70000000
+	LDFLAGS:=$(filter-out -Tbss% -Tdata%, $(LDFLAGS))
 else
     INIT=.init=0
 endif
