@@ -27,6 +27,7 @@
 
 
 /* Console character attributes */
+#define ATTR_NONE    0
 #define ATTR_DEBUG   2
 #define ATTR_USER    7
 #define ATTR_INIT    13

@@ -245,7 +245,8 @@ void plostd_printf(char attr, char *fmt, ...)
 
     ap = (u8 *)&fmt + sizeof(fmt);
 
-    low_setattr(attr);
+    if (attr != ATTR_NONE)
+        low_setattr(attr);
 
     for (p = fmt; *p; p++) {
         if (*p != '%') {

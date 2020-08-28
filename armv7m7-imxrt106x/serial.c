@@ -39,7 +39,7 @@
 #define UART_CNT (UART1 + UART2 + UART3 + UART4 + UART5 + UART6 + UART7 + UART8)
 
 
-#define BUFFER_SIZE 0x800
+#define BUFFER_SIZE 0x200
 
 
 typedef struct {
@@ -56,6 +56,7 @@ typedef struct {
     u8 txBuff[BUFFER_SIZE];
     u16 txHead;
     u16 txTail;
+    u8 tFull;
 } serial_t;
 
 
@@ -122,6 +123,7 @@ int serial_handleIntr(u16 irq, void *buff)
         serial->txHead = (serial->txHead + 1) % BUFFER_SIZE;
         if (serial->txHead != serial->txTail) {
             *(serial->base + datar) = serial->txBuff[serial->txHead];
+            serial->tFull = 0;
         }
         else {
             *(serial->base + ctrlr) &= ~(1 << 23);
@@ -133,7 +135,6 @@ int serial_handleIntr(u16 irq, void *buff)
 }
 
 
-/* TODO: Add timer usage */
 int serial_read(unsigned int pn, u8 *buff, u16 len, u16 timeout)
 {
     serial_t *serial;
@@ -182,6 +183,8 @@ int serial_write(unsigned int pn, const u8 *buff, u16 len)
 
     serial = &serial_common.serials[serialPos[pn]];
 
+    while (serial->txHead == serial->txTail && serial->tFull)
+        ;
 
     low_cli();
     if (serial->txHead > serial->txTail)
@@ -199,7 +202,11 @@ int serial_write(unsigned int pn, const u8 *buff, u16 len)
     /* Initialize sending */
     if (serial->txTail == serial->txHead)
         *(serial->base + datar) = serial->txBuff[serial->txHead];
+
     serial->txTail = ((serial->txTail + cnt) % BUFFER_SIZE);
+
+    if (serial->txTail == serial->txHead)
+        serial->tFull = 1;
 
     *(serial->base + ctrlr) |= 1 << 23;
 
@@ -207,6 +214,21 @@ int serial_write(unsigned int pn, const u8 *buff, u16 len)
 
     return cnt;
 }
+
+
+int serial_safewrite(unsigned int pn, const u8 *buff, u16 len)
+{
+    int l;
+
+    for (l = 0; len;) {
+        if ((l = serial_write(pn, buff, len)) < 0)
+            return ERR_MSG_IO;
+        buff += l;
+        len -= l;
+    }
+    return 0;
+}
+
 
 
 static int serial_muxVal(int mux)
@@ -223,6 +245,7 @@ static int serial_muxVal(int mux)
         case pctl_mux_gpio_sd_b1_00:
         case pctl_mux_gpio_sd_b1_01:
             return 4;
+
     }
 
     return 2;
@@ -269,10 +292,10 @@ static int serial_getIsel(int mux, int *isel, int *val)
         case pctl_mux_gpio_ad_b1_03: *isel = pctl_isel_lpuart2_rx; *val = 1; break;
         case pctl_mux_gpio_sd_b1_10: *isel = pctl_isel_lpuart2_rx; *val = 0; break;
         case pctl_mux_gpio_emc_13:   *isel = pctl_isel_lpuart3_tx; *val = 1; break;
-        case pctl_mux_gpio_ad_b1_06: *isel = pctl_isel_lpuart3_tx; *val = 1; break;
+        case pctl_mux_gpio_ad_b1_06: *isel = pctl_isel_lpuart3_tx; *val = 0; break;
         case pctl_mux_gpio_b0_08:    *isel = pctl_isel_lpuart3_tx; *val = 2; break;
         case pctl_mux_gpio_emc_14:   *isel = pctl_isel_lpuart3_rx; *val = 1; break;
-        case pctl_mux_gpio_ad_b1_07: *isel = pctl_isel_lpuart3_rx; *val = 1; break;
+        case pctl_mux_gpio_ad_b1_07: *isel = pctl_isel_lpuart3_rx; *val = 0; break;
         case pctl_mux_gpio_b0_09:    *isel = pctl_isel_lpuart3_rx; *val = 2; break;
         case pctl_mux_gpio_emc_15:   *isel = pctl_isel_lpuart3_cts_b; *val = 0; break;
         case pctl_mux_gpio_ad_b1_04: *isel = pctl_isel_lpuart3_cts_b; *val = 1; break;
@@ -340,6 +363,8 @@ static void serial_initPins(void)
     for (i = 0; i < sizeof(muxes) / sizeof(muxes[0]); ++i) {
         _imxrt_setIOmux(muxes[i], 0, serial_muxVal(muxes[i]));
 
+
+
         if (serial_getIsel(muxes[i], &isel, &val) < 0)
             continue;
 
@@ -374,8 +399,11 @@ void serial_init(u32 baud, u32 *st)
     *st = 115200;
     serial_initPins();
 
+
+
     _imxrt_ccmSetMux(clk_mux_uart, 0);
     _imxrt_ccmSetDiv(clk_div_uart, 0);
+
 
 
     for (i = 0, dev = 0; dev < sizeof(serialConfig) / sizeof(serialConfig[0]); ++dev) {
@@ -387,8 +415,9 @@ void serial_init(u32 baud, u32 *st)
         serial->rxHead = 0;
         serial->txHead = 0;
         serial->rxTail = 0;
+
         serial->txTail = 0;
-        _imxrt_setDevClock(info[dev].dev, clk_state_run);
+        serial->tFull = 0;
 
         /* Disable TX and RX */
         *(serial->base + ctrlr) &= ~((1 << 19) | (1 << 18));
@@ -429,6 +458,8 @@ void serial_init(u32 baud, u32 *st)
 
         /* Enable TX and RX */
         *(serial->base + ctrlr) |= (1 << 19) | (1 << 18);
+
+        _imxrt_setDevClock(info[dev].dev, clk_state_run);
 
         low_irqinst(info[dev].irq, serial_handleIntr, (void *)serial);
     }

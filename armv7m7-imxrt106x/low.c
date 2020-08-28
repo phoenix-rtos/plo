@@ -214,7 +214,6 @@ void low_sti(void)
 
 int low_irqdispatch(u16 irq)
 {
-
     if (low_common.irqs[irq].isr == NULL)
         return -1;
 
@@ -261,19 +260,19 @@ void low_setattr(char attr)
 {
     switch (attr) {
     case ATTR_DEBUG:
-        serial_write(UART_CONSOLE, (u8 *)"\033[0m\033[32m", 9);
+        serial_safewrite(UART_CONSOLE, (u8 *)"\033[0m\033[32m", 9);
         break;
     case ATTR_USER:
-        serial_write(UART_CONSOLE, (u8 *)"\033[0m", 4);
+        serial_safewrite(UART_CONSOLE, (u8 *)"\033[0m", 4);
         break;
     case ATTR_INIT:
-        serial_write(UART_CONSOLE, (u8 *)"\033[0m\033[35m", 9);
+        serial_safewrite(UART_CONSOLE, (u8 *)"\033[0m\033[35m", 9);
         break;
     case ATTR_LOADER:
-        serial_write(UART_CONSOLE, (u8 *)"\033[0m\033[1m", 8);
+        serial_safewrite(UART_CONSOLE, (u8 *)"\033[0m\033[1m", 8);
         break;
     case ATTR_ERROR:
-        serial_write(UART_CONSOLE, (u8 *)"\033[0m\033[31m", 9);
+        serial_safewrite(UART_CONSOLE, (u8 *)"\033[0m\033[31m", 9);
         break;
     }
 

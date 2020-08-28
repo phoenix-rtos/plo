@@ -24,6 +24,8 @@ extern int serial_read(unsigned int pn, u8 *buff, u16 len, u16 timeout);
 
 extern int serial_write(unsigned int pn, const u8 *buff, u16 len);
 
+extern int serial_safewrite(unsigned int pn, const u8 *buff, u16 len);
+
 extern int serial_rxEmpty(unsigned int pn);
 
 extern void serial_done(void);
