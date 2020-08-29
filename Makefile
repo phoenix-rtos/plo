@@ -26,8 +26,11 @@ include ../phoenix-rtos-build/Makefile.$(TARGET_SUFF)
 
 ifeq ($(TARGET_SUBFAMILY), imxrt106x)
 	INIT=.init=0x70000000
+	BSS=-Tbss=20012000
+	LDFLAGS:=$(filter-out -Tbss% , $(LDFLAGS))
+	LDFLAGS:=$(filter-out -Tdata% , $(LDFLAGS))
 else
-    INIT=.init=0
+	INIT=.init=0
 endif
 
 
@@ -42,8 +45,7 @@ include $(TARGET)/Makefile
 
 $(PREFIX_PROG)plo-$(TARGET).elf: $(OBJS)
 	@(printf "LD  %-24s\n" "$(@F)");
-	$(SIL)$(LD) $(LDFLAGS) -e _start --section-start $(INIT) -Tbss=20000000 -o $(PREFIX_PROG)plo-$(TARGET).elf $(OBJS) $(GCCLIB)
-
+	$(SIL)$(LD) $(LDFLAGS) -e _start --section-start $(INIT) $(BSS) -o $(PREFIX_PROG)plo-$(TARGET).elf $(OBJS) $(GCCLIB)
 
 $(PREFIX_PROG_STRIPPED)plo-$(TARGET).hex: $(PREFIX_PROG_STRIPPED)plo-$(TARGET).elf
 	@(printf "HEX %s\n" "$(@F)");

@@ -24,16 +24,17 @@
 
 
 #define SIZE_INTERRUPTS 167
+#define SYSPAGE_SEG 0x200
 
 
 typedef struct {
-    void *data;
-    int (*isr)(u16, void *);
+	void *data;
+	int (*isr)(u16, void *);
 } intr_handler_t;
 
 
 struct{
-    intr_handler_t irqs[SIZE_INTERRUPTS];
+	intr_handler_t irqs[SIZE_INTERRUPTS];
 } low_common;
 
 
@@ -47,20 +48,22 @@ char _plo_command[CMD_SIZE] = DEFAULT_CMD;
 
 void low_init(void)
 {
-    int i;
+	int i;
 
-    _imxrt_init();
+	_imxrt_init();
 
-    for (i = 0; i < SIZE_INTERRUPTS; ++i) {
-        low_common.irqs[i].data = NULL;
-        low_common.irqs[i].isr = NULL;
-    }
+	syspage_arg_ptr = _syspage_arg;
+
+	for (i = 0; i < SIZE_INTERRUPTS; ++i) {
+		low_common.irqs[i].data = NULL;
+		low_common.irqs[i].isr = NULL;
+	}
 }
 
 
 void low_done(void)
 {
-    //TODO
+	//TODO
 }
 
 
@@ -69,27 +72,27 @@ void low_done(void)
 
 u8 low_inb(u16 addr)
 {
-    //TODO
-    return 0;
+	//TODO
+	return 0;
 }
 
 
 void low_outb(u16 addr, u8 b)
 {
-    //TODO
+	//TODO
 }
 
 
 u32 low_ind(u16 addr)
 {
-    //TODO
-    return 0;
+	//TODO
+	return 0;
 }
 
 
 void low_outd(u16 addr, u32 d)
 {
-    //TODO
+	//TODO
 }
 
 
@@ -97,103 +100,147 @@ void low_outd(u16 addr, u32 d)
 
 void low_setfar(u16 segm, u16 offs, u16 v)
 {
-    //TODO
+	//TODO
 }
 
 
 u16 low_getfar(u16 segm, u16 offs)
 {
-    //TODO
-    return 0;
+	//TODO
+	return 0;
 }
 
 
 void low_setfarbabs(u32 addr, u8 v)
 {
-    //TODO
+	//TODO
 }
 
 
 u8 low_getfarbabs(u32 addr)
 {
-    //TODO
-    return 0;
+	//TODO
+	return 0;
 }
 
 
 void low_setfarabs(u32 addr, u32 v)
 {
-    //TODO
+	//TODO
 }
 
 
 u32 low_getfarabs(u32 addr)
 {
-    //TODO
-    return 0;
+	//TODO
+	return 0;
 }
 
 
 void low_copyto(u16 segm, u16 offs, void *src, unsigned int l)
 {
-    //TODO
+	//TODO
 }
 
 
 void low_copyfrom(u16 segm, u16 offs, void *dst, unsigned int l)
 {
-    //TODO
+	//TODO
 }
 
 
 void low_memcpy(void *dst, const void *src, unsigned int l)
 {
-    int i;
-    char* dst_ = dst;
-    const char* src_ = src;
-
-    for(i = 0; i < l; ++i)
-        *(dst_ + i) = *(src_ + i);
+	asm volatile(" \
+		mov r1, %2; \
+		mov r3, %1; \
+		mov r4, %0; \
+		orr r2, r3, r4; \
+		ands r2, #3; \
+		bne 2f; \
+	1: \
+		cmp r1, #4; \
+		ittt hs; \
+		ldrhs r2, [r3], #4; \
+		strhs r2, [r4], #4; \
+		subshs r1, #4; \
+		bhs 1b; \
+	2: \
+		cmp r1, #0; \
+		ittt ne; \
+		ldrbne r2, [r3], #1; \
+		strbne r2, [r4], #1; \
+		subsne r1, #1; \
+		bne 2b"
+	:
+	: "r" (dst), "r" (src), "r" (l)
+	: "r1", "r2", "r3", "r4", "memory", "cc");
 }
 
 
 void low_copytoabs(u32 addr, void *src, unsigned int l)
 {
-    //TODO
+	//TODO
 }
 
 
 void low_copyfromabs(u32 addr, void *dst, unsigned int l)
 {
-    //TODO
+	//TODO
 }
 
 
 u16 low_getcs(void)
 {
-    //TODO
-    return 0;
+	//TODO
+	return 0;
 }
 
 
 int low_mmcreate(void)
 {
-    //TODO
-    return 0;
+	//TODO
+	return 0;
 }
 
 
 int low_mmget(unsigned int n, low_mmitem_t *mmitem)
 {
-    //TODO
-    return 0;
+	//TODO
+	return 0;
 }
 
 
 int low_launch(void)
 {
-    //TODO
-    return 0;
+	if (plo_syspage.pend - plo_syspage.pbegin == 0) {
+		plostd_printf(ATTR_ERROR, "\nPhoenix-RTOS size is 0.\n");
+		return -1;
+	} else if ((kernel_entry < plo_syspage.pbegin) ||
+			(kernel_entry > plo_syspage.pbegin + plo_syspage.pend)) {
+		plostd_printf(ATTR_ERROR,
+			"\nPhoenix-RTOS start address is not valid. %p %p, %p\n",
+			kernel_entry, plo_syspage.pbegin, plo_syspage.pend);
+		return -1;
+	}
+
+	/* Copy syspage info */
+	plo_syspage.arg = (char *)_syspage_arg;
+		// (char *)(plo_syspage.pbegin + SYSPAGE_SEG + sizeof(syspage_t));
+	low_memcpy((void *)(plo_syspage.pbegin + SYSPAGE_SEG),
+		&plo_syspage, sizeof(syspage_t));
+	// low_memcpy((void *)(plo_syspage.pbegin + SYSPAGE_SEG + sizeof(syspage_t)),
+	// 	(void *)_syspage_arg, sizeof(_syspage_arg));
+
+	plostd_printf(ATTR_ERROR, "\nSyspage arg: %s\n", _syspage_arg);
+
+	low_cli();
+	asm("mov r9, %1;\
+		 blx %0"
+		 : : "r"(kernel_entry), "r"(&plo_syspage));
+	low_sti();
+
+	return -1;
 }
 
 
@@ -202,127 +249,126 @@ int low_launch(void)
 
 void low_cli(void)
 {
-    asm("cpsid if");
+	asm("cpsid if");
 }
 
 
 void low_sti(void)
 {
-    asm("cpsie if");
+	asm("cpsie if");
 }
 
 
 int low_irqdispatch(u16 irq)
 {
-    if (low_common.irqs[irq].isr == NULL)
-        return -1;
+	if (low_common.irqs[irq].isr == NULL)
+		return -1;
 
-    low_common.irqs[irq].isr(irq, low_common.irqs[irq].data);
+	low_common.irqs[irq].isr(irq, low_common.irqs[irq].data);
 
-    return 0;
+	return 0;
 }
 
 
 void low_maskirq(u16 n, u8 v)
 {
-    //TODO
+	//TODO
 }
 
 
 int low_irqinst(u16 irq, int (*isr)(u16, void *), void *data)
 {
-    if (irq > SIZE_INTERRUPTS)
-        return ERR_ARG;
+	if (irq > SIZE_INTERRUPTS)
+		return ERR_ARG;
 
-    low_cli();
-    low_common.irqs[irq].isr = isr;
-    low_common.irqs[irq].data = data;
+	low_cli();
+	low_common.irqs[irq].isr = isr;
+	low_common.irqs[irq].data = data;
 
-    _imxrt_nvicSetPriority(irq - 0x10, 1);
-    _imxrt_nvicSetIRQ(irq - 0x10, 1);
-    low_sti();
+	_imxrt_nvicSetPriority(irq - 0x10, 1);
+	_imxrt_nvicSetIRQ(irq - 0x10, 1);
+	low_sti();
 
-    return 0;
+	return 0;
 }
 
 
 int low_irquninst(u16 irq)
 {
-    low_cli();
-    _imxrt_nvicSetIRQ(irq - 0x10, 0);
-    low_sti();
+	low_cli();
+	_imxrt_nvicSetIRQ(irq - 0x10, 0);
+	low_sti();
 
-    return 0;
+	return 0;
 }
 
 
 void low_setattr(char attr)
 {
-    switch (attr) {
-    case ATTR_DEBUG:
-        serial_safewrite(UART_CONSOLE, (u8 *)"\033[0m\033[32m", 9);
-        break;
-    case ATTR_USER:
-        serial_safewrite(UART_CONSOLE, (u8 *)"\033[0m", 4);
-        break;
-    case ATTR_INIT:
-        serial_safewrite(UART_CONSOLE, (u8 *)"\033[0m\033[35m", 9);
-        break;
-    case ATTR_LOADER:
-        serial_safewrite(UART_CONSOLE, (u8 *)"\033[0m\033[1m", 8);
-        break;
-    case ATTR_ERROR:
-        serial_safewrite(UART_CONSOLE, (u8 *)"\033[0m\033[31m", 9);
-        break;
-    }
+	switch (attr) {
+	case ATTR_DEBUG:
+		serial_safewrite(UART_CONSOLE, (u8 *)"\033[0m\033[32m", 9);
+		break;
+	case ATTR_USER:
+		serial_safewrite(UART_CONSOLE, (u8 *)"\033[0m", 4);
+		break;
+	case ATTR_INIT:
+		serial_safewrite(UART_CONSOLE, (u8 *)"\033[0m\033[35m", 9);
+		break;
+	case ATTR_LOADER:
+		serial_safewrite(UART_CONSOLE, (u8 *)"\033[0m\033[1m", 8);
+		break;
+	case ATTR_ERROR:
+		serial_safewrite(UART_CONSOLE, (u8 *)"\033[0m\033[31m", 9);
+		break;
+	}
 
-    return;
+	return;
 }
 
 
 void low_putc(const char ch)
 {
-    serial_write(UART_CONSOLE, (u8 *)&ch, 1);
+	serial_write(UART_CONSOLE, (u8 *)&ch, 1);
 }
 
 
 void low_getc(char *c, char *sc)
 {
-    while (serial_read(UART_CONSOLE, (u8 *)c, 1, 500) <= 0)
-        ;
-    *sc = 0;
+	while (serial_read(UART_CONSOLE, (u8 *)c, 1, 500) <= 0)
+		;
+	*sc = 0;
 
-    /* Translate backspace */
-    if (*c == 127)
-        *c = 8;
+	/* Translate backspace */
+	if (*c == 127)
+		*c = 8;
 
-    /* Simple parser for VT100 commands */
-    else if (*c == 27) {
-        while (serial_read(UART_CONSOLE, (u8 *)c, 1, 500) <= 0)
-            ;
+	/* Simple parser for VT100 commands */
+	else if (*c == 27) {
+		while (serial_read(UART_CONSOLE, (u8 *)c, 1, 500) <= 0)
+			;
 
-        switch (*c) {
-        case 91:
-            while (serial_read(UART_CONSOLE, (u8 *)c, 1, 500) <= 0)
-                ;
+		switch (*c) {
+		case 91:
+			while (serial_read(UART_CONSOLE, (u8 *)c, 1, 500) <= 0)
+				;
 
-            switch (*c) {
-            case 'A':             /* UP */
-                *sc = 72;
-                break;
-            case 'B':             /* DOWN */
-                *sc = 80;
-                break;
-            }
-            break;
-        }
-        *c = 0;
-    }
+			switch (*c) {
+			case 'A':             /* UP */
+				*sc = 72;
+				break;
+			case 'B':             /* DOWN */
+				*sc = 80;
+				break;
+			}
+			break;
+		}
+		*c = 0;
+	}
 }
 
 
 int low_keypressed(void)
 {
-    return !serial_rxEmpty(UART_CONSOLE);
+	return !serial_rxEmpty(UART_CONSOLE);
 }
-

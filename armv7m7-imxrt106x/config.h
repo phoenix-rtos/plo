@@ -21,13 +21,13 @@
 
 
 /* User interface */
-#define WELCOME      "-\\- Phoenix-RTOS loader for i. MX RT106x, version: " VERSION
+#define WELCOME      "\n-\\- Phoenix-RTOS loader for i. MX RT106x, version: " VERSION
 
 #define DEFAULT_CMD "load flash0; go!"
 
 
 /* Kernel adresses and sizes */
-#define KERNEL_BASE  0x14000
+#define KERNEL_OFFS 0x8000
 
 
 /* phfs sources  */
