@@ -419,6 +419,7 @@ void serial_init(u32 baud, u32 *st)
         serial->txTail = 0;
         serial->tFull = 0;
 
+        _imxrt_ccmControlGate(info[dev].dev, clk_state_run_wait);
         /* Disable TX and RX */
         *(serial->base + ctrlr) &= ~((1 << 19) | (1 << 18));
 
