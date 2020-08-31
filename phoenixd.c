@@ -56,7 +56,6 @@ s32 phoenixd_read(u16 dn, s32 handle, u32 *pos, u8 *buff, u32 len)
     msg_phoenixd_t *io;
     u16 hdrsz;
     u32 l;
-    int k;
 
     /* Read from serial */
     io = (msg_phoenixd_t *)smsg.data;
@@ -99,7 +98,7 @@ s32 phoenixd_write(u16 dn, s32 handle, u32 *pos, u8 *buff, u32 len, u8 sync)
 }
 
 
-s32 phoenixd_close(u16 dn, s32 handle)
+s32 phoenixd_close(u16 dn, s16 handle)
 {
     return ERR_NONE;
 }

@@ -30,8 +30,6 @@ struct {
 	{ "flash0", PDN_FLASH0 },
 	{ "flash1", PDN_FLASH1 },
 	{ "com1", PDN_COM1 },
-	{ "com2", PDN_COM2 },
-	{ "usb", PDN_USB },
 	{ NULL, NULL }
 };
 

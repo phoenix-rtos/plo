@@ -62,7 +62,7 @@ int msg_write(u16 pn, msg_t *msg)
 
     /* Frame start */
     cs[0] = MSG_MARK;
-    if ((res = msg_safewrite(pn, cs, 1)) < 0)
+    if ((res = msg_safewrite(pn, (u8 *)cs, 1)) < 0)
         return res;
 
     for (k = 0; k < MSG_HDRSZ + msg_getlen(msg); k++) {
@@ -72,11 +72,11 @@ int msg_write(u16 pn, msg_t *msg)
                 cs[1] = MSG_ESCMARK;
             else
                 cs[1] = MSG_ESCESC;
-            if ((res = msg_safewrite(pn, cs, 2)) < 0)
+            if ((res = msg_safewrite(pn, (u8 *)cs, 2)) < 0)
                 return res;
         }
         else {
-            if ((res = msg_safewrite(pn, &p[k], 1)) < 0)
+            if ((res = msg_safewrite(pn, (u8 *)&p[k], 1)) < 0)
                 return res;
         }
     }
