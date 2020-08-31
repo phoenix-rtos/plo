@@ -34,7 +34,7 @@ else
 endif
 
 
-OBJS = $(PREFIX_O)plo.o $(PREFIX_O)plostd.o $(PREFIX_O)cmd.o
+OBJS = $(PREFIX_O)plo.o $(PREFIX_O)plostd.o $(PREFIX_O)cmd.o $(PREFIX_O)phoenixd.o $(PREFIX_O)msg.o
 
 
 all: $(PREFIX_PROG_STRIPPED)plo-$(TARGET).elf $(PREFIX_PROG_STRIPPED)plo-$(TARGET).hex $(PREFIX_PROG_STRIPPED)plo-$(TARGET).img

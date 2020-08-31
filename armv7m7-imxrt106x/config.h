@@ -30,14 +30,15 @@
 #define KERNEL_OFFS 0x8000
 
 
+#define UART_LOADER_ID 3
+
 /* phfs sources  */
 #define PDN_FLASH0  0
 #define PDN_FLASH1  1
 #define PDN_COM1    2
-#define PDN_COM2    3
-#define PDN_USB     4
+#define PDN_USB     3
 
-#define PDN_NB      2
+#define PDN_NB      3
 
 /* Boot command size */
 #define CMD_SIZE     64
@@ -47,7 +48,7 @@
 
 /* UART */
 #ifndef UART1
-#define UART1 0
+#define UART1 1
 #endif
 
 #ifndef UART2
@@ -79,7 +80,7 @@
 #endif
 
 #ifndef UART_CONSOLE
-#define UART_CONSOLE 3
+#define UART_CONSOLE 1
 #endif
 
 #define UART_CLK 80000000
@@ -129,13 +130,13 @@
 #define UART2_CTS_PIN ad_b1_00
 
 #ifndef UART3_TX_PIN
-#define UART3_TX_PIN emc_13
-//#define UART3_TX_PIN ad_b1_06
+//#define UART3_TX_PIN emc_13
+#define UART3_TX_PIN ad_b1_06
 //#define UART3_TX_PIN b0_08
 #endif
 #ifndef UART3_RX_PIN
-#define UART3_RX_PIN emc_14
-//#define UART3_RX_PIN ad_b1_07
+//#define UART3_RX_PIN emc_14
+#define UART3_RX_PIN ad_b1_07
 //#define UART3_RX_PIN b0_09
 #endif
 #ifndef UART3_RTS_PIN

@@ -17,6 +17,7 @@
 #include "../low.h"
 #include "../plostd.h"
 #include "../phfs.h"
+#include "../phoenixd.h"
 
 #include "config.h"
 #include "flash.h"
@@ -81,6 +82,13 @@ void phfs_init(void)
         phfs_handlers[PDN_FLASH0 + i].close = flash_close;
         phfs_handlers[PDN_FLASH0 + i].dn = i;
     }
+
+    phfs_handlers[PDN_COM1].open = phoenixd_open;
+    phfs_handlers[PDN_COM1].read = phoenixd_read;
+    phfs_handlers[PDN_COM1].write = phoenixd_write;
+    phfs_handlers[PDN_COM1].close = phoenixd_close;
+    phfs_handlers[PDN_COM1].dn = UART_LOADER_ID;
+
 
     return;
 }
