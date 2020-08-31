@@ -23,21 +23,22 @@
 
 
 struct {
-    void (*f)(char *);
-    char *cmd;
-    char *help;
+	void (*f)(char *);
+	char *cmd;
+	char *help;
 } cmds[] = {
-    { cmd_dump,    "dump", "    - dumps memory, usage: dump <segment>:<offset>" },
-    { cmd_go,      "go!", "     - starts Phoenix-RTOS loaded into memory" },
-    { cmd_help,    "help", "    - prints this message" },
-    { cmd_copy,    "copy", "    - copies data between devices, usage:\n           copy <src device> <src file/LBA> <dst device> <dst file/LBA> [<len>]" },
-    { cmd_load,    "load", "    - loads Phoenix-RTOS, usage: load [<boot device>] [<kernel args>]" },
-    { cmd_memmap,  "mem", "     - prints physical memory map" },
-    { cmd_cmd,     "cmd", "     - boot command, usage: cmd [<command>]" },
-    { cmd_timeout, "timeout", " - boot timeout, usage: timeout [<timeout>]" },
-    { cmd_save,    "save", "    - saves configuration" },
-    { cmd_lspci,   "lspci", "   - enumerates PCI buses" },
-    { NULL, NULL, NULL }
+	{ cmd_dump,    "dump", "    - dumps memory, usage: dump <segment>:<offset>" },
+	{ cmd_go,      "go!", "     - starts Phoenix-RTOS loaded into memory" },
+	{ cmd_help,    "help", "    - prints this message" },
+	{ cmd_copy,    "copy", "    - copies data between devices, usage:\n           copy <src device> <src file/LBA> <dst device> <dst file/LBA> [<len>]" },
+	{ cmd_load,    "load", "    - loads Phoenix-RTOS, usage: load [<boot device>] [<kernel args>]" },
+	{ cmd_memmap,  "mem", "     - prints physical memory map" },
+	{ cmd_cmd,     "cmd", "     - boot command, usage: cmd [<command>]" },
+	{ cmd_timeout, "timeout", " - boot timeout, usage: timeout [<timeout>]" },
+	{ cmd_save,    "save", "    - saves configuration" },
+	{ cmd_lspci,   "lspci", "   - enumerates PCI buses" },
+	{ cmd_write,   "write", "  "},
+	{ NULL, NULL, NULL }
 };
 
 
@@ -45,37 +46,37 @@ struct {
 /* Function parses loader commands */
 void cmd_parse(char *line)
 {
-    int k;
-    char word[LINESZ + 1], cmd[LINESZ + 1];
-    unsigned int p = 0, wp;
+	int k;
+	char word[LINESZ + 1], cmd[LINESZ + 1];
+	unsigned int p = 0, wp;
 
-    for (;;) {
-        if (cmd_getnext(line, &p, ";", DEFAULT_CITES, word, sizeof(word)) == NULL) {
-            plostd_printf(ATTR_ERROR, "\nSyntax error!\n");
-            return;
-        }
-        if (*word == 0)
-            break;
+	for (;;) {
+		if (cmd_getnext(line, &p, ";", DEFAULT_CITES, word, sizeof(word)) == NULL) {
+			plostd_printf(ATTR_ERROR, "\nSyntax error!\n");
+			return;
+		}
+		if (*word == 0)
+			 break;
 
-        wp = 0;
-        if (cmd_getnext(word, &wp, DEFAULT_BLANKS, DEFAULT_CITES, cmd, sizeof(cmd)) == NULL) {
-            plostd_printf(ATTR_ERROR, "\nSyntax error!\n");
-            return;
-        }
+		wp = 0;
+		if (cmd_getnext(word, &wp, DEFAULT_BLANKS, DEFAULT_CITES, cmd, sizeof(cmd)) == NULL) {
+			plostd_printf(ATTR_ERROR, "\nSyntax error!\n");
+			return;
+		}
 
-        /* Find command and launch associated function */
-        for (k = 0; cmds[k].cmd != NULL; k++) {
+		/* Find command and launch associated function */
+		for (k = 0; cmds[k].cmd != NULL; k++) {
 
-            if (!plostd_strcmp(cmd, cmds[k].cmd)) {
-                cmds[k].f(word + wp);
-                break;
-            }
-        }
-        if (!cmds[k].cmd)
-            plostd_printf(ATTR_ERROR, "\n'%s' - unknown command!\n", cmd);
-    }
+			if (!plostd_strcmp(cmd, cmds[k].cmd)) {
+				cmds[k].f(word + wp);
+				break;
+			}
+		}
+		if (!cmds[k].cmd)
+			plostd_printf(ATTR_ERROR, "\n'%s' - unknown command!\n", cmd);
+	}
 
-    return;
+	return;
 }
 
 
@@ -83,65 +84,64 @@ void cmd_parse(char *line)
 
 void cmd_help(char *s)
 {
-    int k;
+	int k;
 
-    plostd_printf(ATTR_LOADER, "\n");
-    plostd_printf(ATTR_LOADER, "Loader commands:\n");
-    plostd_printf(ATTR_LOADER, "----------------\n");
+	plostd_printf(ATTR_LOADER, "\n");
+	plostd_printf(ATTR_LOADER, "Loader commands:\n");
+	plostd_printf(ATTR_LOADER, "----------------\n");
 
-    for (k = 0; cmds[k].cmd; k++)
-        plostd_printf(ATTR_LOADER, "%s %s\n", cmds[k].cmd, cmds[k].help);
-    return;
+	for (k = 0; cmds[k].cmd; k++)
+		plostd_printf(ATTR_LOADER, "%s %s\n", cmds[k].cmd, cmds[k].help);
+	return;
 }
 
 
 /* Function setups boot timeout */
 void cmd_timeout(char *s)
 {
-    char word[LINESZ + 1];
-    unsigned int p = 0;
+	char word[LINESZ + 1];
+	unsigned int p = 0;
 
-    plostd_printf(ATTR_LOADER, "\n");
+	plostd_printf(ATTR_LOADER, "\n");
 
-    if (cmd_getnext(s, &p, DEFAULT_BLANKS, DEFAULT_CITES, word, sizeof(word)) == NULL) {
-        plostd_printf(ATTR_ERROR, "Syntax error!\n");
-        return;
-    }
-    if (*word)
-        _plo_timeout = plostd_ahtoi(word);
+	if (cmd_getnext(s, &p, DEFAULT_BLANKS, DEFAULT_CITES, word, sizeof(word)) == NULL) {
+		plostd_printf(ATTR_ERROR, "Syntax error!\n");
+		return;
+	}
+	if (*word)
+		_plo_timeout = plostd_ahtoi(word);
 
-    plostd_printf(ATTR_LOADER, "timeout=0x%x\n", _plo_timeout);
-    return;
+	plostd_printf(ATTR_LOADER, "timeout=0x%x\n", _plo_timeout);
+	return;
 }
 
 
 void cmd_go(char *s)
 {
-    plostd_printf(ATTR_LOADER, "\nStarting Phoenix-RTOS...\n");
-    low_launch();
+	low_launch();
 
-    return;
+	return;
 }
 
 
 /* Function setups boot command */
 void cmd_cmd(char *s)
 {
-    unsigned int p = 0;
-    int l;
+	unsigned int p = 0;
+	int l;
 
-    plostd_printf(ATTR_LOADER, "\n");
-    cmd_skipblanks(s, &p, DEFAULT_BLANKS);
-    s += p;
+	plostd_printf(ATTR_LOADER, "\n");
+	cmd_skipblanks(s, &p, DEFAULT_BLANKS);
+	s += p;
 
-    if (*s) {
-        low_memcpy(_plo_command, s, l = min(plostd_strlen(s), CMD_SIZE - 1));
-        *((char *)_plo_command + l) = 0;
-    }
+	if (*s) {
+		low_memcpy(_plo_command, s, l = min(plostd_strlen(s), CMD_SIZE - 1));
+		*((char *)_plo_command + l) = 0;
+	}
 
-    plostd_printf(ATTR_LOADER, "cmd=%s\n", (char *)_plo_command);
+	plostd_printf(ATTR_LOADER, "cmd=%s\n", (char *)_plo_command);
 
-    return;
+	return;
 }
 
 
@@ -151,83 +151,83 @@ void cmd_cmd(char *s)
 /* Function prints progress indicator */
 void cmd_showprogress(u32 p)
 {
-    char *states = "-\\|/";
+	char *states = "-\\|/";
 
-    plostd_printf(ATTR_LOADER, "%c%c", 8, states[p % plostd_strlen(states)]);
-    return;
+	plostd_printf(ATTR_LOADER, "%c%c", 8, states[p % plostd_strlen(states)]);
+	return;
 }
 
 
 /* Function skips blank characters */
 void cmd_skipblanks(char *line, unsigned int *pos, char *blanks)
 {
-    char c, blfl;
-    unsigned int i;
+	char c, blfl;
+	unsigned int i;
 
-    while ((c = *((char *)(line + *pos))) != 0) {
-        blfl = 0;
-        for (i = 0; i < plostd_strlen(blanks); i++) {
-            if (c == *(char *)(blanks + i)) {
-                blfl = 1;
-                break;
-            }
-        }
-        if (!blfl)
-            break;
-        (*pos)++;
-    }
+	while ((c = *((char *)(line + *pos))) != 0) {
+		blfl = 0;
+		for (i = 0; i < plostd_strlen(blanks); i++) {
+			if (c == *(char *)(blanks + i)) {
+				blfl = 1;
+				break;
+			}
+		}
+		if (!blfl)
+			break;
+		(*pos)++;
+	}
 
-    return;
+	return;
 }
 
 
 /* Function retrieves next symbol from line */
 char *cmd_getnext(char *line, unsigned int *pos, char *blanks, char *cites, char *word, unsigned int len)
 {
-    char citefl = 0, c;
-    unsigned int i, wp = 0;
+	char citefl = 0, c;
+	unsigned int i, wp = 0;
 
-    /* Skip leading blank characters */
-    cmd_skipblanks(line, pos, blanks);
+	/* Skip leading blank characters */
+	cmd_skipblanks(line, pos, blanks);
 
-    wp = 0;
-    while ((c = *(char *)(line + *pos)) != 0) {
+	wp = 0;
+	while ((c = *(char *)(line + *pos)) != 0) {
 
-        /* Test cite characters */
-        if (cites) {
-            for (i = 0; cites[i]; i++) {
-                if (c != cites[i])
-                    continue;
-                citefl ^= 1;
-                break;
-            }
+		/* Test cite characters */
+		if (cites) {
+			for (i = 0; cites[i]; i++) {
+				if (c != cites[i])
+					continue;
+				citefl ^= 1;
+				break;
+			}
 
-            /* Go to next iteration if cite character found */
-            if (cites[i]) {
-                (*pos)++;
-                continue;
-            }
-        }
+			/* Go to next iteration if cite character found */
+			if (cites[i]) {
+				(*pos)++;
+				continue;
+			}
+		}
 
-        /* Test separators */
-        for (i = 0; blanks[i]; i++) {
-            if (c != blanks[i])
-                continue;
-            break;
-        }
-        if (!citefl && blanks[i])
-            break;
+		/* Test separators */
+		for (i = 0; blanks[i]; i++) {
+			if (c != blanks[i])
+				continue;
+			break;
+		}
+		if (!citefl && blanks[i])
+			break;
 
-        word[wp++] = c;
-        if (wp == len)
-            return NULL;
+		word[wp++] = c;
+		if (wp == len)
+			return NULL;
 
-        (*pos)++;
-    }
+		(*pos)++;
+	}
 
-    if (citefl)
-        return NULL;
+	if (citefl)
+		return NULL;
 
-    word[wp] = 0;
-    return word;
+	word[wp] = 0;
+	return word;
 }

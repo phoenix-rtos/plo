@@ -28,12 +28,37 @@ extern char _plo_command[];
 
 
 typedef struct {
-    u32 addr_lo;
-    u32 addr_hi;
-    u32 len_lo;
-    u32 len_hi;
-    u32 attr;
+	u32 addr_lo;
+	u32 addr_hi;
+	u32 len_lo;
+	u32 len_hi;
+	u32 attr;
 } low_mmitem_t;
+
+typedef struct syspage_program_t {
+	u32 start;
+	u32 end;
+	int mapno;
+
+	char cmdline[16];
+} syspage_program_t;
+
+
+typedef struct _syspage_t {
+	u32 pbegin;
+	u32 pend;
+
+	char *arg;
+
+	u32 progssz;
+	syspage_program_t progs[10];
+} syspage_t;
+
+syspage_t plo_syspage;
+char _syspage_arg[256];
+char *syspage_arg_ptr;
+
+extern u32 kernel_entry;
 
 
 /* Initialization functions */

@@ -55,6 +55,8 @@ extern void cmd_save(char *s);
 
 extern void cmd_lspci(char *s);
 
+extern void cmd_write(char *s);
+
 
 /* Auxiliary functions */
 extern void cmd_showprogress(u32 p);
