@@ -26,7 +26,7 @@ extern s32 flash_write(u16 fn, s32 handle, u32 *pos, u8 *buff, u32 len, u8 sync)
 
 extern s32 flash_read(u16 fn, s32 handle, u32 *pos, u8 *buff, u32 len);
 
-extern s32 flash_close(u16 fn, s16 handle);
+extern s32 flash_close(u16 fn, s32 handle);
 
 
 #endif

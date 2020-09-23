@@ -45,7 +45,7 @@ int plostd_strlen(char *s)
 }
 
 
-int plostd_strcmp(char *s1, char *s2)
+int plostd_strcmp(const char *s1, const char *s2)
 {
 	unsigned int k = 0;
 

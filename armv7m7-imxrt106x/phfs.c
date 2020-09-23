@@ -28,7 +28,7 @@ struct {
     s32 (*open)(u16, char *, u32);
     s32 (*read)(u16, s32, u32 *, u8 *, u32);
     s32 (*write)(u16, s32, u32 *, u8 *, u32, u8);
-    s32 (*close)(u16, s16);
+    s32 (*close)(u16, s32);
     unsigned int dn;
 } phfs_handlers[PDN_NB];
 

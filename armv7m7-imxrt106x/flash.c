@@ -72,7 +72,7 @@ s32 flash_write(u16 fn, s32 handle, u32 *pos, u8 *buff, u32 len, u8 sync)
 }
 
 
-s32 flash_close(u16 fn, s16 handle)
+s32 flash_close(u16 fn, s32 handle)
 {
     if (fn >= FLASH_NO)
         return ERR_ARG;

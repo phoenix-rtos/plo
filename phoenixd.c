@@ -98,7 +98,7 @@ s32 phoenixd_write(u16 dn, s32 handle, u32 *pos, u8 *buff, u32 len, u8 sync)
 }
 
 
-s32 phoenixd_close(u16 dn, s16 handle)
+s32 phoenixd_close(u16 dn, s32 handle)
 {
     return ERR_NONE;
 }

@@ -45,7 +45,7 @@ extern void cmd_cmd(char *s);
 /* Specific command handlers - defining per platform */
 extern void cmd_dump(char *s);
 
-extern void cmd_load(char *s);
+extern void cmd_load(char *args);
 
 extern void cmd_memmap(char *s);
 

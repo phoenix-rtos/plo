@@ -39,7 +39,7 @@ extern int plostd_isalnum(char c);
 
 extern int plostd_strlen(char *s);
 
-extern int plostd_strcmp(char *s1, char *s2);
+extern int plostd_strcmp(const char *s1, const char *s2);
 
 extern char *plostd_itoa(unsigned int i, char *buff);
 
