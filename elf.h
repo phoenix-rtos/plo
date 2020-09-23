@@ -40,6 +40,10 @@ typedef s32 Elf32_Sword;
 #define STT_LOPROC    13
 #define STT_HIPROC    15
 
+#define PF_X          0x1
+#define PF_W          0x2
+#define PF_R          0x4
+
 #define PT_LOAD       1
 #define PT_DYNAMIC    2
 #define PT_INTERP     3
