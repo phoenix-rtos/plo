@@ -6,7 +6,7 @@
  * Loader commands
  *
  * Copyright 2020 Phoenix Systems
- * Author: Hubert Buczynski
+ * Author: Hubert Buczynski, Marcin Baran
  *
  * This file is part of Phoenix-RTOS.
  *
@@ -23,6 +23,20 @@
 #include "config.h"
 
 
+/* Arguments position for load comand */
+#define MAX_CMD_LOAD_ARGS_NB     6
+#define CMD_LOAD_NAME_POS        1
+#define CMD_LOAD_OFFSET_POS      2
+#define CMD_LOAD_ADDRESS_POS     3
+#define CMD_LOAD_SIZE_POS        4
+#define CMD_LOAD_DMAP_POS        5
+
+
+#define CMD_LOAD_MAX_NAME_SIZE   17
+
+#define FLASH_MEM_START_ADDRESS  0x60000000
+
+#define KERNEL_PATH "phoenix"
 struct {
 	char *name;
 	unsigned int pdn;
@@ -30,6 +44,7 @@ struct {
 	{ "flash0", PDN_FLASH0 },
 	{ "flash1", PDN_FLASH1 },
 	{ "com1", PDN_COM1 },
+	{ "usb", PDN_USB },
 	{ NULL, NULL }
 };
 
@@ -143,25 +158,70 @@ void cmd_write(char *s)
 	return;
 }
 
+
+static void cmd_findElfSections(unsigned int pdn, u32 handle, Elf32_Ehdr hdr, u32 kernel_offs)
+{
+	char name[32];
+	Elf32_Shdr shdr;
+	Elf32_Word k = 0;
+	u32 pos, sh_offset, offs;
+
+	pos = kernel_offs + hdr.e_shoff + hdr.e_shstrndx * sizeof(Elf32_Shdr);
+	if (phfs_read(pdn, handle, &pos , (u8 *)&shdr, (u32)sizeof(Elf32_Shdr)) < 0) {
+		plostd_printf(ATTR_ERROR, "Can't read Elf32_Shdr, k=%d!\n", k);
+		return;
+	}
+
+	sh_offset = shdr.sh_offset;
+
+	for (k = 0; k < hdr.e_shnum; k++) {
+		offs = kernel_offs + hdr.e_shoff + k * sizeof(Elf32_Shdr);
+		if (phfs_read(pdn, handle, &offs , (u8 *)&shdr, (u32)sizeof(Elf32_Shdr)) < 0) {
+			plostd_printf(ATTR_ERROR, "Can't read Elf32_Shdr, k=%d!\n", k);
+			return;
+		}
+
+		pos = sh_offset + shdr.sh_name;
+		if (phfs_read(pdn, handle, &pos , (u8 *)name, 32) < 0) {
+			plostd_printf(ATTR_ERROR, "Can't read Elf32_Shdr, k=%d!\n", k);
+			return;
+		}
+
+		/* Check .bss section */
+		if (name[0] == '.' && name[1] == 'b' && name[2] == 's' && name[3] == 's') {
+			plo_syspage->kernel.bss = (void *)shdr.sh_addr;
+			plo_syspage->kernel.bsssz = shdr.sh_size;
+		}
+		/* Check .data section */
+		else if (name[0] == '.' && name[1] == 'd' && name[2] == 'a' && name[3] == 't' && name[4] == 'a') {
+			plo_syspage->kernel.data = (void *)shdr.sh_addr;
+			plo_syspage->kernel.datasz = shdr.sh_size;
+		}
+	}
+}
+
+
 void cmd_loadkernel(unsigned int pdn, char *arg, u16 *po)
 {
-	u32 offs;
-	u32 loffs;
+	u32 offs = 0, kernel_offs = 0;
+	u32 loffs, handle;
 	Elf32_Word i = 0, k = 0, size = 0;
 	Elf32_Ehdr hdr;
 	Elf32_Phdr phdr;
 	u8 buff[384];
 	u32 minaddr = 0xffffffff, maxaddr = 0;
 
-	if (phfs_open(pdn, NULL, 0) < 0) {
-		plostd_printf(ATTR_ERROR, "Cannot initialize flash memory!\n");
+	if (pdn < 2)
+		kernel_offs = KERNEL_OFFS;
+
+	if ((handle = phfs_open(pdn, arg, 0)) < 0) {
+		plostd_printf(ATTR_ERROR, "Cannot initialize %d device\n", pdn);
 		return;
 	}
 
 	/* Read ELF header */
-	/* TODO: get kernel adress from partition table */
-	offs = KERNEL_OFFS;
-	if (phfs_read(pdn, 0, &offs, (u8 *)&hdr, (u32)sizeof(Elf32_Ehdr)) < 0) {
+	offs = kernel_offs;
+	if (phfs_read(pdn, handle, &offs, (u8 *)&hdr, (u32)sizeof(Elf32_Ehdr)) < 0) {
 		plostd_printf(ATTR_ERROR, "Can't read ELF header!\n");
 		return;
 	}
@@ -173,27 +233,28 @@ void cmd_loadkernel(unsigned int pdn, char *arg, u16 *po)
 
 	/* Read program segments */
 	for (k = 0; k < hdr.e_phnum; k++) {
-		offs = KERNEL_OFFS + hdr.e_phoff + k * sizeof(Elf32_Phdr);
-		if (phfs_read(pdn, 0, &offs , (u8 *)&phdr, (u32)sizeof(Elf32_Phdr)) < 0) {
+		offs = kernel_offs + hdr.e_phoff + k * sizeof(Elf32_Phdr);
+		if (phfs_read(pdn, handle, &offs , (u8 *)&phdr, (u32)sizeof(Elf32_Phdr)) < 0) {
 			plostd_printf(ATTR_ERROR, "Can't read Elf32_Phdr, k=%d!\n", k);
 			return;
 		}
 
 		if ((phdr.p_type == PT_LOAD)) {
-			/* Calculate kernel memory parameters */
-			if (minaddr > phdr.p_paddr)
-				minaddr = phdr.p_paddr;
-			if (maxaddr < phdr.p_paddr + phdr.p_memsz)
-				maxaddr = phdr.p_paddr + phdr.p_memsz;
+			/* Calculate kernel memory parameters, omit .bss and .data sections */
+			if (phdr.p_flags == (PF_R + PF_X)) {
+				if (minaddr > phdr.p_paddr)
+					minaddr = phdr.p_paddr;
+				if (maxaddr < phdr.p_paddr + phdr.p_memsz)
+					maxaddr = phdr.p_paddr + phdr.p_memsz;
+			}
 
 			loffs = phdr.p_vaddr;
 
-			plostd_printf(ATTR_LOADER, "Reading segment %p at %p:  ",
-				phdr.p_vaddr, (loffs));
+			plostd_printf(ATTR_LOADER, "Reading segment %p at %p:  ", phdr.p_vaddr, (loffs));
 
 			for (i = 0; i < phdr.p_filesz / sizeof(buff); i++) {
-				offs = KERNEL_OFFS + phdr.p_offset + i * sizeof(buff);
-				if (phfs_read(pdn, 0, &offs, buff, (u32)sizeof(buff)) < 0) {
+				offs = kernel_offs + phdr.p_offset + i * sizeof(buff);
+				if (phfs_read(pdn, handle, &offs, buff, (u32)sizeof(buff)) < 0) {
 					plostd_printf(ATTR_ERROR, "\nCan't read segment data, k=%d!\n", k);
 					return;
 				}
@@ -205,8 +266,8 @@ void cmd_loadkernel(unsigned int pdn, char *arg, u16 *po)
 			/* Last segment part */
 			size = phdr.p_filesz % sizeof(buff);
 			if (size != 0) {
-				offs = KERNEL_OFFS + phdr.p_offset + i * sizeof(buff);
-				if (phfs_read(pdn, 0, &offs, buff, size) < 0) {
+				offs = phdr.p_offset + i * sizeof(buff);
+				if (phfs_read(pdn, handle, &offs, buff, size) < 0) {
 					plostd_printf(ATTR_ERROR, "\nCan't read last segment data, k=%d!\n", k);
 					return;
 				}
@@ -218,26 +279,33 @@ void cmd_loadkernel(unsigned int pdn, char *arg, u16 *po)
 		}
 	}
 
+	plo_syspage->kernel.data = NULL;
+	plo_syspage->kernel.datasz = 0;
+
+
+	cmd_findElfSections(pdn, handle, hdr, kernel_offs);
+
 	kernel_entry = hdr.e_entry;
-	plo_syspage.progssz = 0;
-	plo_syspage.pbegin = minaddr;
-	plo_syspage.pend = maxaddr;
+
+	plo_syspage->kernel.text = (void *)minaddr;
+	plo_syspage->kernel.textsz = maxaddr - minaddr;
 }
 
-void cmd_loadfile(unsigned int pdn, u32 offs, u32 addr, u32 size)
+
+void cmd_loadfile(unsigned int pdn, char * arg, u32 offs, u32 addr, u32 size)
 {
-	int i;
+	int i, handle;
 	u8 buff[384];
 
-	if (phfs_open(pdn, NULL, 0) < 0) {
-		plostd_printf(ATTR_ERROR, "Cannot initialize flash memory!\n");
+	if ((handle = phfs_open(pdn, arg, 0)) < 0) {
+		plostd_printf(ATTR_ERROR, "Cannot initialize source!\n");
 		return;
 	}
 
 	plostd_printf(ATTR_LOADER, "Reading program at %p", addr);
 
 	for (i = 0; i < size / sizeof(buff); i++) {
-		if (phfs_read(pdn, 0, &offs, buff, (u32)sizeof(buff)) < 0) {
+		if (phfs_read(pdn, handle, &offs, buff, (u32)sizeof(buff)) < 0) {
 			plostd_printf(ATTR_ERROR, "\nCan't read segment data, i=%d!\n", i);
 			return;
 		}
@@ -250,7 +318,7 @@ void cmd_loadfile(unsigned int pdn, u32 offs, u32 addr, u32 size)
 	/* Last segment part */
 	size = size % sizeof(buff);
 	if (size != 0) {
-		if (phfs_read(pdn, 0, &offs, buff, size) < 0) {
+		if (phfs_read(pdn, handle, &offs, buff, size) < 0) {
 			plostd_printf(ATTR_ERROR, "\nCan't read last segment data, i=%d!\n", i);
 			return;
 		}
@@ -262,96 +330,130 @@ void cmd_loadfile(unsigned int pdn, u32 offs, u32 addr, u32 size)
 }
 
 
-void cmd_load(char *s)
+static void cmd_syspageUpdate(char *name, u32 addr, u32 size, u32 map)
 {
-	char word[LINESZ + 1];
-	unsigned int p = 0, dn;
-	u16 po = 0;
-	u32 offs, addr, size;
-	char name[17];
+	unsigned int pos = 0;
 
-	cmd_skipblanks(s, &p, DEFAULT_BLANKS);
-	if (cmd_getnext(s, &p, DEFAULT_BLANKS, NULL, word, sizeof(word)) == NULL) {
-		plostd_printf(ATTR_ERROR, "\nSize error!\n");
-		return;
-	}
+	plo_syspage->progs[plo_syspage->progssz].start = addr;
+	plo_syspage->progs[plo_syspage->progssz].end = addr + size;
+	plo_syspage->progs[plo_syspage->progssz].dmap = map;
+
+	*plo_syspage->arg++ = 'X';
+	low_memcpy((void *)plo_syspage->arg, name, plostd_strlen(name));
+
+	plo_syspage->arg += plostd_strlen(name);
+	*plo_syspage->arg++ = ' ';
+
+	low_memcpy(&plo_syspage->progs[plo_syspage->progssz].cmdline, name, plostd_strlen(name));
+
+	for (pos = plostd_strlen(name); pos < (17 - 1); ++pos)
+		plo_syspage->progs[plo_syspage->progssz].cmdline[pos] = 0;
+
+	plo_syspage->progssz++;
+}
+
+
+static int cmd_checkDev(const char *dev)
+{
+	unsigned int dn;
 
 	/* Show boot devices if parameter is empty */
-	if (*word == 0) {
+	if (*dev == 0) {
 		plostd_printf(ATTR_LOADER, "\nBoot devices: ");
+
 		for (dn = 0; devices[dn].name; dn++)
 			plostd_printf(ATTR_LOADER, "%s ", devices[dn].name);
 		plostd_printf(ATTR_LOADER, "\n");
-		return;
+
+		return ERR_ARG;
 	}
 
 	for (dn = 0; devices[dn].name; dn++)  {
-		if (!plostd_strcmp(word, devices[dn].name))
+		if (!plostd_strcmp(dev, devices[dn].name))
 			break;
 	}
 
 	if (!devices[dn].name) {
-		plostd_printf(ATTR_ERROR, "\n'%s' - unknown boot device!\n", word);
+		plostd_printf(ATTR_ERROR, "\n'%s' - unknown boot device!\n", dev);
+		return ERR_ARG;
+	}
+
+	return dn;
+}
+
+
+void cmd_load(char *args)
+{
+	int dn, i;
+	u16 po = 0, argsc = 0;   /* TODO: variable 'po' should be used in cmd_loadkernel function */
+	unsigned int pos = 0;
+
+	u32 offs, addr, size, map;
+	char name[CMD_LOAD_MAX_NAME_SIZE];
+	char word[MAX_CMD_LOAD_ARGS_NB][LINESZ + 1];
+
+	/* Parse arguments */
+	for (i = 0; argsc < MAX_CMD_LOAD_ARGS_NB; ++i) {
+		cmd_skipblanks(args, &pos, DEFAULT_BLANKS);
+		if (cmd_getnext(args, &pos, DEFAULT_BLANKS, NULL, word[i], sizeof(word[i])) == NULL || *word[i] == 0)
+			break;
+
+		argsc++;
+	}
+
+	if (!argsc) {
+		plostd_printf(ATTR_ERROR, "\nChoose appropriate device!\n");
 		return;
 	}
 
-	cmd_skipblanks(s, &p, DEFAULT_BLANKS);
-
-	if (cmd_getnext(s, &p, DEFAULT_BLANKS, NULL, word, sizeof(word)) == NULL ||
-			*word == 0 || !plostd_strcmp(word, "kernel")) {
-		/* Load default kernel if no other args or name is kernel*/
-		plostd_printf(ATTR_LOADER, "\nLoading kernel\n");
-		cmd_loadkernel(devices[dn].pdn, NULL, &po);
+	if ((dn = cmd_checkDev(word[0])) < 0)
 		return;
+
+	/* Load file based on provided arguments */
+	switch (argsc) {
+		/* Loading kernel from default directory */
+		case 1:
+			plostd_printf(ATTR_LOADER, "\nLoading kernel\n");
+			cmd_loadkernel(devices[dn].pdn, "phoenix-armv7m7-imxrt106x.elf", &po);
+			return;
+
+		/* Loading kernel from provided directory */
+		case 2:
+			size = sizeof(word[CMD_LOAD_NAME_POS]) < (CMD_LOAD_MAX_NAME_SIZE - 1) ? sizeof(word[CMD_LOAD_NAME_POS]) : (CMD_LOAD_MAX_NAME_SIZE - 1);
+			low_memcpy(name, word[CMD_LOAD_NAME_POS], size);
+
+			plostd_printf(ATTR_LOADER, "\nLoading kernel from %s\n", name);
+			cmd_loadkernel(devices[dn].pdn, name, &po);
+			name[size] = '\0';
+			return;
+
+		/* Loading program */
+		case 6:
+			size = sizeof(word[CMD_LOAD_NAME_POS]) < (CMD_LOAD_MAX_NAME_SIZE - 1) ? sizeof(word[CMD_LOAD_NAME_POS]) : (CMD_LOAD_MAX_NAME_SIZE - 1);
+			low_memcpy(name, word[CMD_LOAD_NAME_POS], size);
+			name[size] = '\0';
+
+			offs = plostd_ahtoi(word[CMD_LOAD_OFFSET_POS]);
+			addr = plostd_ahtoi(word[CMD_LOAD_ADDRESS_POS]);
+			size = plostd_ahtoi(word[CMD_LOAD_SIZE_POS]);
+			map = plostd_ahtoi(word[CMD_LOAD_DMAP_POS]);
+
+			plostd_printf(ATTR_LOADER, "\nLoading program %s (offs=%p, addr=%p, size=%p)\n", name, offs, addr, size);
+
+			/* In case of loading data from flash memory, only syspage needs to be updated. */
+			if (addr < FLASH_MEM_START_ADDRESS)
+				cmd_loadfile(devices[dn].pdn, name, offs, addr, size);
+
+			cmd_syspageUpdate(name, addr, size, map);
+			return;
+
+		default:
+			plostd_printf(ATTR_ERROR, "\nWrong number of arguments.\n");
 	}
-	size = plostd_strlen(word) < 16 ? plostd_strlen(word) : 16;
-	low_memcpy(name, word, size);
-	name[size] = '\0';
-
-	if (cmd_getnext(s, &p, DEFAULT_BLANKS, NULL, word, sizeof(word)) == NULL ||
-			*word == 0) {
-		plostd_printf(ATTR_ERROR, "\nOffs error!\n");
-		return;
-	}
-
-	offs = plostd_ahtoi(word);
-
-	if (cmd_getnext(s, &p, DEFAULT_BLANKS, NULL, word, sizeof(word)) == NULL ||
-			*word == 0) {
-		plostd_printf(ATTR_ERROR, "\nAddress error!\n");
-		return;
-	}
-
-	addr = plostd_ahtoi(word);
-
-	if (cmd_getnext(s, &p, DEFAULT_BLANKS, NULL, word, sizeof(word)) == NULL ||
-			*word == 0) {
-		plostd_printf(ATTR_ERROR, "\nSize error!\n");
-		return;
-	}
-
-	size = plostd_ahtoi(word);
-
-	plostd_printf(ATTR_LOADER, "\nLoading program %s (offs=%p, addr=%p, size=%p)\n",
-		name, offs, addr, size);
-
-	cmd_loadfile(devices[dn].pdn, offs, addr, size);
-
-	plo_syspage.progs[plo_syspage.progssz].start = addr;
-	plo_syspage.progs[plo_syspage.progssz].end = addr + size;
-	plo_syspage.progs[plo_syspage.progssz++].mapno = 0;
-
-	*syspage_arg_ptr++ = 'X';
-	low_memcpy((void *)syspage_arg_ptr, name, plostd_strlen(name));
-	syspage_arg_ptr += plostd_strlen(name);
-	*syspage_arg_ptr++ = ' ';
-	low_memcpy(&plo_syspage.progs[0].cmdline, name, plostd_strlen(name));
-
-	for (p = plostd_strlen(name); p < 16; ++p)
-		plo_syspage.progs[0].cmdline[p] = 0;
 
 	return;
 }
+
 
 
 void cmd_copy(char *s)

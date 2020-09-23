@@ -35,29 +35,62 @@ typedef struct {
 	u32 attr;
 } low_mmitem_t;
 
+
+#pragma pack(push, 1)
+
+enum { mAttrRead = 0x01, mAttrWrite = 0x02, maAttrExec = 0x04, mAttrShareable = 0x08,
+	   mAttrCacheable = 0x10, mAttrBufferable = 0x20, /* TODO: */ };
+
+
+typedef struct _syspage_map_t {
+	u32 start;
+	u32 end;
+	u32 attr;
+
+	u8 id;
+	char name[8];
+} syspage_map_t;
+
+
 typedef struct syspage_program_t {
 	u32 start;
 	u32 end;
-	int mapno;
+
+	u8 dmap;
+	u8 imap;
 
 	char cmdline[16];
 } syspage_program_t;
 
 
 typedef struct _syspage_t {
-	u32 pbegin;
-	u32 pend;
+	struct {
+		void *text;
+		u32 textsz;
+
+		void *data;
+		u32 datasz;
+
+		void *bss;
+		u32 bsssz;
+	} kernel;
+
+	u32 syspagesz;
 
 	char *arg;
 
 	u32 progssz;
-	syspage_program_t progs[10];
+	syspage_program_t *progs;
+
+	u32 mapssz;
+	syspage_map_t *maps;
 } syspage_t;
 
-syspage_t plo_syspage;
-char _syspage_arg[256];
-char *syspage_arg_ptr;
 
+#pragma pack(pop)
+
+
+syspage_t *plo_syspage;
 extern u32 kernel_entry;
 
 

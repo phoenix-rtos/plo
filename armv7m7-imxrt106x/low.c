@@ -6,7 +6,7 @@
  * Low - level routines
  *
  * Copyright 2020 Phoenix Systems
- * Author: Hubert Buczynski
+ * Author: Hubert Buczynski, Marcin Baran
  *
  * This file is part of Phoenix-RTOS.
  *
@@ -22,10 +22,13 @@
 #include "../errors.h"
 #include "../serial.h"
 
-
 #define SIZE_INTERRUPTS 167
-#define SYSPAGE_SEG 0x200
 
+#define SYSPAGE_ADDRESS      0x20200000
+
+#define MAX_PROGRAMS         32
+#define MAX_MAPS             16
+#define MAX_ARGS             256
 
 typedef struct {
 	void *data;
@@ -43,8 +46,69 @@ char _welcome_str[] = WELCOME;
 char _plo_command[CMD_SIZE] = DEFAULT_CMD;
 
 
+char args[MAX_ARGS];
+syspage_map_t maps[MAX_MAPS];
+syspage_program_t programs[MAX_PROGRAMS];
+
 
 /* Init and deinit functions */
+static void low_initSyspage(void)
+{
+	plo_syspage = (void *)SYSPAGE_ADDRESS;
+
+	plo_syspage->arg = args;
+	plo_syspage->maps = maps;
+	plo_syspage->progs = programs;
+
+	plo_syspage->mapssz = 0;
+	plo_syspage->progssz = 0;
+	plo_syspage->syspagesz = sizeof(syspage_t);
+
+	plo_syspage->kernel.data = NULL;
+	plo_syspage->kernel.datasz = 0;
+
+	plo_syspage->kernel.bss = NULL;
+	plo_syspage->kernel.bsssz = 0;
+
+	plo_syspage->kernel.text = NULL;
+	plo_syspage->kernel.textsz = 0;
+}
+
+
+static void low_initMaps(void)
+{
+	/* Get size ITCM & DTCM from GPR17 */
+
+	/* TODO: get ITCM & DTCM & OCRAM from GPR17 */
+
+
+	/* DTCM */
+	plo_syspage->maps[plo_syspage->mapssz].id = plo_syspage->mapssz + 1;
+	plo_syspage->maps[plo_syspage->mapssz].start = 0x20000000;
+	plo_syspage->maps[plo_syspage->mapssz].end = 0x20028000;
+	plo_syspage->maps[plo_syspage->mapssz].attr = mAttrRead | mAttrWrite;
+	low_memcpy(plo_syspage->maps[plo_syspage->mapssz].name, "DTCM", 5);
+	++plo_syspage->mapssz;
+
+	/* OCRAM2 */
+	plo_syspage->maps[plo_syspage->mapssz].id = plo_syspage->mapssz + 1;
+	plo_syspage->maps[plo_syspage->mapssz].start = 0x20200000;
+	plo_syspage->maps[plo_syspage->mapssz].end = 0x2027fe00;
+	plo_syspage->maps[plo_syspage->mapssz].attr = mAttrRead | mAttrWrite | maAttrExec;
+	low_memcpy(plo_syspage->maps[plo_syspage->mapssz].name, "OCRAM2", 7);
+	++plo_syspage->mapssz;
+
+	/* TODO: OCRAM based on GPR17 */
+
+	/* ITCM */
+	plo_syspage->maps[plo_syspage->mapssz].id = plo_syspage->mapssz + 1;
+	plo_syspage->maps[plo_syspage->mapssz].start = 0;
+	plo_syspage->maps[plo_syspage->mapssz].end = 0x40000;
+	plo_syspage->maps[plo_syspage->mapssz].attr = mAttrRead | maAttrExec;
+	low_memcpy(plo_syspage->maps[plo_syspage->mapssz].name, "ITCM", 5);
+	++plo_syspage->mapssz;
+}
+
 
 void low_init(void)
 {
@@ -52,7 +116,9 @@ void low_init(void)
 
 	_imxrt_init();
 
-	syspage_arg_ptr = _syspage_arg;
+	low_initSyspage();
+
+	low_initMaps();
 
 	for (i = 0; i < SIZE_INTERRUPTS; ++i) {
 		low_common.irqs[i].data = NULL;
@@ -213,31 +279,26 @@ int low_mmget(unsigned int n, low_mmitem_t *mmitem)
 
 int low_launch(void)
 {
-	if (plo_syspage.pend - plo_syspage.pbegin == 0) {
-		plostd_printf(ATTR_ERROR, "\nPhoenix-RTOS size is 0.\n");
-		return -1;
-	} else if ((kernel_entry < plo_syspage.pbegin) ||
-			(kernel_entry > plo_syspage.pbegin + plo_syspage.pend)) {
-		plostd_printf(ATTR_ERROR,
-			"\nPhoenix-RTOS start address is not valid. %p %p, %p\n",
-			kernel_entry, plo_syspage.pbegin, plo_syspage.pend);
-		return -1;
-	}
+	_imxrt_cleanDCache();
 
-	/* Copy syspage info */
-	plo_syspage.arg = (char *)_syspage_arg;
-		// (char *)(plo_syspage.pbegin + SYSPAGE_SEG + sizeof(syspage_t));
-	low_memcpy((void *)(plo_syspage.pbegin + SYSPAGE_SEG),
-		&plo_syspage, sizeof(syspage_t));
-	// low_memcpy((void *)(plo_syspage.pbegin + SYSPAGE_SEG + sizeof(syspage_t)),
-	// 	(void *)_syspage_arg, sizeof(_syspage_arg));
+	plo_syspage->arg = (char *)(plo_syspage + plo_syspage->syspagesz);
+	plo_syspage->syspagesz += MAX_ARGS;
+	low_memcpy((void *)(plo_syspage->arg), args, MAX_ARGS);
 
-	plostd_printf(ATTR_ERROR, "\nSyspage arg: %s\n", _syspage_arg);
+	plo_syspage->progs = (syspage_program_t *)(plo_syspage + plo_syspage->syspagesz);
+	plo_syspage->syspagesz += (plo_syspage->progssz * sizeof(syspage_program_t));
+	low_memcpy((void *)(plo_syspage->progs), programs, plo_syspage->progssz * sizeof(syspage_program_t));
+
+	plo_syspage->maps = (syspage_map_t *)(plo_syspage + plo_syspage->syspagesz);
+	plo_syspage->syspagesz += (plo_syspage->mapssz * sizeof(syspage_map_t));
+	low_memcpy((void *)(plo_syspage->maps), maps, plo_syspage->mapssz * sizeof(syspage_map_t));
+
 
 	low_cli();
-	asm("mov r9, %1;\
+	asm("mov r9, %1; \
 		 blx %0"
-		 : : "r"(kernel_entry), "r"(&plo_syspage));
+		 :
+		 : "r"(kernel_entry), "r"(plo_syspage));
 	low_sti();
 
 	return -1;

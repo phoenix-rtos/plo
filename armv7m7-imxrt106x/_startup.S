@@ -147,7 +147,7 @@ ivt_end:
 .globl _init_vectors
 .type _init_vectors, %object
 _init_vectors:
-.word _end + 1024 + 256
+.word _end + 2 * 1024
 .word _start
 
 /* TODO: define exception_dispatch */
@@ -191,6 +191,7 @@ _plo:
     /* Init vector table and stack pointer */
     ldr r0, =0xe000ed08
     ldr r1, =_init_vectors
+
     str r1, [r0]
     ldr r0, [r1]
     msr msp, r0
