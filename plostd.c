@@ -132,6 +132,8 @@ static unsigned int _plostd_ltoa(unsigned long n, unsigned int base, char *buff)
 
 char *plostd_ltoa(unsigned long n, unsigned int base, char *buff)
 {
+	char *saved_buff = buff;
+
 	if (base == 2) {
 		buff[0] = '0';
 		buff[1] = 'b';
@@ -149,7 +151,7 @@ char *plostd_ltoa(unsigned long n, unsigned int base, char *buff)
 	}
 
 	buff[_plostd_ltoa(n, base, buff)] = '\0';
-	return buff;
+	return saved_buff;
 }
 
 
