@@ -151,9 +151,9 @@ void cmd_cmd(char *s)
 /* Function prints progress indicator */
 void cmd_showprogress(u32 p)
 {
-	char *states = "-\\|/";
+	const static char states[] = {'-', '\\', '|', '/'};
 
-	plostd_printf(ATTR_LOADER, "%c%c", 8, states[p % plostd_strlen(states)]);
+	plostd_printf(ATTR_LOADER, "%c%c", 8, states[p % sizeof(states)]);
 	return;
 }
 
@@ -161,18 +161,11 @@ void cmd_showprogress(u32 p)
 /* Function skips blank characters */
 void cmd_skipblanks(char *line, unsigned int *pos, char *blanks)
 {
-	char c, blfl;
-	unsigned int i;
+	char *p;
 
-	while ((c = *((char *)(line + *pos))) != 0) {
-		blfl = 0;
-		for (i = 0; i < plostd_strlen(blanks); i++) {
-			if (c == *(char *)(blanks + i)) {
-				blfl = 1;
-				break;
-			}
-		}
-		if (!blfl)
+	while (line[*pos]) {
+		for (p = blanks; *p && line[*pos] != *p; p++);
+		if (!*p)
 			break;
 		(*pos)++;
 	}
@@ -190,16 +183,15 @@ char *cmd_getnext(char *line, unsigned int *pos, char *blanks, char *cites, char
 	/* Skip leading blank characters */
 	cmd_skipblanks(line, pos, blanks);
 
-	wp = 0;
-	while ((c = *(char *)(line + *pos)) != 0) {
+	while ((c = line[*pos]) != 0) {
 
 		/* Test cite characters */
 		if (cites) {
 			for (i = 0; cites[i]; i++) {
-				if (c != cites[i])
-					continue;
-				citefl ^= 1;
-				break;
+				if (c == cites[i]) {
+					citefl ^= 1;
+					break;
+				}
 			}
 
 			/* Go to next iteration if cite character found */
@@ -211,10 +203,10 @@ char *cmd_getnext(char *line, unsigned int *pos, char *blanks, char *cites, char
 
 		/* Test separators */
 		for (i = 0; blanks[i]; i++) {
-			if (c != blanks[i])
-				continue;
-			break;
+			if (c == blanks[i])
+				break;
 		}
+
 		if (!citefl && blanks[i])
 			break;
 
