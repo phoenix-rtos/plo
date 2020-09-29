@@ -279,8 +279,6 @@ int low_mmget(unsigned int n, low_mmitem_t *mmitem)
 
 int low_launch(void)
 {
-	_imxrt_cleanDCache();
-
 	plo_syspage->arg = (char *)(plo_syspage + plo_syspage->syspagesz);
 	plo_syspage->syspagesz += MAX_ARGS;
 	low_memcpy((void *)(plo_syspage->arg), args, MAX_ARGS);
@@ -293,6 +291,7 @@ int low_launch(void)
 	plo_syspage->syspagesz += (plo_syspage->mapssz * sizeof(syspage_map_t));
 	low_memcpy((void *)(plo_syspage->maps), maps, plo_syspage->mapssz * sizeof(syspage_map_t));
 
+	_imxrt_cleanDCache();
 
 	low_cli();
 	asm("mov r9, %1; \

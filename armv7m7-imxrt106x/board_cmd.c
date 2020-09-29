@@ -279,10 +279,6 @@ void cmd_loadkernel(unsigned int pdn, char *arg, u16 *po)
 		}
 	}
 
-	plo_syspage->kernel.data = NULL;
-	plo_syspage->kernel.datasz = 0;
-
-
 	cmd_findElfSections(pdn, handle, hdr, kernel_offs);
 
 	kernel_entry = hdr.e_entry;
