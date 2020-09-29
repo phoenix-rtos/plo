@@ -37,7 +37,7 @@
 
 extern int plostd_isalnum(char c);
 
-extern int plostd_strlen(char *s);
+extern unsigned int plostd_strlen(const char *s);
 
 extern int plostd_strcmp(const char *s1, const char *s2);
 
@@ -45,15 +45,15 @@ extern char *plostd_itoa(unsigned int i, char *buff);
 
 extern char *plostd_itoah(u8 *ip, u8 is, char *buff, int lz);
 
-extern unsigned int plostd_ahtoi(char *s);
+extern unsigned int plostd_ahtoi(const char *s);
 
 extern char *plostd_ltoa(unsigned long n, unsigned int base, char *buff);
 
-extern unsigned long plostd_atol(char *s);
+extern unsigned long plostd_atol(const char *s);
 
-extern void plostd_puts(char *s);
+extern void plostd_puts(const char *s);
 
-extern void plostd_printf(char attr, char *, ...);
+extern void plostd_printf(char attr, const char *, ...);
 
 
 #endif
