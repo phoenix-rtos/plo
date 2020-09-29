@@ -34,34 +34,27 @@ int plostd_isalnum(char c)
 }
 
 
-int plostd_strlen(char *s)
+unsigned int plostd_strlen(const char *s)
 {
-	char *p;
 	unsigned int k = 0;
 
-	for (p = s; *p; p++)
-		k++;
+	for (; s[k]; k++);
 	return k;
 }
 
 
 int plostd_strcmp(const char *s1, const char *s2)
 {
-	unsigned int k = 0;
+	for(; *s1 && *s1 == *s2; ++s1, ++s2);
 
-	for (k = 0; s1[k] && s2[k]; k++) {
-		if (s1[k] != s2[k])
-			break;
-	}
-	if (s1[k] || s2[k])
+	if (*s1 || *s2)
 		return ERR_STD_NOTEQ;
-	return 0;
+	return ERR_NONE;
 }
-
 
 char *plostd_itoa(unsigned int i, char *buff)
 {
-	static char *digits = "0123456789";
+	static const char *digits = "0123456789";
 	int l = 0;
 	int div, offs;
 	int nz = 0;
@@ -100,7 +93,7 @@ char *plostd_itoa(unsigned int i, char *buff)
 
 char *plostd_itoah(u8 *ip, u8 is, char *buff, int lz)
 {
-	static char *digitsh = "0123456789abcdef";
+	static const char *digitsh = "0123456789abcdef";
 	int l, offs, i, nz = 0;
 
 	for (i = 0, l = 0; i < is; i++) {
@@ -122,7 +115,7 @@ char *plostd_itoah(u8 *ip, u8 is, char *buff, int lz)
 
 static unsigned int _plostd_ltoa(unsigned long n, unsigned int base, char *buff)
 {
-	static char *digits = "0123456789abcdef";
+	static const char *digits = "0123456789abcdef";
 	unsigned int i = (n < base) ? 0 : _plostd_ltoa(n / base, base, buff);
 
 	buff[i] = digits[n % base];
@@ -155,9 +148,9 @@ char *plostd_ltoa(unsigned long n, unsigned int base, char *buff)
 }
 
 
-unsigned int plostd_ahtoi(char *s)
+unsigned int plostd_ahtoi(const char *s)
 {
-	static char *digitsh = "0123456789abcdef";
+	static const char *digitsh = "0123456789abcdef";
 	char *p;
 	int k, i, found;
 	unsigned int v, pow;
@@ -186,7 +179,7 @@ unsigned int plostd_ahtoi(char *s)
 }
 
 
-static unsigned long _plostd_atol(char *s, unsigned int base, unsigned long n)
+static unsigned long _plostd_atol(const char *s, unsigned int base, unsigned long n)
 {
 	unsigned int x;
 
@@ -204,7 +197,7 @@ static unsigned long _plostd_atol(char *s, unsigned int base, unsigned long n)
 }
 
 
-unsigned long plostd_atol(char *s)
+unsigned long plostd_atol(const char *s)
 {
 	unsigned int base = 10;
 
@@ -227,20 +220,18 @@ unsigned long plostd_atol(char *s)
 }
 
 
-void plostd_puts(char *s)
+void plostd_puts(const char *s)
 {
-	char *p;
-
-	for (p = s; *p; p++)
-		low_putc(*p);
+	for (; *s; s++)
+		low_putc(*s);
 	return;
 }
 
 
-void plostd_printf(char attr, char *fmt, ...)
+void plostd_printf(char attr, const char *fmt, ...)
 {
 	va_list ap;
-	char *p;
+	const char *p;
 	char buff[16];
 	int i;
 	long l;
