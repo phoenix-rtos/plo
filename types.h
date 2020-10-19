@@ -59,20 +59,20 @@ typedef u8 *va_list;
 #define va_end(ap) ((void)0)
 
 typedef volatile struct {
-    int sec, min, hour, dom, dow, doy, month, year;
+	int sec, min, hour, dom, dow, doy, month, year;
 } *time_st;
 
 typedef union{
-    u32 all;
-    struct{
-        u32 mode    : 5;
-        u32 t_bit   : 1;
-        u32 f_bit   : 1;
-        u32 i_bit   : 1;
-        u32 dmz     : 19;
-        u32 q_bit   : 1;
-        u32 flags   : 4;
-    };
+	u32 all;
+	struct{
+		u32 mode    : 5;
+		u32 t_bit   : 1;
+		u32 f_bit   : 1;
+		u32 i_bit   : 1;
+		u32 dmz     : 19;
+		u32 q_bit   : 1;
+		u32 flags   : 4;
+	};
 }psr_t;
 
 
