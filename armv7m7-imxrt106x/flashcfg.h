@@ -41,7 +41,7 @@ enum { flash_windbond = 0xef, flash_issi = 0x9d, flash_micron = 0x20 };
 #define READ_JEDEC_ID_SEQ_ID       12
 
 
-int flash_getCfg(flash_context_t *ctx);
+int flashcfg_getCfg(flash_context_t *ctx);
 
 
 #endif

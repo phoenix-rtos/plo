@@ -28,50 +28,50 @@
 #define DEFAULT_SECTOR_SIZE            0x1000
 
 typedef struct {
-    u32 size;
-    u32 page_size;
-    u32 sector_size;
+	u32 size;
+	u32 page_size;
+	u32 sector_size;
 } flash_properties_t;
 
 
 typedef struct {
-    flash_properties_t properties;
-    serial_norConfigOption_t option;
-    flexspi_norConfig_t config;
+	flash_properties_t properties;
+	serial_norConfigOption_t option;
+	flexspi_norConfig_t config;
 
-    u32 address;
-    u32 instance;
-    u32 flashID;
+	u32 address;
+	u32 instance;
+	u32 flashID;
 
-    int sectorID;
-    int counter;
+	int sectorID;
+	int counter;
 
-    char buff[DEFAULT_SECTOR_SIZE];
+	char buff[DEFAULT_SECTOR_SIZE];
 } flash_context_t;
 
 
-s32 flash_readData(flash_context_t *ctx, u32 offset, char *buff, u32 size);
+s32 flashdrv_readData(flash_context_t *ctx, u32 offset, char *buff, u32 size);
 
 
-s32 flash_directBytesWrite(flash_context_t *ctx, u32 offset, const char *buff, u32 size);
+s32 flashdrv_directBytesWrite(flash_context_t *ctx, u32 offset, const char *buff, u32 size);
 
 
-s32 flash_bufferedPagesWrite(flash_context_t *ctx, u32 offset, const char *buff, u32 size);
+s32 flashdrv_bufferedPagesWrite(flash_context_t *ctx, u32 offset, const char *buff, u32 size);
 
 
-void flash_sync(flash_context_t *ctx);
+void flashdrv_sync(flash_context_t *ctx);
 
 
-int flash_chipErase(flash_context_t *ctx);
+int flashdrv_chipErase(flash_context_t *ctx);
 
 
-int flash_sectorErase(flash_context_t *ctx, u32 offset);
+int flashdrv_sectorErase(flash_context_t *ctx, u32 offset);
 
 
-int flash_init(flash_context_t *ctx);
+int flashdrv_init(flash_context_t *ctx);
 
 
-void flash_contextDestroy(flash_context_t *ctx);
+void flashdrv_contextDestroy(flash_context_t *ctx);
 
 
 #endif
