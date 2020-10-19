@@ -41,6 +41,8 @@ extern unsigned int plostd_strlen(const char *s);
 
 extern int plostd_strcmp(const char *s1, const char *s2);
 
+extern int plostd_strncmp(const char *s1, const char *s2, u32 n);
+
 extern char *plostd_itoa(unsigned int i, char *buff);
 
 extern char *plostd_itoah(u8 *ip, u8 is, char *buff, int lz);

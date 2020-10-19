@@ -45,12 +45,39 @@ unsigned int plostd_strlen(const char *s)
 
 int plostd_strcmp(const char *s1, const char *s2)
 {
-	for(; *s1 && *s1 == *s2; ++s1, ++s2);
+	const char *p;
+	unsigned int k;
 
-	if (*s1 || *s2)
-		return ERR_STD_NOTEQ;
-	return ERR_NONE;
+	for (p = s1, k = 0; *p; p++, k++) {
+
+		if (*p < *(s2 + k))
+			return -1;
+		else if (*p > *(s2 + k))
+			return 1;
+	}
+
+	if (*p != *(s2 + k))
+		return -1;
+
+	return 0;
 }
+
+
+int plostd_strncmp(const char *s1, const char *s2, u32 n)
+{
+	const char *p;
+	u32 k = 0;
+
+	for (p = s1, k = 0; *p && k < n; p++, k++) {
+		if (*p < *(s2 + k))
+			return -1;
+		else if (*p > *(s2 + k))
+			return 1;
+	}
+
+	return 0;
+}
+
 
 char *plostd_itoa(unsigned int i, char *buff)
 {
