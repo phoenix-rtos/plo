@@ -21,7 +21,6 @@ TARGET ?= armv7m7-imxrt106x
 #TARGET ?= armv7a7-imx6ull
 #TARGET ?= riscv64-spike
 
-CFLAGS += -Iplo/armv7m7-imxrt106x/config.h
 
 include ../phoenix-rtos-build/Makefile.common
 include ../phoenix-rtos-build/Makefile.$(TARGET_SUFF)
