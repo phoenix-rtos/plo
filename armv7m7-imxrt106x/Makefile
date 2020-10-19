@@ -7,4 +7,4 @@
 #
 
 
-OBJS += $(addprefix $(PREFIX_O)$(TARGET)/, _startup.o low.o imxrt.o serial.o board_cmd.o timer.o phfs.o flashdrv.o rom_api.o flashcfg.o flash.o)
+OBJS += $(addprefix $(PREFIX_O)$(TARGET)/, _startup.o low.o imxrt.o serial.o cmd.o timer.o flashdrv.o rom_api.o flashcfg.o phfs-flash.o syspage.o)
