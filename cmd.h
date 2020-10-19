@@ -19,13 +19,35 @@
 
 #include "types.h"
 
-
-/* Boot command size */
-#define CMD_SIZE          64
-
-
 #define DEFAULT_BLANKS    " \t"
 #define DEFAULT_CITES     "\""
+
+/* Boot command size */
+#define CMD_SIZE                  64
+#define MAX_COMMANDS_NB           20
+
+#define MAX_CMD_LOAD_ARGS_NB      12
+#define MAX_APP_NAME_SIZE         17
+
+#define KERNEL_PATH               "phoenix"
+
+
+typedef struct {
+	char *name;
+	unsigned int pdn;
+} cmd_device_t;
+
+
+typedef struct {
+	void (*f)(char *);
+	char *cmd;
+	char *help;
+} cmd_t;
+
+
+
+/* Initialize commands */
+extern void cmd_init(void);
 
 
 /* Function parses loader commands */
@@ -35,33 +57,49 @@ extern void cmd_parse(char *line);
 /* Generic command handlers */
 extern void cmd_help(char *s);
 
+
 extern void cmd_timeout(char *s);
 
+
 extern void cmd_go(char *s);
+
 
 extern void cmd_cmd(char *s);
 
 
-/* Specific command handlers - defining per platform */
 extern void cmd_dump(char *s);
 
-extern void cmd_load(char *args);
 
-extern void cmd_memmap(char *s);
+extern void cmd_write(char *s);
+
 
 extern void cmd_copy(char *s);
 
+
+extern void cmd_memmap(char *s);
+
+
 extern void cmd_save(char *s);
 
-extern void cmd_lspci(char *s);
 
-extern void cmd_write(char *s);
+extern void cmd_kernel(char *s);
+
+
+extern void cmd_app(char *s);
+
+
+extern void cmd_map(char *args);
+
+
+extern void cmd_syspage(char *s);
 
 
 /* Auxiliary functions */
 extern void cmd_showprogress(u32 p);
 
+
 extern void cmd_skipblanks(char *line, unsigned int *pos, char *blanks);
+
 
 extern char *cmd_getnext(char *line, unsigned int *pos, char *blanks, char *cites, char *word, unsigned int len);
 

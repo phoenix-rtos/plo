@@ -15,20 +15,21 @@
 
 
 #include "imxrt.h"
+#include "phfs-flash.h"
 #include "config.h"
+#include "peripherals.h"
 #include "flashdrv.h"
+#include "cmd-board.h"
+
+
 #include "../low.h"
 #include "../plostd.h"
 #include "../errors.h"
 #include "../serial.h"
+#include "../syspage.h"
+#include "../phoenixd.h"
 
-#define SIZE_INTERRUPTS 167
 
-#define SYSPAGE_ADDRESS      0x20200000
-
-#define MAX_PROGRAMS         32
-#define MAX_MAPS             16
-#define MAX_ARGS             256
 
 typedef struct {
 	void *data;
@@ -36,79 +37,30 @@ typedef struct {
 } intr_handler_t;
 
 
+/* Board command definitions */
+const cmd_t board_cmds[] = {
+	{ cmd_flexram,    "flexram", " - define flexram value, usage: flexram <value>" },
+	{ NULL, NULL, NULL }
+};
+
+
+const cmd_device_t devices[] = {
+	{ "flash0", PDN_FLASH0 },
+	{ "flash1", PDN_FLASH1 },
+	{ "com1", PDN_COM1 },
+	{ NULL, NULL }
+};
+
+
+
 struct{
+	u16 timeout;
+	u32 kernel_entry;
 	intr_handler_t irqs[SIZE_INTERRUPTS];
 } low_common;
 
 
-u16  _plo_timeout = 3;
-char _welcome_str[] = WELCOME;
-char _plo_command[CMD_SIZE] = DEFAULT_CMD;
-
-
-char args[MAX_ARGS];
-syspage_map_t maps[MAX_MAPS];
-syspage_program_t programs[MAX_PROGRAMS];
-
-
-/* Init and deinit functions */
-static void low_initSyspage(void)
-{
-	plo_syspage = (void *)SYSPAGE_ADDRESS;
-
-	plo_syspage->arg = args;
-	plo_syspage->maps = maps;
-	plo_syspage->progs = programs;
-
-	plo_syspage->mapssz = 0;
-	plo_syspage->progssz = 0;
-	plo_syspage->syspagesz = sizeof(syspage_t);
-
-	plo_syspage->kernel.data = NULL;
-	plo_syspage->kernel.datasz = 0;
-
-	plo_syspage->kernel.bss = NULL;
-	plo_syspage->kernel.bsssz = 0;
-
-	plo_syspage->kernel.text = NULL;
-	plo_syspage->kernel.textsz = 0;
-}
-
-
-static void low_initMaps(void)
-{
-	/* Get size ITCM & DTCM from GPR17 */
-
-	/* TODO: get ITCM & DTCM & OCRAM from GPR17 */
-
-
-	/* DTCM */
-	plo_syspage->maps[plo_syspage->mapssz].id = plo_syspage->mapssz + 1;
-	plo_syspage->maps[plo_syspage->mapssz].start = 0x20000000;
-	plo_syspage->maps[plo_syspage->mapssz].end = 0x20028000;
-	plo_syspage->maps[plo_syspage->mapssz].attr = mAttrRead | mAttrWrite;
-	low_memcpy(plo_syspage->maps[plo_syspage->mapssz].name, "DTCM", 5);
-	++plo_syspage->mapssz;
-
-	/* OCRAM2 */
-	plo_syspage->maps[plo_syspage->mapssz].id = plo_syspage->mapssz + 1;
-	plo_syspage->maps[plo_syspage->mapssz].start = 0x20200000;
-	plo_syspage->maps[plo_syspage->mapssz].end = 0x2027fe00;
-	plo_syspage->maps[plo_syspage->mapssz].attr = mAttrRead | mAttrWrite | maAttrExec;
-	low_memcpy(plo_syspage->maps[plo_syspage->mapssz].name, "OCRAM2", 7);
-	++plo_syspage->mapssz;
-
-	/* TODO: OCRAM based on GPR17 */
-
-	/* ITCM */
-	plo_syspage->maps[plo_syspage->mapssz].id = plo_syspage->mapssz + 1;
-	plo_syspage->maps[plo_syspage->mapssz].start = 0;
-	plo_syspage->maps[plo_syspage->mapssz].end = 0x40000;
-	plo_syspage->maps[plo_syspage->mapssz].attr = mAttrRead | maAttrExec;
-	low_memcpy(plo_syspage->maps[plo_syspage->mapssz].name, "ITCM", 5);
-	++plo_syspage->mapssz;
-}
-
+/* Initialization functions */
 
 void low_init(void)
 {
@@ -116,20 +68,111 @@ void low_init(void)
 
 	_imxrt_init();
 
-	low_initSyspage();
+	low_setLaunchTimeout(3);
 
-	low_initMaps();
+	phfsflash_init();
+
+	syspage_init();
+
+	/* TODO: get ITCM & DTCM & OCRAM from GPR17 */
+	syspage_addmap("itcm", (void *)0, (void *)0x40000, mAttrRead | mAttrWrite | maAttrExec);
+	syspage_addmap("dtcm", (void *)0x20000000, (void *)0x20028000, mAttrRead | mAttrWrite);
+	syspage_addmap("ocram2", (void *)0x20200000, (void *)0x2027fe00, mAttrRead | mAttrWrite | maAttrExec);
+
+	syspage_addmap("xip1", (void *)0x70000000, (void *)0x70400000, mAttrRead | maAttrExec);
+	syspage_addmap("xip2", (void *)0x60000000, (void *)0x64000000, mAttrRead | maAttrExec);
+
+	syspage_setAddress((void *)SYSPAGE_ADDRESS);
+
+	/* Add entries related to plo image */
+	syspage_addEntries((u32)__bss_start__, (u32)__bss_start__ - (u32)_end + STACK_SIZE);
 
 	for (i = 0; i < SIZE_INTERRUPTS; ++i) {
 		low_common.irqs[i].data = NULL;
 		low_common.irqs[i].isr = NULL;
 	}
+
+	low_common.kernel_entry = 0;
 }
 
 
 void low_done(void)
 {
 	//TODO
+}
+
+
+void low_initphfs(phfs_handler_t *handlers)
+{
+	int i;
+
+	/* Handlers for flash memories */
+	for (i = 0; i < 2; ++i) {
+		handlers[PDN_FLASH0 + i].open = phfsflash_open;
+		handlers[PDN_FLASH0 + i].read = phfsflash_read;
+		handlers[PDN_FLASH0 + i].write = phfsflash_write;
+		handlers[PDN_FLASH0 + i].close = phfsflash_close;
+		handlers[PDN_FLASH0 + i].dn = i;
+	}
+
+	handlers[PDN_COM1].open = phoenixd_open;
+	handlers[PDN_COM1].read = phoenixd_read;
+	handlers[PDN_COM1].write = phoenixd_write;
+	handlers[PDN_COM1].close = phoenixd_close;
+	handlers[PDN_COM1].dn = PHFS_SERIAL_LOADER_ID;
+}
+
+
+void low_initdevs(cmd_device_t **devs)
+{
+	*devs = (cmd_device_t *)devices;
+}
+
+
+void low_appendcmds(cmd_t *cmds)
+{
+	int i = 0;
+
+	/* Find the last declared cmd */
+	while (cmds[i++].cmd != NULL);
+
+	if ((MAX_COMMANDS_NB - --i) < (sizeof(board_cmds) / sizeof(cmd_t)))
+		return;
+
+	low_memcpy(&cmds[i], board_cmds, sizeof(board_cmds));
+}
+
+
+
+/* Setters and getters for common data */
+
+void low_setDefaultIMAP(char *imap)
+{
+	low_memcpy(imap, "ocram2", 7);
+}
+
+
+void low_setDefaultDMAP(char *dmap)
+{
+	low_memcpy(dmap, "ocram2", 7);
+}
+
+
+void low_setKernelEntry(u32 addr)
+{
+	low_common.kernel_entry = addr;
+}
+
+
+void low_setLaunchTimeout(u32 timeout)
+{
+	low_common.timeout = timeout;
+}
+
+
+u32 low_getLaunchTimeout(void)
+{
+	return low_common.timeout;
 }
 
 
@@ -160,6 +203,7 @@ void low_outd(u16 addr, u32 d)
 {
 	//TODO
 }
+
 
 
 /* Functions make operations on memory */
@@ -276,17 +320,7 @@ int low_mmget(unsigned int n, low_mmitem_t *mmitem)
 
 int low_launch(void)
 {
-	plo_syspage->arg = (char *)(plo_syspage + plo_syspage->syspagesz);
-	plo_syspage->syspagesz += MAX_ARGS;
-	low_memcpy((void *)(plo_syspage->arg), args, MAX_ARGS);
-
-	plo_syspage->progs = (syspage_program_t *)(plo_syspage + plo_syspage->syspagesz);
-	plo_syspage->syspagesz += (plo_syspage->progssz * sizeof(syspage_program_t));
-	low_memcpy((void *)(plo_syspage->progs), programs, plo_syspage->progssz * sizeof(syspage_program_t));
-
-	plo_syspage->maps = (syspage_map_t *)(plo_syspage + plo_syspage->syspagesz);
-	plo_syspage->syspagesz += (plo_syspage->mapssz * sizeof(syspage_map_t));
-	low_memcpy((void *)(plo_syspage->maps), maps, plo_syspage->mapssz * sizeof(syspage_map_t));
+	syspage_save();
 
 	_imxrt_cleanDCache();
 
@@ -294,7 +328,7 @@ int low_launch(void)
 	asm("mov r9, %1; \
 		 blx %0"
 		 :
-		 : "r"(kernel_entry), "r"(plo_syspage));
+		 : "r"(low_common.kernel_entry), "r"(syspage_getAddress()));
 	low_sti();
 
 	return -1;
@@ -359,6 +393,8 @@ int low_irquninst(u16 irq)
 	return 0;
 }
 
+
+/* Communication functions */
 
 void low_setattr(char attr)
 {

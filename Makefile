@@ -21,31 +21,36 @@ TARGET ?= armv7m7-imxrt106x
 #TARGET ?= armv7a7-imx6ull
 #TARGET ?= riscv64-spike
 
+CFLAGS += -Iplo/armv7m7-imxrt106x/config.h
+
 include ../phoenix-rtos-build/Makefile.common
 include ../phoenix-rtos-build/Makefile.$(TARGET_SUFF)
 
 ifeq ($(TARGET_SUBFAMILY), imxrt106x)
 	INIT=.init=0x70000000
-	BSS=-Tbss=20012000
+	BSS=-Tbss=20011000
+    DATA=-Tdata=20011000
+
 	LDFLAGS:=$(filter-out -Tbss% , $(LDFLAGS))
 	LDFLAGS:=$(filter-out -Tdata% , $(LDFLAGS))
 else
 	INIT=.init=0
 endif
 
+CFLAGS += -I../plo/$(TARGET)
 
-OBJS = $(PREFIX_O)plo.o $(PREFIX_O)plostd.o $(PREFIX_O)cmd.o $(PREFIX_O)phoenixd.o $(PREFIX_O)msg.o
+OBJS = $(PREFIX_O)plo.o $(PREFIX_O)plostd.o $(PREFIX_O)cmd.o $(PREFIX_O)phoenixd.o $(PREFIX_O)msg.o $(PREFIX_O)phfs.o
 
 
 all: $(PREFIX_PROG_STRIPPED)plo-$(TARGET).elf $(PREFIX_PROG_STRIPPED)plo-$(TARGET).hex $(PREFIX_PROG_STRIPPED)plo-$(TARGET).img
 
 
-include $(TARGET)/Makefile
 
+include $(TARGET)/Makefile
 
 $(PREFIX_PROG)plo-$(TARGET).elf: $(OBJS)
 	@(printf "LD  %-24s\n" "$(@F)");
-	$(SIL)$(LD) $(LDFLAGS) -e _start --section-start $(INIT) $(BSS) -o $(PREFIX_PROG)plo-$(TARGET).elf $(OBJS) $(GCCLIB)
+	$(SIL)$(LD) $(LDFLAGS) -e _start --section-start $(INIT) $(BSS) $(DATA) -o $(PREFIX_PROG)plo-$(TARGET).elf $(OBJS) $(GCCLIB)
 
 $(PREFIX_PROG_STRIPPED)plo-$(TARGET).hex: $(PREFIX_PROG_STRIPPED)plo-$(TARGET).elf
 	@(printf "HEX %s\n" "$(@F)");
