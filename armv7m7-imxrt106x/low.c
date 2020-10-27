@@ -74,18 +74,11 @@ void low_init(void)
 
 	syspage_init();
 
-	/* TODO: get ITCM & DTCM & OCRAM from GPR17 */
-	syspage_addmap("itcm", (void *)0, (void *)0x40000, mAttrRead | mAttrWrite | maAttrExec);
-	syspage_addmap("dtcm", (void *)0x20000000, (void *)0x20028000, mAttrRead | mAttrWrite);
-	syspage_addmap("ocram2", (void *)0x20200000, (void *)0x2027fe00, mAttrRead | mAttrWrite | maAttrExec);
-
-	syspage_addmap("xip1", (void *)0x70000000, (void *)0x70400000, mAttrRead | maAttrExec);
-	syspage_addmap("xip2", (void *)0x60000000, (void *)0x64000000, mAttrRead | maAttrExec);
-
 	syspage_setAddress((void *)SYSPAGE_ADDRESS);
 
 	/* Add entries related to plo image */
-	syspage_addEntries((u32)__bss_start__, (u32)__bss_start__ - (u32)_end + STACK_SIZE);
+	syspage_addEntries((u32)plo_bss, (u32)_end - (u32)plo_bss + STACK_SIZE);
+
 
 	for (i = 0; i < SIZE_INTERRUPTS; ++i) {
 		low_common.irqs[i].data = NULL;
@@ -93,6 +86,7 @@ void low_init(void)
 	}
 
 	low_common.kernel_entry = 0;
+
 }
 
 

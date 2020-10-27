@@ -130,7 +130,6 @@ void plo_cmdloop(void)
 }
 
 
-
 void plo_init(void)
 {
 	u16 t = 0;
@@ -164,8 +163,8 @@ void plo_init(void)
 
 
 	if (t == 0) {
-		plostd_printf(ATTR_INIT, "\n%s%s", PROMPT, PLO_DEFAULT_CMD);
-		cmd_parse(PLO_DEFAULT_CMD);
+		plostd_printf(ATTR_INIT, "\n%s\n", PROMPT);
+		cmd_default();
 	}
 	plostd_printf(ATTR_INIT, "\n");
 

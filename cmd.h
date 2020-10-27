@@ -49,6 +49,8 @@ typedef struct {
 /* Initialize commands */
 extern void cmd_init(void);
 
+extern void cmd_default(void);
+
 
 /* Function parses loader commands */
 extern void cmd_parse(char *line);

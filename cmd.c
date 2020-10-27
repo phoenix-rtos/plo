@@ -21,6 +21,7 @@
 #include "elf.h"
 #include "cmd.h"
 #include "syspage.h"
+#include "script.h"
 
 
 const cmd_t genericCmds[] = {
@@ -39,7 +40,6 @@ const cmd_t genericCmds[] = {
 	{ cmd_syspage, "syspage", " - shows syspage contents, usage: syspage" },
 	{ NULL, NULL, NULL }
 };
-
 
 
 struct {
@@ -103,6 +103,7 @@ static int cmd_parseArgs(char *s, char (*args)[LINESZ + 1], u16 *argsc, int *dn)
 
 
 
+
 /* Initialization function */
 
 void cmd_init(void)
@@ -111,7 +112,16 @@ void cmd_init(void)
 
 	low_memcpy(cmd_common.cmds, genericCmds, sizeof(genericCmds));
 	low_appendcmds(cmd_common.cmds);
+
+	script_init();
 }
+
+
+void cmd_default(void)
+{
+	script_run();
+}
+
 
 
 /* Function parses loader commands */
@@ -196,6 +206,7 @@ void cmd_timeout(char *s)
 
 void cmd_go(char *s)
 {
+	plostd_printf(ATTR_INIT, "\n\n");
 	low_launch();
 
 	return;
@@ -510,12 +521,13 @@ static int cmd_loadApp(unsigned int pdn, const char *name, addr_t offs, u32 size
 	currAddr = start;
 	/* Get data from memory storage */
 	if (size) {
-		/* Check wheter device is in the the same map */
+		/* Check wheter device is in the the same map as imap */
 		if ((void *)handle.offs <= (start + offs) && (void *)handle.offs >= start) {
 			start += offs;
 			end = start + size;
 			plostd_printf(ATTR_LOADER, "Code is located in %s map. Data has not been copied.\n", imap);
 		}
+		/* Get data from memory and copy it to specific imap */
 		else {
 			for (i = 0; i < size / sizeof(buff); i++) {
 				if (phfs_read(pdn, handle, &offs, buff, (u32)sizeof(buff)) < 0) {
@@ -527,6 +539,7 @@ static int cmd_loadApp(unsigned int pdn, const char *name, addr_t offs, u32 size
 					return -1;
 
 				currAddr += sizeof(buff);
+				offs += sizeof(buff);
 				plostd_printf(ATTR_LOADER, "\rReading adress %p / %p: ", currAddr, start + size);
 				cmd_showprogress(i);
 			}
@@ -594,41 +607,48 @@ void cmd_app(char *s)
 {
 	int i = 0, pdn, argID = 0;
 	unsigned int pos = 0;
-	char nameArgs[3][LINESZ + 1];
-	char appname[MAX_APP_NAME_SIZE];
+	char cmdArgs[MAX_CMD_LOAD_ARGS_NB][LINESZ + 1];
+	u16 cmdArgsc = 0;
 
-	u16 namesz;
-	u16 argsc = 0;
-
-	addr_t offs = 0;
 	u32 size = 0;
+	addr_t offs = 0;
+	u16 namesz;
+	char *name;
+	char appArgs[3][LINESZ + 1];
 	char cmap[8], dmap[8];
-	char args[MAX_CMD_LOAD_ARGS_NB][LINESZ + 1];
 
 
-	/* Parse arguments */
-	if (cmd_parseArgs(s, args, &argsc, &pdn) < 0) {
+	/* Parse command arguments */
+	if (cmd_parseArgs(s, cmdArgs, &cmdArgsc, &pdn) < 0) {
 		plostd_printf(ATTR_ERROR, "\nWrong arguments!!\n");
 		return;
 	}
 
-	/* Set app name */
+	/* Check app name and aliases */
 	++argID;
+	name = cmdArgs[argID];
+	if (name[0] == '@') {
+		if (script_expandAlias(&name) < 0) {
+			plostd_printf(ATTR_ERROR, "\nWrong arguments!!\n");
+			return;
+		}
+	}
+
+	/* Parse program name, offset and size */
 	for (i = 0; i < 3; ++i) {
-		cmd_skipblanks(args[argID], &pos, "( : )\t");
-		if (cmd_getnext(args[argID], &pos, "( : )\t", NULL, nameArgs[i], sizeof(nameArgs[i])) == NULL || *nameArgs[i] == 0)
+		cmd_skipblanks(name, &pos, "( : )\t");
+		if (cmd_getnext(name, &pos, "( : )\t", NULL, appArgs[i], sizeof(appArgs[i])) == NULL || *appArgs[i] == 0)
 			break;
 
 		if (i == 0 ) {
-			namesz = (plostd_strlen(nameArgs[i]) < (MAX_APP_NAME_SIZE - 1)) ? (plostd_strlen(nameArgs[i]) + 1) : (MAX_APP_NAME_SIZE - 1);
-			low_memcpy(appname, nameArgs[i], namesz);
-			appname[namesz] = '\0';
+			namesz = (plostd_strlen(appArgs[i]) < (MAX_APP_NAME_SIZE - 1)) ? (plostd_strlen(appArgs[i]) + 1) : (MAX_APP_NAME_SIZE - 1);
+			appArgs[0][namesz] = '\0';
 		}
 		else if (i == 1) {
-			offs = plostd_ahtoi(nameArgs[i]);
+			offs = plostd_ahtoi(appArgs[i]);
 		}
 		else if (i == 2) {
-			size = plostd_ahtoi(nameArgs[i]);
+			size = plostd_ahtoi(appArgs[i]);
 		}
 	}
 
@@ -637,19 +657,20 @@ void cmd_app(char *s)
 	low_setDefaultDMAP(dmap);
 
 	/* Get map for code section */
-	if ((argID + 1) < argsc)
-		low_memcpy(cmap, args[++argID], 8);
+	if ((argID + 1) < cmdArgsc)
+		low_memcpy(cmap, cmdArgs[++argID], 8);
 
 	/* Get map for data section */
-	if ((argID + 1) < argsc)
-		low_memcpy(dmap, args[++argID], 8);
+	if ((argID + 1) < cmdArgsc)
+		low_memcpy(dmap, cmdArgs[++argID], 8);
+
 
 	if (offs != 0 && size != 0)
-		plostd_printf(ATTR_LOADER, "\nLoading %s (offs=%p, size=%p, cmap=%s, dmap=%s)\n", appname, offs, size, cmap, dmap);
+		plostd_printf(ATTR_LOADER, "\nLoading %s (offs=%p, size=%p, cmap=%s, dmap=%s)\n", appArgs[0], offs, size, cmap, dmap);
 	else
-		plostd_printf(ATTR_LOADER, "\nLoading %s (offs=UNDEF, size=UNDEF, cmap=%s, dmap=%s)\n", appname, cmap, dmap);
+		plostd_printf(ATTR_LOADER, "\nLoading %s (offs=UNDEF, size=UNDEF, imap=%s, dmap=%s)\n", appArgs[0], cmap, dmap);
 
-	cmd_loadApp(cmd_common.devs[pdn].pdn, appname, offs, size, cmap, dmap);
+	cmd_loadApp(cmd_common.devs[pdn].pdn, appArgs[0], offs, size, cmap, dmap);
 
 	return;
 }
@@ -721,16 +742,12 @@ void cmd_map(char *s)
 		}
 	}
 
-	plostd_printf(ATTR_LOADER, "\n Map offs: %p size %p .\n", start, end);
-
-
 	if (syspage_addmap(mapname, (void *)start, (void *)end, attr) < 0) {
 		plostd_printf(ATTR_ERROR, "\nMap cannot be created. Check map range and parameters!!\n");
 		return;
 	}
 
-
-	plostd_printf(ATTR_LOADER, "\nMap: %s has been created.\n", mapname);
+	plostd_printf(ATTR_LOADER, "\nMap: %s offs: %p size %p has been created.\n", mapname, start, end);
 
 	return;
 }
