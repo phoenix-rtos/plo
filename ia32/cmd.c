@@ -563,7 +563,7 @@ void cmd_copy(char *s)
 		plostd_printf(ATTR_ERROR, "\n'%s' - unknown dst device!\n", word);
 		
 		if (phfs_close(devices[sdn].pdn, sh) < 0)
-			plostd_printf(ATTR_LOADER, "Failed to sync with %s!\n", devices[sdn].name);
+			plostd_printf(ATTR_ERROR, "Failed to sync %s!\n", devices[sdn].name);
 
 		return;
 	}
@@ -572,7 +572,7 @@ void cmd_copy(char *s)
 		plostd_printf(ATTR_ERROR, "\nBad dst file/LBA specified!\n");
 
 		if (phfs_close(devices[sdn].pdn, sh) < 0)
-			plostd_printf(ATTR_LOADER, "Failed to sync with %s!\n", devices[sdn].name);
+			plostd_printf(ATTR_ERROR, "Failed to sync %s!\n", devices[sdn].name);
 
 		return;
 	}
@@ -581,10 +581,10 @@ void cmd_copy(char *s)
 		plostd_printf(ATTR_ERROR, "\nBad len!\n");
 
 		if (phfs_close(devices[sdn].pdn, sh) < 0)
-			plostd_printf(ATTR_LOADER, "Failed to sync with %s!\n", devices[sdn].name);
+			plostd_printf(ATTR_ERROR, "Failed to sync %s!\n", devices[sdn].name);
 
 		if (phfs_close(devices[ddn].pdn, dh) < 0)
-			plostd_printf(ATTR_LOADER, "Failed to sync with %s!\n", devices[ddn].name);
+			plostd_printf(ATTR_ERROR, "Failed to sync %s!\n", devices[ddn].name);
 
 		return;
 	}
@@ -595,7 +595,7 @@ void cmd_copy(char *s)
 		plostd_printf(ATTR_LOADER, " / %sB", plostd_ltoa(len, 10, buff));
 	}
 
-	for (l = 0; !err && l < len;) {
+	for (l = 0; l < len;) {
 		if ((sl = phfs_read(devices[sdn].pdn, sh, &pos, buff, min(sizeof(buff), len - l))) <= 0) {
 			if (sl < 0) {
 				plostd_printf(ATTR_ERROR, "\nFailed to read data from %s!", devices[sdn].name);
@@ -614,21 +614,23 @@ void cmd_copy(char *s)
 		}
 		l += i;
 
+		if (err)
+			break;
+
 		plostd_printf(ATTR_LOADER, "\rCopied %sB", plostd_ltoa(l, 10, buff));
 		if (len != -1)
 			plostd_printf(ATTR_LOADER, " / %sB", plostd_ltoa(len, 10, buff));
 	}
-
 	plostd_printf(ATTR_LOADER, "\n");
-	
+
 	if (!err)
 		plostd_printf(ATTR_LOADER, "Finished copying\n");
 
 	if (phfs_close(devices[sdn].pdn, sh) < 0)
-		plostd_printf(ATTR_LOADER, "Failed to sync with %s!\n", devices[sdn].name);
+		plostd_printf(ATTR_ERROR, "Failed to sync %s!\n", devices[sdn].name);
 
 	if (phfs_close(devices[ddn].pdn, dh) < 0)
-		plostd_printf(ATTR_LOADER, "Failed to sync with %s!\n", devices[ddn].name);
+		plostd_printf(ATTR_ERROR, "Failed to sync %s!\n", devices[ddn].name);
 
 	return;
 }
