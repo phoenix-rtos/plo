@@ -151,6 +151,10 @@ extern int low_int13access(u8 mode, u8 drive, u16 c, u8 h, u8 s, u8 n, u8 *buff)
 
 extern int low_int13param(u8 drive, u16 *mc, u8 *mh, u8 *ms);
 
+extern int low_int13ext(u8 drive);
+
+extern int low_int13paramext(u8 drive, void *buff);
+
 
 /* Function prepares memory map for kernel */
 extern int low_mmcreate(void);

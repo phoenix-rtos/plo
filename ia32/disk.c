@@ -22,6 +22,40 @@
 #include "disk.h"
 
 
+static int disk_geometry(u8 dn, u16 *cyls, u8 *heads, u8 *secs)
+{
+	struct {
+		u16 len;
+		u16 flags;
+		u32 cyls;
+		u32 heads;
+		u32 secs;
+		u64 size;
+		u16 secsz;
+	} buff;
+
+	/* Use int13 extensions */
+	if (!low_int13ext(dn)) {
+		buff.len = sizeof(buff);
+		if (!low_int13paramext(dn, &buff)) {
+			*cyls = (u16)(buff.cyls & 0xffff);
+			*heads = (u8)(buff.heads & 0xff);
+			*secs = (u8)(buff.secs & 0xff);
+			return 0;
+		}
+	}
+
+	/* Fallback to default */
+	if (!low_int13param(dn, cyls, heads, secs)) {
+		*cyls += 1;
+		*heads += 1;
+		return 0;
+	}
+
+	return 1;
+}
+
+
 s32 disk_open(u16 dn, char *name, u32 flags)
 {
 	return 64;
@@ -38,17 +72,13 @@ s32 disk_read(u16 dn, s32 handle, u32 *pos, u8 *buff, u32 len)
 	u16 c, cyls;
 	u32 sb, eb, l = 0;
 	u16 boffs, size;
-	int err;
 
 	if (!len)
 		return ERR_ARG;
 
 	/* Get disk geometry */
-	if (err = low_int13param(dn, &cyls, &heads, &secs))
+	if (disk_geometry(dn, &cyls, &heads, &secs))
 		return ERR_PHFS_IO;
-
-	cyls += 1;
-	heads += 1;
 
 	/* Calculate start and end block numbers */
 	sb = handle + *pos / SECTOR_SIZE;
@@ -64,7 +94,7 @@ s32 disk_read(u16 dn, s32 handle, u32 *pos, u8 *buff, u32 len)
 
 		/* Read track from disk to cache */
 		if (empty || (dn != ldn) || (c != lc) || (h != lh) || (offs != loffs)) {
-			if ((err = low_int13access(INT13_READ, dn, c, h, offs, min(RCACHE_SIZE, secs), cache)))
+			if (low_int13access(INT13_READ, dn, c, h, offs, min(RCACHE_SIZE, secs), cache))
 				return ERR_PHFS_IO;
 
 			ldn = dn;
@@ -96,18 +126,14 @@ s32 disk_write(u16 dn, s32 handle, u32 *pos, u8 *buff, u32 len, u8 sync)
 	u16 c, cyls;
 	u32 sb, eb, l = 0;
 	u16 boffs, size;
-	int err;
 
 	if (!len && !sync)
 		return ERR_ARG;
 
 	if (len) {
 		/* Get disk geometry */
-		if (err = low_int13param(dn, &cyls, &heads, &secs))
+		if (disk_geometry(dn, &cyls, &heads, &secs))
 			return ERR_PHFS_IO;
-
-		cyls += 1;
-		heads += 1;
 
 		/* Calculate start and end block numbers */
 		sb = handle + *pos / SECTOR_SIZE;
@@ -124,7 +150,7 @@ s32 disk_write(u16 dn, s32 handle, u32 *pos, u8 *buff, u32 len, u8 sync)
 
 			/* Write compact track segment from cache to disk */
 			if ((lb != le) && ((dn != ldn) || (c != lc) || (h != lh) || (offs != loffs) || (b + 1 < lb) || (b > le))) {
-				if ((err = low_int13access(INT13_WRITE, dn, lc, lh, loffs + lb, le - lb, cache + lb * SECTOR_SIZE)))
+				if (low_int13access(INT13_WRITE, dn, lc, lh, loffs + lb, le - lb, cache + lb * SECTOR_SIZE))
 					return ERR_PHFS_IO;
 
 				/* Mark cache empty */
@@ -158,7 +184,7 @@ s32 disk_write(u16 dn, s32 handle, u32 *pos, u8 *buff, u32 len, u8 sync)
 	}
 
 	if (sync && (lb != le)) {
-		if ((err = low_int13access(INT13_WRITE, ldn, lc, lh, loffs + lb, le - lb, cache + lb * SECTOR_SIZE)))
+		if (low_int13access(INT13_WRITE, ldn, lc, lh, loffs + lb, le - lb, cache + lb * SECTOR_SIZE))
 			return ERR_PHFS_IO;
 
 		lb = le = 0;
