@@ -473,7 +473,6 @@ int low_int13access(u8 mode, u8 drive, u16 c, u8 h, u8 s, u8 n, u8 *buff)
 #asm
 	push bp
 	mov bp, sp
-
 	push bx
 	push cx
 	push dx
@@ -494,12 +493,12 @@ int low_int13access(u8 mode, u8 drive, u16 c, u8 h, u8 s, u8 n, u8 *buff)
 	mov bx, 16[bp] /* buffer */
 
 	int 0x13
-	jc low_int13access_l1
+	jc low_int13access_l0
 	mov ax, #0
 
-low_int13access_l1:
-	pop cx
+low_int13access_l0:
 	pop dx
+	pop cx
 	pop bx
 	pop bp
 #endasm
@@ -511,10 +510,9 @@ int low_int13param(u8 drive, u16 *mc, u8 *mh, u8 *ms)
 #asm
 	push bp
 	mov bp, sp
-
 	push bx
-	push dx
 	push cx
+	push dx
 	push es
 
 ; get disk parameters
@@ -522,6 +520,7 @@ int low_int13param(u8 drive, u16 *mc, u8 *mh, u8 *ms)
 	mov dl, 4[bp] /* drive */
 	int 0x13
 	jc low_int13param_l0
+	mov ax, #0
 
 	mov bx, 6[bp]
 	mov [bx], ch
@@ -537,15 +536,57 @@ int low_int13param(u8 drive, u16 *mc, u8 *mh, u8 *ms)
 	and cl, #0x3f
 	mov [bx], cl   /* S */
 
-	mov ax, #0
-	jmp low_int13param_l1
-
 low_int13param_l0:
-	/*mov ax, #1 */
-
-low_int13param_l1:
 	pop es
+	pop dx
 	pop cx
+	pop bx
+	pop bp
+#endasm
+}
+
+
+int low_int13ext(u8 drive)
+{
+#asm
+	push bp
+	mov bp, sp
+	push bx
+	push dx
+
+	mov ah, #0x41
+	mov bx, #0x55aa
+	mov dl, 4[bp] /* drive */
+	int 0x13
+	jc low_int13ext_l0
+	mov ax, #0
+
+low_int13ext_l0:
+	pop dx
+	pop bx
+	pop bp
+#endasm
+}
+
+
+int low_int13paramext(u8 drive, void *buff)
+{
+#asm
+	push bp
+	mov bp, sp
+	push bx
+	push dx
+	push si
+
+	mov ah, #0x48
+	mov dl, 4[bp] /* drive */
+	mov si, 6[bp] /* buff */
+	int 0x13
+	jc low_int13paramext_l0
+	mov ax, #0
+
+low_int13paramext_l0:
+	pop si
 	pop dx
 	pop bx
 	pop bp
