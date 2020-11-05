@@ -277,14 +277,10 @@ int flashdrv_init(flash_context_t *ctx)
 	ctx->config.mem.serialClkFreq = 8;
 	ctx->config.mem.sflashPadType = 4;
 
-
 	if ((res = flashdrv_defineFlexSPI(ctx)) < 0)
 		return res;
 
 	if (flexspi_norGetConfig(ctx->instance, &ctx->config, &ctx->option) != 0)
-		return ERR_ARG;
-
-	if (flexspi_norFlashInit(ctx->instance, &ctx->config) != 0)
 		return ERR_ARG;
 
 	if (flashdrv_getVendorID(ctx, &ctx->flashID) != 0)

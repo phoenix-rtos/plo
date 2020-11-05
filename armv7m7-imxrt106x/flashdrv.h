@@ -50,28 +50,28 @@ typedef struct {
 } flash_context_t;
 
 
-s32 flashdrv_readData(flash_context_t *ctx, u32 offset, char *buff, u32 size);
+extern s32 flashdrv_readData(flash_context_t *ctx, u32 offset, char *buff, u32 size);
 
 
-s32 flashdrv_directBytesWrite(flash_context_t *ctx, u32 offset, const char *buff, u32 size);
+extern s32 flashdrv_directBytesWrite(flash_context_t *ctx, u32 offset, const char *buff, u32 size);
 
 
-s32 flashdrv_bufferedPagesWrite(flash_context_t *ctx, u32 offset, const char *buff, u32 size);
+extern s32 flashdrv_bufferedPagesWrite(flash_context_t *ctx, u32 offset, const char *buff, u32 size);
 
 
-void flashdrv_sync(flash_context_t *ctx);
+extern void flashdrv_sync(flash_context_t *ctx);
 
 
-int flashdrv_chipErase(flash_context_t *ctx);
+extern int flashdrv_chipErase(flash_context_t *ctx);
 
 
-int flashdrv_sectorErase(flash_context_t *ctx, u32 offset);
+extern int flashdrv_sectorErase(flash_context_t *ctx, u32 offset);
 
 
-int flashdrv_init(flash_context_t *ctx);
+extern int flashdrv_init(flash_context_t *ctx);
 
 
-void flashdrv_contextDestroy(flash_context_t *ctx);
+extern void flashdrv_contextDestroy(flash_context_t *ctx);
 
 
 #endif
