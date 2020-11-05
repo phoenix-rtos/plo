@@ -23,6 +23,17 @@
 #include "syspage.h"
 #include "script.h"
 
+#define MSG_BUFF_SZ 0x100
+
+
+typedef struct {
+	unsigned int dn;
+	handle_t handle;
+
+	addr_t dataOffs;
+	u32 datasz;
+} phfs_conf_t;
+
 
 const cmd_t genericCmds[] = {
 	{ cmd_help,    "help", "    - prints this message" },
@@ -51,41 +62,44 @@ struct {
 
 /* Auxiliary functions */
 
-static int cmd_checkDev(const char *dev)
+static int cmd_checkDev(const char *devName, unsigned int *dn)
 {
-	unsigned int dn;
+	unsigned int i;
 
 	/* Show boot devices if parameter is empty */
-	if (*dev == 0) {
+
+	if (*devName == 0) {
 		plostd_printf(ATTR_LOADER, "\nBoot devices: ");
 
-		for (dn = 0; cmd_common.devs[dn].name; dn++)
-			plostd_printf(ATTR_LOADER, "%s ", cmd_common.devs[dn].name);
+		for (i = 0; cmd_common.devs[i].name; i++)
+			plostd_printf(ATTR_LOADER, "%s ", cmd_common.devs[i].name);
 		plostd_printf(ATTR_LOADER, "\n");
 
 		return ERR_ARG;
 	}
 
-	for (dn = 0; cmd_common.devs[dn].name; dn++)  {
-		if (!plostd_strcmp(dev, cmd_common.devs[dn].name))
+	for (i = 0; cmd_common.devs[i].name; i++)  {
+		if (!plostd_strcmp(devName, cmd_common.devs[i].name))
 			break;
 	}
 
-	if (!cmd_common.devs[dn].name) {
-		plostd_printf(ATTR_ERROR, "\n'%s' - unknown boot device!\n", dev);
+	if (!cmd_common.devs[i].name) {
+		plostd_printf(ATTR_ERROR, "\n'%s' - unknown boot device!\n", devName);
 		return ERR_ARG;
 	}
 
-	return dn;
+	*dn = i;
+
+	return 0;
 }
 
 
-static int cmd_parseArgs(char *s, char (*args)[LINESZ + 1], u16 *argsc, int *dn)
+static int cmd_parseArgs(char *s, char (*args)[LINESZ + 1], u16 *argsc)
 {
 	int i;
 	unsigned int pos = 0;
 
-	for (i = 0; *argsc < MAX_CMD_LOAD_ARGS_NB; ++i) {
+	for (i = 0; *argsc < MAX_CMD_ARGS_NB; ++i) {
 		cmd_skipblanks(s, &pos, DEFAULT_BLANKS);
 		if (cmd_getnext(s, &pos, DEFAULT_BLANKS, NULL, args[i], sizeof(args[i])) == NULL || *args[i] == 0)
 			break;
@@ -93,15 +107,103 @@ static int cmd_parseArgs(char *s, char (*args)[LINESZ + 1], u16 *argsc, int *dn)
 	}
 
 	if (!*argsc)
-		return -1;
-
-	if ((*dn = cmd_checkDev(args[0])) < 0)
-		return -1;
+		return ERR_ARG;
 
 	return 0;
 }
 
 
+static int cmd_cpphfs2phfs(phfs_conf_t *src, phfs_conf_t *dst)
+{
+	int res, i = 0;
+	u32 size, chunk;
+	u8 buff[MSG_BUFF_SZ];
+
+	if (src->handle.offs != 0) {
+		if (src->datasz == 0 && src->datasz == 0) {
+			size = 0;
+		}
+		else {
+			if (src->datasz == 0 || dst->datasz == 0)
+				size = (src->datasz > dst->datasz) ? src->datasz : dst->datasz;
+			else
+				size = (src->datasz < dst->datasz) ? src->datasz : dst->datasz;
+		}
+	}
+	else {
+		size = -1;
+	}
+
+	do {
+		if (size > sizeof(buff))
+			chunk = sizeof(buff);
+		else
+			chunk = size;
+
+		if ((res = phfs_read(src->dn, src->handle, &src->dataOffs, buff, chunk)) < 0) {
+			plostd_printf(ATTR_ERROR, "\nCan't read segment data\n");
+			return ERR_PHFS_FILE;
+		}
+
+		if (phfs_write(dst->dn, dst->handle, &dst->dataOffs, buff, res, 1) < 0) {
+			plostd_printf(ATTR_ERROR, "\nCan't write segment data!\n");
+			return ERR_PHFS_FILE;
+		}
+
+		if (src->handle.offs != 0) {
+			src->dataOffs += res;
+			size -= res;
+		}
+
+		dst->dataOffs += res;
+		plostd_printf(ATTR_LOADER, "\rWriting to adress %p", dst->dataOffs + (addr_t)dst->handle.offs);
+		cmd_showprogress(i++);
+	} while (size > 0 && res > 0);
+
+	return 0;
+}
+
+
+static int cmd_cpphfs2map(phfs_conf_t *src, const char *map)
+{
+	void *addr;
+	int res, i = 0;
+	u32 size, chunk;
+	u8 buff[MSG_BUFF_SZ];
+
+	if (syspage_getMapTop(map, &addr) < 0) {
+		plostd_printf(ATTR_ERROR, "\n%s does not exist!\n", map);
+		return ERR_ARG;
+	}
+
+	size = (src->handle.offs != 0) ? src->datasz : -1;
+
+	do {
+		if (size > sizeof(buff))
+			chunk = sizeof(buff);
+		else
+			chunk = size;
+
+		if ((res = phfs_read(src->dn, src->handle, &src->dataOffs, buff, chunk)) < 0) {
+			plostd_printf(ATTR_ERROR, "\nCan't read segment data\n");
+			return ERR_PHFS_FILE;
+		}
+
+		if (syspage_write2Map(map, buff, res) < 0)
+			return ERR_ARG;
+
+		if (src->handle.offs != 0) {
+			src->dataOffs += res;
+			size -= res;
+		}
+
+		addr += res;
+		plostd_printf(ATTR_LOADER, "\rWriting to adress %p ", addr);
+		cmd_showprogress(i++);
+	} while (size > 0 && res > 0);
+
+	return 0;
+}
 
 
 /* Initialization function */
@@ -124,12 +226,12 @@ void cmd_default(void)
 
 
 
-/* Function parses loader commands */
+/* Function parses commands */
 void cmd_parse(char *line)
 {
 	int k;
-	char word[LINESZ + 1], cmd[LINESZ + 1];
 	unsigned int p = 0, wp;
+	char word[LINESZ + 1], cmd[LINESZ + 1];
 
 	for (;;) {
 		if (cmd_getnext(line, &p, ";", DEFAULT_CITES, word, sizeof(word)) == NULL) {
@@ -146,8 +248,8 @@ void cmd_parse(char *line)
 		}
 
 		/* Find command and launch associated function */
+		/* TODO: hide cursor while commands are executed */
 		for (k = 0; cmd_common.cmds[k].cmd != NULL; k++) {
-
 			if (!plostd_strcmp(cmd, cmd_common.cmds[k].cmd)) {
 				cmd_common.cmds[k].f(word + wp);
 				break;
@@ -166,21 +268,21 @@ void cmd_parse(char *line)
 
 void cmd_help(char *s)
 {
-	int k, e;
+	int i, platformCmdsID;
 
 	plostd_printf(ATTR_LOADER, "\n");
 	plostd_printf(ATTR_LOADER, "Loader commands:\n");
 	plostd_printf(ATTR_LOADER, "----------------\n");
 
-	e = sizeof(genericCmds) / sizeof(cmd_t) - 1;
+	platformCmdsID = sizeof(genericCmds) / sizeof(cmd_t) - 1;
 
-	for (k = 0; cmd_common.cmds[k].cmd; k++) {
-		if (k == e)  {
+	for (i = 0; cmd_common.cmds[i].cmd; i++) {
+		if (i == platformCmdsID)  {
 			plostd_printf(ATTR_LOADER, "\nPlatform specific commands: \n");
 			plostd_printf(ATTR_LOADER, "----------------\n");
 		}
 
-		plostd_printf(ATTR_LOADER, "%s %s\n", cmd_common.cmds[k].cmd, cmd_common.cmds[k].help);
+		plostd_printf(ATTR_LOADER, "%s %s\n", cmd_common.cmds[i].cmd, cmd_common.cmds[i].help);
 	}
 }
 
@@ -206,7 +308,7 @@ void cmd_timeout(char *s)
 
 void cmd_go(char *s)
 {
-	plostd_printf(ATTR_INIT, "\n\n");
+	plostd_printf(ATTR_INIT, "\n\n Launch Phoenix-RTOS \n");
 	low_launch();
 
 	return;
@@ -215,19 +317,19 @@ void cmd_go(char *s)
 
 void cmd_cmd(char *s)
 {
-	int l;
+	int len;
 	char cmd[CMD_SIZE];
 	unsigned int p = 0;
 
-	l = min(plostd_strlen(s), CMD_SIZE - 1);
+	len = min(plostd_strlen(s), CMD_SIZE - 1);
 
 	plostd_printf(ATTR_LOADER, "\n");
 	cmd_skipblanks(s, &p, DEFAULT_BLANKS);
 	s += p;
 
 	if (*s) {
-		low_memcpy(cmd, s, l);
-		*((char *)cmd + l) = 0;
+		low_memcpy(cmd, s, len);
+		*((char *)cmd + len) = 0;
 	}
 
 	plostd_printf(ATTR_LOADER, "cmd=%s\n", (char *)cmd);
@@ -345,11 +447,86 @@ void cmd_write(char *s)
 	return;
 }
 
+/* Function parse device name or parameters. There is distinction whether it is storage or external dev.
+ * For external dev, name shall be provided. For storage device offset and size shall be provided. */
+static int cmd_parseDev(phfs_conf_t *dev, const char (*args)[LINESZ + 1], u16 *argsID, u16 cmdArgsc)
+{
+	/* TODO: appropriate recognition of hex value */
+	if (plostd_isnumber(args[++(*argsID)]) < 0) {
+		plostd_printf(ATTR_LOADER, "\nOpening device %s ..\n", cmd_common.devs[dev->dn].name);
+		dev->handle = phfs_open(dev->dn, args[(*argsID)], 0);
+
+		if (dev->handle.h < 0) {
+			plostd_printf(ATTR_ERROR, "Cannot initialize source: %s!\n", cmd_common.devs[dev->dn].name);
+			return ERR_PHFS_IO;
+		}
+	}
+	else {
+		/* check whether size is provided */
+		if (((*argsID) + 1) >= cmdArgsc || plostd_isnumber(args[(*argsID) + 1]) < 0)
+			return -1;
+
+		dev->dataOffs = plostd_ahtoi(args[(*argsID)]);
+
+		dev->datasz = plostd_ahtoi(args[++(*argsID)]);
+
+		plostd_printf(ATTR_LOADER, "\nOpening device %s ..\n", cmd_common.devs[dev->dn].name);
+		dev->handle = phfs_open(dev->dn, NULL, 0);
+		if (dev->handle.h < 0) {
+			plostd_printf(ATTR_ERROR, "Cannot initialize source: %s!\n", cmd_common.devs[dev->dn].name);
+			return ERR_PHFS_IO;
+		}
+	}
+
+	return 0;
+}
+
 
 void cmd_copy(char *s)
 {
-	/* TODO */
-	plostd_printf(ATTR_LOADER, "\nCOPY in progress...\n");
+	phfs_conf_t phfses[2];
+
+	u16 cmdArgsc = 0, argsID = 0;
+	char cmdArgs[7][LINESZ + 1];
+
+	phfses[0].datasz = phfses[1].datasz = 0;
+	phfses[0].dataOffs = phfses[1].dataOffs = 0;
+
+
+	/* Parse all comand's arguments */
+	if (cmd_parseArgs(s, cmdArgs, &cmdArgsc) < 0 || cmdArgsc < 4) {
+		plostd_printf(ATTR_ERROR, "\nWrong arguments!!\n");
+		return;
+	}
+
+	/* Parse source parameters */
+	if (cmd_checkDev(cmdArgs[argsID], &phfses[0].dn) < 0)
+		return;
+
+	if (cmd_parseDev(&phfses[0], cmdArgs, &argsID, cmdArgsc) < 0) {
+		phfs_close(phfses[0].dn, phfses[0].handle);
+		return;
+	}
+
+	/* Parse destination parameters */
+	if (cmd_checkDev(cmdArgs[++argsID], &phfses[1].dn) < 0)
+		return;
+
+	if (cmd_parseDev(&phfses[1], cmdArgs, &argsID, cmdArgsc) < 0) {
+		phfs_close(phfses[0].dn, phfses[0].handle);
+		phfs_close(phfses[1].dn, phfses[1].handle);
+		return;
+	}
+
+	/* Copy data between devices */
+	cmd_cpphfs2phfs(&phfses[0], &phfses[1]);
+
+	plostd_printf(ATTR_LOADER, "\nFinished copying\n");
+
+	phfs_close(phfses[0].dn, phfses[0].handle);
+	phfs_close(phfses[1].dn, phfses[1].handle);
+
+	return;
 }
 
 
@@ -378,9 +555,9 @@ void cmd_kernel(char *s)
 	addr_t offs = 0, kernelOffs = 0;
 	void *loffs;
 
-	int pdn;
+	unsigned int pdn;
 	u16 argsc = 0;
-	char args[MAX_CMD_LOAD_ARGS_NB][LINESZ + 1];
+	char args[MAX_CMD_ARGS_NB][LINESZ + 1];
 
 	Elf32_Ehdr hdr;
 	Elf32_Phdr phdr;
@@ -388,10 +565,13 @@ void cmd_kernel(char *s)
 
 
 	/* Parse arguments */
-	if (cmd_parseArgs(s, args, &argsc, &pdn) < 0) {
+	if (cmd_parseArgs(s, args, &argsc) < 0) {
 		plostd_printf(ATTR_ERROR, "\nWrong arguments!!\n");
 		return;
 	}
+
+	if (cmd_checkDev(args[0], &pdn) < 0)
+		return;
 
 	plostd_printf(ATTR_LOADER, "\nOpening device %s ...\n", args[0]);
 	handle = phfs_open(pdn, "phoenix-armv7m7-imxrt106x.elf", 0);
@@ -474,6 +654,7 @@ void cmd_kernel(char *s)
 			syspage_setKernelBss((void *)shdr.sh_addr, (u32)shdr.sh_size);
 	}
 
+	/* TODO: it is temporary solution. It should be defined. */
 	syspage_setKernelData(0, 0);
 
 	syspage_setKernelText((void *)minaddr, maxaddr - minaddr);
@@ -483,146 +664,100 @@ void cmd_kernel(char *s)
 }
 
 
-
-static int cmd_loadApp(unsigned int pdn, const char *name, addr_t offs, u32 size, const char *imap, const char *dmap)
+static int cmd_loadApp(phfs_conf_t *phfs, const char *name, const char *imap, const char *dmap)
 {
-	int i;
-	handle_t handle;
-	u8 buff[384];
 	Elf32_Ehdr hdr;
+	void *start, *end;
 
-	u32 res;
-	void *start, *end, *currAddr;
-
-	handle = phfs_open(pdn, name, 0);
-	if (handle.h < 0) {
+	phfs->handle = phfs_open(phfs->dn, name, 0);
+	if (phfs->handle.h < 0) {
 		plostd_printf(ATTR_ERROR, "\nCannot initialize source: %s!\n", name);
-		return -1;
+		return ERR_PHFS_IO;
 	}
 
+
 	/* Check ELF header */
-	if (phfs_read(pdn, handle, &offs, (u8 *)&hdr, (u32)sizeof(Elf32_Ehdr)) < 0) {
+	if (phfs_read(phfs->dn, phfs->handle, &phfs->dataOffs, (u8 *)&hdr, (u32)sizeof(Elf32_Ehdr)) < 0) {
 		plostd_printf(ATTR_ERROR, "\nCan't read ELF header!\n");
-		return -1;
+		return ERR_PHFS_FILE;
 	}
 
 	if ((hdr.e_ident[0] != 0x7f) && (hdr.e_ident[1] != 'E') && (hdr.e_ident[2] != 'L') && (hdr.e_ident[3] != 'F')) {
 		plostd_printf(ATTR_ERROR, "\nFile isn't ELF object!\n");
-		return -1;
+		return ERR_PHFS_FILE;
 	}
 
-	/* Get file start address */
+	/* Get instruction begining address */
 	if (syspage_getMapTop(imap, &start) < 0) {
 		plostd_printf(ATTR_ERROR, "\n%s does not exist!\n", imap);
-		return -1;
+		return ERR_ARG;
 	}
 
 
-	currAddr = start;
 	/* Get data from memory storage */
-	if (size) {
+	if (phfs->datasz) {
 		/* Check wheter device is in the the same map as imap */
-		if ((void *)handle.offs <= (start + offs) && (void *)handle.offs >= start) {
-			start += offs;
-			end = start + size;
+		if ((void *)phfs->handle.offs <= (start + phfs->dataOffs) && (void *)phfs->handle.offs >= start) {
+			start += phfs->dataOffs;
+			end = start + phfs->datasz;
 			plostd_printf(ATTR_LOADER, "Code is located in %s map. Data has not been copied.\n", imap);
 		}
-		/* Get data from memory and copy it to specific imap */
 		else {
-			for (i = 0; i < size / sizeof(buff); i++) {
-				if (phfs_read(pdn, handle, &offs, buff, (u32)sizeof(buff)) < 0) {
-					plostd_printf(ATTR_ERROR, "\nCan't read segment data, i=%d!\n", i);
-					return -1;
-				}
-
-				if (syspage_write2Map(imap, buff, sizeof(buff)) < 0)
-					return -1;
-
-				currAddr += sizeof(buff);
-				offs += sizeof(buff);
-				plostd_printf(ATTR_LOADER, "\rReading adress %p / %p: ", currAddr, start + size);
-				cmd_showprogress(i);
-			}
-
-			/* Last segment part */
-			res = size % sizeof(buff);
-			if (res != 0) {
-				if (phfs_read(pdn, handle, &offs, buff, res) < 0) {
-					plostd_printf(ATTR_ERROR, "\nCan't read last segment data, i=%d!\n", i);
-					return -1;
-				}
-
-				if (syspage_write2Map(imap, buff, res) < 0)
-					return -1;
-			}
-
-			currAddr += res;
-			plostd_printf(ATTR_LOADER, "\rReading adress %p / %p: ", currAddr, start + size);
+			cmd_cpphfs2map(phfs, imap);
 
 			/* Get file end address */
 			if (syspage_getMapTop(imap, &end) < 0) {
 				plostd_printf(ATTR_ERROR, "\n%s does not exist!\n", imap);
-				return -1;
+				return ERR_ARG;
 			}
 		}
 	}
 	/* Get data from external source i.e. serial or USB device */
 	else {
 		if (syspage_write2Map(imap, (u8 *)&hdr, (u32)sizeof(Elf32_Ehdr)) < 0)
-			return -1;
+			return ERR_ARG;
 
-		i = 0;
-		do {
-			if ((res = phfs_read(pdn, handle, &offs, buff, (u32)sizeof(buff))) < 0) {
-				plostd_printf(ATTR_ERROR, "\nCan't read segment data, i=%d!\n", i);
-				return -1;
-			}
-
-			if (syspage_write2Map(imap, buff, res) < 0)
-				return -1;
-
-			currAddr += res;
-			plostd_printf(ATTR_LOADER, "\rWriting to adress %p ", currAddr);
-			cmd_showprogress(i++);
-
-		} while (res > 0);
+		cmd_cpphfs2map(phfs, imap);
 
 		/* Get file end address */
 		if (syspage_getMapTop(imap, &end) < 0) {
 			plostd_printf(ATTR_ERROR, "\n%s does not exist!\n", imap);
-			return -1;
+			return ERR_ARG;
 		}
 	}
 
 	syspage_addProg(start, end, imap, dmap, name);
-
 	plostd_printf(ATTR_LOADER, "%c[ok]\n", 8);
 
 	return 0;
 }
 
 
-
 void cmd_app(char *s)
 {
-	int i = 0, pdn, argID = 0;
-	unsigned int pos = 0;
-	char cmdArgs[MAX_CMD_LOAD_ARGS_NB][LINESZ + 1];
 	u16 cmdArgsc = 0;
+	int i = 0, argID = 0;
+	unsigned int pos = 0;
+	char cmdArgs[MAX_CMD_ARGS_NB][LINESZ + 1];
 
-	u32 size = 0;
-	addr_t offs = 0;
 	u16 namesz;
 	char *name;
-	char appArgs[3][LINESZ + 1];
 	char cmap[8], dmap[8];
+	char appArgs[3][LINESZ + 1];
 
+	phfs_conf_t phfs;
+
+	phfs.datasz = 0;
+	phfs.dataOffs = 0;
 
 	/* Parse command arguments */
-	if (cmd_parseArgs(s, cmdArgs, &cmdArgsc, &pdn) < 0) {
+	if (cmd_parseArgs(s, cmdArgs, &cmdArgsc) < 0) {
 		plostd_printf(ATTR_ERROR, "\nWrong arguments!!\n");
 		return;
 	}
+
+	if (cmd_checkDev(cmdArgs[0], &phfs.dn) < 0)
+		return;
 
 	/* Check app name and aliases */
 	++argID;
@@ -645,14 +780,14 @@ void cmd_app(char *s)
 			appArgs[0][namesz] = '\0';
 		}
 		else if (i == 1) {
-			offs = plostd_ahtoi(appArgs[i]);
+			phfs.dataOffs = plostd_ahtoi(appArgs[i]);
 		}
 		else if (i == 2) {
-			size = plostd_ahtoi(appArgs[i]);
+			phfs.datasz = plostd_ahtoi(appArgs[i]);
 		}
 	}
 
-	/* Set default program parameters */
+	/* Set default maps */
 	low_setDefaultIMAP(cmap);
 	low_setDefaultDMAP(dmap);
 
@@ -665,12 +800,12 @@ void cmd_app(char *s)
 		low_memcpy(dmap, cmdArgs[++argID], 8);
 
 
-	if (offs != 0 && size != 0)
-		plostd_printf(ATTR_LOADER, "\nLoading %s (offs=%p, size=%p, cmap=%s, dmap=%s)\n", appArgs[0], offs, size, cmap, dmap);
+	if (phfs.dataOffs != 0 && phfs.datasz != 0)
+		plostd_printf(ATTR_LOADER, "\nLoading %s (offs=%p, size=%p, cmap=%s, dmap=%s)\n", appArgs[0], phfs.dataOffs, phfs.datasz, cmap, dmap);
 	else
 		plostd_printf(ATTR_LOADER, "\nLoading %s (offs=UNDEF, size=UNDEF, imap=%s, dmap=%s)\n", appArgs[0], cmap, dmap);
 
-	cmd_loadApp(cmd_common.devs[pdn].pdn, appArgs[0], offs, size, cmap, dmap);
+	cmd_loadApp(&phfs, appArgs[0], cmap, dmap);
 
 	return;
 }
@@ -679,17 +814,17 @@ void cmd_app(char *s)
 void cmd_map(char *s)
 {
 	int i;
-	u16 argID = 0, argsc = 0;
-	addr_t start, end;
 	u32 attr = 0;
+	addr_t start, end;
+	u16 argID = 0, argsc = 0;
 
 	u8 namesz;
 	char mapname[8];
 
 	unsigned int pos = 0;
-	char args[MAX_CMD_LOAD_ARGS_NB][LINESZ + 1];
+	char args[MAX_CMD_ARGS_NB][LINESZ + 1];
 
-	for (i = 0; argsc < MAX_CMD_LOAD_ARGS_NB; ++i) {
+	for (i = 0; argsc < MAX_CMD_ARGS_NB; ++i) {
 		cmd_skipblanks(s, &pos, "+ \t");
 		if (cmd_getnext(s, &pos, "+ \t", NULL, args[i], sizeof(args[i])) == NULL || *args[i] == 0)
 			break;

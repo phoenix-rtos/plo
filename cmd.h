@@ -26,7 +26,7 @@
 #define CMD_SIZE                  64
 #define MAX_COMMANDS_NB           20
 
-#define MAX_CMD_LOAD_ARGS_NB      12
+#define MAX_CMD_ARGS_NB           10
 #define MAX_APP_NAME_SIZE         17
 
 #define KERNEL_PATH               "phoenix"
