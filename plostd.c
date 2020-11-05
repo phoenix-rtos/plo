@@ -19,6 +19,18 @@
 #include "plostd.h"
 
 
+int plostd_isnumber(const char *s)
+{
+	while (*s != '\0') {
+		if ((*s < '0') || (*s > '9'))
+			return -1;
+		s++;
+	}
+
+	return 1;
+}
+
+
 int plostd_isalnum(char c)
 {
 	/* test digit */
@@ -263,7 +275,7 @@ void plostd_printf(char attr, const char *fmt, ...)
 	int i;
 	long l;
 
-	ap = (u8 *)&fmt + sizeof(fmt);
+	va_start(ap, fmt);
 
 	if (attr != ATTR_NONE)
 		low_setattr(attr);
