@@ -70,8 +70,6 @@ void low_init(void)
 
 	low_setLaunchTimeout(3);
 
-	phfsflash_init();
-
 	syspage_init();
 
 	syspage_setAddress((void *)SYSPAGE_ADDRESS);
@@ -108,6 +106,8 @@ void low_initphfs(phfs_handler_t *handlers)
 		handlers[PDN_FLASH0 + i].close = phfsflash_close;
 		handlers[PDN_FLASH0 + i].dn = i;
 	}
+
+	phfsflash_init();
 
 	handlers[PDN_COM1].open = phoenixd_open;
 	handlers[PDN_COM1].read = phoenixd_read;

@@ -17,22 +17,32 @@
 
 #include "phfs-flash.h"
 #include "flashdrv.h"
+#include "../low.h"
 
-
-flash_context_t flash_ctx[FLASH_NO];
+struct {
+	u32 buffCnt;
+	u8 buff[0x100];
+	flash_context_t flash_ctx;
+} phfsflash_common[FLASH_NO];
 
 
 int phfsflash_init(void)
 {
 	/* Initialize internal flash memory */
-	flash_ctx[0].address = FLASH_INTERNAL_DATA_ADDRESS;
-	if (flashdrv_init(&flash_ctx[0]) < 0)
+	phfsflash_common[0].flash_ctx.address = FLASH_INTERNAL_DATA_ADDRESS;
+
+	if (flashdrv_init(&phfsflash_common[0].flash_ctx) < 0)
 		return ERR_ARG;
 
 	/* Initialize external flash memory */
-	flash_ctx[1].address = FLASH_EXT_DATA_ADDRESS;
-	if (flashdrv_init(&flash_ctx[1]) < 0)
+	phfsflash_common[1].flash_ctx.address = FLASH_EXT_DATA_ADDRESS;
+	if (flashdrv_init(&phfsflash_common[1].flash_ctx) < 0)
 		return  ERR_ARG;
+
+	for (int i = 0; i < 0x100; ++i) {
+		phfsflash_common[0].buff[i] = 0xff;
+		phfsflash_common[1].buff[i] = 0xff;
+	}
 
 	return 0;
 }
@@ -48,7 +58,7 @@ handle_t phfsflash_open(u16 fn, const char *name, u32 flags)
 		return handle;
 	}
 
-	handle.offs = (void *)flash_ctx[fn].address;
+	handle.offs = (void *)phfsflash_common[fn].flash_ctx.address;
 
 	return handle;
 }
@@ -56,28 +66,47 @@ handle_t phfsflash_open(u16 fn, const char *name, u32 flags)
 
 s32 phfsflash_read(u16 fn, handle_t handle, addr_t *pos, u8 *buff, u32 len)
 {
+	int res;
+
 	if (fn >= FLASH_NO)
 		return ERR_ARG;
 
-	if (flashdrv_readData(&flash_ctx[fn], *pos, (char *)buff, len) < 0)
-		return ERR_ARG;
+	if ((res = flashdrv_readData(&phfsflash_common[fn].flash_ctx, *pos, (char *)buff, len)) < 0)
+		return res;
 
-	return ERR_NONE;
+	return res;
 }
 
 
 s32 phfsflash_write(u16 fn, handle_t handle, addr_t *pos, u8 *buff, u32 len, u8 sync)
 {
-	if (fn >= FLASH_NO)
+	u32 size;
+	u16 buffOffs = 0;
+
+	size = len;
+	if (!len)
+		return ERR_NONE;
+
+	if (fn >= FLASH_NO || *pos % 0x100)
 		return ERR_ARG;
 
-	if (flashdrv_bufferedPagesWrite(&flash_ctx[fn], *pos, (const char *)buff, len) < 0)
-		return ERR_ARG;
+	while (size) {
+		if (size < 0x100) {
+			low_memcpy(phfsflash_common[fn].buff, buff + buffOffs, size);
+			if (flashdrv_bufferedPagesWrite(&phfsflash_common[fn].flash_ctx, *pos + buffOffs, (const char *)phfsflash_common[fn].buff, 0x100) < 0)
+				return ERR_ARG;
+			size = 0;
+			break;
+		}
 
-	if (sync)
-		flashdrv_sync(&flash_ctx[fn]);
+		if (flashdrv_bufferedPagesWrite(&phfsflash_common[fn].flash_ctx, *pos + buffOffs, (const char *)(buff + buffOffs), 0x100) < 0)
+			return ERR_ARG;
 
-	return ERR_NONE;
+		buffOffs += 0x100;
+		size -= 0x100;
+	}
+
+	return len - size;
 }
 
 
@@ -86,7 +115,7 @@ s32 phfsflash_close(u16 fn, handle_t handle)
 	if (fn >= FLASH_NO)
 		return ERR_ARG;
 
-	flashdrv_contextDestroy(&flash_ctx[fn]);
+	flashdrv_sync(&phfsflash_common[fn].flash_ctx);
 
 	return ERR_NONE;
 }
