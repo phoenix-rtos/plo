@@ -263,6 +263,7 @@ void syspage_save(void)
 }
 
 
+/* TODO: align text and show map's attributes as string based on integer */
 void syspage_show(void)
 {
 	int i = 0;

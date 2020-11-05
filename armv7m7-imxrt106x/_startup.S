@@ -86,6 +86,7 @@ _fcfb:
 .word 0x00000000, 0x00000000, 0x00000000, 0x00000000
 
 /* lutCustomSeq */
+
 .word 0x00000000, 0x00000000, 0x00000000, 0x00000000
 .word 0x00000000, 0x00000000, 0x00000000, 0x00000000
 .word 0x00000000, 0x00000000, 0x00000000, 0x00000000
@@ -151,11 +152,11 @@ _init_vectors:
 .word _start
 
 /* TODO: define exception_dispatch */
-.word 0                     /* NMI */
-.word 0                     /* HardFault */
-.word 0                     /* MemMgtFault */
-.word 0                     /* BusFault */
-.word 0                     /* UsageFault */
+.word _exceptions_dispatch                     /* NMI */
+.word _exceptions_dispatch                     /* HardFault */
+.word _exceptions_dispatch                     /* MemMgtFault */
+.word _exceptions_dispatch                     /* BusFault */
+.word _exceptions_dispatch                     /* UsageFault */
 .word 0
 .word 0
 .word 0
@@ -208,7 +209,6 @@ _interrupts_dispatch:
     cpsid if
 
     mrs r0, ipsr
-    mrs r2, msp
     sub r1, sp, #44
     stmdb sp!, {r1-r2, r4-r11, lr}
 
@@ -217,9 +217,19 @@ _intd0:
     ldr sp, [sp]
 _intd1:
     ldmia sp!, {r0-r1, r4-r11, lr}
-    msr msp, r1
 
     cpsie if
     bx lr
 .size _interrupts_dispatch, .-_interrupts_dispatch
+.ltorg
+
+
+.globl _exceptions_dispatch
+.type _exceptions_dispatch, %function
+
+_exceptions_dispatch:
+    cpsid if
+    /* TODO: implement exception dispatcher */
+    1: b 1b
+.size _exceptions_dispatch, .-_exceptions_dispatch
 .ltorg
