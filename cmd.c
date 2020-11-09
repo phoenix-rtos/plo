@@ -234,7 +234,7 @@ void cmd_parse(char *line)
 	char word[LINESZ + 1], cmd[LINESZ + 1];
 
 	for (;;) {
-		if (cmd_getnext(line, &p, ";", DEFAULT_CITES, word, sizeof(word)) == NULL) {
+		if (cmd_getnext(line, &p, "\n", DEFAULT_CITES, word, sizeof(word)) == NULL) {
 			plostd_printf(ATTR_ERROR, "\nSyntax error!\n");
 			return;
 		}
@@ -737,18 +737,15 @@ void cmd_app(char *s)
 {
 	u16 cmdArgsc = 0;
 	int i = 0, argID = 0;
-	unsigned int pos = 0;
 	char cmdArgs[MAX_CMD_ARGS_NB][LINESZ + 1];
 
 	u16 namesz;
 	char *name;
+	unsigned int pos = 0;
 	char cmap[8], dmap[8];
-	char appArgs[3][LINESZ + 1];
+	char appData[3][LINESZ + 1];
 
-	phfs_conf_t phfs;
-
-	phfs.datasz = 0;
-	phfs.dataOffs = 0;
+	phfs_conf_t phfs = {.datasz = 0, .dataOffs = 0};
 
 	/* Parse command arguments */
 	if (cmd_parseArgs(s, cmdArgs, &cmdArgsc) < 0) {
@@ -762,6 +759,7 @@ void cmd_app(char *s)
 	/* Check app name and aliases */
 	++argID;
 	name = cmdArgs[argID];
+
 	if (name[0] == '@') {
 		if (script_expandAlias(&name) < 0) {
 			plostd_printf(ATTR_ERROR, "\nWrong arguments!!\n");
@@ -769,21 +767,21 @@ void cmd_app(char *s)
 		}
 	}
 
-	/* Parse program name, offset and size */
+	/* Parse program name with args, offset and size */
 	for (i = 0; i < 3; ++i) {
-		cmd_skipblanks(name, &pos, "( : )\t");
-		if (cmd_getnext(name, &pos, "( : )\t", NULL, appArgs[i], sizeof(appArgs[i])) == NULL || *appArgs[i] == 0)
+		cmd_skipblanks(name, &pos, "@ ( : )\t");
+		if (cmd_getnext(name, &pos, "( : )\t", NULL, appData[i], sizeof(appData[i])) == NULL || *appData[i] == 0)
 			break;
 
 		if (i == 0 ) {
-			namesz = (plostd_strlen(appArgs[i]) < (MAX_APP_NAME_SIZE - 1)) ? (plostd_strlen(appArgs[i]) + 1) : (MAX_APP_NAME_SIZE - 1);
-			appArgs[0][namesz] = '\0';
+			namesz = (plostd_strlen(appData[i]) < (MAX_APP_NAME_SIZE - 1)) ? (plostd_strlen(appData[i]) + 1) : (MAX_APP_NAME_SIZE - 1);
+			appData[0][namesz] = '\0';
 		}
 		else if (i == 1) {
-			phfs.dataOffs = plostd_ahtoi(appArgs[i]);
+			phfs.dataOffs = plostd_ahtoi(appData[i]);
 		}
 		else if (i == 2) {
-			phfs.datasz = plostd_ahtoi(appArgs[i]);
+			phfs.datasz = plostd_ahtoi(appData[i]);
 		}
 	}
 
@@ -801,11 +799,11 @@ void cmd_app(char *s)
 
 
 	if (phfs.dataOffs != 0 && phfs.datasz != 0)
-		plostd_printf(ATTR_LOADER, "\nLoading %s (offs=%p, size=%p, cmap=%s, dmap=%s)\n", appArgs[0], phfs.dataOffs, phfs.datasz, cmap, dmap);
+		plostd_printf(ATTR_LOADER, "\nLoading %s (offs=%p, size=%p, cmap=%s, dmap=%s)\n", appData[0], phfs.dataOffs, phfs.datasz, cmap, dmap);
 	else
-		plostd_printf(ATTR_LOADER, "\nLoading %s (offs=UNDEF, size=UNDEF, imap=%s, dmap=%s)\n", appArgs[0], cmap, dmap);
+		plostd_printf(ATTR_LOADER, "\nLoading %s (offs=UNDEF, size=UNDEF, imap=%s, dmap=%s)\n", appData[0], cmap, dmap);
 
-	cmd_loadApp(&phfs, appArgs[0], cmap, dmap);
+	cmd_loadApp(&phfs, appData[0], cmap, dmap);
 
 	return;
 }

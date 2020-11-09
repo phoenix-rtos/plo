@@ -17,7 +17,7 @@
 #include "script.h"
 #include "plostd.h"
 #include "cmd.h"
-
+#include "low.h"
 
 
 /* Linker symbol points to the beginning of .data section */
@@ -63,11 +63,23 @@ void script_run(void)
 int script_expandAlias(char **name)
 {
 	int i;
+	unsigned int len;
 
 	for (i = 0; i < script_common.cmdCnt; ++i) {
-		if (script_common.basicCmds[i][0] == '@' && plostd_strncmp(*name + 1, script_common.basicCmds[i] + 1, plostd_strlen(*name) - 1) == 0) {
-			*name = script_common.basicCmds[i] + 1;
-			return 0;
+		if (script_common.basicCmds[i][0] == '@') {
+			len = 1;
+			/* Omit program arguments */
+			while (len < plostd_strlen(*name)) {
+				if ((*name)[len] == ';')
+					break;
+				++len;
+			}
+			--len;
+			if (plostd_strncmp(*name + 1, script_common.basicCmds[i] + 1, len) == 0) {
+				/* Copy size and offset to app name */
+				low_memcpy(*name + plostd_strlen(*name), script_common.basicCmds[i] + len + 1, plostd_strlen(script_common.basicCmds[i]) - len);
+				return 0;
+			}
 		}
 	}
 

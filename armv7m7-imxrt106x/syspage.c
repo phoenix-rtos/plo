@@ -415,7 +415,7 @@ void syspage_addEntries(u32 start, u32 sz)
 int syspage_addProg(void *start, void *end, const char *imap, const char *dmap, const char *name)
 {
 	u8 imapID, dmapID;
-	unsigned int pos = 0;
+	unsigned int pos = 0, len = 0;
 	u32 progID = syspage_common.progsCnt;
 
 	if ((syspage_getMapID(imap, &imapID) < 0) || (syspage_getMapID(dmap, &dmapID) < 0)) {
@@ -435,9 +435,14 @@ int syspage_addProg(void *start, void *end, const char *imap, const char *dmap, 
 	syspage_common.args[syspage_common.argCnt++] = ' ';
 	syspage_common.args[syspage_common.argCnt] = '\0';
 
-	low_memcpy(syspage_common.progs[progID].cmdline, name, plostd_strlen(name));
+	while (len < plostd_strlen(name)) {
+		if (name[len] == ';')
+			break;
+		++len;
+	}
+	low_memcpy(syspage_common.progs[progID].cmdline, name, len);
 
-	for (pos = plostd_strlen(name); pos < 16; ++pos)
+	for (pos = len; pos < 16; ++pos)
 		syspage_common.progs[progID].cmdline[pos] = 0;
 
 	syspage_common.progsCnt++;
