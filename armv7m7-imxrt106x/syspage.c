@@ -314,7 +314,9 @@ int syspage_addmap(const char *name, void *start, void *end, u32 attr)
 	syspage_common.maps[mapID].map.attr = attr;
 	syspage_common.maps[mapID].map.id = mapID;
 
-	size = plostd_strlen(name) < 7 ? plostd_strlen(name) : 7;
+	size = plostd_strlen(name);
+	if (size > 7)
+		size = 7;
 	low_memcpy(syspage_common.maps[mapID].map.name, name, size);
 	syspage_common.maps[mapID].map.name[size] = '\0';
 
@@ -417,6 +419,7 @@ int syspage_addProg(void *start, void *end, const char *imap, const char *dmap, 
 	u8 imapID, dmapID;
 	unsigned int pos = 0;
 	u32 progID = syspage_common.progsCnt;
+	unsigned int len;
 
 	if ((syspage_getMapID(imap, &imapID) < 0) || (syspage_getMapID(dmap, &dmapID) < 0)) {
 		plostd_printf(ATTR_ERROR, "\nMAPS for %s doesn not exist!\n", name);
@@ -428,16 +431,18 @@ int syspage_addProg(void *start, void *end, const char *imap, const char *dmap, 
 	syspage_common.progs[progID].dmap = dmapID;
 	syspage_common.progs[progID].imap = imapID;
 
-	syspage_common.args[syspage_common.argCnt++] = 'X';
-	low_memcpy((void *)&syspage_common.args[syspage_common.argCnt], name, plostd_strlen(name));
+	len = plostd_strlen(name);
 
-	syspage_common.argCnt += plostd_strlen(name);
+	syspage_common.args[syspage_common.argCnt++] = 'X';
+	low_memcpy((void *)&syspage_common.args[syspage_common.argCnt], name, len);
+
+	syspage_common.argCnt += len;
 	syspage_common.args[syspage_common.argCnt++] = ' ';
 	syspage_common.args[syspage_common.argCnt] = '\0';
 
-	low_memcpy(syspage_common.progs[progID].cmdline, name, plostd_strlen(name));
+	low_memcpy(syspage_common.progs[progID].cmdline, name, len);
 
-	for (pos = plostd_strlen(name); pos < 16; ++pos)
+	for (pos = len; pos < 16; ++pos)
 		syspage_common.progs[progID].cmdline[pos] = 0;
 
 	syspage_common.progsCnt++;

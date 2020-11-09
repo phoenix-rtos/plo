@@ -776,14 +776,16 @@ void cmd_app(char *s)
 			break;
 
 		if (i == 0 ) {
-			namesz = (plostd_strlen(appArgs[i]) < (MAX_APP_NAME_SIZE - 1)) ? (plostd_strlen(appArgs[i]) + 1) : (MAX_APP_NAME_SIZE - 1);
+			namesz = plostd_strlen(appArgs[0]);
+			if (namesz > (MAX_APP_NAME_SIZE - 1))
+				namesz = MAX_APP_NAME_SIZE - 1;
 			appArgs[0][namesz] = '\0';
 		}
 		else if (i == 1) {
-			phfs.dataOffs = plostd_ahtoi(appArgs[i]);
+			phfs.dataOffs = plostd_ahtoi(appArgs[1]);
 		}
 		else if (i == 2) {
-			phfs.datasz = plostd_ahtoi(appArgs[i]);
+			phfs.datasz = plostd_ahtoi(appArgs[2]);
 		}
 	}
 
@@ -836,7 +838,9 @@ void cmd_map(char *s)
 		return;
 	}
 
-	namesz = (plostd_strlen(args[argID]) < 7) ? (plostd_strlen(args[argID]) + 1) : 7;
+	namesz = plostd_strlen(args[argID]);
+	if (namesz > sizeof(mapname) - 1)
+		namesz = sizeof(mapname) - 1;
 	low_memcpy(mapname, args[argID], namesz);
 	mapname[namesz] = '\0';
 
@@ -900,9 +904,9 @@ void cmd_syspage(char *s)
 /* Function prints progress indicator */
 void cmd_showprogress(u32 p)
 {
-	char *states = "-\\|/";
+	const static char states[] = "-\\|/";
 
-	plostd_printf(ATTR_LOADER, "%c", states[p % plostd_strlen(states)]);
+	plostd_printf(ATTR_LOADER, "%c", states[p % (sizeof(states) - 1)]);
 	return;
 }
 
