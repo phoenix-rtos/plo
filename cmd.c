@@ -785,7 +785,7 @@ void cmd_app(char *s)
 		}
 		else if (i == 2) {
 			if (plostd_ishex(appData[i]) < 0) {
-				plostd_printf(ATTR_ERROR, "\nOffset is not a hex value !!\n");
+				plostd_printf(ATTR_ERROR, "\nSize is not a hex value !!\n");
 				return;
 			}
 
