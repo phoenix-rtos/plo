@@ -451,8 +451,7 @@ void cmd_write(char *s)
  * For external dev, name shall be provided. For storage device offset and size shall be provided. */
 static int cmd_parseDev(phfs_conf_t *dev, const char (*args)[LINESZ + 1], u16 *argsID, u16 cmdArgsc)
 {
-	/* TODO: appropriate recognition of hex value */
-	if (plostd_isnumber(args[++(*argsID)]) < 0) {
+	if (plostd_ishex(args[++(*argsID)]) < 0) {
 		plostd_printf(ATTR_LOADER, "\nOpening device %s ..\n", cmd_common.devs[dev->dn].name);
 		dev->handle = phfs_open(dev->dn, args[(*argsID)], 0);
 
@@ -463,7 +462,7 @@ static int cmd_parseDev(phfs_conf_t *dev, const char (*args)[LINESZ + 1], u16 *a
 	}
 	else {
 		/* check whether size is provided */
-		if (((*argsID) + 1) >= cmdArgsc || plostd_isnumber(args[(*argsID) + 1]) < 0)
+		if (((*argsID) + 1) >= cmdArgsc || plostd_ishex(args[(*argsID) + 1]) < 0)
 			return -1;
 
 		dev->dataOffs = plostd_ahtoi(args[(*argsID)]);
@@ -778,9 +777,18 @@ void cmd_app(char *s)
 			appData[0][namesz] = '\0';
 		}
 		else if (i == 1) {
+			if (plostd_ishex(appData[i]) < 0) {
+				plostd_printf(ATTR_ERROR, "\nOffset is not a hex value !!\n");
+				return;
+			}
 			phfs.dataOffs = plostd_ahtoi(appData[i]);
 		}
 		else if (i == 2) {
+			if (plostd_ishex(appData[i]) < 0) {
+				plostd_printf(ATTR_ERROR, "\nOffset is not a hex value !!\n");
+				return;
+			}
+
 			phfs.datasz = plostd_ahtoi(appData[i]);
 		}
 	}

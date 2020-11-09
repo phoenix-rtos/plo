@@ -35,7 +35,7 @@
 #define ATTR_ERROR   4
 
 
-extern int plostd_isnumber(const char *s);
+extern int plostd_ishex(const char *s);
 
 extern int plostd_isalnum(char c);
 

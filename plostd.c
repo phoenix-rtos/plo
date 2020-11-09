@@ -19,10 +19,10 @@
 #include "plostd.h"
 
 
-int plostd_isnumber(const char *s)
+int plostd_ishex(const char *s)
 {
 	while (*s != '\0') {
-		if ((*s < '0') || (*s > '9'))
+		if (!((*s >= '0' && *s <= '9') || (*s >= 'a' && *s <= 'f') || (*s >= 'A' && *s <= 'F')))
 			return -1;
 		s++;
 	}
