@@ -794,12 +794,16 @@ void cmd_app(char *s)
 	low_setDefaultDMAP(dmap);
 
 	/* Get map for code section */
-	if ((argID + 1) < cmdArgsc)
-		low_memcpy(cmap, cmdArgs[++argID], 8);
+	if ((argID + 1) < cmdArgsc) {
+		low_memcpy(cmap, cmdArgs[++argID], sizeof(cmap));
+		cmap[sizeof(cmap) - 1] = '\0';
+	}
 
 	/* Get map for data section */
-	if ((argID + 1) < cmdArgsc)
-		low_memcpy(dmap, cmdArgs[++argID], 8);
+	if ((argID + 1) < cmdArgsc) {
+		low_memcpy(dmap, cmdArgs[++argID], sizeof(dmap));
+		dmap[sizeof(dmap) - 1] = '\0';
+	}
 
 
 	if (phfs.dataOffs != 0 && phfs.datasz != 0)
