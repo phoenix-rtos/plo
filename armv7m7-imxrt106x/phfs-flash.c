@@ -66,15 +66,10 @@ handle_t phfsflash_open(u16 fn, const char *name, u32 flags)
 
 s32 phfsflash_read(u16 fn, handle_t handle, addr_t *pos, u8 *buff, u32 len)
 {
-	int res;
-
 	if (fn >= FLASH_NO)
 		return ERR_ARG;
 
-	if ((res = flashdrv_readData(&phfsflash_common[fn].flash_ctx, *pos, (char *)buff, len)) < 0)
-		return res;
-
-	return res;
+	return flashdrv_readData(&phfsflash_common[fn].flash_ctx, *pos, (char *)buff, len);
 }
 
 
@@ -95,8 +90,7 @@ s32 phfsflash_write(u16 fn, handle_t handle, addr_t *pos, u8 *buff, u32 len, u8 
 			low_memcpy(phfsflash_common[fn].buff, buff + buffOffs, size);
 			if (flashdrv_bufferedPagesWrite(&phfsflash_common[fn].flash_ctx, *pos + buffOffs, (const char *)phfsflash_common[fn].buff, 0x100) < 0)
 				return ERR_ARG;
-			size = 0;
-			break;
+			return len;
 		}
 
 		if (flashdrv_bufferedPagesWrite(&phfsflash_common[fn].flash_ctx, *pos + buffOffs, (const char *)(buff + buffOffs), 0x100) < 0)
