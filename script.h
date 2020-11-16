@@ -18,6 +18,7 @@
 
 #include "types.h"
 
+#define MAX_SCRIPT_LINES_NB 64
 
 
 extern void script_init(void);
