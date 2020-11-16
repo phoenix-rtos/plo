@@ -26,7 +26,7 @@ extern char script[];
 
 struct {
 	u32 cmdCnt;
-	char basicCmds[MAX_COMMANDS_NB][LINESZ];
+	char basicCmds[MAX_SCRIPT_LINES_NB][LINESZ];
 } script_common;
 
 
@@ -38,7 +38,12 @@ void script_init(void)
 
 	script_common.cmdCnt = 0;
 
-	for (i = 0; script_common.cmdCnt < MAX_COMMANDS_NB; ++i) {
+	for (i = 0;; ++i) {
+		if (i >= MAX_SCRIPT_LINES_NB) {
+			plostd_printf(ATTR_ERROR, "\nWarning: too many script lines, only %d loaded.\n", MAX_SCRIPT_LINES_NB);
+			break;
+		}
+
 		cmd_skipblanks(argsScript, &pos, "\n");
 		if (cmd_getnext(argsScript, &pos, "\n", NULL, script_common.basicCmds[i], sizeof(script_common.basicCmds[i])) == NULL || (script_common.basicCmds[i][0] == '\0'))
 			break;
