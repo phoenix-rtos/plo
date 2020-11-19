@@ -316,5 +316,9 @@ void plostd_printf(char attr, const char *fmt, ...)
 	}
 	va_end(ap);
 
+	/* CSI normal: all attributes off */
+	if (attr != ATTR_NONE)
+		plostd_puts("\033[0m");
+
 	return;
 }
