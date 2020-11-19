@@ -20,6 +20,6 @@ CFLAGS+= -mfloat-abi=soft
 
 GCCLIB := $(shell $(CC) $(CFLAGS) -print-libgcc-file-name)
 
-OBJS += $(addprefix $(PREFIX_O)$(TARGET)/, _startup.o low.o imxrt.o serial.o cmd.o timer.o flashdrv.o rom_api.o flashcfg.o phfs-flash.o syspage.o)
+OBJS += $(addprefix $(PREFIX_O)$(TARGET_FAMILY)-$(TARGET_SUBFAMILY)/, _startup.o low.o imxrt.o serial.o cmd.o timer.o flashdrv.o rom_api.o flashcfg.o phfs-flash.o syspage.o)
 
 

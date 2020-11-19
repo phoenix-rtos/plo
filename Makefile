@@ -14,16 +14,16 @@ KERNEL=1
 include ../phoenix-rtos-build/Makefile.common
 include ../phoenix-rtos-build/Makefile.$(TARGET_SUFF)
 
-include $(TARGET)/Makefile
+include $(TARGET_FAMILY)-$(TARGET_SUBFAMILY)/Makefile
 
 
-CFLAGS += -I../plo/$(TARGET)
+CFLAGS += -I../plo/$(TARGET_FAMILY)-$(TARGET_SUBFAMILY)
 
 OBJS += $(PREFIX_O)plo.o $(PREFIX_O)plostd.o $(PREFIX_O)phoenixd.o $(PREFIX_O)msg.o $(PREFIX_O)phfs.o $(PREFIX_O)cmd.o
 
 
-all: $(PREFIX_PROG_STRIPPED)plo-$(TARGET).elf  $(PREFIX_PROG_STRIPPED)plo-$(TARGET).img\
-     $(PREFIX_PROG_STRIPPED)plo-ram-$(TARGET).elf $(PREFIX_PROG_STRIPPED)plo-ram-$(TARGET).img
+all: $(PREFIX_PROG_STRIPPED)plo-$(TARGET_FAMILY)-$(TARGET_SUBFAMILY).elf  $(PREFIX_PROG_STRIPPED)plo-$(TARGET_FAMILY)-$(TARGET_SUBFAMILY).img\
+     $(PREFIX_PROG_STRIPPED)plo-ram-$(TARGET_FAMILY)-$(TARGET_SUBFAMILY).elf $(PREFIX_PROG_STRIPPED)plo-ram-$(TARGET_FAMILY)-$(TARGET_SUBFAMILY).img
 
 
 
@@ -37,13 +37,13 @@ $(PREFIX_O)/script.o.plo: $(PREFIX_O)script.o $(BUILD_DIR)/script.plo
 	$(SIL)$(OBJCOPY) --update-section .data=$(BUILD_DIR)/script.plo $(PREFIX_O)script.o --add-symbol script=.data:0 $(PREFIX_O)script.o.plo
 
 
-$(PREFIX_PROG)plo-$(TARGET).elf: $(OBJS) $(PREFIX_O)/script.o.plo
+$(PREFIX_PROG)plo-$(TARGET_FAMILY)-$(TARGET_SUBFAMILY).elf: $(OBJS) $(PREFIX_O)/script.o.plo
 	@(printf "LD  %-24s\n" "$(@F)");
-	$(SIL)$(LD) $(LDFLAGS) -e _start --section-start .init=$(INIT_FLASH) $(BSS) -o $(PREFIX_PROG)plo-$(TARGET).elf $(OBJS) $(PREFIX_O)/script.o.plo $(GCCLIB)
+	$(SIL)$(LD) $(LDFLAGS) -e _start --section-start .init=$(INIT_FLASH) $(BSS) -o $(PREFIX_PROG)plo-$(TARGET_FAMILY)-$(TARGET_SUBFAMILY).elf $(OBJS) $(PREFIX_O)/script.o.plo $(GCCLIB)
 
-$(PREFIX_PROG)plo-ram-$(TARGET).elf: $(OBJS)
+$(PREFIX_PROG)plo-ram-$(TARGET_FAMILY)-$(TARGET_SUBFAMILY).elf: $(OBJS)
 	@(printf "LD  %-24s\n" "$(@F)");
-	$(SIL)$(LD) $(LDFLAGS) -e _start --section-start .init=$(INIT_RAM) $(BSS) -o $(PREFIX_PROG)plo-ram-$(TARGET).elf $(OBJS) $(PREFIX_O)/script.o.plo $(GCCLIB)
+	$(SIL)$(LD) $(LDFLAGS) -e _start --section-start .init=$(INIT_RAM) $(BSS) -o $(PREFIX_PROG)plo-ram-$(TARGET_FAMILY)-$(TARGET_SUBFAMILY).elf $(OBJS) $(PREFIX_O)/script.o.plo $(GCCLIB)
 
 
 $(PREFIX_PROG_STRIPPED)%.hex: $(PREFIX_PROG_STRIPPED)%.elf
