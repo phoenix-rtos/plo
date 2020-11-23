@@ -480,9 +480,21 @@ void serial_done(void)
 
 		serial = &serial_common.serials[i++];
 
-		/* disable TX and RX */
+		/* Disable TX and RX */
 		*(serial->base + ctrlr) &= ~((1 << 19) | (1 << 18));
+		imxrt_dataBarrier();
+
+		/* Disable TX and RX interrupts */
 		*(serial->base + ctrlr) &= ~((1 << 23) | (1 << 21));
+
+		/* Flush TX and RX fifo */
+		*(serial->base + fifor) |= (1 << 15) | (1 << 14);
+
+		/* Safely perform LPUART software reset procedure */
+		*(serial->base + globalr) |= (1 << 1);
+		imxrt_dataBarrier();
+		*(serial->base + globalr) &= ~(1 << 1);
+		imxrt_dataBarrier();
 
 		low_irquninst(serial->irq);
 	}
