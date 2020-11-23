@@ -308,7 +308,7 @@ void cmd_timeout(char *s)
 
 void cmd_go(char *s)
 {
-	plostd_printf(ATTR_INIT, "\n\n Launch Phoenix-RTOS \n");
+	plostd_printf(ATTR_NONE, "\n");
 	low_launch();
 
 	return;
