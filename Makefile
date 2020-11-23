@@ -16,7 +16,7 @@ include ../phoenix-rtos-build/Makefile.$(TARGET_SUFF)
 
 include $(TARGET_FAMILY)-$(TARGET_SUBFAMILY)/Makefile
 
-
+CFLAGS += $(BOARD_CONFIG)
 CFLAGS += -I../plo/$(TARGET_FAMILY)-$(TARGET_SUBFAMILY)
 
 OBJS += $(PREFIX_O)plo.o $(PREFIX_O)plostd.o $(PREFIX_O)phoenixd.o $(PREFIX_O)msg.o $(PREFIX_O)phfs.o $(PREFIX_O)cmd.o
