@@ -22,7 +22,6 @@
 #define IOMUXC_GPR 0x400ac000
 #define FLEXSPI2_BASE 0x70000000
 
-#define ADDR_ITCM 0x00000000
 #define ADDR_DTCM 0x20000000
 #define ADDR_SCB  0xe000ed00
 #define SWAP(x)   (((x >> 24) & 0xff) | ((x << 8) & (0xff << 16)) | ((x >> 8) & (0xff << 8)) | ((x << 24) & (0xff << 24)))
@@ -106,40 +105,40 @@ _syspage:
 .org _fcfb + 0x1000, 0x0
 
 ivt_flash:
-    .word 0x412000d1                         /* hdr */
-    .word _start                             /* entry */
-    .word 0                                  /* reserved 1 */
-    .word 0                                  /* dcd */
-    .word flash_boot_data                    /* boot_data */
-    .word ivt_flash                          /* self */
-    .word 0                                  /* csf */
-    .word 0                                  /* reserved 2 */
+	.word 0x402000d1                         /* hdr */
+	.word _start                             /* entry */
+	.word 0                                  /* reserved 1 */
+	.word 0                                  /* dcd */
+	.word flash_boot_data                    /* boot_data */
+	.word ivt_flash                          /* self */
+	.word 0                                  /* csf */
+	.word 0                                  /* reserved 2 */
 
 flash_boot_data:
-    .word FLEXSPI2_BASE                      /* load address */
-    .word _etext - _fcfb                     /* size */
-    .word 0                                  /* plugin */
-    .word 0xffffffff                         /* empty - extra data word */
+	.word FLEXSPI2_BASE                      /* load address */
+	.word _etext - _fcfb                     /* size */
+	.word 0                                  /* plugin */
+	.word 0xffffffff                         /* empty - extra data word */
 
 ivt_flash_end:
 
 .org _fcfb + 0x1050, 0x0
 
 ivt:
-    .word 0x412000d1                         /* hdr */
-    .word _start                             /* entry */
-    .word 0                                  /* reserved 1 */
-    .word 0                                  /* dcd */
-    .word boot_data                          /* boot_data */
-    .word ivt                                /* self */
-    .word 0                                  /* csf */
-    .word 0                                  /* reserved 2 */
+	.word 0x402000d1                         /* hdr */
+	.word _start                             /* entry */
+	.word 0                                  /* reserved 1 */
+	.word 0                                  /* dcd */
+	.word boot_data                          /* boot_data */
+	.word ivt                                /* self */
+	.word 0                                  /* csf */
+	.word 0                                  /* reserved 2 */
 
 boot_data:
-    .word ADDR_ITCM                          /* load address */
-    .word _etext - _fcfb                     /* size */
-    .word 0                                  /* plugin */
-    .word 0xffffffff
+	.word _fcfb                              /* load address */
+	.word _etext - _fcfb                     /* size */
+	.word 0                                  /* plugin */
+	.word 0
 
 ivt_end:
 
@@ -152,11 +151,11 @@ _init_vectors:
 .word _start
 
 /* TODO: define exception_dispatch */
-.word _exceptions_dispatch                     /* NMI */
-.word _exceptions_dispatch                     /* HardFault */
-.word _exceptions_dispatch                     /* MemMgtFault */
-.word _exceptions_dispatch                     /* BusFault */
-.word _exceptions_dispatch                     /* UsageFault */
+.word _exceptions_dispatch  /* NMI */
+.word _exceptions_dispatch  /* HardFault */
+.word _exceptions_dispatch  /* MemMgtFault */
+.word _exceptions_dispatch  /* BusFault */
+.word _exceptions_dispatch  /* UsageFault */
 .word 0
 .word 0
 .word 0
