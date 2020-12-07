@@ -324,7 +324,6 @@ int low_launch(void)
 }
 
 
-
 /* Opeartions on interrupts */
 
 void low_cli(void)
@@ -358,7 +357,7 @@ void low_maskirq(u16 n, u8 v)
 
 int low_irqinst(u16 irq, int (*isr)(u16, void *), void *data)
 {
-	if (irq > SIZE_INTERRUPTS)
+	if (irq >= SIZE_INTERRUPTS)
 		return ERR_ARG;
 
 	low_cli();

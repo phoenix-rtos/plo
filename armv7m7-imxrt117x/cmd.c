@@ -29,4 +29,3 @@ void cmd_flexram(char *args)
 {
 	//TODO
 }
-

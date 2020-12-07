@@ -148,7 +148,7 @@ int serial_read(unsigned int pn, u8 *buff, u16 len, u16 timeout)
 
 	--pn;
 
-	if (pn > UART_MAX_CNT || !serialConfig[pn])
+	if (pn >= (sizeof(serialConfig) / sizeof(serialConfig[0])) || !serialConfig[pn])
 		return ERR_ARG;
 
 	serial = &serial_common.serials[serialPos[pn]];
@@ -184,7 +184,7 @@ int serial_write(unsigned int pn, const u8 *buff, u16 len)
 
 	--pn;
 
-	if (pn > UART_MAX_CNT || !serialConfig[pn])
+	if (pn >= (sizeof(serialConfig) / sizeof(serialConfig[0])) || !serialConfig[pn])
 		return ERR_ARG;
 
 	serial = &serial_common.serials[serialPos[pn]];
