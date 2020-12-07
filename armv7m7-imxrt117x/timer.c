@@ -103,7 +103,7 @@ void timer_init(void)
 	freq = 400 * 1000 * 1000;
 	timer_common.ticksPerMs = freq / 1000;
 
-	//_imxrt_setDevClock(GPT1_CLK, clk_state_run);
+	_imxrt_setDevClock(GPT1_CLK, 0, 2, 0, 0, 1);
 
 	*(timer_common.base + gpt_cr) |= 1 << 15;
 

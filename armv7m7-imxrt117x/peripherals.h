@@ -221,11 +221,11 @@
 /* GPT - general purpose timer */
 
 #define GPT1_BASE           ((void *)0x400ec000)
-#define GPT1_CLK            pctl_clk_gpt1_bus
+#define GPT1_CLK            pctl_clk_gpt1
 #define GPT1_IRQ            gpt1_irq
 
 #define GPT2_BASE           ((void *)0x400f0000)
-#define GPT2_CLK            pctl_clk_gpt2_bus
+#define GPT2_CLK            pctl_clk_gpt2
 #define GPT2_IRQ            gpt2_irq
 
 #endif
