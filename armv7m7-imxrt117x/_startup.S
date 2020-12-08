@@ -136,7 +136,7 @@ ivt:
 
 boot_data:
 	.word _fcfb                              /* load address */
-	.word _etext - _fcfb                     /* size */
+	.word _edata - _fcfb                     /* size */
 	.word 0                                  /* plugin */
 	.word 0
 
