@@ -28,8 +28,8 @@
 
 
 .section .init, "x"
-
 _fcfb:
+#if 0
 .word 0x42464346 /* Tag */
 .word 0x56010400 /* Version */
 .word 0
@@ -97,11 +97,6 @@ _fcfb:
 .word 0x00000000
 .word 0x00040000
 
-.org _fcfb + 512
-
-.type _syspage, %object
-_syspage:
-
 .org _fcfb + 0x1000, 0x0
 
 ivt_flash:
@@ -123,6 +118,7 @@ flash_boot_data:
 ivt_flash_end:
 
 .org _fcfb + 0x1050, 0x0
+#endif
 
 ivt:
 	.word 0x402000d1                         /* hdr */
