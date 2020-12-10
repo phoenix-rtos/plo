@@ -45,9 +45,6 @@ enum { wdog_wcr = 0, wdog_wsr, wdog_wrsr, wdog_wicr, wdog_wmcr };
 enum { rtwdog_cs = 0, rtwdog_cnt, rtwdog_total, rtwdog_win };
 
 
-enum { lpcg0_direct = 6144, lpcg0_domain };
-
-
 struct {
 	volatile u32 *aips[4];
 	volatile u32 *nvic;
@@ -109,22 +106,6 @@ int _imxrt_setIOmux(int mux, char sion, char mode)
 }
 
 
-static int _imxrt_getIOmux(int mux, char *sion, char *mode)
-{
-	u32 t;
-	volatile u32 *reg;
-
-	if ((reg = _imxrt_IOmuxGetReg(mux)) == NULL)
-		return -1;
-
-	t = (*reg);
-	*sion = !!(t & (1 << 4));
-	*mode = t & 0xf;
-
-	return 0;
-}
-
-
 static volatile u32 *_imxrt_IOpadGetReg(int pad)
 {
 	if (pad < pctl_pad_gpio_emc_b1_00 || pad > pctl_pad_gpio_lpsr_15)
@@ -180,52 +161,6 @@ int _imxrt_setIOpad(int pad, char sre, char dse, char pue, char pus, char ode, c
 	//t |= (apc & 0xf) << 28;
 
 	(*reg) = t;
-
-	return 0;
-}
-
-
-static int _imxrt_getIOpad(int pad, char *sre, char *dse, char *pue, char *pus, char *ode, char *apc)
-{
-	u32 t;
-	char pull;
-	volatile u32 *reg;
-
-	if ((reg = _imxrt_IOpadGetReg(pad)) == NULL)
-		return -1;
-
-	t = (*reg);
-
-	if (pad >= pctl_pad_gpio_emc_b1_00 && pad <= pctl_pad_gpio_disp_b2_15) {
-		pull = (t >> 2) & 3;
-
-		if (pull == 3) {
-			*pue = 0;
-		}
-		else {
-			*pue = 1;
-			if (pull & 1)
-				*pus = 1;
-			else
-				*pus = 0;
-		}
-
-		*ode = (t >> 4) & 1;
-		/* sre field does not apply, leave it alone */
-	}
-	else {
-		*sre = t & 1;
-		*pue = (t >> 2) & 1;
-		*pus = (t >> 3) & 1;
-
-		if (pad >= pctl_pad_test_mode && pad <= pctl_pad_gpio_snvs_09)
-			*ode = (t >> 6) & 1;
-		else
-			*ode = (t >> 5) & 1;
-	}
-
-	*dse = (t >> 1) & 1;
-	*apc = (t >> 28) & 0xf;
 
 	return 0;
 }
@@ -294,20 +229,6 @@ int _imxrt_setIOisel(int isel, char daisy)
 		return -1;
 
 	(*reg) = daisy & mask;
-
-	return 0;
-}
-
-
-static int _imxrt_getIOisel(int isel, char *daisy)
-{
-	volatile u32 *reg;
-	u32 mask;
-
-	if ((reg = _imxrt_IOiselGetReg(isel, &mask)) == NULL)
-		return -1;
-
-	*daisy = (*reg) & mask;
 
 	return 0;
 }
@@ -572,12 +493,6 @@ int _imxrt_setDevClock(int clock, int div, int mux, int mfd, int mfn, int state)
 	imxrt_dataInstrBarrier();
 
 	return 0;
-}
-
-
-static void _imxrt_reboot(void)
-{
-	/* TODO */
 }
 
 

@@ -21,9 +21,6 @@
 
 #include "../types.h"
 
-/* Peripheral clock modes */
-enum { clk_state_off = 0, clk_state_run, clk_state_run_wait, clk_state_run_wait_stop, clk_state_always };
-
 
 /* CCM - Clock gating */
 
@@ -331,7 +328,7 @@ extern int _imxrt_setIOpad(int pad, char sre, char dse, char pue, char pus, char
 extern int _imxrt_setIOisel(int isel, char daisy);
 
 
-extern void _imxrt_platformInit(void);
+extern void _imxrt_cleanDCache(void);
 
 
 extern void _imxrt_init(void);
