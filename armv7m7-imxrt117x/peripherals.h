@@ -24,7 +24,7 @@
 
 /* UART */
 #ifndef UART1
-#define UART1 1
+#define UART1 0
 #endif
 
 #ifndef UART2
@@ -68,7 +68,7 @@
 #endif
 
 #ifndef UART12
-#define UART12 0
+#define UART12 1
 #endif
 
 #ifndef UART_CONSOLE
@@ -204,13 +204,13 @@
 #define UART11_CTS_PIN lpsr_10
 
 #ifndef UART12_TX_PIN
-#define UART12_TX_PIN lpsr_06
-//#define UART12_TX_PIN lpsr_00
+//#define UART12_TX_PIN lpsr_06
+#define UART12_TX_PIN lpsr_00
 //#define UART12_TX_PIN lpsr_10
 #endif
 #ifndef UART12_RX_PIN
-#define UART12_RX_PIN lpsr_07
-//#define UART12_RX_PIN lpsr_01
+//#define UART12_RX_PIN lpsr_07
+#define UART12_RX_PIN lpsr_01
 //#define UART12_RX_PIN lpsr_11
 #endif
 #define UART12_RTS_PIN lpsr_04

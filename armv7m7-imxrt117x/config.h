@@ -48,7 +48,7 @@ extern void plo_bss(void);
 #define PDN_FLASH0               0
 #define PDN_COM1                 1
 
-#define PHFS_SERIAL_LOADER_ID    2
+#define PHFS_SERIAL_LOADER_ID    12
 
 
 /* Types extensions */
