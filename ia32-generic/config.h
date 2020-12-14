@@ -24,6 +24,7 @@
 
 #define PLO_WELCOME              "\n-\\- Phoenix-RTOS loader for ia32, version: " VERSION
 #define PLO_DEFAULT_CMD          "syspage"
+#define KERNEL_PATH              "phoenix-ia32-generic.elf"
 
 /* Kernel adresses and sizes */
 #define KERNEL_OFFS     0x8000

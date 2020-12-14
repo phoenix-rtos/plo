@@ -573,7 +573,7 @@ void cmd_kernel(char *s)
 		return;
 
 	plostd_printf(ATTR_LOADER, "\nOpening device %s ...\n", args[0]);
-	handle = phfs_open(pdn, "phoenix-armv7m7-imxrt106x.elf", 0);
+	handle = phfs_open(pdn, KERNEL_PATH, 0);
 
 	if (handle.h < 0) {
 		plostd_printf(ATTR_ERROR, "\nCannot initialize device: %s\n", args[0]);

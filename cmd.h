@@ -29,8 +29,6 @@
 #define MAX_CMD_ARGS_NB           10
 #define MAX_APP_NAME_SIZE         17
 
-#define KERNEL_PATH               "phoenix"
-
 
 typedef struct {
 	char *name;

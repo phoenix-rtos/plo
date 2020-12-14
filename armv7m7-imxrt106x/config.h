@@ -25,6 +25,7 @@
 #define VERSION                  "1.0.1"
 #define PLO_WELCOME              "\n-\\- Phoenix-RTOS loader for i. MX RT106x, version: " VERSION
 #define PLO_DEFAULT_CMD          "syspage"
+#define KERNEL_PATH              "phoenix-armv7m7-imxrt106x.elf"
 
 
 /* Addresses descriptions */
