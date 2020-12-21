@@ -254,33 +254,36 @@ static int serial_muxVal(int mux)
 
 static u32 calculate_baudrate(int baud)
 {
-	int osr, sbr, bestSbr = 0, bestOsr = 0, bestErr = 1000, t;
+	u32 osr, sbr, t, tDiff;
+	u32 bestOsr = 0, bestSbr = 0, bestDiff = (u32)baud;
 
-	if (!baud)
+	if (baud <= 0) {
 		return 0;
-
-	for (osr = 3; osr < 32; ++osr) {
-		sbr = UART_CLK / (baud * (osr + 1));
-		sbr &= 0xfff;
-		t = UART_CLK / (sbr * (osr + 1));
-
-		if (t > baud)
-			t = ((t - baud) * 1000) / baud;
-		else
-			t = ((baud - t) * 1000) / baud;
-
-		if (t < bestErr) {
-			bestErr = t;
-			bestOsr = osr;
-			bestSbr = sbr;
-		}
-
-		/* Finish if error is < 1% */
-		if (bestErr < 10)
-			break;
 	}
 
-	return (bestOsr << 24) | ((bestOsr <= 6) << 17) | bestSbr;
+	for (osr = 4; osr <= 32; ++osr) {
+		/* find sbr value in range between 1 and 8191 */
+		sbr = (UART_CLK / ((u32)baud * osr)) & 0x1fff;
+		sbr = (sbr == 0) ? 1 : sbr;
+
+		/* baud rate difference based on temporary osr and sbr */
+		tDiff = UART_CLK / (osr * sbr) - (u32)baud;
+		t = UART_CLK / (osr * (sbr + 1));
+
+		/* select best values between sbr and sbr+1 */
+		if (tDiff > (u32)baud - t) {
+			tDiff = (u32)baud - t;
+			sbr += (sbr < 0x1fff);
+		}
+
+		if (tDiff <= bestDiff) {
+			bestDiff = tDiff;
+			bestOsr = osr - 1;
+			bestSbr = sbr;
+		}
+	}
+
+	return (bestOsr << 24) | ((bestOsr <= 6) << 17) | (bestSbr & 0x1fff);
 }
 
 
@@ -433,7 +436,7 @@ void serial_init(u32 baud, u32 *st)
 		*(serial->base + pincfgr) &= ~3;
 
 		/* Set 115200 default baudrate */
-		t = *(serial->base + baudr) & ~((0x1f << 24) | (1 << 17) | 0xfff);
+		t = *(serial->base + baudr) & ~((0x1f << 24) | (1 << 17) | 0x1fff);
 		*(serial->base + baudr) = t | calculate_baudrate(115200);
 
 		/* Set 8 bit and no parity mode */
