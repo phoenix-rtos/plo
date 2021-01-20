@@ -128,7 +128,6 @@ static int flashcfg_getMicronConfig(flash_context_t *ctx)
 		case MICORN_MT25QL01GBBB:
 			ctx->properties.size = 0x8000000;
 			ctx->properties.page_size = 0x100;
-			ctx->properties.sector_size = 0x1000;
 			ctx->properties.sector_size = DEFAULT_SECTOR_SIZE;
 			break;
 
