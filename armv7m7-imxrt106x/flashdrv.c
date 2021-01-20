@@ -283,6 +283,9 @@ int flashdrv_init(flash_context_t *ctx)
 	if (flexspi_norGetConfig(ctx->instance, &ctx->config, &ctx->option) != 0)
 		return ERR_ARG;
 
+	if (flexspi_norFlashInit(ctx->instance, &ctx->config) != 0)
+		return ERR_ARG;
+
 	if (flashdrv_getVendorID(ctx, &ctx->flashID) != 0)
 		return ERR_ARG;
 
