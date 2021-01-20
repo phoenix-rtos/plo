@@ -125,6 +125,14 @@ static int flashcfg_getMicronConfig(flash_context_t *ctx)
 			ctx->properties.sector_size = DEFAULT_SECTOR_SIZE;
 			break;
 
+		case MICORN_MT25QL01GBBB:
+			ctx->properties.size = 0x8000000;
+			ctx->properties.page_size = 0x100;
+			ctx->properties.sector_size = 0x1000;
+			ctx->properties.sector_size = DEFAULT_SECTOR_SIZE;
+			break;
+
+
 		default :
 			return ERR_ARG;
 	}
@@ -208,6 +216,8 @@ int flashcfg_getCfg(flash_context_t *ctx)
 		case flash_micron:
 			if (flashcfg_getMicronConfig(ctx) < 0)
 				return ERR_ARG;
+
+			/* TODO: provide support for chip erase on MT25QL01GBBB in LUT */
 			flashcfg_setMicronLUT(ctx);
 			break;
 
