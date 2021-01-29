@@ -19,7 +19,7 @@
 .cpu cortex-m7
 
 
-#define IOMUXC_GPR 0x400ac000
+#define IOMUXC_GPR 0x400e4000
 #define FLEXSPI2_BASE 0x70000000
 
 #define ADDR_DTCM 0x20000000
@@ -174,6 +174,22 @@ _init_vectors:
 .type _start, %function
 _start:
 	cpsid if
+
+	/* Configure FLEX RAM */
+	ldr r0, =IOMUXC_GPR
+
+	/* Low */
+	ldr r1, = 0xaaaa
+	str r1, [r0, #0x44]
+
+	/* HIGH */
+	ldr r1, =0xffff
+	str r1, [r0, #0x48]
+
+	/* Use provided FLEXRAM config */
+	ldr r1, [r0, #0x40]
+	orr r1, #(1 << 2)
+	str r1, [r0, #0x40]
 
 	/* Init vector table and stack pointer */
 	ldr r0, =0xe000ed08
