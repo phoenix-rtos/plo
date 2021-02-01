@@ -72,6 +72,13 @@ int syspage_getMapTop(const char *map, void **addr)
 }
 
 
+int syspage_alignMapTop(const char *map)
+{
+	return 0;
+}
+
+
+
 int syspage_getFreeSize(const char *map, u32 *sz)
 {
 	return 0;

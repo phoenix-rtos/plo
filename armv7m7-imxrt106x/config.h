@@ -35,7 +35,9 @@
 #define DISK_KERNEL_OFFS         0x00011000
 #define SYSPAGE_ADDRESS          0x20200000
 
-#define STACK_SIZE	             5 * 1024
+#define STACK_SIZE               5 * 1024
+
+#define PAGE_SIZE                0x200
 
 
 /* Linker symbols */

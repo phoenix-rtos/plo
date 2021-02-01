@@ -686,12 +686,15 @@ static int cmd_loadApp(phfs_conf_t *phfs, const char *name, const char *imap, co
 		return ERR_PHFS_FILE;
 	}
 
+	/* Align map top, so the app begin is aligned */
+	if (syspage_alignMapTop(imap) < 0)
+		return ERR_ARG;
+
 	/* Get instruction begining address */
 	if (syspage_getMapTop(imap, &start) < 0) {
 		plostd_printf(ATTR_ERROR, "\n%s does not exist!\n", imap);
 		return ERR_ARG;
 	}
-
 
 	/* Get data from memory storage */
 	if (phfs->datasz) {

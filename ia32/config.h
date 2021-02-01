@@ -59,6 +59,8 @@
 #define INIT_ESP     0x6000
 #define STACK_SIZE   0x1000
 
+#define PAGE_SIZE    0x1000
+
 
 /* Boot command size */
 #define CMD_SIZE     64

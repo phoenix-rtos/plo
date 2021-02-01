@@ -56,6 +56,9 @@ extern int syspage_addmap(const char *name, void *start, void *end, u32 attr);
 extern int syspage_getMapTop(const char *map, void **addr);
 
 
+extern int syspage_alignMapTop(const char *map);
+
+
 extern int syspage_getFreeSize(const char *map, u32 *sz);
 
 
@@ -69,7 +72,6 @@ extern void syspage_addEntries(u32 start, u32 sz);
 /* Program's functions */
 
 extern int syspage_addProg(void *start, void *end, const char *imap, const char *dmap, const char *name);
-
 
 
 /* Setting kernel's data */

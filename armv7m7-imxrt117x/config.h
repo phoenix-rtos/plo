@@ -37,6 +37,8 @@
 
 #define STACK_SIZE	             5 * 1024
 
+#define PAGE_SIZE                0x200
+
 
 /* Linker symbols */
 extern void _end(void);

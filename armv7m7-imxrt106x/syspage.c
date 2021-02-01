@@ -346,6 +346,27 @@ int syspage_getMapTop(const char *map, void **addr)
 }
 
 
+int syspage_alignMapTop(const char *map)
+{
+	u8 id;
+	u32 newTop;
+
+	if (syspage_getMapID(map, &id) < 0) {
+		plostd_printf(ATTR_ERROR, "\nMAPS for %s doesn not exist!\n", map);
+		return -1;
+	}
+
+	newTop = (syspage_common.maps[id].top + PAGE_SIZE - 1) & ~(PAGE_SIZE - 1);
+
+	if (newTop > syspage_common.maps[id].map.end)
+		return -1;
+
+	syspage_common.maps[id].top = newTop;
+
+	return 0;
+}
+
+
 int syspage_getFreeSize(const char *map, u32 *sz)
 {
 	u8 id;
