@@ -19,7 +19,9 @@ $(error "No BCC nor NCC found in PATH. Consider apt-get install bcc.")
 endif
 
 CFLAGS = -ansi -I.
-#CFLAGS += -DCONSOLE_SERIAL
+ifneq ($(CONSOLE), vga)
+	CFLAGS += -DCONSOLE_SERIAL
+endif
 
 AS = as86
 LD = ld86
