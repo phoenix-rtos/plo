@@ -161,13 +161,11 @@ void plo_init(void)
 #endif
 	}
 
-
 	if (t == 0) {
 		plostd_printf(ATTR_INIT, "\n%s\n", PROMPT);
 		cmd_default();
 	}
 	plostd_printf(ATTR_INIT, "\n");
-
 
 	/* Enter to interactive mode */
 	plo_cmdloop();

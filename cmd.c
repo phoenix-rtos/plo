@@ -22,6 +22,8 @@
 #include "cmd.h"
 #include "syspage.h"
 #include "script.h"
+#include "timer.h"
+#include "serial.h"
 
 #define MSG_BUFF_SZ 0x100
 
@@ -309,6 +311,9 @@ void cmd_timeout(char *s)
 void cmd_go(char *s)
 {
 	plostd_printf(ATTR_NONE, "\n");
+	serial_done();
+	timer_done();
+	low_done();
 	low_launch();
 
 	return;

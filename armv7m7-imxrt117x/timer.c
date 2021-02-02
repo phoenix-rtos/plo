@@ -108,7 +108,7 @@ void timer_init(void)
 	*(timer_common.base + gpt_cr) |= 1 << 15;
 
 	while (((*(timer_common.base + gpt_cr) >> 15) & 0x1))
-	{ }
+		;
 
 	/* Disable GPT and it's interrupts */
 	*(timer_common.base + gpt_cr) = 0;
