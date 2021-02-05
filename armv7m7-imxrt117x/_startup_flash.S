@@ -3,7 +3,7 @@
  *
  * plo - operating system loader
  *
- * Low-level initialization for Cortex-M7 (ARMv7) architecture
+ * Low-level initialization for Cortex-M7 (ARMv7) architecture - plo starting from NV memory
  *
  * Copyright 2012, 2016-2017, 2020 Phoenix Systems
  * Author: Jacek Popko, Pawel Pisarczyk, Jakub Sejdak, Aleksander Kaminski, Hubert Buczynski
@@ -13,23 +13,15 @@
  * %LICENSE%
  */
 
+#define FLEXSPI2_BASE 0x70000000
+
 #define __ASSEMBLY__
 
 .syntax unified
 .cpu cortex-m7
 
-
-#define IOMUXC_GPR 0x400e4000
-#define FLEXSPI2_BASE 0x70000000
-
-#define ADDR_DTCM 0x20000000
-#define ADDR_SCB  0xe000ed00
-#define SWAP(x)   (((x >> 24) & 0xff) | ((x << 8) & (0xff << 16)) | ((x >> 8) & (0xff << 8)) | ((x << 24) & (0xff << 24)))
-
-
 .section .init, "x"
 _fcfb:
-#if 0
 .word 0x42464346 /* Tag */
 .word 0x56010400 /* Version */
 .word 0
@@ -47,12 +39,12 @@ _fcfb:
 .word 0, 0, 0, 0 /* configCmdSeqs */
 .word 0, 0, 0, 0 /* cfgCmdArgs */
 .word 0x00000000 /* controllerMiscOption */
-.byte 0x0          /* deviceType */
+.byte 0x0        /* deviceType */
 .byte 0x4        /* sflashPadType */
 .byte 0x6        /* serialClkFreq */
 .byte 0x0        /* lutCustomSeqEnable */
 .word 0, 0
-.word 0x800000 /* sflashA1Size */
+.word 0x800000   /* sflashA1Size */
 .word 0          /* sflashA2Size */
 .word 0          /* sflashB1Size */
 .word 0          /* sflashB2Size */
@@ -115,123 +107,8 @@ flash_boot_data:
 	.word 0                                  /* plugin */
 	.word 0xffffffff                         /* empty - extra data word */
 
-ivt_flash_end:
-
-.org _fcfb + 0x1050, 0x0
-#endif
-
-ivt:
-	.word 0x402000d1                         /* hdr */
-	.word _start                             /* entry */
-	.word 0                                  /* reserved 1 */
-	.word 0                                  /* dcd */
-	.word boot_data                          /* boot_data */
-	.word ivt                                /* self */
-	.word 0                                  /* csf */
-	.word 0                                  /* reserved 2 */
-
-boot_data:
-	.word _fcfb                              /* load address */
-	.word _edata - _fcfb                     /* size */
-	.word 0                                  /* plugin */
-	.word 0
-
 ivt_end:
 
-.org _fcfb + 0x1100, 0x0
+.org _fcfb + 0x1050, 0x0
 
-.globl _init_vectors
-.type _init_vectors, %object
-_init_vectors:
-.word _end + 5 * 1024
-.word _start
-
-/* TODO: define exception_dispatch */
-.word _exceptions_dispatch  /* NMI */
-.word _exceptions_dispatch  /* HardFault */
-.word _exceptions_dispatch  /* MemMgtFault */
-.word _exceptions_dispatch  /* BusFault */
-.word _exceptions_dispatch  /* UsageFault */
-.word 0
-.word 0
-.word 0
-.word 0
-.word 0                     /* SVC */
-.word 0                     /* Debug */
-.word 0
-.word _interrupts_dispatch  /* PendSV */
-.word _interrupts_dispatch  /* Systick */
-
-.rept 217
-.word _interrupts_dispatch  /* _interrupts_dispatch */
-.endr
-.size _init_vectors, .-_init_vectors
-
-.thumb
-.thumb_func
-
-.globl _start
-.type _start, %function
-_start:
-	cpsid if
-
-	/* Configure FLEX RAM */
-	ldr r0, =IOMUXC_GPR
-
-	/* Low */
-	ldr r1, = 0xaaaa
-	str r1, [r0, #0x44]
-
-	/* HIGH */
-	ldr r1, =0xffff
-	str r1, [r0, #0x48]
-
-	/* Use provided FLEXRAM config */
-	ldr r1, [r0, #0x40]
-	orr r1, #(1 << 2)
-	str r1, [r0, #0x40]
-
-	/* Init vector table and stack pointer */
-	ldr r0, =0xe000ed08
-	ldr r1, =_init_vectors
-
-	str r1, [r0]
-	ldr r0, [r1]
-	msr msp, r0
-	ldr r8, =plo_init
-	bx r8
-
-.size _start, .-_start
-.ltorg
-
-
-.globl _interrupts_dispatch
-.type _interrupts_dispatch, %function
-_interrupts_dispatch:
-	cpsid if
-
-	mrs r0, ipsr
-	sub r1, sp, #44
-	stmdb sp!, {r1-r2, r4-r11, lr}
-
-_intd0:
-	bl low_irqdispatch
-	ldr sp, [sp]
-_intd1:
-	ldmia sp!, {r0-r1, r4-r11, lr}
-
-	cpsie if
-	bx lr
-.size _interrupts_dispatch, .-_interrupts_dispatch
-.ltorg
-
-
-.globl _exceptions_dispatch
-.type _exceptions_dispatch, %function
-
-_exceptions_dispatch:
-	cpsid if
-	/* TODO: implement exception dispatcher */
-	1: b 1b
-.size _exceptions_dispatch, .-_exceptions_dispatch
-.ltorg
+#include "_common.inc"
