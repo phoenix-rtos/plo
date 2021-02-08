@@ -21,9 +21,9 @@
 #include "rom_api.h"
 
 
-#define FLASH_NO                     2
-#define FLASH_EXT_DATA_ADDRESS       0x60000000
-#define FLASH_INTERNAL_DATA_ADDRESS  0x70000000
+#define FLASH_NO        1
+#define FLASH_FLEXSPI1  0x30000000
+//#define FLASH_FLEXSPI2  0x60000000
 
 #define DEFAULT_SECTOR_SIZE            0x1000
 

@@ -28,20 +28,22 @@ struct {
 
 int phfsflash_init(void)
 {
-	/* Initialize internal flash memory */
-	phfsflash_common[0].flash_ctx.address = FLASH_INTERNAL_DATA_ADDRESS;
+	/* Initialize flash memory 1 */
+	phfsflash_common[0].flash_ctx.address = FLASH_FLEXSPI1;
 
 	if (flashdrv_init(&phfsflash_common[0].flash_ctx) < 0)
 		return ERR_ARG;
 
-	/* Initialize external flash memory */
-	phfsflash_common[1].flash_ctx.address = FLASH_EXT_DATA_ADDRESS;
+#if 0 /* TODO handle no flash memory connected to the MCU */
+	/* Initialize flash memory 2 */
+	phfsflash_common[1].flash_ctx.address = FLASH_FLEXSPI2;
 	if (flashdrv_init(&phfsflash_common[1].flash_ctx) < 0)
 		return  ERR_ARG;
+#endif
 
 	for (int i = 0; i < 0x100; ++i) {
 		phfsflash_common[0].buff[i] = 0xff;
-		phfsflash_common[1].buff[i] = 0xff;
+//		phfsflash_common[1].buff[i] = 0xff;
 	}
 
 	return 0;

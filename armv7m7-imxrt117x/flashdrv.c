@@ -246,18 +246,18 @@ void flashdrv_sync(flash_context_t *ctx)
 static int flashdrv_defineFlexSPI(flash_context_t *ctx)
 {
 	switch (ctx->address) {
-		case FLASH_EXT_DATA_ADDRESS:
+		case FLASH_FLEXSPI1:
 			ctx->instance = 0;
 			ctx->option.option0 = QSPI_FREQ_133MHZ;
 			ctx->option.option1 = 0;
 			break;
-
-		case FLASH_INTERNAL_DATA_ADDRESS:
+#if 0
+		case FLASH_FLEXSPI2:
 			ctx->instance = 1;
 			ctx->option.option0 = QSPI_FREQ_133MHZ;
 			ctx->option.option1 = 0;
 			break;
-
+#endif
 		default:
 			return ERR_ARG;
 	}
