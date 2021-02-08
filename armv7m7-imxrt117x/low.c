@@ -28,6 +28,7 @@
 #include "../serial.h"
 #include "../syspage.h"
 #include "../phoenixd.h"
+#include "../timer.h"
 
 
 
@@ -310,6 +311,15 @@ int low_mmget(unsigned int n, low_mmitem_t *mmitem)
 int low_launch(void)
 {
 	syspage_save();
+
+	/* Give the LPUART transmitters some time */
+	timer_wait(100, TIMER_EXPIRE, NULL, 0);
+
+	/* Tidy up */
+	serial_done();
+	timer_done();
+
+	low_done();
 
 	_imxrt_cleanDCache();
 
