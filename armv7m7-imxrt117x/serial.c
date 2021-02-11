@@ -98,7 +98,7 @@ int serial_rxEmpty(unsigned int pn)
 	serial_t *serial;
 	--pn;
 
-	if (pn > (sizeof(serialConfig) / sizeof(serialConfig[0])) || !serialConfig[pn])
+	if (pn >= (sizeof(serialConfig) / sizeof(serialConfig[0])) || !serialConfig[pn])
 		return ERR_ARG;
 
 	serial = &serial_common.serials[serialPos[pn]];

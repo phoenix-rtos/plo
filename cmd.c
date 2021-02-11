@@ -486,7 +486,7 @@ void cmd_copy(char *s)
 	phfs_conf_t phfses[2];
 
 	u16 cmdArgsc = 0, argsID = 0;
-	char cmdArgs[7][LINESZ + 1];
+	char cmdArgs[MAX_CMD_ARGS_NB][LINESZ + 1];
 
 	phfses[0].datasz = phfses[1].datasz = 0;
 	phfses[0].dataOffs = phfses[1].dataOffs = 0;
@@ -801,12 +801,15 @@ void cmd_app(char *s)
 	low_setDefaultDMAP(dmap);
 
 	/* Get map for code section */
-	if ((argID + 1) < cmdArgsc)
+	if ((argID + 1) < cmdArgsc) {
 		low_memcpy(cmap, cmdArgs[++argID], 8);
-
+		cmap[sizeof(cmap) - 1] = '\0';
+	}
 	/* Get map for data section */
-	if ((argID + 1) < cmdArgsc)
+	if ((argID + 1) < cmdArgsc) {
 		low_memcpy(dmap, cmdArgs[++argID], 8);
+		dmap[sizeof(dmap) - 1] = '\0';
+	}
 
 
 	if (phfs.dataOffs != 0 && phfs.datasz != 0)
