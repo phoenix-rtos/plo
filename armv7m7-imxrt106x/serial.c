@@ -108,6 +108,16 @@ int serial_handleIntr(u16 irq, void *buff)
 	if (serial == NULL)
 		return 0;
 
+	/* Clear RX overrun error */
+	if (*(serial->base + statr) & (1 << 19)) {
+		*(serial->base + fifor) |= (1 << 14);
+		*(serial->base + statr) |= (1 << 19);
+	}
+
+	/* Clear RX framing and noise error */
+	if (*(serial->base + statr) & (1 << 18) | (1 << 17))
+		*(serial->base + statr) |= (1 << 18) | (1 << 17);
+
 	/* Receive */
 	while (serial_getRXcount(serial)) {
 		serial->rxBuff[serial->rxHead] = *(serial->base + datar);
@@ -481,8 +491,8 @@ void serial_init(u32 baud, u32 *st)
 		serial->rxFifoSz = fifoSzLut[*(serial->base + fifor) & 0x7];
 		serial->txFifoSz = fifoSzLut[(*(serial->base + fifor) >> 4) & 0x7];
 
-		/* Enable receiver interrupt */
-		*(serial->base + ctrlr) |= 1 << 21;
+		/* Enable overrun, noise, framing error and receiver interrupts */
+		*(serial->base + ctrlr) |= (1 << 27) | (1 << 26) | (1 << 25) | (1 << 21);
 
 		/* Enable TX and RX */
 		*(serial->base + ctrlr) |= (1 << 19) | (1 << 18);
@@ -511,8 +521,8 @@ void serial_done(void)
 		*(serial->base + ctrlr) &= ~((1 << 19) | (1 << 18));
 		imxrt_dataBarrier();
 
-		/* Disable TX and RX interrupts */
-		*(serial->base + ctrlr) &= ~((1 << 23) | (1 << 21));
+		/* Disable overrun, noise, framing error, TX and RX interrupts */
+		*(serial->base + ctrlr) &= ~((1 << 27) | (1 << 26) | (1 << 25) | (1 << 23) | (1 << 21));
 
 		/* Flush TX and RX fifo */
 		*(serial->base + fifor) |= (1 << 15) | (1 << 14);
