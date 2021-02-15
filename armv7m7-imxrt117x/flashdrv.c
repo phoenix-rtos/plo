@@ -23,7 +23,7 @@
 #include "flashcfg.h"
 
 
-#define QSPI_FREQ_133MHZ 0xc0000008
+#define QSPI_FREQ_133MHZ 0xc0000007
 
 
 /* Flash config commands */
@@ -94,9 +94,11 @@ static int flashdrv_getVendorID(flash_context_t *ctx, u32 *manID)
 	ctx->config.mem.lut[4 * READ_JEDEC_ID_SEQ_ID + 3] = 0;
 	flexspi_norFlashUpdateLUT(ctx->instance, READ_JEDEC_ID_SEQ_ID, (const u32 *)&ctx->config.mem.lut[4 * READ_JEDEC_ID_SEQ_ID], 1);
 
+	xfer.txBuffer = NULL;
+	xfer.txSize = 0;
 	xfer.rxSize = 3;
 	xfer.rxBuffer = manID;
-	xfer.baseAddress = ctx->instance;
+	xfer.baseAddress = 0;
 	xfer.operation = kFlexSpiOperation_Read;
 	xfer.seqId = READ_JEDEC_ID_SEQ_ID;
 	xfer.seqNum = 1;
@@ -243,28 +245,6 @@ void flashdrv_sync(flash_context_t *ctx)
 
 /* Init functions */
 
-static int flashdrv_defineFlexSPI(flash_context_t *ctx)
-{
-	switch (ctx->address) {
-		case FLASH_FLEXSPI1:
-			ctx->instance = 0;
-			ctx->option.option0 = QSPI_FREQ_133MHZ;
-			ctx->option.option1 = 0;
-			break;
-#if 0
-		case FLASH_FLEXSPI2:
-			ctx->instance = 1;
-			ctx->option.option0 = QSPI_FREQ_133MHZ;
-			ctx->option.option1 = 0;
-			break;
-#endif
-		default:
-			return ERR_ARG;
-	}
-
-	return ERR_NONE;
-}
-
 
 int flashdrv_init(flash_context_t *ctx)
 {
@@ -277,10 +257,14 @@ int flashdrv_init(flash_context_t *ctx)
 	ctx->config.mem.serialClkFreq = 8;
 	ctx->config.mem.sflashPadType = 4;
 
-	if ((res = flashdrv_defineFlexSPI(ctx)) < 0)
-		return res;
+	ctx->instance = 1;
+	ctx->option.option0 = 0xc0000007;
+	ctx->option.option1 = 0x00000000;
 
 	if (flexspi_norGetConfig(ctx->instance, &ctx->config, &ctx->option) != 0)
+		return ERR_ARG;
+
+	if (flexspi_norFlashInit(ctx->instance, &ctx->config) != 0)
 		return ERR_ARG;
 
 	if (flashdrv_getVendorID(ctx, &ctx->flashID) != 0)

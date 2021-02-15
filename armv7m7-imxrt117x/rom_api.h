@@ -34,7 +34,7 @@ typedef enum {
 
 
 typedef struct {
-	flexspi_operation_t operation;             /* FlexSPI operation */
+	flexspi_operation_t operation;        /* FlexSPI operation */
 	u32 baseAddress;                      /* FlexSPI operation base address */
 	u32 seqId;                            /* Sequence Id */
 	u32 seqNum;                           /* Sequence Number */
@@ -98,7 +98,7 @@ typedef struct {
 
 
 typedef struct {
-	volatile flexspi_memConfig_t mem;           /* Common memory configuration info via FlexSPI */
+	volatile flexspi_memConfig_t mem;      /* Common memory configuration info via FlexSPI */
 	u32 pageSize;                          /* Page size of Serial NOR */
 	u32 sectorSize;                        /* Sector size of Serial NOR */
 	u8 ipcmdSerialClkFreq;                 /* Clock frequency for IP command */
