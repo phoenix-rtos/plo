@@ -249,6 +249,7 @@ void flashdrv_sync(flash_context_t *ctx)
 int flashdrv_init(flash_context_t *ctx)
 {
 	int res = ERR_NONE;
+	u32 pc;
 
 	ctx->sectorID = -1;
 	ctx->counter = 0;
@@ -260,6 +261,11 @@ int flashdrv_init(flash_context_t *ctx)
 	ctx->instance = 1;
 	ctx->option.option0 = 0xc0000007;
 	ctx->option.option1 = 0x00000000;
+
+	/* Don't try to initialize FlexSPI if we're already XIP from it */
+	__asm__ volatile ("mov %0, pc" :"=r"(pc));
+	if (pc >= 0x30000000 && pc < 0x40000000)
+		return 0;
 
 	if (flexspi_norGetConfig(ctx->instance, &ctx->config, &ctx->option) != 0)
 		return ERR_ARG;
