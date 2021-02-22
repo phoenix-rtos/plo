@@ -120,7 +120,7 @@ static int cmd_cpphfs2phfs(phfs_conf_t *src, phfs_conf_t *dst)
 	u8 buff[MSG_BUFF_SZ];
 
 	if (src->handle.offs != 0) {
-		if (src->datasz == 0 && src->datasz == 0) {
+		if (src->datasz == 0 && dst->datasz == 0) {
 			size = 0;
 		}
 		else {
