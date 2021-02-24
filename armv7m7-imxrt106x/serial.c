@@ -115,7 +115,7 @@ int serial_handleIntr(u16 irq, void *buff)
 	}
 
 	/* Clear RX framing and noise error */
-	if (*(serial->base + statr) & (1 << 18) | (1 << 17))
+	if (*(serial->base + statr) & ((1 << 18) | (1 << 17)))
 		*(serial->base + statr) |= (1 << 18) | (1 << 17);
 
 	/* Receive */
