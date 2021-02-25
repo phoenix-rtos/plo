@@ -103,20 +103,20 @@ int serial_rxEmpty(unsigned int pn)
 
 int serial_handleIntr(u16 irq, void *buff)
 {
+	u32 flags;
 	serial_t *serial = (serial_t *)buff;
 
 	if (serial == NULL)
 		return 0;
 
-	/* Clear RX overrun error */
-	if (*(serial->base + statr) & (1 << 19)) {
-		*(serial->base + fifor) |= (1 << 14);
-		*(serial->base + statr) |= (1 << 19);
-	}
+	/* Error flags: parity, framing, noise, overrun */
+	flags = *(serial->base + statr) & (0xf << 16);
 
-	/* Clear RX framing and noise error */
-	if (*(serial->base + statr) & ((1 << 18) | (1 << 17)))
-		*(serial->base + statr) |= (1 << 18) | (1 << 17);
+	/* RX overrun: invalidate fifo */
+	if (flags & (1 << 19))
+		*(serial->base + fifor) |= 1 << 14;
+
+	*(serial->base + statr) |= flags;
 
 	/* Receive */
 	while (serial_getRXcount(serial)) {
