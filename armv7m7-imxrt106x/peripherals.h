@@ -87,6 +87,11 @@
 #define UART8_HW_FLOWCTRL 0
 #endif
 
+#ifdef UART_CONSOLE_PLO
+#undef UART_CONSOLE
+#define UART_CONSOLE UART_CONSOLE_PLO
+#endif
+
 #ifndef UART_CONSOLE
 #define UART_CONSOLE 1
 #endif
