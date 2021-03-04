@@ -60,6 +60,8 @@ extern void low_setLaunchTimeout(u32 timeout);
 
 extern u32 low_getLaunchTimeout(void);
 
+extern addr_t low_vm2phym(addr_t addr);
+
 
 /* Functions modify registers */
 
