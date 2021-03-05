@@ -612,7 +612,8 @@ void cmd_kernel(char *s)
 					maxaddr = phdr.p_paddr + phdr.p_memsz;
 			}
 
-			loffs = (void *)phdr.p_vaddr;
+			loffs = (void *)low_vm2phym((addr_t)phdr.p_vaddr);
+
 			for (i = 0; i < phdr.p_filesz / sizeof(buff); i++) {
 				offs = kernelOffs + phdr.p_offset + i * sizeof(buff);
 				if (phfs_read(pdn, handle, &offs, buff, (u32)sizeof(buff)) < 0) {
@@ -659,6 +660,7 @@ void cmd_kernel(char *s)
 	syspage_setKernelText((void *)minaddr, maxaddr - minaddr);
 	low_setKernelEntry(hdr.e_entry);
 
+
 	plostd_printf(ATTR_LOADER, "%c[ok]\n", 8);
 }
 
@@ -667,6 +669,7 @@ static int cmd_loadApp(phfs_conf_t *phfs, const char *name, const char *imap, co
 {
 	Elf32_Ehdr hdr;
 	void *start, *end;
+	int res;
 
 	phfs->handle = phfs_open(phfs->dn, name, 0);
 	if (phfs->handle.h < 0) {
@@ -676,8 +679,8 @@ static int cmd_loadApp(phfs_conf_t *phfs, const char *name, const char *imap, co
 
 
 	/* Check ELF header */
-	if (phfs_read(phfs->dn, phfs->handle, &phfs->dataOffs, (u8 *)&hdr, (u32)sizeof(Elf32_Ehdr)) < 0) {
-		plostd_printf(ATTR_ERROR, "\nCan't read ELF header!\n");
+	if ((res = phfs_read(phfs->dn, phfs->handle, &phfs->dataOffs, (u8 *)&hdr, (u32)sizeof(Elf32_Ehdr))) < 0) {
+		plostd_printf(ATTR_ERROR, "\nCan't read ELF header %d!\n", res);
 		return ERR_PHFS_FILE;
 	}
 
@@ -747,7 +750,10 @@ void cmd_app(char *s)
 	char cmap[8], dmap[8];
 	char appData[3][LINESZ + 1];
 
-	phfs_conf_t phfs = {.datasz = 0, .dataOffs = 0};
+	phfs_conf_t phfs;
+
+	phfs.datasz = 0;
+	phfs.dataOffs = 0;
 
 	/* Parse command arguments */
 	if (cmd_parseArgs(s, cmdArgs, &cmdArgsc) < 0) {
