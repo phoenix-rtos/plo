@@ -46,5 +46,12 @@
 #define TTC0_BASE_ADDR   ((void *)0xf8001000)
 #define TTC1_BASE_ADDR   ((void *)0xf8002000)
 
+#define TTC0_1_IRQ       42
+#define TTC0_2_IRQ       43
+#define TTC0_3_IRQ       44
+
+#define TTC1_1_IRQ       69
+#define TTC1_2_IRQ       70
+#define TTC1_3_IRQ       71
 
 #endif

@@ -115,18 +115,14 @@ int serial_read(unsigned int pn, u8 *buff, u16 len, u16 timeout)
 {
 	u16 l, cnt = 0;
 	serial_t *serial;
-	volatile int temp = 0;
 
 	if (pn >= UARTS_MAX_CNT)
 		return ERR_ARG;
 
 	serial = &serial_common.serials[pn];
 
-
-	/* TODO: after adding timer this line should be removed
-	 *       it is necessary to wait some time in order to load kernel via serial */
-	while (serial->rxHead == serial->rxTail && temp++ < 90000)
-		__asm__ volatile ("nop");
+	if (!timer_wait(timeout, TIMER_VALCHG, &serial->rxHead, serial->rxTail))
+		return ERR_SERIAL_TIMEOUT;
 
 	low_cli();
 

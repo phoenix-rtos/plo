@@ -57,7 +57,7 @@ void low_init(void)
 
 	syspage_setAddress((void *)SYSPAGE_ADDRESS);
 
-	low_common.timeout = 0;
+	low_common.timeout = 3;
 	low_common.kernel_entry = 0;
 }
 
@@ -297,16 +297,10 @@ int low_mmget(unsigned int n, low_mmitem_t *mmitem)
 
 int low_launch(void)
 {
-	int i;
-
 	syspage_save();
 
 	/* Give the LPUART transmitters some time */
 	timer_wait(100, TIMER_EXPIRE, NULL, 0);
-
-	/* TODO: it should be removed after timer driver implementation */
-	for (i = 0; i < 5000000; ++i)
-		__asm__ volatile ("nop");
 
 	/* Tidy up */
 	serial_done();
