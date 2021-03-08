@@ -22,6 +22,7 @@
 #define MAX_MAPS_NB             16
 #define MAX_ARGS_SIZE           256
 #define MAX_ENTRIES_NB          6     /* 3 of kernel's sections, 2 of plo's sections and syspage */
+#define MAX_CMDLINE_SIZE        16
 
 #define MAX_SYSPAGE_SIZE     (sizeof(syspage_t) + MAX_ARGS_SIZE * sizeof(char) + MAX_PROGRAMS_NB * sizeof(syspage_program_t) + MAX_MAPS_NB * sizeof(syspage_map_t))
 
@@ -45,7 +46,7 @@ typedef struct syspage_program_t {
 	u8 dmap;
 	u8 imap;
 
-	char cmdline[16];
+	char cmdline[MAX_CMDLINE_SIZE];
 } syspage_program_t;
 
 
@@ -357,8 +358,10 @@ int syspage_alignMapTop(const char *map)
 
 	newTop = (syspage_common.maps[id].top + PAGE_SIZE - 1) & ~(PAGE_SIZE - 1);
 
-	if (newTop > syspage_common.maps[id].map.end)
+	if (newTop > syspage_common.maps[id].map.end) {
+		plostd_printf(ATTR_ERROR, "\nMap %s is full!\n", map);
 		return -1;
+	}
 
 	syspage_common.maps[id].top = newTop;
 
@@ -435,11 +438,28 @@ void syspage_addEntries(u32 start, u32 sz)
 int syspage_addProg(void *start, void *end, const char *imap, const char *dmap, const char *name)
 {
 	u8 imapID, dmapID;
-	unsigned int pos = 0, len = 0;
+	unsigned int pos, len;
 	u32 progID = syspage_common.progsCnt;
 
 	if ((syspage_getMapID(imap, &imapID) < 0) || (syspage_getMapID(dmap, &dmapID) < 0)) {
 		plostd_printf(ATTR_ERROR, "\nMAPS for %s does not exist!\n", name);
+		return -1;
+	}
+
+	len = plostd_strlen(name);
+
+	if (syspage_common.argCnt + 1 + len + 1 + 1 > MAX_ARGS_SIZE) {
+		plostd_printf(ATTR_ERROR, "\nMAX_ARGS_SIZE for %s exceeded!\n", name);
+		return -1;
+	}
+
+	for (pos = 0; pos < len; pos++) {
+		if (name[pos] == ';')
+			break;
+	}
+
+	if (pos >= MAX_CMDLINE_SIZE) {
+		plostd_printf(ATTR_ERROR, "\nSyspage program %s, name is too long!\n", name);
 		return -1;
 	}
 
@@ -449,21 +469,17 @@ int syspage_addProg(void *start, void *end, const char *imap, const char *dmap, 
 	syspage_common.progs[progID].imap = imapID;
 
 	syspage_common.args[syspage_common.argCnt++] = 'X';
-	low_memcpy((void *)&syspage_common.args[syspage_common.argCnt], name, plostd_strlen(name));
+	low_memcpy((void *)&syspage_common.args[syspage_common.argCnt], name, len);
 
-	syspage_common.argCnt += plostd_strlen(name);
+	syspage_common.argCnt += len;
 	syspage_common.args[syspage_common.argCnt++] = ' ';
 	syspage_common.args[syspage_common.argCnt] = '\0';
 
-	while (len < plostd_strlen(name)) {
-		if (name[len] == ';')
-			break;
-		++len;
-	}
-	low_memcpy(syspage_common.progs[progID].cmdline, name, len);
+	/* copy only program name, without (;) args) */
+	low_memcpy(syspage_common.progs[progID].cmdline, name, pos);
 
-	for (pos = len; pos < 16; ++pos)
-		syspage_common.progs[progID].cmdline[pos] = 0;
+	while (pos < MAX_CMDLINE_SIZE)
+		syspage_common.progs[progID].cmdline[pos++] = '\0';
 
 	syspage_common.progsCnt++;
 
