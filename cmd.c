@@ -660,12 +660,11 @@ void cmd_kernel(char *s)
 	syspage_setKernelText((void *)minaddr, maxaddr - minaddr);
 	low_setKernelEntry(hdr.e_entry);
 
-
-	plostd_printf(ATTR_LOADER, "%c[ok]\n", 8);
+	plostd_printf(ATTR_LOADER, "[ok]\n");
 }
 
 
-static int cmd_loadApp(phfs_conf_t *phfs, const char *name, const char *imap, const char *dmap)
+static int cmd_loadApp(phfs_conf_t *phfs, const char *name, const char *imap, const char *dmap, const char *cmdline)
 {
 	Elf32_Ehdr hdr;
 	void *start, *end;
@@ -731,8 +730,12 @@ static int cmd_loadApp(phfs_conf_t *phfs, const char *name, const char *imap, co
 		}
 	}
 
-	syspage_addProg(start, end, imap, dmap, name);
-	plostd_printf(ATTR_LOADER, "%c[ok]\n", 8);
+	if (syspage_addProg(start, end, imap, dmap, cmdline) < 0) {
+		plostd_printf(ATTR_LOADER, "[failed]\n");
+		return -1;
+	}
+
+	plostd_printf(ATTR_LOADER, "[ok]\n");
 
 	return 0;
 }
@@ -744,7 +747,6 @@ void cmd_app(char *s)
 	int i = 0, argID = 0;
 	char cmdArgs[MAX_CMD_ARGS_NB][LINESZ + 1];
 
-	u16 namesz;
 	char *name;
 	unsigned int pos = 0;
 	char cmap[8], dmap[8];
@@ -768,24 +770,25 @@ void cmd_app(char *s)
 	++argID;
 	name = cmdArgs[argID];
 
+	pos = plostd_strlen(name);
 	if (name[0] == '@') {
 		if (script_expandAlias(&name) < 0) {
 			plostd_printf(ATTR_ERROR, "\nWrong arguments!!\n");
 			return;
 		}
+		name++;
+		pos--;
 	}
 
-	/* Parse program name with args, offset and size */
-	for (i = 0; i < 3; ++i) {
-		cmd_skipblanks(name, &pos, "@ ( : )\t");
-		if (cmd_getnext(name, &pos, "( : )\t", NULL, appData[i], sizeof(appData[i])) == NULL || *appData[i] == 0)
+	low_memcpy(appData[0], name, pos);
+	appData[0][pos] = '\0';
+
+	/* Parse (offset:size) */
+	for (i = 1; i < 3; ++i) {
+		if (cmd_getnext(name, &pos, "(:) \t", NULL, appData[i], sizeof(appData[i])) == NULL || *appData[i] == 0)
 			break;
 
-		if (i == 0 ) {
-			namesz = (plostd_strlen(appData[i]) < (MAX_APP_NAME_SIZE - 1)) ? (plostd_strlen(appData[i]) + 1) : (MAX_APP_NAME_SIZE - 1);
-			appData[0][namesz] = '\0';
-		}
-		else if (i == 1) {
+		if (i == 1) {
 			if (plostd_ishex(appData[i]) < 0) {
 				plostd_printf(ATTR_ERROR, "\nOffset is not a hex value !!\n");
 				return;
@@ -817,13 +820,25 @@ void cmd_app(char *s)
 		dmap[sizeof(dmap) - 1] = '\0';
 	}
 
+	for (pos = 0; appData[0][pos]; pos++) {
+		if (appData[0][pos] == ';')
+			break;
+	}
+
+	low_memcpy(name, appData[0], pos);
+	name[pos] = '\0';
+
+	if (pos > MAX_APP_NAME_SIZE) {
+		plostd_printf(ATTR_ERROR, "\nApp %s name is too long!\n", name);
+		return;
+	}
 
 	if (phfs.dataOffs != 0 && phfs.datasz != 0)
-		plostd_printf(ATTR_LOADER, "\nLoading %s (offs=%p, size=%p, cmap=%s, dmap=%s)\n", appData[0], phfs.dataOffs, phfs.datasz, cmap, dmap);
+		plostd_printf(ATTR_LOADER, "\nLoading %s (offs=%p, size=%p, cmap=%s, dmap=%s)\n", name, phfs.dataOffs, phfs.datasz, cmap, dmap);
 	else
-		plostd_printf(ATTR_LOADER, "\nLoading %s (offs=UNDEF, size=UNDEF, imap=%s, dmap=%s)\n", appData[0], cmap, dmap);
+		plostd_printf(ATTR_LOADER, "\nLoading %s (offs=UNDEF, size=UNDEF, imap=%s, dmap=%s)\n", name, cmap, dmap);
 
-	cmd_loadApp(&phfs, appData[0], cmap, dmap);
+	cmd_loadApp(&phfs, name, cmap, dmap, appData[0]);
 
 	return;
 }
