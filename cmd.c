@@ -5,9 +5,9 @@
  *
  * Loader commands
  *
- * Copyright 2012, 2017, 2020 Phoenix Systems
+ * Copyright 2012, 2017, 2020-2021 Phoenix Systems
  * Copyright 2001, 2005 Pawel Pisarczyk
- * Author: Pawel Pisarczyk, Pawel Kolodziej, Hubert Buczynski
+ * Author: Pawel Pisarczyk, Pawel Kolodziej, Hubert Buczynski, Gerard Swiderski
  *
  * This file is part of Phoenix-RTOS.
  *
@@ -46,7 +46,7 @@ const cmd_t genericCmds[] = {
 	{ cmd_memmap,  "mem", "     - prints physical memory map" },
 	{ cmd_save,    "save", "    - saves configuration" },
 	{ cmd_kernel,  "kernel", "  - loads Phoenix - RTOS, usage: kernel [<boot device>]"},
-	{ cmd_app,     "app", "     - loads app, usage: load [<boot device>] <name>(<offset:size>) [dmap] [imap]" },
+	{ cmd_app,     "app", "     - loads app, usage:\n           app [<boot device>] [-x] [@]<name>|<name(offset:size)> [imap] [dmap]" },
 	{ cmd_map,     "map", "     - define multimap, usage: map <start> <end> <name> <attributes>"},
 	{ cmd_syspage, "syspage", " - shows syspage contents, usage: syspage" },
 	{ NULL, NULL, NULL }
@@ -664,7 +664,7 @@ void cmd_kernel(char *s)
 }
 
 
-static int cmd_loadApp(phfs_conf_t *phfs, const char *name, const char *imap, const char *dmap, const char *cmdline)
+static int cmd_loadApp(phfs_conf_t *phfs, const char *name, const char *imap, const char *dmap, const char *cmdline, u32 flags)
 {
 	Elf32_Ehdr hdr;
 	void *start, *end;
@@ -730,7 +730,7 @@ static int cmd_loadApp(phfs_conf_t *phfs, const char *name, const char *imap, co
 		}
 	}
 
-	if (syspage_addProg(start, end, imap, dmap, cmdline) < 0) {
+	if (syspage_addProg(start, end, imap, dmap, cmdline, flags) < 0) {
 		plostd_printf(ATTR_LOADER, "[failed]\n");
 		return -1;
 	}
@@ -744,11 +744,11 @@ static int cmd_loadApp(phfs_conf_t *phfs, const char *name, const char *imap, co
 void cmd_app(char *s)
 {
 	u16 cmdArgsc = 0;
-	int i = 0, argID = 0;
+	int i, argID = 0;
 	char cmdArgs[MAX_CMD_ARGS_NB][LINESZ + 1];
 
 	char *name;
-	unsigned int pos = 0;
+	unsigned int pos = 0, flags = 0;
 	char cmap[8], dmap[8];
 	char appData[3][LINESZ + 1];
 
@@ -758,16 +758,32 @@ void cmd_app(char *s)
 	phfs.dataOffs = 0;
 
 	/* Parse command arguments */
-	if (cmd_parseArgs(s, cmdArgs, &cmdArgsc) < 0) {
+	if (cmd_parseArgs(s, cmdArgs, &cmdArgsc) < 0 || cmdArgsc < 3 || cmdArgsc > 6) {
 		plostd_printf(ATTR_ERROR, "\nWrong arguments!!\n");
 		return;
 	}
 
-	if (cmd_checkDev(cmdArgs[0], &phfs.dn) < 0)
+	if (cmd_checkDev(cmdArgs[argID++], &phfs.dn) < 0)
 		return;
 
+	/* Check optional flags */
+	if (cmdArgs[argID][0] == '-') {
+		if ((cmdArgs[argID][1] | 0x20) == 'x' && cmdArgs[argID][2] == '\0') {
+			flags |= flagSyspageExec;
+			argID++;
+		}
+		else {
+			plostd_printf(ATTR_ERROR, "\nWrong arguments!!\n");
+			return;
+		}
+	}
+
+	if (argID >= cmdArgsc) {
+		plostd_printf(ATTR_ERROR, "\nWrong arguments!!\n");
+		return;
+	}
+
 	/* Check app name and aliases */
-	++argID;
 	name = cmdArgs[argID];
 
 	pos = plostd_strlen(name);
@@ -776,8 +792,14 @@ void cmd_app(char *s)
 			plostd_printf(ATTR_ERROR, "\nWrong arguments!!\n");
 			return;
 		}
+
 		name++;
 		pos--;
+	}
+
+	if (!plostd_isalnum(name[0])) {
+		plostd_printf(ATTR_ERROR, "\nWrong arguments!!\n");
+		return;
 	}
 
 	low_memcpy(appData[0], name, pos);
@@ -793,6 +815,7 @@ void cmd_app(char *s)
 				plostd_printf(ATTR_ERROR, "\nOffset is not a hex value !!\n");
 				return;
 			}
+
 			phfs.dataOffs = plostd_ahtoi(appData[i]);
 		}
 		else if (i == 2) {
@@ -834,13 +857,11 @@ void cmd_app(char *s)
 	}
 
 	if (phfs.dataOffs != 0 && phfs.datasz != 0)
-		plostd_printf(ATTR_LOADER, "\nLoading %s (offs=%p, size=%p, cmap=%s, dmap=%s)\n", name, phfs.dataOffs, phfs.datasz, cmap, dmap);
+		plostd_printf(ATTR_LOADER, "\nLoading %s (offs=%p, size=%p, cmap=%s, dmap=%s, flags=%x)\n", name, phfs.dataOffs, phfs.datasz, cmap, dmap, flags);
 	else
-		plostd_printf(ATTR_LOADER, "\nLoading %s (offs=UNDEF, size=UNDEF, imap=%s, dmap=%s)\n", name, cmap, dmap);
+		plostd_printf(ATTR_LOADER, "\nLoading %s (offs=UNDEF, size=UNDEF, imap=%s, dmap=%s, flags=%x)\n", name, cmap, dmap, flags);
 
-	cmd_loadApp(&phfs, name, cmap, dmap, appData[0]);
-
-	return;
+	cmd_loadApp(&phfs, name, cmap, dmap, appData[0], flags);
 }
 
 
@@ -889,7 +910,7 @@ void cmd_map(char *s)
 			break;
 
 		case 'E':
-			attr |= maAttrExec;
+			attr |= mAttrExec;
 			break;
 
 		case 'S':

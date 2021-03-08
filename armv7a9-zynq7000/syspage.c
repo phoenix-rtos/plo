@@ -5,8 +5,8 @@
  *
  * Syspage
  *
- * Copyright 2020 - 2021 Phoenix Systems
- * Authors: Hubert Buczynski
+ * Copyright 2020-2021 Phoenix Systems
+ * Authors: Hubert Buczynski, Gerard Swiderski
  *
  * This file is part of Phoenix-RTOS.
  *
@@ -435,11 +435,12 @@ void syspage_addEntries(u32 start, u32 sz)
 
 /* Program's functions */
 
-int syspage_addProg(void *start, void *end, const char *imap, const char *dmap, const char *name)
+int syspage_addProg(void *start, void *end, const char *imap, const char *dmap, const char *name, u32 flags)
 {
 	u8 imapID, dmapID;
 	unsigned int pos, len;
 	u32 progID = syspage_common.progsCnt;
+	const u32 isExec = (flags & flagSyspageExec) != 0;
 
 	if ((syspage_getMapID(imap, &imapID) < 0) || (syspage_getMapID(dmap, &dmapID) < 0)) {
 		plostd_printf(ATTR_ERROR, "\nMAPS for %s does not exist!\n", name);
@@ -448,7 +449,7 @@ int syspage_addProg(void *start, void *end, const char *imap, const char *dmap, 
 
 	len = plostd_strlen(name);
 
-	if (syspage_common.argCnt + 1 + len + 1 + 1 > MAX_ARGS_SIZE) {
+	if (syspage_common.argCnt + isExec + len + 1 + 1 > MAX_ARGS_SIZE) {
 		plostd_printf(ATTR_ERROR, "\nMAX_ARGS_SIZE for %s exceeded!\n", name);
 		return -1;
 	}
@@ -468,7 +469,9 @@ int syspage_addProg(void *start, void *end, const char *imap, const char *dmap, 
 	syspage_common.progs[progID].dmap = dmapID;
 	syspage_common.progs[progID].imap = imapID;
 
-	syspage_common.args[syspage_common.argCnt++] = 'X';
+	if (isExec)
+		syspage_common.args[syspage_common.argCnt++] = 'X';
+
 	low_memcpy((void *)&syspage_common.args[syspage_common.argCnt], name, len);
 
 	syspage_common.argCnt += len;
