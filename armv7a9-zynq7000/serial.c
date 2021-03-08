@@ -3,7 +3,7 @@
  *
  * plo - operating system loader
  *
- * i.MXRT1064 Serial driver
+ * Zynq-7000 Serial driver
  *
  * Copyright 2020 Phoenix Systems
  * Author: Hubert Buczyński
@@ -45,7 +45,7 @@ typedef struct {
 
 
 enum {
-	cr, mr, ier, idr, imr, isr, baudgen, rxtout, rxwm, modemcr, modemsr, sr, fifo,
+	cr = 0, mr, ier, idr, imr, isr, baudgen, rxtout, rxwm, modemcr, modemsr, sr, fifo,
 	baud_rate_divider_reg0, flow_delay_reg0, tx_fifo_trigger_level0,
 };
 
@@ -270,10 +270,11 @@ void serial_init(u32 baud, u32 *st)
 	static const struct {
 		volatile u32 *base;
 		u16 irq;
-	} info[] = {
+	} info[UARTS_MAX_CNT] = {
 		{ UART0_BASE_ADDR, UART0_IRQ },
 		{ UART1_BASE_ADDR, UART1_IRQ }
 	};
+
 
 	/* TODO: initialiaze clocks and MIO pads
 	 *       zynq API has to be defined */

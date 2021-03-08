@@ -57,13 +57,13 @@ struct {
 
 /* Required configuration for SPI (Shared Peripheral Interrupts IRQID[32:95]) */
 static const u8 spiConf[] = {/* IRQID: 32-39 */ rising_edge, rising_edge, high_lvl, high_lvl, reserved, high_lvl, high_lvl, high_lvl,
-							 /* IRQID: 40-47 */ high_lvl, rising_edge, high_lvl, high_lvl, high_lvl, high_lvl, high_lvl, high_lvl,
-							 /* IRQID: 48-55 */ high_lvl, high_lvl, high_lvl, high_lvl, high_lvl, high_lvl, high_lvl, rising_edge,
-							 /* IRQID: 56-63 */ high_lvl, high_lvl, high_lvl, high_lvl, high_lvl, rising_edge, rising_edge, rising_edge,
-							 /* IRQID: 64-71 */ rising_edge, rising_edge, rising_edge, rising_edge, rising_edge, high_lvl, high_lvl, high_lvl,
-							 /* IRQID: 72-79 */ high_lvl, high_lvl, high_lvl, high_lvl, high_lvl, high_lvl, rising_edge, high_lvl,
-							 /* IRQID: 80-87 */ high_lvl, high_lvl, high_lvl, high_lvl, high_lvl, high_lvl, high_lvl, high_lvl,
-							 /* IRQID: 88-95 */ high_lvl, high_lvl, high_lvl, high_lvl, rising_edge, reserved, reserved, reserved };
+                             /* IRQID: 40-47 */ high_lvl, rising_edge, high_lvl, high_lvl, high_lvl, high_lvl, high_lvl, high_lvl,
+                             /* IRQID: 48-55 */ high_lvl, high_lvl, high_lvl, high_lvl, high_lvl, high_lvl, high_lvl, rising_edge,
+                             /* IRQID: 56-63 */ high_lvl, high_lvl, high_lvl, high_lvl, high_lvl, rising_edge, rising_edge, rising_edge,
+                             /* IRQID: 64-71 */ rising_edge, rising_edge, rising_edge, rising_edge, rising_edge, high_lvl, high_lvl, high_lvl,
+                             /* IRQID: 72-79 */ high_lvl, high_lvl, high_lvl, high_lvl, high_lvl, high_lvl, rising_edge, high_lvl,
+                             /* IRQID: 80-87 */ high_lvl, high_lvl, high_lvl, high_lvl, high_lvl, high_lvl, high_lvl, high_lvl,
+                             /* IRQID: 88-95 */ high_lvl, high_lvl, high_lvl, high_lvl, rising_edge, reserved, reserved, reserved };
 
 
 

@@ -26,7 +26,7 @@
 
 
 enum {
-	clk_ctrl, clk_ctrl2, clk_ctrl3, cnt_ctrl, cnt_ctrl2, cnt_ctrl3, cnt_value, cnt_value2, cnt_value3, interval_val, interval_cnt2, interval_cnt3,
+	clk_ctrl = 0, clk_ctrl2, clk_ctrl3, cnt_ctrl, cnt_ctrl2, cnt_ctrl3, cnt_value, cnt_value2, cnt_value3, interval_val, interval_cnt2, interval_cnt3,
 	match0, match1_cnt2, match1_cnt3, match1, match2_cnt2, match2_cnt3, match2, match3_cnt2, match3_cnt3, isr, irq_reg2, irq_reg3, ier, irq_en2,
 	irq_en3, ev_ctrl_t1, ev_ctrl_t2, ev_ctrl_t3, ev_reg1, ev_reg2, ev_reg3
 };
@@ -35,8 +35,8 @@ enum {
 typedef struct {
 	volatile u32 *base;
 	volatile u32 done;
+	volatile u32 leftTime;
 	u32 ticksPerFreq;
-	u32 leftTime;
 
 	u16 irq;
 } timer_t;
@@ -74,26 +74,22 @@ static int timer_isr(u16 irq, void *data)
 static void timer_setPrescaler(u32 freq)
 {
 	u32 ticks;
-	u8 prescaler;
+	u32 prescaler;
 
 	ticks = TTC_SRC_CLK_CPU_1x / freq;
 
-	/* Prescaler is not needed */
-	if (ticks < 0xffff) {
-		timer_common.ticksPerFreq = ticks;
-		return;
+	prescaler = 0;
+	while ((ticks > 0xffff) && (prescaler < 0x10)) {
+		prescaler++;
+		ticks /= 2;
 	}
 
-	for (prescaler = 0; prescaler < 0xf; ++prescaler) {
-		ticks = TTC_SRC_CLK_CPU_1x / freq / (1 << (prescaler + 1));
-
-		if (ticks < 0xffff)
-			break;
+	if (prescaler) {
+		/* Enable and set prescaler */
+		prescaler--;
+		*(timer_common.base + clk_ctrl) |= (prescaler << 1);
+		*(timer_common.base + clk_ctrl) |= 0x1;
 	}
-
-	/* Enable and set prescaler */
-	*(timer_common.base + clk_ctrl) |= 0x1;
-	*(timer_common.base + clk_ctrl) |= (prescaler & 0xf) << 1;
 
 	timer_common.ticksPerFreq = ticks;
 }
@@ -124,12 +120,9 @@ int timer_wait(u32 ms, int flags, u16 *p, u16 v)
 	/* Enable interval irq timer */
 	*(timer_common.base + ier) = 0x1;
 
-	for (;;) {
-		if (!timer_common.leftTime)
-			break;
-
+	while (timer_common.leftTime) {
 		if (((flags & TIMER_KEYB) && low_keypressed()) ||
-			((flags & TIMER_VALCHG) && *p != v))
+		    ((flags & TIMER_VALCHG) && *p != v))
 			return 1;
 	}
 

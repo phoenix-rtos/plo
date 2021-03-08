@@ -265,7 +265,7 @@ void syspage_save(void)
 /* TODO: align text and show map's attributes as string based on integer */
 void syspage_show(void)
 {
-	int i = 0;
+	int i;
 	plostd_printf(ATTR_LOADER, "\nSyspage addres: 0x%p\n", syspage_getAddress());
 	plostd_printf(ATTR_NONE, "--------------------------\n");
 
@@ -335,7 +335,7 @@ int syspage_getMapTop(const char *map, void **addr)
 	u8 id;
 
 	if (syspage_getMapID(map, &id) < 0) {
-		plostd_printf(ATTR_ERROR, "\nMAPS for %s doesn not exist!\n", map);
+		plostd_printf(ATTR_ERROR, "\nMAPS for %s does not exist!\n", map);
 		return -1;
 	}
 
@@ -351,7 +351,7 @@ int syspage_alignMapTop(const char *map)
 	u32 newTop;
 
 	if (syspage_getMapID(map, &id) < 0) {
-		plostd_printf(ATTR_ERROR, "\nMAPS for %s doesn not exist!\n", map);
+		plostd_printf(ATTR_ERROR, "\nMAPS for %s does not exist!\n", map);
 		return -1;
 	}
 
@@ -371,7 +371,7 @@ int syspage_getFreeSize(const char *map, u32 *sz)
 	u8 id;
 
 	if (syspage_getMapID(map, &id) < 0) {
-		plostd_printf(ATTR_ERROR, "\nMAPS for %s doesn not exist!\n", map);
+		plostd_printf(ATTR_ERROR, "\nMAPS for %s does not exist!\n", map);
 		return -1;
 	}
 
@@ -387,7 +387,7 @@ int syspage_write2Map(const char *map, const u8 *buff, u32 len)
 	u32 freesz;
 
 	if (syspage_getMapID(map, &id) < 0) {
-		plostd_printf(ATTR_ERROR, "\nMAPS for %s doesn not exist!\n", map);
+		plostd_printf(ATTR_ERROR, "\nMAPS for %s does not exist!\n", map);
 		return -1;
 	}
 
@@ -439,7 +439,7 @@ int syspage_addProg(void *start, void *end, const char *imap, const char *dmap, 
 	u32 progID = syspage_common.progsCnt;
 
 	if ((syspage_getMapID(imap, &imapID) < 0) || (syspage_getMapID(dmap, &dmapID) < 0)) {
-		plostd_printf(ATTR_ERROR, "\nMAPS for %s doesn not exist!\n", name);
+		plostd_printf(ATTR_ERROR, "\nMAPS for %s does not exist!\n", name);
 		return -1;
 	}
 

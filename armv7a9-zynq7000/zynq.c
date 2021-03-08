@@ -136,18 +136,18 @@ int _zynq_loadPL(u32 srcAddr, u32 srcLen)
 	*(zynq_common.dcfg + dcfg_ctrl) &= ~(1 << 30);
 
 	while (*(zynq_common.dcfg + dcfg_status) & (1 << 4))
-	{};
+		;
 
 	*(zynq_common.dcfg + dcfg_ctrl) |= (1 << 30);
 	*(zynq_common.dcfg + dcfg_int_sts) |= (1 << 2);
 
 	/* Ensure that PL is ready for programming; PCFG_INIT = 1 */
 	while (!(*(zynq_common.dcfg + dcfg_status) & (1 << 4)))
-	{};
+		;
 
 	/* DMA queue can't be full */
 	while ((*(zynq_common.dcfg + dcfg_status) & (1 << 31)))
-	{};
+		;
 
 	/* Disable PCAP loopback */
 	*(zynq_common.dcfg + dcfg_mctrl) &= ~(1 << 4);
@@ -166,11 +166,11 @@ int _zynq_loadPL(u32 srcAddr, u32 srcLen)
 
 	/* Wait for DMA tranfer to be done */
 	while (!(*(zynq_common.dcfg + dcfg_int_sts) & (1 << 13)))
-	{};
+		;
 
 	/* Wait for FPGA to be done */
 	while (!(*(zynq_common.dcfg + dcfg_int_sts) & (1 << 2)))
-	{};
+		;
 
 	/* Check the following errors:
 	 * AXI_WERR_INT, AXI_RTO_INT, AXI_RERR_INT, RX_FIFO_OV_INT, DMA_CMD_ERR_INT, DMA_Q_OV_INT, P2D_LEN_ERR_INT, PCFG_HMAC_ERR_INT */
@@ -499,7 +499,7 @@ static void _zynq_ddrInit(void)
 
 	/* POLL ON DCI STATUS */
 	while (!(*(zynq_common.slcr + slcr_ddriob_dci_status) & 0x00002000))
-	{};
+		;
 
 	/* Unlock DDR */
 	/* reg_ddrc_soft_rstb = 0x1;; reg_ddrc_powerdown_en = 0x0; reg_ddrc_data_bus_width = 0x0; reg_ddrc_burst8_refresh = 0x0; reg_ddrc_rdwr_idle_gap = 1;
@@ -508,7 +508,7 @@ static void _zynq_ddrInit(void)
 
 	/* Check DDR status */
 	while (!(*(zynq_common.ddr + ddrc_mode_sts_reg) & 0x00000007))
-	{};
+		;
 
 	_zynq_slcrUnlock();
 
@@ -586,7 +586,7 @@ static void _zynq_ioPllInit(u16 fdiv)
 
 	/* Check pll status */
 	while(!(*(zynq_common.slcr + slcr_pll_status) & 0x00000004))
-	{};
+		;
 
 	/* Remove pll by pass
 	 * PLL_BYPASS_FORCE = 1 */
@@ -621,7 +621,7 @@ static void _zynq_ddrPllInit(u16 fdiv)
 
 	/* Check pll status */
 	while(!(*(zynq_common.slcr + slcr_pll_status) & 0x00000002))
-	{};
+		;
 
 	/* Remove pll by pass
 	 * PLL_BYPASS_FORCE = 1 */
@@ -658,7 +658,7 @@ static void _zynq_armPllInit(u16 fdiv)
 
 	/* Check pll status */
 	while(!(*(zynq_common.slcr + slcr_pll_status) & 0x00000001))
-	{};
+		;
 
 	/* Remove pll by pass
 	 * PLL_BYPASS_FORCE = 1 */

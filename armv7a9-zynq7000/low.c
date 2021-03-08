@@ -29,7 +29,7 @@
 struct{
 	u16 timeout;
 	u32 kernel_entry;
-	} low_common;
+} low_common;
 
 
 /* Board command definitions */
@@ -234,31 +234,27 @@ void low_copyfrom(u16 segm, u16 offs, void *dst, unsigned int l)
 
 void low_memcpy(void *dst, const void *src, unsigned int l)
 {
-	__asm__ volatile
-	(" \
-		mov r1, %2; \
-		mov r3, %1; \
-		mov r4, %0; \
-		orr r2, r3, r4; \
-		ands r2, #3; \
+	asm volatile(" \
+		orr r3, %0, %1; \
+		ands r3, #3; \
 		bne 2f; \
 	1: \
-		cmp r1, #4; \
+		cmp %2, #4; \
 		ittt hs; \
-		ldrhs r2, [r3], #4; \
-		strhs r2, [r4], #4; \
-		subshs r1, #4; \
+		ldrhs r3, [%1], #4; \
+		strhs r3, [%0], #4; \
+		subshs %2, #4; \
 		bhs 1b; \
 	2: \
-		cmp r1, #0; \
+		cmp %2, #0; \
 		ittt ne; \
-		ldrbne r2, [r3], #1; \
-		strbne r2, [r4], #1; \
-		subsne r1, #1; \
+		ldrbne r3, [%1], #1; \
+		strbne r3, [%0], #1; \
+		subsne %2, #1; \
 		bne 2b"
+	: "+l" (dst), "+l" (src), "+l" (l)
 	:
-	: "r" (dst), "r" (src), "r" (l)
-	: "r1", "r2", "r3", "r4", "memory", "cc");
+	: "r3", "memory", "cc");
 }
 
 

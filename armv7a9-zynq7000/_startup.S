@@ -178,7 +178,7 @@ _exception_abort:
 
 /* TODO */
 _exceptions_dispatch:
- 	cpsid if
+	cpsid if
 	1: b 1b
 
 
@@ -229,5 +229,5 @@ _interrupts_dispatch:
 
 /* TODO */
 _syscalls_dispatch:
- 	cpsid if
+	cpsid if
 	1: b 1b

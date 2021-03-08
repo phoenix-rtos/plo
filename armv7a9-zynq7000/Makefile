@@ -1,5 +1,5 @@
 #
-# Makefile for plo/armv7m7-imxrt106x
+# Makefile for plo/armv7a9-zynq7000
 #
 # Copyright 2020 Phoenix Systems
 #
@@ -20,5 +20,3 @@ CFLAGS += -DVADDR_KERNEL_INIT=$(VADDR_KERNEL_INIT)
 GCCLIB := $(shell $(CC) $(CFLAGS) -print-libgcc-file-name)
 
 OBJS += $(addprefix $(PREFIX_O)$(TARGET_FAMILY)-$(TARGET_SUBFAMILY)/, _startup.o low.o zynq.o serial.o timer.o syspage.o cmd.o interrupts.o)
-
-
