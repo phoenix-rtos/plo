@@ -5,8 +5,8 @@
  *
  * Syspage
  *
- * Copyright 2020 Phoenix Systems
- * Authors: Hubert Buczynski
+ * Copyright 2020-2021 Phoenix Systems
+ * Authors: Hubert Buczynski, Gerard Swiderski
  *
  * This file is part of Phoenix-RTOS.
  *
@@ -21,9 +21,12 @@
 
 /* TODO: Make it compatible with Phoenix-RTOS kernel;
  *       take into account map's attributes while data is written to them */
-enum { mAttrRead = 0x01, mAttrWrite = 0x02, maAttrExec = 0x04, mAttrShareable = 0x08,
+enum { mAttrRead = 0x01, mAttrWrite = 0x02, mAttrExec = 0x04, mAttrShareable = 0x08,
 	   mAttrCacheable = 0x10, mAttrBufferable = 0x20 };
 
+
+/* syspage_addProg bitflags */
+enum { flagSyspageExec = 0x01 };
 
 
 /* Initialization function */
@@ -71,7 +74,7 @@ extern void syspage_addEntries(u32 start, u32 sz);
 
 /* Program's functions */
 
-extern int syspage_addProg(void *start, void *end, const char *imap, const char *dmap, const char *name);
+extern int syspage_addProg(void *start, void *end, const char *imap, const char *dmap, const char *name, u32 flags);
 
 
 /* Setting kernel's data */
