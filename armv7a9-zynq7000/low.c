@@ -3,108 +3,73 @@
  *
  * plo - operating system loader
  *
- * Low - level routines
+ * low - level routines
  *
- * Copyright 2020 Phoenix Systems
- * Author: Hubert Buczynski, Marcin Baran
+ * Copyright 2021 Phoenix Systems
+ * Author: Hubert Buczynski
  *
  * This file is part of Phoenix-RTOS.
  *
  * %LICENSE%
  */
 
-
-#include "imxrt.h"
-#include "phfs-flash.h"
-#include "config.h"
-#include "peripherals.h"
-#include "flashdrv.h"
+#include "zynq.h"
 #include "cmd-board.h"
-
+#include "interrupts.h"
+#include "peripherals.h"
 
 #include "../low.h"
 #include "../plostd.h"
-#include "../errors.h"
 #include "../serial.h"
+#include "../timer.h"
 #include "../syspage.h"
 #include "../phoenixd.h"
-#include "../timer.h"
-
-
-
-typedef struct {
-	void *data;
-	int (*isr)(u16, void *);
-} intr_handler_t;
-
-
-/* Board command definitions */
-const cmd_t board_cmds[] = {
-	{ cmd_flexram,    "flexram", " - define flexram value, usage: flexram <value>" },
-	{ NULL, NULL, NULL }
-};
-
-
-const cmd_device_t devices[] = {
-	{ "flash0", PDN_FLASH0 },
-	{ "com1", PDN_COM1 },
-	{ NULL, NULL }
-};
-
 
 
 struct{
 	u16 timeout;
 	u32 kernel_entry;
-	intr_handler_t irqs[SIZE_INTERRUPTS];
 } low_common;
+
+
+/* Board command definitions */
+const cmd_t board_cmds[] = {
+	{ cmd_loadPL,    "fpga ", " - load binary bitstream - TBD" },
+	{ NULL, NULL, NULL }
+};
+
+
+const cmd_device_t devices[] = {
+	{ "com1", PDN_COM1 },
+	{ NULL, NULL }
+};
 
 
 /* Initialization functions */
 
 void low_init(void)
 {
-	int i;
+	_zynq_init();
 
-	_imxrt_init();
-
-	phfsflash_init();
-
-	low_setLaunchTimeout(3);
+	interrupts_init();
 
 	syspage_init();
 
 	syspage_setAddress((void *)SYSPAGE_ADDRESS);
 
-	/* Add entries related to plo image */
-	syspage_addEntries((u32)plo_bss, (u32)_end - (u32)plo_bss + STACK_SIZE);
-
-
-	for (i = 0; i < SIZE_INTERRUPTS; ++i) {
-		low_common.irqs[i].data = NULL;
-		low_common.irqs[i].isr = NULL;
-	}
-
+	low_common.timeout = 3;
 	low_common.kernel_entry = 0;
-
 }
 
 
 void low_done(void)
 {
-	//TODO
+
 }
 
 
 void low_initphfs(phfs_handler_t *handlers)
 {
-	/* Handlers for flash memory */
-	handlers[PDN_FLASH0 ].open = phfsflash_open;
-	handlers[PDN_FLASH0].read = phfsflash_read;
-	handlers[PDN_FLASH0].write = phfsflash_write;
-	handlers[PDN_FLASH0].close = phfsflash_close;
-	handlers[PDN_FLASH0].dn = PDN_FLASH0;
-
 	handlers[PDN_COM1].open = phoenixd_open;
 	handlers[PDN_COM1].read = phoenixd_read;
 	handlers[PDN_COM1].write = phoenixd_write;
@@ -138,18 +103,25 @@ void low_appendcmds(cmd_t *cmds)
 
 void low_setDefaultIMAP(char *imap)
 {
-	low_memcpy(imap, "ocram2", 7);
+	low_memcpy(imap, "ddr", 4);
 }
 
 
 void low_setDefaultDMAP(char *dmap)
 {
-	low_memcpy(dmap, "ocram2", 7);
+	low_memcpy(dmap, "ddr", 4);
 }
 
 
 void low_setKernelEntry(u32 addr)
 {
+	u32 offs;
+
+	if ((u32)VADDR_KERNEL_INIT != (u32)ADDR_DDR) {
+		offs = addr - VADDR_KERNEL_INIT;
+		addr = ADDR_DDR + offs;
+	}
+
 	low_common.kernel_entry = addr;
 }
 
@@ -168,6 +140,12 @@ u32 low_getLaunchTimeout(void)
 
 addr_t low_vm2phym(addr_t addr)
 {
+	u32 offs;
+	if ((u32)VADDR_KERNEL_INIT != (u32)ADDR_DDR) {
+		offs = addr - VADDR_KERNEL_INIT;
+		addr = ADDR_DDR + offs;
+	}
+
 	return addr;
 }
 
@@ -323,20 +301,19 @@ int low_launch(void)
 	/* Tidy up */
 	serial_done();
 	timer_done();
-
 	low_done();
-
-	_imxrt_cleanDCache();
 
 	low_cli();
 	asm("mov r9, %1; \
 		 blx %0"
 		 :
 		 : "r"(low_common.kernel_entry), "r"(syspage_getAddress()));
+
 	low_sti();
 
 	return -1;
 }
+
 
 
 /* Opeartions on interrupts */
@@ -355,11 +332,6 @@ void low_sti(void)
 
 int low_irqdispatch(u16 irq)
 {
-	if (low_common.irqs[irq].isr == NULL)
-		return -1;
-
-	low_common.irqs[irq].isr(irq, low_common.irqs[irq].data);
-
 	return 0;
 }
 
@@ -372,15 +344,8 @@ void low_maskirq(u16 n, u8 v)
 
 int low_irqinst(u16 irq, int (*isr)(u16, void *), void *data)
 {
-	if (irq >= SIZE_INTERRUPTS)
-		return ERR_ARG;
-
 	low_cli();
-	low_common.irqs[irq].isr = isr;
-	low_common.irqs[irq].data = data;
-
-	_imxrt_nvicSetPriority(irq - 0x10, 1);
-	_imxrt_nvicSetIRQ(irq - 0x10, 1);
+	interrupts_setHandler(irq, isr, data);
 	low_sti();
 
 	return 0;
@@ -390,7 +355,7 @@ int low_irqinst(u16 irq, int (*isr)(u16, void *), void *data)
 int low_irquninst(u16 irq)
 {
 	low_cli();
-	_imxrt_nvicSetIRQ(irq - 0x10, 0);
+	interrupts_deleteHandler(irq);
 	low_sti();
 
 	return 0;

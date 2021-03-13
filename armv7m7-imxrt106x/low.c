@@ -171,6 +171,11 @@ u32 low_getLaunchTimeout(void)
 }
 
 
+addr_t low_vm2phym(addr_t addr)
+{
+	return addr;
+}
+
 
 /* Functions modify registers */
 
