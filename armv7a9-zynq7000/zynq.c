@@ -173,50 +173,49 @@ int _zynq_setCtlClock(const ctl_clock_t *clk)
 		case ctrl_gem1_rclk:
 			id = clk->dev - ctrl_gem0_rclk;
 			*(zynq_common.slcr + slcr_gem0_rclk_ctrl + id) = (*(zynq_common.slcr + ctrl_gem0_rclk + id) & ~0x00000011) | (!!clk->pll.clkact0) |
-                                                             ((!!clk->pll.srcsel) << 4);
+				((!!clk->pll.srcsel) << 4);
 			break;
 
 		case ctrl_gem0_clk:
 		case ctrl_gem1_clk:
 			id = clk->dev - ctrl_gem0_clk;
 			*(zynq_common.slcr + slcr_gem0_clk_ctrl + id) = (*(zynq_common.slcr + slcr_gem0_clk_ctrl + id) & ~0x03f03f71) | (!!clk->pll.clkact0) |
-                                                            ((clk->pll.srcsel & 0x7) << 4) | ((clk->pll.divisor0 & 0x3f) << 8) | ((clk->pll.divisor1 & 0x3f) << 20);
+				((clk->pll.srcsel & 0x7) << 4) | ((clk->pll.divisor0 & 0x3f) << 8) | ((clk->pll.divisor1 & 0x3f) << 20);
 			break;
 
 		case ctrl_smc_clk:
 			*(zynq_common.slcr + slcr_smc_clk_ctrl) = (*(zynq_common.slcr + slcr_smc_clk_ctrl) & ~0x00003f31) | (!!clk->pll.clkact0) |
-                                                      ((clk->pll.srcsel & 0x3) << 4) | ((clk->pll.divisor0 & 0x3f) << 8);
+				((clk->pll.srcsel & 0x3) << 4) | ((clk->pll.divisor0 & 0x3f) << 8);
 			break;
 
 		case ctrl_lqspi_clk:
 			*(zynq_common.slcr + slcr_lqspi_clk_ctrl) = (*(zynq_common.slcr + slcr_lqspi_clk_ctrl) & ~0x00003f31) | (!!clk->pll.clkact0) |
-                                                        ((clk->pll.srcsel & 0x3) << 4) | ((clk->pll.divisor0 & 0x3f) << 8);
+				((clk->pll.srcsel & 0x3) << 4) | ((clk->pll.divisor0 & 0x3f) << 8);
 			break;
 
 		case ctrl_sdio_clk:
 			*(zynq_common.slcr + slcr_sdio_clk_ctrl) = (*(zynq_common.slcr + slcr_sdio_clk_ctrl) & ~0x00003f33) | (!!clk->pll.clkact0) | ((!!clk->pll.clkact1) << 1) |
-                                                       ((clk->pll.srcsel & 0x3) << 4) | ((clk->pll.divisor0 & 0x3f) << 8);
+				((clk->pll.srcsel & 0x3) << 4) | ((clk->pll.divisor0 & 0x3f) << 8);
 			break;
 
 		case ctrl_uart_clk:
 			*(zynq_common.slcr + slcr_uart_clk_ctrl) = (*(zynq_common.slcr + slcr_uart_clk_ctrl) & ~0x00003f33) | (!!clk->pll.clkact0) |
-                                                       ((!!clk->pll.clkact1) << 1) | ((clk->pll.srcsel & 0x3) << 4) | ((clk->pll.divisor0 & 0x3f) << 8);
+				((!!clk->pll.clkact1) << 1) | ((clk->pll.srcsel & 0x3) << 4) | ((clk->pll.divisor0 & 0x3f) << 8);
 			break;
 
 		case ctrl_spi_clk:
 			*(zynq_common.slcr + slcr_spi_clk_ctrl) = (*(zynq_common.slcr + slcr_spi_clk_ctrl) & ~0x00003f33) | (!!clk->pll.clkact0) |
-													  ((!!clk->pll.clkact1) << 1) | ((clk->pll.srcsel & 0x3) << 4) | ((clk->pll.divisor0 & 0x3f) << 8);
+				((!!clk->pll.clkact1) << 1) | ((clk->pll.srcsel & 0x3) << 4) | ((clk->pll.divisor0 & 0x3f) << 8);
 			break;
 
 		case ctrl_can_clk:
 			*(zynq_common.slcr + slcr_can_clk_ctrl) = (*(zynq_common.slcr + slcr_can_clk_ctrl) & ~0x03f03f33) | (!!clk->pll.clkact0) |
-                                                      ((!!clk->pll.clkact1) << 1) | ((clk->pll.srcsel & 0x3) << 4) | ((clk->pll.divisor0 & 0x3f) << 8) |
-                                                      ((clk->pll.divisor1 & 0x3f) << 20);
+				((!!clk->pll.clkact1) << 1) | ((clk->pll.srcsel & 0x3) << 4) | ((clk->pll.divisor0 & 0x3f) << 8) | ((clk->pll.divisor1 & 0x3f) << 20);
 			break;
 
 		case ctrl_can_mioclk:
 			*(zynq_common.slcr + slcr_can_mioclk_ctrl) = (*(zynq_common.slcr + slcr_can_mioclk_ctrl) & ~0x007f007f) | (clk->mio.mux0 & 0x3f) | ((!!clk->mio.ref0) << 6) |
-                                                         ((clk->mio.mux1 & 0x3f) << 16) | ((!!clk->mio.ref1) << 22);
+				((clk->mio.mux1 & 0x3f) << 16) | ((!!clk->mio.ref1) << 22);
 			break;
 
 		default:
@@ -235,7 +234,6 @@ int _zynq_getCtlClock(ctl_clock_t *clk)
 	u32 id;
 	u32 val = 0;
 
-	_zynq_slcrUnlock();
 	switch (clk->dev)
 	{
 		case ctrl_usb0_clk:
@@ -327,11 +325,8 @@ int _zynq_getCtlClock(ctl_clock_t *clk)
 			break;
 
 		default:
-			_zynq_slcrLock();
 			return ERR_ARG;
 	}
-
-	_zynq_slcrLock();
 
 	return 0;
 }
@@ -344,9 +339,9 @@ int _zynq_setMIO(const ctl_mio_t *mio)
 	if (mio->pin > 53)
 		return ERR_ARG;
 
-	val = (!!mio->triEnable) | (!!mio->l0 << 1) | (!!mio->l1 << 2) | ((mio->l2 & 0x3) << 3)
-		| ((mio->l3 & 0x7) << 5) | (!!mio->speed << 8) | ((mio->ioType & 0x7) << 9) | (!!mio->pullup << 12)
-		| (!!mio->disableRcvr << 13);
+	val = (!!mio->triEnable) | (!!mio->l0 << 1) | (!!mio->l1 << 2) | ((mio->l2 & 0x3) << 3) |
+		((mio->l3 & 0x7) << 5) | (!!mio->speed << 8) | ((mio->ioType & 0x7) << 9) | (!!mio->pullup << 12) |
+		(!!mio->disableRcvr << 13);
 
 	_zynq_slcrUnlock();
 	*(zynq_common.slcr + slcr_mio_pin_00 + mio->pin) = (*(zynq_common.slcr + slcr_mio_pin_00 + mio->pin) & ~0x00003fff) | val;
@@ -363,9 +358,7 @@ int _zynq_getMIO(ctl_mio_t *mio)
 	if (mio->pin > 53)
 		return ERR_ARG;
 
-	_zynq_slcrUnlock();
 	val = *(zynq_common.slcr + slcr_mio_pin_00 + mio->pin);
-	_zynq_slcrLock();
 
 	mio->triEnable = val & 0x1;
 	mio->l0 = (val >> 1) & 0x1;
@@ -886,8 +879,6 @@ static void _zynq_armPllInit(u16 fdiv)
 }
 
 
-/* TODO: remove _zynq_periphsInit(), it's temporary solution;
- *       zynq API to enable/disable clocks nad MIOs should be defined */
 void _zynq_init(void)
 {
 	zynq_common.ddr = (void *)DDRC_BASE_ADDRESS;
