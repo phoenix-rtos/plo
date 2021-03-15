@@ -28,6 +28,7 @@
 typedef struct {
 	volatile u32 *base;
 	u16 irq;
+	u16 clk;
 
 	u16 rxFifoSz;
 	u16 txFifoSz;
@@ -262,6 +263,57 @@ static int serial_calcBaudarate(int pn, int baudrate)
 }
 
 
+static int serial_setPin(u32 pin)
+{
+	ctl_mio_t ctl;
+
+	/* Set default properties for UART's pins */
+	ctl.pin = pin;
+	ctl.l0 = ctl.l1 = ctl.l2 = 0;
+	ctl.l3 = 0x7;
+	ctl.speed = 0;
+	ctl.ioType = 1;
+	ctl.pullup = 0;
+	ctl.disableRcvr = 0;
+
+	switch (pin)
+	{
+		/* Uart Rx */
+		case mio_pin_10:
+		case mio_pin_49:
+			ctl.triEnable = 1;
+			break;
+
+		/* Uart Tx */
+		case mio_pin_11:
+		case mio_pin_48:
+			ctl.triEnable = 0;
+			break;
+
+		default:
+			return ERR_ARG;
+	}
+
+	return _zynq_setMIO(&ctl);
+}
+
+
+static void serial_initCtrlClock(void)
+{
+	ctl_clock_t ctl;
+
+	/* Set IO PLL as source clock and set divider:
+	 * IO_PLL / 0x14 :  1000 MHz / 20 = 50 MHz     */
+	ctl.dev = ctrl_uart_clk;
+	ctl.pll.clkact0 = 0x1;
+	ctl.pll.clkact1 = 0x1;
+	ctl.pll.srcsel = 0;
+	ctl.pll.divisor0 = 0x14;
+
+	_zynq_setCtlClock(&ctl);
+}
+
+
 void serial_init(u32 baud, u32 *st)
 {
 	int i;
@@ -270,15 +322,25 @@ void serial_init(u32 baud, u32 *st)
 	static const struct {
 		volatile u32 *base;
 		u16 irq;
+		u16 clk;
+		u16 rxPin;
+		u16 txPin;
 	} info[UARTS_MAX_CNT] = {
-		{ UART0_BASE_ADDR, UART0_IRQ },
-		{ UART1_BASE_ADDR, UART1_IRQ }
+		{ UART0_BASE_ADDR, UART0_IRQ, UART0_CLK, UART0_RX, UART0_TX },
+		{ UART1_BASE_ADDR, UART1_IRQ, UART1_CLK, UART1_RX, UART1_TX }
 	};
 
 
-	/* TODO: initialiaze clocks and MIO pads
-	 *       zynq API has to be defined */
+	/* UART Clock Controller configuration */
+	serial_initCtrlClock();
+
 	for (i = 0; i < UARTS_MAX_CNT; ++i) {
+		if (_zynq_setAmbaClk(info[i].clk, clk_enable) < 0)
+			return;
+
+		if (serial_setPin(info[i].rxPin) < 0 || serial_setPin(info[i].txPin) < 0)
+			return;
+
 		serial = &serial_common.serials[i];
 
 		serial->rxHead = 0;
@@ -288,6 +350,7 @@ void serial_init(u32 baud, u32 *st)
 		serial->tFull = 0;
 
 		serial->irq = info[i].irq;
+		serial->clk = info[i].clk;
 		serial->base = info[i].base;
 
 		/* Reset RX & TX */
@@ -317,24 +380,25 @@ void serial_init(u32 baud, u32 *st)
 }
 
 
-/* TODO: disable clocks
- *       zynq API has to be defined */
 void serial_done(void)
 {
 	int i;
+	serial_t *serial;
 
 	for (i = 0; i < UARTS_MAX_CNT; ++i) {
+		serial = &serial_common.serials[i];
 		/* Disable interrupts */
-		*(serial_common.serials[i].base + idr) = 0xfff;
+		*(serial->base + idr) = 0xfff;
 
 		/* Disable RX & TX */
-		*(serial_common.serials[i].base + cr) = (1 << 5) | (1 << 3);
+		*(serial->base + cr) = (1 << 5) | (1 << 3);
 		/* Reset RX & TX */
-		*(serial_common.serials[i].base + cr) = 0x3;
+		*(serial->base + cr) = 0x3;
 
 		/* Clear status flags */
-		*(serial_common.serials[i].base + isr) = 0xfff;
+		*(serial->base + isr) = 0xfff;
 
-		low_irquninst(serial_common.serials[i].irq);
+		low_irquninst(serial->irq);
+		_zynq_setAmbaClk(serial->clk, clk_disable);
 	}
 }
