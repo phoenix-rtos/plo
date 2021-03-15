@@ -41,4 +41,13 @@
 #define SIZE_STACK      5 * 1024
 
 
+/* Zynq-7000 System Adress Map */
+#define ADDR_OCRAM_LOW   0x00000000
+#define SIZE_OCRAM_LOW   192 * 1024
+#define ADDR_OCRAM_HIGH  0xffff0000
+#define SIZE_OCRAM_HIGH  64 * 1024
+
+#define ADDR_DDR         0x00100000
+#define SIZE_DDR         512 * 1024 * 1024
+
 #endif
