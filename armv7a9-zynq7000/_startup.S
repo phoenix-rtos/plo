@@ -16,7 +16,6 @@
 #define __ASSEMBLY__
 
 #include "cpu.h"
-#include "peripherals.h"
 
 .arm
 

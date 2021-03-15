@@ -18,6 +18,8 @@
 #include "zynq.h"
 #include "peripherals.h"
 
+#include "../errors.h"
+
 
 #define SCLR_BASE_ADDRESS   0xf8000000
 #define DDRC_BASE_ADDRESS   0xf8006000
@@ -54,12 +56,7 @@ enum {
 	slcr_ddr_cal_start = 0x183,
 	slcr_ddr_ref_start = 0x185, slcr_ddr_cmd_sta, slcr_ddr_urgent_sel, slcr_ddr_dfi_status,
 	/* MIO pins config registers */
-	slcr_mio_pin_00 = 0x1c0, slcr_mio_pin_01, slcr_mio_pin_02, slcr_mio_pin_03, slcr_mio_pin_04, slcr_mio_pin_05, slcr_mio_pin_06, slcr_mio_pin_07, slcr_mio_pin_08,
-	slcr_mio_pin_09, slcr_mio_pin_10, slcr_mio_pin_11, slcr_mio_pin_12, slcr_mio_pin_13, slcr_mio_pin_14, slcr_mio_pin_15, slcr_mio_pin_16, slcr_mio_pin_17,
-	slcr_mio_pin_18, slcr_mio_pin_19, slcr_mio_pin_20, slcr_mio_pin_21, slcr_mio_pin_22, slcr_mio_pin_23, slcr_mio_pin_24, slcr_mio_pin_25, slcr_mio_pin_26,
-	slcr_mio_pin_27, slcr_mio_pin_28, slcr_mio_pin_29, slcr_mio_pin_30, slcr_mio_pin_31, slcr_mio_pin_32, slcr_mio_pin_33, slcr_mio_pin_34, slcr_mio_pin_35,
-	slcr_mio_pin_36, slcr_mio_pin_37, slcr_mio_pin_38, slcr_mio_pin_39, slcr_mio_pin_40, slcr_mio_pin_41, slcr_mio_pin_42, slcr_mio_pin_43, slcr_mio_pin_44,
-	slcr_mio_pin_45, slcr_mio_pin_46, slcr_mio_pin_47, slcr_mio_pin_48, slcr_mio_pin_49, slcr_mio_pin_50, slcr_mio_pin_51, slcr_mio_pin_52, slcr_mio_pin_53,
+	slcr_mio_pin_00 = 0x1c0 /* 53 registers */,
 	slcr_mio_loopback = 0x201,
 	slcr_mio_mst_tri0 = 0x203, slcr_mio_mst_tri1,
 	slcr_sd0_wp_cd_sel = 0x20c, slcr_sd1_wp_cd_sel,
@@ -117,6 +114,271 @@ struct {
 	volatile u32 *ddr;
 	volatile u32 *dcfg;
 } zynq_common;
+
+
+static void _zynq_slcrLock(void)
+{
+	*(zynq_common.slcr + slcr_lock) = 0x0000767b;
+}
+
+
+static void _zynq_slcrUnlock(void)
+{
+	*(zynq_common.slcr + slcr_unlock) = 0x0000df0d;
+}
+
+
+int _zynq_setAmbaClk(u32 dev, u32 state)
+{
+	/* Check max dev position in amba register */
+	if (dev > 24)
+		return ERR_ARG;
+
+	_zynq_slcrUnlock();
+	*(zynq_common.slcr + slcr_aper_clk_ctrl) = (*(zynq_common.slcr + slcr_aper_clk_ctrl) & ~(1 << dev)) | (!!state << dev);
+	_zynq_slcrLock();
+
+	return 0;
+}
+
+
+int _zynq_getAmbaClk(u32 dev, u32 *state)
+{
+	/* Check max dev position in amba register */
+	if (dev > 24)
+		return ERR_ARG;
+
+	_zynq_slcrUnlock();
+	*state = (*(zynq_common.slcr + slcr_aper_clk_ctrl) >> dev) & 0x1;
+	_zynq_slcrLock();
+
+	return 0;
+}
+
+
+int _zynq_setCtlClock(const ctl_clock_t *clk)
+{
+	u32 id = 0;
+
+	_zynq_slcrUnlock();
+	switch (clk->dev)
+	{
+		case ctrl_usb0_clk:
+		case ctrl_usb1_clk:
+			id = clk->dev - ctrl_usb0_clk;
+			*(zynq_common.slcr + slcr_usb0_clk_ctrl + id) = (*(zynq_common.slcr + ctrl_usb0_clk + id) & ~0x00000070) | (clk->pll.srcsel & 0x7) << 4;
+			break;
+
+		case ctrl_gem0_rclk:
+		case ctrl_gem1_rclk:
+			id = clk->dev - ctrl_gem0_rclk;
+			*(zynq_common.slcr + slcr_gem0_rclk_ctrl + id) = (*(zynq_common.slcr + ctrl_gem0_rclk + id) & ~0x00000011) | (!!clk->pll.clkact0) |
+                                                             ((!!clk->pll.srcsel) << 4);
+			break;
+
+		case ctrl_gem0_clk:
+		case ctrl_gem1_clk:
+			id = clk->dev - ctrl_gem0_clk;
+			*(zynq_common.slcr + slcr_gem0_clk_ctrl + id) = (*(zynq_common.slcr + slcr_gem0_clk_ctrl + id) & ~0x03f03f71) | (!!clk->pll.clkact0) |
+                                                            ((clk->pll.srcsel & 0x7) << 4) | ((clk->pll.divisor0 & 0x3f) << 8) | ((clk->pll.divisor1 & 0x3f) << 20);
+			break;
+
+		case ctrl_smc_clk:
+			*(zynq_common.slcr + slcr_smc_clk_ctrl) = (*(zynq_common.slcr + slcr_smc_clk_ctrl) & ~0x00003f31) | (!!clk->pll.clkact0) |
+                                                      ((clk->pll.srcsel & 0x3) << 4) | ((clk->pll.divisor0 & 0x3f) << 8);
+			break;
+
+		case ctrl_lqspi_clk:
+			*(zynq_common.slcr + slcr_lqspi_clk_ctrl) = (*(zynq_common.slcr + slcr_lqspi_clk_ctrl) & ~0x00003f31) | (!!clk->pll.clkact0) |
+                                                        ((clk->pll.srcsel & 0x3) << 4) | ((clk->pll.divisor0 & 0x3f) << 8);
+			break;
+
+		case ctrl_sdio_clk:
+			*(zynq_common.slcr + slcr_sdio_clk_ctrl) = (*(zynq_common.slcr + slcr_sdio_clk_ctrl) & ~0x00003f33) | (!!clk->pll.clkact0) | ((!!clk->pll.clkact1) << 1) |
+                                                       ((clk->pll.srcsel & 0x3) << 4) | ((clk->pll.divisor0 & 0x3f) << 8);
+			break;
+
+		case ctrl_uart_clk:
+			*(zynq_common.slcr + slcr_uart_clk_ctrl) = (*(zynq_common.slcr + slcr_uart_clk_ctrl) & ~0x00003f33) | (!!clk->pll.clkact0) |
+                                                       ((!!clk->pll.clkact1) << 1) | ((clk->pll.srcsel & 0x3) << 4) | ((clk->pll.divisor0 & 0x3f) << 8);
+			break;
+
+		case ctrl_spi_clk:
+			*(zynq_common.slcr + slcr_spi_clk_ctrl) = (*(zynq_common.slcr + slcr_spi_clk_ctrl) & ~0x00003f33) | (!!clk->pll.clkact0) |
+													  ((!!clk->pll.clkact1) << 1) | ((clk->pll.srcsel & 0x3) << 4) | ((clk->pll.divisor0 & 0x3f) << 8);
+			break;
+
+		case ctrl_can_clk:
+			*(zynq_common.slcr + slcr_can_clk_ctrl) = (*(zynq_common.slcr + slcr_can_clk_ctrl) & ~0x03f03f33) | (!!clk->pll.clkact0) |
+                                                      ((!!clk->pll.clkact1) << 1) | ((clk->pll.srcsel & 0x3) << 4) | ((clk->pll.divisor0 & 0x3f) << 8) |
+                                                      ((clk->pll.divisor1 & 0x3f) << 20);
+			break;
+
+		case ctrl_can_mioclk:
+			*(zynq_common.slcr + slcr_can_mioclk_ctrl) = (*(zynq_common.slcr + slcr_can_mioclk_ctrl) & ~0x007f007f) | (clk->mio.mux0 & 0x3f) | ((!!clk->mio.ref0) << 6) |
+                                                         ((clk->mio.mux1 & 0x3f) << 16) | ((!!clk->mio.ref1) << 22);
+			break;
+
+		default:
+			_zynq_slcrLock();
+			return ERR_ARG;
+	}
+
+	_zynq_slcrLock();
+
+	return 0;
+}
+
+
+int _zynq_getCtlClock(ctl_clock_t *clk)
+{
+	u32 id;
+	u32 val = 0;
+
+	_zynq_slcrUnlock();
+	switch (clk->dev)
+	{
+		case ctrl_usb0_clk:
+		case ctrl_usb1_clk:
+			id = clk->dev - ctrl_usb0_clk;
+			val = *(zynq_common.slcr + slcr_usb0_clk_ctrl + id);
+			clk->pll.srcsel = (val >> 4) & 0x7;
+			clk->pll.clkact0 = clk->pll.clkact1 = clk->pll.divisor0 = clk->pll.divisor1 = 0;
+			break;
+
+		case ctrl_gem0_rclk:
+		case ctrl_gem1_rclk:
+			id = clk->dev - ctrl_gem0_rclk;
+			val = *(zynq_common.slcr + slcr_gem0_rclk_ctrl + id);
+			clk->pll.clkact0 = val & 0x1;
+			clk->pll.srcsel = (val >> 4) & 0x1;
+			clk->pll.clkact1 = clk->pll.divisor0 = clk->pll.divisor1 = 0;
+			return 0;
+
+		case ctrl_gem0_clk:
+		case ctrl_gem1_clk:
+			id = clk->dev - ctrl_gem0_clk;
+			val = *(zynq_common.slcr + slcr_gem0_clk_ctrl + id);
+			clk->pll.clkact0 = val & 0x1;
+			clk->pll.srcsel = (val >> 4) & 0x7;
+			clk->pll.divisor0 = (val >> 8) & 0x3f;
+			clk->pll.divisor1 = (val >> 20) & 0x3f;
+			clk->pll.clkact1 = 0;
+			break;
+
+		case ctrl_smc_clk:
+			val = *(zynq_common.slcr + slcr_smc_clk_ctrl);
+			clk->pll.clkact0 = val & 0x1;
+			clk->pll.srcsel = (val >> 4) & 0x3;
+			clk->pll.divisor0 = (val >> 8) & 0x3f;
+			clk->pll.clkact1 = clk->pll.divisor1 = 0;
+			break;
+
+		case ctrl_lqspi_clk:
+			val = *(zynq_common.slcr + slcr_lqspi_clk_ctrl);
+			clk->pll.clkact0 = val & 0x1;
+			clk->pll.srcsel = (val >> 4) & 0x3;
+			clk->pll.divisor0 = (val >> 8) & 0x3f;
+			clk->pll.clkact1 = clk->pll.divisor1 = 0;
+			break;
+
+		case ctrl_sdio_clk:
+			val = *(zynq_common.slcr + slcr_sdio_clk_ctrl);
+			clk->pll.clkact0 = val & 0x1;
+			clk->pll.clkact1 = (val >> 1) & 0x1;
+			clk->pll.srcsel = (val >> 4) & 0x3;
+			clk->pll.divisor0 = (val >> 8) & 0x3f;
+			clk->pll.divisor1 = 0;
+			break;
+
+		case ctrl_uart_clk:
+			val = *(zynq_common.slcr + slcr_uart_clk_ctrl);
+			clk->pll.clkact0 = val & 0x1;
+			clk->pll.clkact1 = (val >> 1) & 0x1;
+			clk->pll.srcsel = (val >> 4) & 0x3;
+			clk->pll.divisor0 = (val >> 8) & 0x3f;
+			clk->pll.divisor1 = 0;
+			break;
+
+		case ctrl_spi_clk:
+			val = *(zynq_common.slcr + slcr_spi_clk_ctrl);
+			clk->pll.clkact0 = val & 0x1;
+			clk->pll.clkact1 = (val >> 1) & 0x1;
+			clk->pll.srcsel = (val >> 4) & 0x3;
+			clk->pll.divisor0 = (val >> 8) & 0x3f;
+			clk->pll.divisor1 = 0;
+			break;
+
+		case ctrl_can_clk:
+			val = *(zynq_common.slcr + slcr_can_clk_ctrl);
+			clk->pll.clkact0 = val & 0x1;
+			clk->pll.clkact1 = (val >> 1) & 0x1;
+			clk->pll.srcsel = (val >> 4) & 0x3;
+			clk->pll.divisor0 = (val >> 8) & 0x3f;
+			clk->pll.divisor1 = (val >> 20) & 0x3f;
+			break;
+
+		case ctrl_can_mioclk:
+			val = *(zynq_common.slcr + slcr_can_mioclk_ctrl);
+			clk->mio.mux0 = val & 0x3f;
+			clk->mio.ref0 = (val >> 6) & 0x1;
+			clk->mio.mux1 = (val >> 16) & 0x3f;
+			clk->mio.ref1 = (val >> 22) & 0x1;
+			break;
+
+		default:
+			_zynq_slcrLock();
+			return ERR_ARG;
+	}
+
+	_zynq_slcrLock();
+
+	return 0;
+}
+
+
+int _zynq_setMIO(const ctl_mio_t *mio)
+{
+	u32 val = 0;
+
+	if (mio->pin > 53)
+		return ERR_ARG;
+
+	val = (!!mio->triEnable) | (!!mio->l0 << 1) | (!!mio->l1 << 2) | ((mio->l2 & 0x3) << 3)
+		| ((mio->l3 & 0x7) << 5) | (!!mio->speed << 8) | ((mio->ioType & 0x7) << 9) | (!!mio->pullup << 12)
+		| (!!mio->disableRcvr << 13);
+
+	_zynq_slcrUnlock();
+	*(zynq_common.slcr + slcr_mio_pin_00 + mio->pin) = (*(zynq_common.slcr + slcr_mio_pin_00 + mio->pin) & ~0x00003fff) | val;
+	_zynq_slcrLock();
+
+	return 0;
+}
+
+
+int _zynq_getMIO(ctl_mio_t *mio)
+{
+	u32 val;
+
+	if (mio->pin > 53)
+		return ERR_ARG;
+
+	_zynq_slcrUnlock();
+	val = *(zynq_common.slcr + slcr_mio_pin_00 + mio->pin);
+	_zynq_slcrLock();
+
+	mio->triEnable = val & 0x1;
+	mio->l0 = (val >> 1) & 0x1;
+	mio->l1 = (val >> 2) & 0x1;
+	mio->l2 = (val >> 3) & 0x3;
+	mio->l3 = (val >> 5) & 0x7;
+	mio->speed = (val >> 8) & 0x1;
+	mio->ioType = (val >> 9) & 0x7;
+	mio->pullup = (val >> 12) & 0x1;
+	mio->disableRcvr = (val >> 13) & 0x1;
+
+	return 0;
+}
 
 
 int _zynq_loadPL(u32 srcAddr, u32 srcLen)
@@ -178,54 +440,6 @@ int _zynq_loadPL(u32 srcAddr, u32 srcLen)
 		return ERR_LOW_BIOS;
 
 	return ERR_NONE;
-}
-
-
-static void _zynq_slcrLock(void)
-{
-	*(zynq_common.slcr + slcr_lock) = 0x0000767b;
-}
-
-
-static void _zynq_slcrUnlock(void)
-{
-	*(zynq_common.slcr + slcr_unlock) = 0x0000df0d;
-}
-
-
-static void _zynq_periphsInit(void)
-{
-	_zynq_slcrUnlock();
-
-	/* UART_0 Initialization
-	 * TxD
-	 * TRI_ENABLE = 0; L0_SEL = 0; L1_SEL = 0; L2_SEL = 0; L3_SEL = 7; Speed = 0; IO_Type = 1; PULLUP = 0; DisableRcvr = 0 */
-	*(zynq_common.slcr + slcr_mio_pin_11) = (*(zynq_common.slcr + slcr_mio_pin_11) & ~0x00003fff) | 0x000002e0;
-
-	/* RxD
-	 * TRI_ENABLE = 1; L0_SEL = 0; L1_SEL = 0; L2_SEL = 0; L3_SEL = 7; Speed = 0; IO_Type = 1; PULLUP = 0; DisableRcvr = 0 */
-	*(zynq_common.slcr + slcr_mio_pin_10) = (*(zynq_common.slcr + slcr_mio_pin_10) & ~0x00003fff) | 0x000002e1;
-
-
-	/* UART_1 Initialization
-	 * TxD
-	 * TRI_ENABLE = 0; L0_SEL = 0; L1_SEL = 0; L2_SEL = 0; L3_SEL = 7; Speed = 0; IO_Type = 1; PULLUP = 0; DisableRcvr = 0 */
-	*(zynq_common.slcr + slcr_mio_pin_48) = (*(zynq_common.slcr + slcr_mio_pin_48) & ~0x00003fff) | 0x000002e0;
-
-	/* RxD
-	 * TRI_ENABLE = 1; L0_SEL = 0; L1_SEL = 0; L2_SEL = 0; L3_SEL = 7; Speed = 0; IO_Type = 1; PULLUP = 0; DisableRcvr = 0 */
-	*(zynq_common.slcr + slcr_mio_pin_49) = (*(zynq_common.slcr + slcr_mio_pin_49) & ~0x00003fff) | 0x000002e1;
-
-
-	/* Define UARTs' clocks speed
-	 * IO_PLL / 20 :  1000 MHz / 20 = 50 MHz
-	 * CLKACT0 = 0x0; CLKACT1 = 0x1; SRCSEL = 0x0; DIVISOR = 0x14 */
-	*(zynq_common.slcr + slcr_uart_clk_ctrl) = (*(zynq_common.slcr + slcr_uart_clk_ctrl) & ~0x00003f33) | 0x00001402 | 0x1;
-
-	/* Enable UART_0 & UART_1 clock */
-	*(zynq_common.slcr + slcr_aper_clk_ctrl) = *(zynq_common.slcr + slcr_aper_clk_ctrl) | (1 << 21) | (1 << 20);
-
-	_zynq_slcrLock();
 }
 
 
@@ -699,9 +913,4 @@ void _zynq_init(void)
 	_zynq_clcksInit();
 
 	_zynq_ddrInit();
-
-	/* Initialize basic peripherals - MIO & Clk:
-	 *  -  UART_0       : ref_clk = 50 MHz based on TRM
-	 *  -  UART_1       : ref_clk = 50 MHz based on TRM                                */
-	_zynq_periphsInit();
 }
