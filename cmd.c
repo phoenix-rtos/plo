@@ -758,7 +758,7 @@ void cmd_app(char *s)
 	phfs.dataOffs = 0;
 
 	/* Parse command arguments */
-	if (cmd_parseArgs(s, cmdArgs, &cmdArgsc) < 0 || cmdArgsc < 3 || cmdArgsc > 6) {
+	if (cmd_parseArgs(s, cmdArgs, &cmdArgsc) < 0 || cmdArgsc < 2 || cmdArgsc > 6) {
 		plostd_printf(ATTR_ERROR, "\nWrong arguments!!\n");
 		return;
 	}
