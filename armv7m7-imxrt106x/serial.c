@@ -409,9 +409,13 @@ static void serial_initPins(void)
 	}
 }
 
+u32 serial_getBaudrate(void)
+{
+	return UART_BAUDRATE;
+}
 
-/* TODO: set baudrate using 'baud' argument */
-void serial_init(u32 baud, u32 *st)
+
+void serial_init(void)
 {
 	u32 t;
 	int i, dev;
@@ -433,15 +437,10 @@ void serial_init(u32 baud, u32 *st)
 		{ UART8_BASE, UART8_CLK, UART8_IRQ }
 	};
 
-	*st = 115200;
 	serial_initPins();
-
-
 
 	_imxrt_ccmSetMux(clk_mux_uart, 0);
 	_imxrt_ccmSetDiv(clk_div_uart, 0);
-
-
 
 	for (i = 0, dev = 0; dev < sizeof(serialConfig) / sizeof(serialConfig[0]); ++dev) {
 		if (!serialConfig[dev])
@@ -471,7 +470,7 @@ void serial_init(u32 baud, u32 *st)
 
 		/* Set 115200 default baudrate */
 		t = *(serial->base + baudr) & ~((0x1f << 24) | (1 << 17) | 0x1fff);
-		*(serial->base + baudr) = t | calculate_baudrate(115200);
+		*(serial->base + baudr) = t | calculate_baudrate(UART_BAUDRATE);
 
 		/* Set 8 bit and no parity mode */
 		*(serial->base + ctrlr) &= ~0x117;
