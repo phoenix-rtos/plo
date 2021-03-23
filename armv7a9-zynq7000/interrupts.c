@@ -135,7 +135,7 @@ void interrupts_dispatch(void)
 
 int interrupts_setHandler(u16 n, int (*f)(u16, void *), void *data)
 {
-	if (f == NULL || data == NULL || n >= SIZE_INTERRUPTS)
+	if (f == NULL || n >= SIZE_INTERRUPTS)
 		return ERR_ARG;
 
 	interrupts_common.handlers[n].n = n;

@@ -57,4 +57,13 @@
 #define TTC1_2_IRQ       70
 #define TTC1_3_IRQ       71
 
+
+/* USB OTG */
+#define USB0_BASE_ADDR   ((void *)0xE0002000)
+#define USB1_BASE_ADDR   ((void *)0xE0003000)
+
+#define USB0_IRQ         53
+#define USB1_IRQ         76
+
+
 #endif

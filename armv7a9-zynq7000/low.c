@@ -17,13 +17,15 @@
 #include "cmd-board.h"
 #include "interrupts.h"
 #include "peripherals.h"
+#include "phfs-serial.h"
+#include "cdc-client.h"
+#include "phfs-usb.h"
 
 #include "../low.h"
 #include "../plostd.h"
 #include "../serial.h"
 #include "../timer.h"
 #include "../syspage.h"
-#include "../phoenixd.h"
 
 
 struct{
@@ -41,6 +43,7 @@ const cmd_t board_cmds[] = {
 
 const cmd_device_t devices[] = {
 	{ "com1", PDN_COM1 },
+	{ "usb0", PDN_ACM0 },
 	{ NULL, NULL }
 };
 
@@ -50,11 +53,9 @@ const cmd_device_t devices[] = {
 void low_init(void)
 {
 	_zynq_init();
-
 	interrupts_init();
-
+	timer_init();
 	syspage_init();
-
 	syspage_setAddress((void *)SYSPAGE_ADDRESS);
 
 	low_common.timeout = 3;
@@ -64,17 +65,27 @@ void low_init(void)
 
 void low_done(void)
 {
-
+	phfs_serialDeinit();
+	phfs_usbDeinit();
+	timer_done();
 }
 
 
 void low_initphfs(phfs_handler_t *handlers)
 {
-	handlers[PDN_COM1].open = phoenixd_open;
-	handlers[PDN_COM1].read = phoenixd_read;
-	handlers[PDN_COM1].write = phoenixd_write;
-	handlers[PDN_COM1].close = phoenixd_close;
+	handlers[PDN_COM1].open = phfs_serialOpen;
+	handlers[PDN_COM1].read = phfs_serialRead;
+	handlers[PDN_COM1].write = phfs_serialWrite;
+	handlers[PDN_COM1].close = phfs_serialClose;
 	handlers[PDN_COM1].dn = PHFS_SERIAL_LOADER_ID;
+	phfs_serialInit();
+
+	handlers[PDN_ACM0].open = phfs_usbOpen;
+	handlers[PDN_ACM0].read = phfs_usbRead;
+	handlers[PDN_ACM0].write = phfs_usbWrite;
+	handlers[PDN_ACM0].close = phfs_usbClose;
+	handlers[PDN_ACM0].dn = endpt_bulk_acm0;
+	phfs_usbInit();
 }
 
 
@@ -299,8 +310,6 @@ int low_launch(void)
 	timer_wait(100, TIMER_EXPIRE, NULL, 0);
 
 	/* Tidy up */
-	serial_done();
-	timer_done();
 	low_done();
 
 	low_cli();
