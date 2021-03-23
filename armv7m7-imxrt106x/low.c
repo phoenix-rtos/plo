@@ -15,22 +15,22 @@
 
 
 #include "imxrt.h"
-#include "phfs-flash.h"
 #include "config.h"
-#include "peripherals.h"
-#include "flashdrv.h"
 #include "cmd-board.h"
+#include "peripherals.h"
 
+#include "client.h"
+#include "phfs-usb.h"
+#include "cdc-client.h"
+#include "phfs-flash.h"
+#include "phfs-serial.h"
 
 #include "../low.h"
 #include "../plostd.h"
 #include "../errors.h"
-#include "../serial.h"
 #include "../timer.h"
+#include "../serial.h"
 #include "../syspage.h"
-#include "../phoenixd.h"
-
-
 
 typedef struct {
 	void *data;
@@ -49,6 +49,7 @@ const cmd_device_t devices[] = {
 	{ "flash0", PDN_FLASH0 },
 	{ "flash1", PDN_FLASH1 },
 	{ "com1", PDN_COM1 },
+	{ "usb0", PDN_USB0 },
 	{ NULL, NULL }
 };
 
@@ -67,33 +68,32 @@ void low_init(void)
 {
 	int i;
 
-	_imxrt_init();
-
-	phfsflash_init();
-
-	low_setLaunchTimeout(3);
-
-	syspage_init();
-
-	syspage_setAddress((void *)SYSPAGE_ADDRESS);
-
-	/* Add entries related to plo image */
-	syspage_addEntries((u32)plo_bss, (u32)_end - (u32)plo_bss + STACK_SIZE);
-
-
+	low_common.kernel_entry = 0;
 	for (i = 0; i < SIZE_INTERRUPTS; ++i) {
 		low_common.irqs[i].data = NULL;
 		low_common.irqs[i].isr = NULL;
 	}
 
-	low_common.kernel_entry = 0;
+	_imxrt_init();
+	timer_init();
 
+	syspage_init();
+	syspage_setAddress((void *)SYSPAGE_ADDRESS);
+
+	/* Add entries related to plo image */
+	syspage_addEntries((u32)plo_bss, (u32)_end - (u32)plo_bss + STACK_SIZE);
+
+	low_setLaunchTimeout(3);
 }
 
 
 void low_done(void)
 {
-	//TODO
+	phfs_serialDeinit();
+	phfs_usbDeinit();
+	timer_done();
+
+	_imxrt_cleanDCache();
 }
 
 
@@ -109,12 +109,21 @@ void low_initphfs(phfs_handler_t *handlers)
 		handlers[PDN_FLASH0 + i].close = phfsflash_close;
 		handlers[PDN_FLASH0 + i].dn = i;
 	}
+	phfsflash_init();
 
-	handlers[PDN_COM1].open = phoenixd_open;
-	handlers[PDN_COM1].read = phoenixd_read;
-	handlers[PDN_COM1].write = phoenixd_write;
-	handlers[PDN_COM1].close = phoenixd_close;
+	handlers[PDN_COM1].open = phfs_serialOpen;
+	handlers[PDN_COM1].read = phfs_serialRead;
+	handlers[PDN_COM1].write = phfs_serialWrite;
+	handlers[PDN_COM1].close = phfs_serialClose;
 	handlers[PDN_COM1].dn = PHFS_SERIAL_LOADER_ID;
+	phfs_serialInit();
+
+	handlers[PDN_USB0].open = phfs_usbOpen;
+	handlers[PDN_USB0].read = phfs_usbRead;
+	handlers[PDN_USB0].write = phfs_usbWrite;
+	handlers[PDN_USB0].close = phfs_usbClose;
+	handlers[PDN_USB0].dn = endpt_bulk_acm0;
+	phfs_usbInit();
 }
 
 
@@ -261,7 +270,7 @@ void low_copyfrom(u16 segm, u16 offs, void *dst, unsigned int l)
 
 void low_memcpy(void *dst, const void *src, unsigned int l)
 {
-	asm volatile(" \
+	__asm__ volatile(" \
 		orr r3, %0, %1; \
 		ands r3, #3; \
 		bne 2f; \
@@ -326,15 +335,10 @@ int low_launch(void)
 	timer_wait(100, TIMER_EXPIRE, NULL, 0);
 
 	/* Tidy up */
-	serial_done();
-	timer_done();
-
 	low_done();
 
-	_imxrt_cleanDCache();
-
 	low_cli();
-	asm("mov r9, %1; \
+	__asm__ volatile("mov r9, %1; \
 		 blx %0"
 		 :
 		 : "r"(low_common.kernel_entry), "r"(syspage_getAddress()));
@@ -349,13 +353,13 @@ int low_launch(void)
 
 void low_cli(void)
 {
-	asm("cpsid if");
+	__asm__ volatile("cpsid if");
 }
 
 
 void low_sti(void)
 {
-	asm("cpsie if");
+	__asm__ volatile("cpsie if");
 }
 
 

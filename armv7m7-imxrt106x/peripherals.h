@@ -96,7 +96,8 @@
 #define UART_CONSOLE 1
 #endif
 
-#define UART_CLK 80000000
+#define UART_CLK         80000000
+#define UART_BAUDRATE    115200
 
 #define UART1_BASE ((void *)0x40184000)
 #define UART2_BASE ((void *)0x40188000)
@@ -231,5 +232,14 @@
 #define GPT2_BASE           ((void *)0x401f0000)
 #define GPT2_CLK            pctl_clk_gpt2_bus
 #define GPT2_IRQ            101 + 16
+
+
+/* USB OTG */
+
+#define USB0_BASE_ADDR       ((void *)0x402E0000)
+#define USB0_PHY_BASE_ADDR   ((void *)0x400D9000)
+
+#define USB0_IRQ             usb_otg1_irq
+
 
 #endif
