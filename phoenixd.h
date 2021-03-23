@@ -17,6 +17,8 @@
 #define _PHOENIXD_H_
 
 #include "msg.h"
+#include "phfs.h"
+
 
 /* Message types */
 #define MSG_OPEN    1
@@ -25,24 +27,22 @@
 #define MSG_COPY    4
 
 
-typedef struct _msg_phoenixd_t {
-  u32 handle;
-  u32 pos;
-  u32 len;
-  u8  data[MSG_MAXLEN - 3 * sizeof(u32)];
-} msg_phoenixd_t;
+typedef struct {
+	int (*read)(unsigned int, u8 *, u16, u16);
+	int (*write)(unsigned int, const u8 *, u16);
+} phfs_clbk_t;
 
 
-extern handle_t phoenixd_open(u16 dn, const char *name, u32 flags);
+extern handle_t phoenixd_open(u16 dn, const char *name, u32 flags, phfs_clbk_t *cblk);
 
 
-extern s32 phoenixd_read(u16 dn, handle_t handle, addr_t *pos, u8 *buff, u32 len);
+extern s32 phoenixd_read(u16 dn, handle_t handle, addr_t *pos, u8 *buff, u32 len, phfs_clbk_t *cblk);
 
 
-extern s32 phoenixd_write(u16 dn, handle_t handle, addr_t *pos, u8 *buff, u32 len, u8 sync);
+extern s32 phoenixd_write(u16 dn, handle_t handle, addr_t *pos, u8 *buff, u32 len, u8 sync, phfs_clbk_t *cblk);
 
 
-extern s32 phoenixd_close(u16 dn, handle_t handle);
+extern s32 phoenixd_close(u16 dn, handle_t handle, phfs_clbk_t *cblk);
 
 
 #endif
