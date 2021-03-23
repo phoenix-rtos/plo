@@ -14,6 +14,8 @@ KERNEL=1
 include ../phoenix-rtos-build/Makefile.common
 include ../phoenix-rtos-build/Makefile.$(TARGET_SUFF)
 
+include lib/Makefile
+include devices/Makefile
 include $(TARGET_FAMILY)-$(TARGET_SUBFAMILY)/Makefile
 
 CFLAGS += $(BOARD_CONFIG)

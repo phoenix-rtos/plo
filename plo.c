@@ -5,7 +5,7 @@
  *
  * Loader console
  *
- * Copyright 2012, 2017, 2020 Phoenix Systems
+ * Copyright 2012, 2017, 2020-2021 Phoenix Systems
  * Copyright 2001, 2005 Pawel Pisarczyk
  * Authors: Pawel Pisarczyk, Lukasz Kosinski, Hubert Buczynski
  *
@@ -133,32 +133,20 @@ void plo_cmdloop(void)
 void plo_init(void)
 {
 	u16 t = 0;
-	u32 st;
 
 	low_init();
-	timer_init();
-	serial_init(-1, &st);   /* TODO: provide generic calculation of baud rate */
 	phfs_init();
 	cmd_init();
 
-#ifdef CONSOLE_SERIAL
-	serial_write(0, "\033[?25h", 6);
-#endif
-
 	plostd_printf(ATTR_LOADER, "%s \n", PLO_WELCOME);
-	plostd_printf(ATTR_INIT, "Detected UART, setting to maximal speed %d Bps\n", st);
+	plostd_printf(ATTR_INIT, "Detected UART, setting to maximal speed %d Bps\n", serial_getBaudrate());
 
 	/* Wait and execute saved loader command */
 	for (t = low_getLaunchTimeout(); t; t--) {
 		plostd_printf(ATTR_INIT, "\r%d seconds to automatic boot      ", t);
 
-#ifdef CONSOLE_SERIAL
-		if (serial_read(0, &c, 1, 1000) > 0)
-			break;
-#else
 		if (timer_wait(1000, TIMER_KEYB, NULL, 0))
 			break;
-#endif
 	}
 
 	if (t == 0) {
@@ -169,9 +157,6 @@ void plo_init(void)
 
 	/* Enter to interactive mode */
 	plo_cmdloop();
-
-	serial_done();
-	timer_done();
 
 	low_done();
 
