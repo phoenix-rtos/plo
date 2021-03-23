@@ -314,7 +314,13 @@ static void serial_initCtrlClock(void)
 }
 
 
-void serial_init(u32 baud, u32 *st)
+u32 serial_getBaudrate(void)
+{
+	return UART_BAUDRATE;
+}
+
+
+void serial_init(void)
 {
 	int i;
 	serial_t *serial;

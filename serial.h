@@ -17,8 +17,11 @@
 #ifndef _SERIAL_H_
 #define _SERIAL_H_
 
+#include "types.h"
 
-extern void serial_init(u32 baud, u32 *st);
+extern void serial_init(void);
+
+extern u32 serial_getBaudrate(void);
 
 extern int serial_read(unsigned int pn, u8 *buff, u16 len, u16 timeout);
 

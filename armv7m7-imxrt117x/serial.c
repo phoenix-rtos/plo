@@ -491,8 +491,13 @@ static void serial_initPins(void)
 }
 
 
-/* TODO: set baudrate using 'baud' argument */
-void serial_init(u32 baud, u32 *st)
+u32 serial_getBaudrate(void)
+{
+	return UART_BAUDRATE;
+}
+
+
+void serial_init(void)
 {
 	u32 t;
 	int i, dev;
@@ -518,7 +523,6 @@ void serial_init(u32 baud, u32 *st)
 		{ UART12_BASE, UART12_CLK, UART12_IRQ }
 	};
 
-	*st = 115200;
 	serial_initPins();
 
 	for (i = 0, dev = 0; dev < sizeof(serialConfig) / sizeof(serialConfig[0]); ++dev) {
@@ -550,7 +554,7 @@ void serial_init(u32 baud, u32 *st)
 
 		/* Set 115200 default baudrate */
 		t = *(serial->base + baudr) & ~((0x1f << 24) | (1 << 17) | 0xfff);
-		*(serial->base + baudr) = t | calculate_baudrate(115200);
+		*(serial->base + baudr) = t | calculate_baudrate(UART_BAUDRATE);
 
 		/* Set 8 bit and no parity mode */
 		*(serial->base + ctrlr) &= ~0x117;
