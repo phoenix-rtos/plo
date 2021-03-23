@@ -52,11 +52,13 @@ extern void plo_bss(void);
 #define PDN_COM1                 1
 
 #define PHFS_SERIAL_LOADER_ID    12
+#define PHFS_ACM_PORTS_NB        1    /* Number of ports define by CDC driver; min = 1, max = 2 */
 
 
 /* Types extensions */
 
 typedef u32 addr_t;
+typedef unsigned int size_t;
 
 
 

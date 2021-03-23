@@ -16,6 +16,7 @@
 
 #include "imxrt.h"
 #include "phfs-flash.h"
+#include "phfs-serial.h"
 #include "config.h"
 #include "peripherals.h"
 #include "flashdrv.h"
@@ -66,9 +67,17 @@ void low_init(void)
 {
 	int i;
 
+	for (i = 0; i < SIZE_INTERRUPTS; ++i) {
+		low_common.irqs[i].data = NULL;
+		low_common.irqs[i].isr = NULL;
+	}
+
+	low_common.kernel_entry = 0;
+
+
 	_imxrt_init();
 
-	phfsflash_init();
+	timer_init();
 
 	low_setLaunchTimeout(3);
 
@@ -78,15 +87,6 @@ void low_init(void)
 
 	/* Add entries related to plo image */
 	syspage_addEntries((u32)plo_bss, (u32)_end - (u32)plo_bss + STACK_SIZE);
-
-
-	for (i = 0; i < SIZE_INTERRUPTS; ++i) {
-		low_common.irqs[i].data = NULL;
-		low_common.irqs[i].isr = NULL;
-	}
-
-	low_common.kernel_entry = 0;
-
 }
 
 
@@ -99,17 +99,19 @@ void low_done(void)
 void low_initphfs(phfs_handler_t *handlers)
 {
 	/* Handlers for flash memory */
-	handlers[PDN_FLASH0 ].open = phfsflash_open;
+	handlers[PDN_FLASH0].open = phfsflash_open;
 	handlers[PDN_FLASH0].read = phfsflash_read;
 	handlers[PDN_FLASH0].write = phfsflash_write;
 	handlers[PDN_FLASH0].close = phfsflash_close;
 	handlers[PDN_FLASH0].dn = PDN_FLASH0;
+	phfsflash_init();
 
-	handlers[PDN_COM1].open = phoenixd_open;
-	handlers[PDN_COM1].read = phoenixd_read;
-	handlers[PDN_COM1].write = phoenixd_write;
-	handlers[PDN_COM1].close = phoenixd_close;
+	handlers[PDN_COM1].open = phfs_serialOpen;
+	handlers[PDN_COM1].read = phfs_serialRead;
+	handlers[PDN_COM1].write = phfs_serialWrite;
+	handlers[PDN_COM1].close = phfs_serialClose;
 	handlers[PDN_COM1].dn = PHFS_SERIAL_LOADER_ID;
+	phfs_serialInit();
 }
 
 

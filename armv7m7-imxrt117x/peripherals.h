@@ -75,7 +75,8 @@
 #define UART_CONSOLE 11
 #endif
 
-#define UART_CLK 24000000
+#define UART_CLK         24000000
+#define UART_BAUDRATE    115200
 
 #define UART1_BASE  ((void *)0x4007c000)
 #define UART2_BASE  ((void *)0x40080000)
