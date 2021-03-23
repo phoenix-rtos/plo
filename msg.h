@@ -16,6 +16,7 @@
 #ifndef _MSG_H_
 #define _MSG_H_
 
+#include "types.h"
 
 /* Special characters */
 #define MSG_MARK      0x7e
@@ -37,6 +38,10 @@ typedef struct _msg_t {
 	u32 csum;
 	u32 type;
 	u8  data[MSG_MAXLEN];
+	union {
+		int (*read)(unsigned int, u8 *, u16, u16);
+		int (*write)(unsigned int, const u8 *, u16);
+	};
 } msg_t;
 
 
