@@ -30,10 +30,9 @@ static u32 msg_csum(msg_t *msg)
 	u16 csum;
 
 	csum = 0;
-	for (k = 0; k < MSG_HDRSZ + msg_getlen(msg); k++) {
-		if (k >= sizeof(msg->csum))
-			csum += *((u8 *)msg + k);
-	}
+	for (k = sizeof(msg->csum); k < MSG_HDRSZ + msg_getlen(msg); k++)
+		csum += *((u8 *)msg + k);
+
 	csum += msg_getseq(msg);
 	return csum;
 }
@@ -42,27 +41,25 @@ static u32 msg_csum(msg_t *msg)
 static int msg_write(u16 pn, msg_t *msg)
 {
 	u8 *p = (u8 *)msg;
-	char cs[2];
+	u8 cs[2];
 	u16 k;
 	int res;
 
 	/* Frame start */
 	cs[0] = MSG_MARK;
-	if ((res = msg->write(pn, (u8 *)cs, 1)) < 0)
+	if ((res = msg->write(pn, cs, 1)) < 0)
 		return res;
 
 	for (k = 0; k < MSG_HDRSZ + msg_getlen(msg); k++) {
 		if ((p[k] == MSG_MARK) || (p[k] == MSG_ESC)) {
 			cs[0] = MSG_ESC;
-			if (p[k] == MSG_MARK)
-				cs[1] = MSG_ESCMARK;
-			else
-				cs[1] = MSG_ESCESC;
-			if ((res = msg->write(pn, (u8 *)cs, 2)) < 0)
+			cs[1] = p[k] == MSG_MARK ? MSG_ESCMARK : MSG_ESCESC;
+
+			if ((res = msg->write(pn, cs, 2)) < 0)
 				return res;
 		}
 		else {
-			if ((res = msg->write(pn, (u8 *)&p[k], 1)) < 0)
+			if ((res = msg->write(pn, &p[k], 1)) < 0)
 				return res;
 		}
 	}
