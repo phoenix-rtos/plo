@@ -18,7 +18,7 @@
 
 
 /* Function handles command to initialize PL with bitstream */
-extern void cmd_loadPL(char *args);
+extern void cmd_bitstream(char *s);
 
 
 #endif

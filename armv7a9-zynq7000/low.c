@@ -36,7 +36,7 @@ struct{
 
 /* Board command definitions */
 const cmd_t board_cmds[] = {
-	{ cmd_loadPL,    "fpga ", " - load binary bitstream - TBD" },
+	{ cmd_bitstream, "bitstream", "- loads bitstream into PL, usage:\n            bitstream [<boot device>] [<name>]" },
 	{ NULL, NULL, NULL }
 };
 
