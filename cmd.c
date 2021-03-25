@@ -36,19 +36,19 @@ typedef struct {
 
 
 const cmd_t genericCmds[] = {
-	{ cmd_help,    "help", "    - prints this message" },
-	{ cmd_timeout, "timeout", " - boot timeout, usage: timeout [<timeout>]" },
-	{ cmd_go,      "go!", "     - starts Phoenix-RTOS loaded into memory" },
-	{ cmd_cmd,     "cmd", "     - boot command, usage: cmd [<command>]" },
-	{ cmd_dump,    "dump", "    - dumps memory, usage: dump <segment>:<offset>" },
-	{ cmd_write,   "write", "   - write to memory, usage: write <address> <bytes size> <value>"},
-	{ cmd_copy,    "copy", "    - copies data between devices, usage:\n           copy <src device> <src file/LBA> <dst device> <dst file/LBA> [<len>]" },
-	{ cmd_memmap,  "mem", "     - prints physical memory map" },
-	{ cmd_save,    "save", "    - saves configuration" },
-	{ cmd_kernel,  "kernel", "  - loads Phoenix - RTOS, usage: kernel [<boot device>]"},
-	{ cmd_app,     "app", "     - loads app, usage:\n           app [<boot device>] [-x] [@]<name>|<name(offset:size)> [imap] [dmap]" },
-	{ cmd_map,     "map", "     - define multimap, usage: map <start> <end> <name> <attributes>"},
-	{ cmd_syspage, "syspage", " - shows syspage contents, usage: syspage" },
+	{ cmd_help,    "help", "      - prints this message" },
+	{ cmd_timeout, "timeout", "   - boot timeout, usage: timeout [<timeout>]" },
+	{ cmd_go,      "go!", "       - starts Phoenix-RTOS loaded into memory" },
+	{ cmd_cmd,     "cmd", "       - boot command, usage: cmd [<command>]" },
+	{ cmd_dump,    "dump", "      - dumps memory, usage: dump <segment>:<offset>" },
+	{ cmd_write,   "write", "     - write to memory, usage: write <address> <bytes size> <value>"},
+	{ cmd_copy,    "copy", "      - copies data between devices, usage:\n           copy <src device> <src file/LBA> <dst device> <dst file/LBA> [<len>]" },
+	{ cmd_memmap,  "mem", "       - prints physical memory map" },
+	{ cmd_save,    "save", "      - saves configuration" },
+	{ cmd_kernel,  "kernel", "    - loads Phoenix - RTOS, usage: kernel [<boot device>]"},
+	{ cmd_app,     "app", "       - loads app, usage:\n           app [<boot device>] [-x] [@]<name>|<name(offset:size)> [imap] [dmap]" },
+	{ cmd_map,     "map", "       - define multimap, usage: map <start> <end> <name> <attributes>"},
+	{ cmd_syspage, "syspage", "   - shows syspage contents, usage: syspage" },
 	{ NULL, NULL, NULL }
 };
 
@@ -61,57 +61,6 @@ struct {
 
 
 /* Auxiliary functions */
-
-static int cmd_checkDev(const char *devName, unsigned int *dn)
-{
-	unsigned int i;
-
-	/* Show boot devices if parameter is empty */
-
-	if (*devName == 0) {
-		plostd_printf(ATTR_LOADER, "\nBoot devices: ");
-
-		for (i = 0; cmd_common.devs[i].name; i++)
-			plostd_printf(ATTR_LOADER, "%s ", cmd_common.devs[i].name);
-		plostd_printf(ATTR_LOADER, "\n");
-
-		return ERR_ARG;
-	}
-
-	for (i = 0; cmd_common.devs[i].name; i++)  {
-		if (!plostd_strcmp(devName, cmd_common.devs[i].name))
-			break;
-	}
-
-	if (!cmd_common.devs[i].name) {
-		plostd_printf(ATTR_ERROR, "\n'%s' - unknown boot device!\n", devName);
-		return ERR_ARG;
-	}
-
-	*dn = i;
-
-	return 0;
-}
-
-
-static int cmd_parseArgs(char *s, char (*args)[LINESZ + 1], u16 *argsc)
-{
-	int i;
-	unsigned int pos = 0;
-
-	for (i = 0; *argsc < MAX_CMD_ARGS_NB; ++i) {
-		cmd_skipblanks(s, &pos, DEFAULT_BLANKS);
-		if (cmd_getnext(s, &pos, DEFAULT_BLANKS, NULL, args[i], sizeof(args[i])) == NULL || *args[i] == 0)
-			break;
-		(*argsc)++;
-	}
-
-	if (!*argsc)
-		return ERR_ARG;
-
-	return 0;
-}
-
 
 static int cmd_cpphfs2phfs(phfs_conf_t *src, phfs_conf_t *dst)
 {
@@ -225,8 +174,8 @@ void cmd_default(void)
 }
 
 
-
 /* Function parses commands */
+
 void cmd_parse(char *line)
 {
 	int k;
@@ -261,7 +210,6 @@ void cmd_parse(char *line)
 
 	return;
 }
-
 
 
 /* Generic command handlers */
@@ -446,6 +394,7 @@ void cmd_write(char *s)
 
 	return;
 }
+
 
 /* Function parse device name or parameters. There is distinction whether it is storage or external dev.
  * For external dev, name shall be provided. For storage device offset and size shall be provided. */
@@ -1034,4 +983,55 @@ char *cmd_getnext(char *line, unsigned int *pos, char *blanks, char *cites, char
 	word[wp] = 0;
 
 	return word;
+}
+
+
+int cmd_parseArgs(char *s, char (*args)[LINESZ + 1], u16 *argsc)
+{
+	int i;
+	unsigned int pos = 0;
+
+	for (i = 0; *argsc < MAX_CMD_ARGS_NB; ++i) {
+		cmd_skipblanks(s, &pos, DEFAULT_BLANKS);
+		if (cmd_getnext(s, &pos, DEFAULT_BLANKS, NULL, args[i], sizeof(args[i])) == NULL || *args[i] == 0)
+			break;
+		(*argsc)++;
+	}
+
+	if (!*argsc)
+		return ERR_ARG;
+
+	return 0;
+}
+
+
+int cmd_checkDev(const char *devName, unsigned int *dn)
+{
+	unsigned int i;
+
+	/* Show boot devices if parameter is empty */
+
+	if (*devName == 0) {
+		plostd_printf(ATTR_LOADER, "\nBoot devices: ");
+
+		for (i = 0; cmd_common.devs[i].name; i++)
+			plostd_printf(ATTR_LOADER, "%s ", cmd_common.devs[i].name);
+		plostd_printf(ATTR_LOADER, "\n");
+
+		return ERR_ARG;
+	}
+
+	for (i = 0; cmd_common.devs[i].name; i++)  {
+		if (!plostd_strcmp(devName, cmd_common.devs[i].name))
+			break;
+	}
+
+	if (!cmd_common.devs[i].name) {
+		plostd_printf(ATTR_ERROR, "\n'%s' - unknown boot device!\n", devName);
+		return ERR_ARG;
+	}
+
+	*dn = i;
+
+	return 0;
 }
