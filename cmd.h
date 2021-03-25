@@ -18,6 +18,7 @@
 #define _CMD_H_
 
 #include "types.h"
+#include "plostd.h"
 
 #define DEFAULT_BLANKS    " \t"
 #define DEFAULT_CITES     "\""
@@ -102,5 +103,12 @@ extern void cmd_skipblanks(char *line, unsigned int *pos, char *blanks);
 
 
 extern char *cmd_getnext(char *line, unsigned int *pos, char *blanks, char *cites, char *word, unsigned int len);
+
+
+extern int cmd_parseArgs(char *s, char (*args)[LINESZ + 1], u16 *argsc);
+
+
+extern int cmd_checkDev(const char *devName, unsigned int *dn);
+
 
 #endif
