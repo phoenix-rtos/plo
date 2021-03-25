@@ -20,6 +20,7 @@
 #define ERR_NONE             0
 #define ERR_ARG             -1
 
+#define ERR_LOW_CFG         -15
 #define ERR_LOW_BIOS        -16
 #define ERR_LOW_MMSIZE      -17
 
