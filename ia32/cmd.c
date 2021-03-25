@@ -324,7 +324,7 @@ void cmd_loadkernel(unsigned int pdn, char *arg, u16 *po)
 		plostd_printf(ATTR_ERROR, "Can't read ELF header!\n");
 		return;
 	}
-	if ((hdr.e_ident[0] != 0x7f) && (hdr.e_ident[1] != 'E') && (hdr.e_ident[2] != 'L') && (hdr.e_ident[3] != 'F')) {
+	if ((hdr.e_ident[0] != 0x7f) || (hdr.e_ident[1] != 'E') || (hdr.e_ident[2] != 'L') || (hdr.e_ident[3] != 'F')) {
 		plostd_printf(ATTR_ERROR, "File isn't ELF object!\n");
 		return;
 	}
@@ -561,7 +561,7 @@ void cmd_copy(char *s)
 
 	if ((ddn = cmd_getdevice(s, &p, DEFAULT_BLANKS, NULL, word, sizeof(word))) == -1) {
 		plostd_printf(ATTR_ERROR, "\n'%s' - unknown dst device!\n", word);
-		
+
 		if (phfs_close(devices[sdn].pdn, sh) < 0)
 			plostd_printf(ATTR_ERROR, "Failed to sync %s!\n", devices[sdn].name);
 

@@ -590,7 +590,7 @@ void cmd_kernel(char *s)
 		return;
 	}
 
-	if ((hdr.e_ident[0] != 0x7f) && (hdr.e_ident[1] != 'E') && (hdr.e_ident[2] != 'L') && (hdr.e_ident[3] != 'F')) {
+	if ((hdr.e_ident[0] != 0x7f) || (hdr.e_ident[1] != 'E') || (hdr.e_ident[2] != 'L') || (hdr.e_ident[3] != 'F')) {
 		plostd_printf(ATTR_ERROR, "File isn't ELF object!\n");
 		return;
 	}
@@ -683,7 +683,7 @@ static int cmd_loadApp(phfs_conf_t *phfs, const char *name, const char *imap, co
 		return ERR_PHFS_FILE;
 	}
 
-	if ((hdr.e_ident[0] != 0x7f) && (hdr.e_ident[1] != 'E') && (hdr.e_ident[2] != 'L') && (hdr.e_ident[3] != 'F')) {
+	if ((hdr.e_ident[0] != 0x7f) || (hdr.e_ident[1] != 'E') || (hdr.e_ident[2] != 'L') || (hdr.e_ident[3] != 'F')) {
 		plostd_printf(ATTR_ERROR, "\nFile isn't ELF object!\n");
 		return ERR_PHFS_FILE;
 	}
