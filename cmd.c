@@ -1021,12 +1021,12 @@ int cmd_checkDev(const char *devName, unsigned int *dn)
 		return ERR_ARG;
 	}
 
-	for (i = 0; cmd_common.devs[i].name; i++)  {
+	for (i = 0; cmd_common.devs[i].name != NULL; i++)  {
 		if (!plostd_strcmp(devName, cmd_common.devs[i].name))
 			break;
 	}
 
-	if (!cmd_common.devs[i].name) {
+	if (cmd_common.devs[i].name == NULL) {
 		plostd_printf(ATTR_ERROR, "\n'%s' - unknown boot device!\n", devName);
 		return ERR_ARG;
 	}
