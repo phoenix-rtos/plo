@@ -20,6 +20,7 @@
 
 #include "../errors.h"
 
+#define MAX_WAITING_COUNTER 10000000
 
 #define SCLR_BASE_ADDRESS   0xf8000000
 #define DDRC_BASE_ADDRESS   0xf8006000
@@ -376,6 +377,7 @@ int _zynq_getMIO(ctl_mio_t *mio)
 
 int _zynq_loadPL(u32 srcAddr, u32 srcLen)
 {
+	u32 cnt;
 	u32 wordsCnt;
 
 	if (srcAddr < ADDR_DDR || (srcAddr + srcLen) > (ADDR_DDR + SIZE_DDR))
@@ -401,8 +403,11 @@ int _zynq_loadPL(u32 srcAddr, u32 srcLen)
 		;
 
 	/* DMA queue can't be full */
-	while ((*(zynq_common.dcfg + dcfg_status) & (1 << 31)))
-		;
+	cnt = MAX_WAITING_COUNTER;
+	while ((*(zynq_common.dcfg + dcfg_status) & (1 << 31))) {
+		if (!--cnt)
+			return ERR_LOW_CFG;
+	}
 
 	/* Disable PCAP loopback */
 	*(zynq_common.dcfg + dcfg_mctrl) &= ~(1 << 4);
@@ -420,17 +425,23 @@ int _zynq_loadPL(u32 srcAddr, u32 srcLen)
 	*(zynq_common.dcfg + dcfg_dma_dest_len) = wordsCnt;
 
 	/* Wait for DMA tranfer to be done */
-	while (!(*(zynq_common.dcfg + dcfg_int_sts) & (1 << 13)))
-		;
-
-	/* Wait for FPGA to be done */
-	while (!(*(zynq_common.dcfg + dcfg_int_sts) & (1 << 2)))
-		;
+	cnt = MAX_WAITING_COUNTER;
+	while (!(*(zynq_common.dcfg + dcfg_int_sts) & (1 << 13))) {
+		if (!--cnt)
+			return ERR_LOW_CFG;
+	}
 
 	/* Check the following errors:
 	 * AXI_WERR_INT, AXI_RTO_INT, AXI_RERR_INT, RX_FIFO_OV_INT, DMA_CMD_ERR_INT, DMA_Q_OV_INT, P2D_LEN_ERR_INT, PCFG_HMAC_ERR_INT */
 	if (*(zynq_common.dcfg + dcfg_int_sts) & 0x74c840)
-		return ERR_LOW_BIOS;
+		return ERR_LOW_CFG;
+
+	/* Wait for FPGA to be done */
+	cnt = MAX_WAITING_COUNTER;
+	while (!(*(zynq_common.dcfg + dcfg_int_sts) & (1 << 2))) {
+		if (!--cnt)
+			return ERR_LOW_CFG;
+	}
 
 	return ERR_NONE;
 }
