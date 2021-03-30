@@ -20,6 +20,7 @@
 #include "phfs-serial.h"
 #include "cdc-client.h"
 #include "phfs-usb.h"
+#include "gpio.h"
 
 #include "../low.h"
 #include "../plostd.h"
@@ -55,6 +56,8 @@ void low_init(void)
 	_zynq_init();
 	interrupts_init();
 	timer_init();
+	gpio_init();
+
 	syspage_init();
 	syspage_setAddress((void *)SYSPAGE_ADDRESS);
 
