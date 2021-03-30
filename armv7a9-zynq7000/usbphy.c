@@ -18,6 +18,7 @@
 #include "usbphy.h"
 
 #include "zynq.h"
+#include "gpio.h"
 #include "peripherals.h"
 
 
@@ -116,6 +117,12 @@ static void phy_setPins(void)
 	ctl.pin = mio_pin_29;
 	_zynq_setMIO(&ctl);
 
+
+	/* USB phy RESET */
+	ctl.pin = mio_pin_07;
+	ctl.l0 = ctl.l1 = ctl.l2 = ctl.l3 = 0;
+	ctl.triEnable = 0;
+	_zynq_setMIO(&ctl);
 }
 
 
@@ -123,15 +130,19 @@ void phy_init(void)
 {
 	phyusb_common.buffCounter = 0;
 
-	phy_reset();
 	phy_setPins();
+	phy_reset();
 	phy_setClock();
 }
 
 
-/* TODO: reset USB physical layer - handle PL */
 void phy_reset(void)
 {
+	/* Set USB phy reset */
+	gpio_setPinDir(mio_pin_07, gpio_dir_out);
+	gpio_writePin(mio_pin_07, 0);
+	gpio_writePin(mio_pin_07, 1);
+
 	phyusb_common.buffCounter = 0;
 	_zynq_setAmbaClk(amba_usb0_clk, clk_disable);
 }
