@@ -66,4 +66,7 @@
 #define USB1_IRQ         76
 
 
+/* GPIO */
+#define GPIO_BASE_ADDR  ((void *)0xe000a000)
+
 #endif
