@@ -36,7 +36,7 @@ extern void syspage_init(void);
 
 /* Syspage's location functions */
 
-extern int syspage_setAddress(void *addr);
+extern void syspage_setAddress(void *addr);
 
 
 extern void *syspage_getAddress(void);
@@ -63,13 +63,13 @@ extern int syspage_getMapTop(const char *map, void **addr);
 extern int syspage_alignMapTop(const char *map);
 
 
-extern int syspage_getFreeSize(const char *map, u32 *sz);
+extern int syspage_getFreeSize(const char *map, size_t *sz);
 
 
-extern int syspage_write2Map(const char *map, const u8 *buff, u32 len);
+extern int syspage_write2Map(const char *map, const u8 *buff, size_t len);
 
 
-extern void syspage_addEntries(u32 start, u32 sz);
+extern void syspage_addEntries(addr_t start, size_t sz);
 
 
 
@@ -80,13 +80,13 @@ extern int syspage_addProg(void *start, void *end, const char *imap, const char 
 
 /* Setting kernel's data */
 
-extern void syspage_setKernelText(void *addr, u32 size);
+extern void syspage_setKernelText(void *addr, size_t size);
 
 
-extern void syspage_setKernelBss(void *addr, u32 size);
+extern void syspage_setKernelBss(void *addr, size_t size);
 
 
-extern void syspage_setKernelData(void *addr, u32 size);
+extern void syspage_setKernelData(void *addr, size_t size);
 
 
 /* Add specific architecture data */
