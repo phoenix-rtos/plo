@@ -16,7 +16,7 @@
 #include "../errors.h"
 #include "../cmd.h"
 #include "../phfs.h"
-#include "../low.h"
+#include "../hal.h"
 #include "../cmd.h"
 
 #include "zynq.h"
@@ -58,7 +58,7 @@ void cmd_bitstream(char *s)
 			return;
 		}
 
-		low_memcpy((void *)addr, buff, res);
+		hal_memcpy((void *)addr, buff, res);
 		addr += res;
 	} while (res != 0);
 

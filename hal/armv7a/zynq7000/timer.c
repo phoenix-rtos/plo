@@ -14,7 +14,7 @@
  */
 
 
-#include "../low.h"
+#include "../hal.h"
 #include "../timer.h"
 
 #include "peripherals.h"
@@ -121,7 +121,7 @@ int timer_wait(u32 ms, int flags, u16 *p, u16 v)
 	*(timer_common.base + ier) = 0x1;
 
 	while (timer_common.leftTime) {
-		if (((flags & TIMER_KEYB) && low_keypressed()) ||
+		if (((flags & TIMER_KEYB) && hal_keypressed()) ||
 		    ((flags & TIMER_VALCHG) && *p != v))
 			return 1;
 	}
@@ -141,7 +141,7 @@ void timer_init(void)
 	/* Trigger interrupt at TTC_DEFAULT_FREQ = 1000 Hz */
 	timer_setPrescaler(TTC_DEFAULT_FREQ);
 
-	low_irqinst(timer_common.irq, timer_isr, (void *)&timer_common);
+	hal_irqinst(timer_common.irq, timer_isr, (void *)&timer_common);
 }
 
 
@@ -166,5 +166,5 @@ void timer_done(void)
 	/* Reset counters and restart counting */
 	*(timer_common.base + cnt_ctrl) = 0x10;
 
-	low_irquninst(timer_common.irq);
+	hal_irquninst(timer_common.irq);
 }

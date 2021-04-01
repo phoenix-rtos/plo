@@ -13,7 +13,7 @@
  * %LICENSE%
  */
 
-#include "../low.h"
+#include "../hal.h"
 #include "../errors.h"
 
 #include "client.h"
@@ -57,19 +57,19 @@ static void desc_strInit(usb_desc_list_t *desList, int *localOffset, int strOrde
 	switch (strOrder) {
 		case 0:
 			desc_common.str_0 = (u32)(desc_common.data->setupMem + *localOffset);
-			low_memcpy((void *)desc_common.str_0, desList->descriptor, sizeof(usb_string_desc_t));
+			hal_memcpy((void *)desc_common.str_0, desList->descriptor, sizeof(usb_string_desc_t));
 			*localOffset += desList->descriptor->bFunctionLength;
 			break;
 
 		case 1:
 			desc_common.str_man = (u32)(desc_common.data->setupMem + *localOffset);
-			low_memcpy((void *)desc_common.str_man, desList->descriptor, desList->descriptor->bFunctionLength);
+			hal_memcpy((void *)desc_common.str_man, desList->descriptor, desList->descriptor->bFunctionLength);
 			*localOffset += desList->descriptor->bFunctionLength;
 			break;
 
 		case 2:
 			desc_common.str_prod = (u32)(desc_common.data->setupMem + *localOffset);
-			low_memcpy((void *)desc_common.str_prod, desList->descriptor, desList->descriptor->bFunctionLength);
+			hal_memcpy((void *)desc_common.str_prod, desList->descriptor, desList->descriptor->bFunctionLength);
 			*localOffset += desList->descriptor->bFunctionLength;
 			break;
 
@@ -99,40 +99,40 @@ int desc_init(usb_desc_list_t *desList, usb_common_data_t *usb_data_in, usb_dc_t
 		switch (desList->descriptor->bDescriptorType) {
 			case USB_DESC_DEVICE:
 				desc_common.dev = (u32)(desc_common.data->setupMem + localOffset);
-				low_memcpy((void *)desc_common.dev, desList->descriptor, sizeof(usb_device_desc_t));
+				hal_memcpy((void *)desc_common.dev, desList->descriptor, sizeof(usb_device_desc_t));
 				localOffset += desList->descriptor->bFunctionLength;
 				break;
 
 			case USB_DESC_CONFIG:
 				desc_common.cfg = (u32)(desc_common.data->setupMem + localOffset);
-				low_memcpy((void *)desc_common.cfg, desList->descriptor, sizeof(usb_configuration_desc_t));
+				hal_memcpy((void *)desc_common.cfg, desList->descriptor, sizeof(usb_configuration_desc_t));
 				localOffset += desList->descriptor->bFunctionLength;
 				break;
 
 			case USB_DESC_INTERFACE:
-				low_memcpy(desc_common.data->setupMem + localOffset, desList->descriptor, desList->descriptor->bFunctionLength);
+				hal_memcpy(desc_common.data->setupMem + localOffset, desList->descriptor, desList->descriptor->bFunctionLength);
 				localOffset += desList->descriptor->bFunctionLength;
 				break;
 
 			case USB_DESC_ENDPOINT:
-				low_memcpy(desc_common.data->setupMem + localOffset, desList->descriptor, desList->descriptor->bFunctionLength);
+				hal_memcpy(desc_common.data->setupMem + localOffset, desList->descriptor, desList->descriptor->bFunctionLength);
 				localOffset += desList->descriptor->bFunctionLength;
 				desc_endptInit((usb_endpoint_desc_t *)desList->descriptor);
 				break;
 
 			case USB_DESC_TYPE_HID:
-				low_memcpy(desc_common.data->setupMem + localOffset, desList->descriptor, desList->descriptor->bFunctionLength);
+				hal_memcpy(desc_common.data->setupMem + localOffset, desList->descriptor, desList->descriptor->bFunctionLength);
 				localOffset += desList->descriptor->bFunctionLength;
 				break;
 
 			case USB_DESC_TYPE_CDC_CS_INTERFACE:
-				low_memcpy(desc_common.data->setupMem + localOffset, desList->descriptor, desList->descriptor->bFunctionLength);
+				hal_memcpy(desc_common.data->setupMem + localOffset, desList->descriptor, desList->descriptor->bFunctionLength);
 				localOffset += desList->descriptor->bFunctionLength;
 				break;
 
 			case USB_DESC_TYPE_HID_REPORT:
 				desc_common.hid_reports = (u32)(desc_common.data->setupMem + localOffset);
-				low_memcpy((void *)desc_common.hid_reports, &desList->descriptor->bDescriptorSubtype, desList->descriptor->bFunctionLength - 2);
+				hal_memcpy((void *)desc_common.hid_reports, &desList->descriptor->bDescriptorSubtype, desList->descriptor->bFunctionLength - 2);
 				localOffset += desList->descriptor->bFunctionLength - 2;
 				break;
 

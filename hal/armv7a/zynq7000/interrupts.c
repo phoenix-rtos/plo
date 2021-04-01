@@ -16,7 +16,7 @@
 #include "interrupts.h"
 #include "cpu.h"
 
-#include "../low.h"
+#include "../hal.h"
 #include "../types.h"
 #include "../errors.h"
 
@@ -155,14 +155,14 @@ int interrupts_deleteHandler(u16 n)
 	if (n >= SIZE_INTERRUPTS || interrupts_common.handlers[n].data == NULL || interrupts_common.handlers[n].f == NULL)
 		return ERR_ARG;
 
-	low_cli();
+	hal_cli();
 
 	interrupts_common.handlers[n].data = NULL;
 	interrupts_common.handlers[n].f = NULL;
 
 	interrupts_disableIRQ(n);
 
-	low_sti();
+	hal_sti();
 
 	return ERR_NONE;
 }
@@ -210,5 +210,5 @@ void interrupts_init(void)
 	/* EnableS = 1; EnableNS = 1; AckCtl = 1; FIQEn = 0 */
 	*(interrupts_common.mpcore + cicr) = (*(interrupts_common.mpcore + cicr) & ~0x7) | 0x7;
 
-	low_sti();
+	hal_sti();
 }

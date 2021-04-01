@@ -13,7 +13,7 @@
  * %LICENSE%
  */
 
-#include "../low.h"
+#include "../hal.h"
 #include "../errors.h"
 
 #include "usbphy.h"
@@ -36,7 +36,7 @@ int usbclient_send(int endpt, const void *data, unsigned int len)
 	if (!imx_common.data.endpts[endpt].caps[USB_ENDPT_DIR_IN].init)
 		return -1;
 
-	low_memcpy(imx_common.data.endpts[endpt].buf[USB_ENDPT_DIR_IN].buffer, data, len);
+	hal_memcpy(imx_common.data.endpts[endpt].buf[USB_ENDPT_DIR_IN].buffer, data, len);
 	res = ctrl_execTransfer(endpt, (u32)imx_common.data.endpts[endpt].buf[USB_ENDPT_DIR_IN].buffer, len, USB_ENDPT_DIR_IN);
 
 	if (DTD_ERROR(res))
@@ -54,7 +54,7 @@ int usbclient_rcvEndp0(void *data, unsigned int len)
 		;
 
 	res = imx_common.data.endpts[0].buf[USB_ENDPT_DIR_OUT].len;
-	low_memcpy(data, (const char *)imx_common.data.endpts[0].buf[USB_ENDPT_DIR_OUT].buffer, res); /* copy data to buffer */
+	hal_memcpy(data, (const char *)imx_common.data.endpts[0].buf[USB_ENDPT_DIR_OUT].buffer, res); /* copy data to buffer */
 	imx_common.dc.op = DC_OP_NONE;
 
 	ctrl_execTransfer(0, (u32)imx_common.data.endpts[0].buf[USB_ENDPT_DIR_IN].buffer, 0, USB_ENDPT_DIR_IN); /* ACK */
@@ -82,7 +82,7 @@ int usbclient_receive(int endpt, void *data, unsigned int len)
 			if (res > len)
 				res = len;
 
-			low_memcpy(data, (const char *)imx_common.data.endpts[endpt].buf[USB_ENDPT_DIR_OUT].buffer, res);
+			hal_memcpy(data, (const char *)imx_common.data.endpts[endpt].buf[USB_ENDPT_DIR_OUT].buffer, res);
 		}
 		else {
 			res = -1;
@@ -139,7 +139,7 @@ int usbclient_init(usb_desc_list_t *desList)
 		return -1;
 	}
 
-	low_irqinst(phy_getIrq(), usbclient_intr, (void *)NULL);
+	hal_irqinst(phy_getIrq(), usbclient_intr, (void *)NULL);
 
 	while (imx_common.dc.op != DC_OP_EXIT) {
 		if (imx_common.dc.op == DC_OP_INIT) {

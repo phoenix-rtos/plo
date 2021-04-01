@@ -13,7 +13,7 @@
  * %LICENSE%
  */
 
-#include "../low.h"
+#include "../hal.h"
 #include "../errors.h"
 
 #include "client.h"
@@ -305,7 +305,7 @@ int ctrl_hfIrq(void)
 
 		do {
 			*(ctrl_common.dc->base + usbcmd) |= 1 << 13;
-			low_memcpy(&ctrl_common.dc->setup, (void *)ctrl_common.dc->endptqh[endpt].setup_buff, sizeof(usb_setup_packet_t));
+			hal_memcpy(&ctrl_common.dc->setup, (void *)ctrl_common.dc->endptqh[endpt].setup_buff, sizeof(usb_setup_packet_t));
 		} while (!(*(ctrl_common.dc->base + usbcmd) & 1 << 13));
 
 		*(ctrl_common.dc->base + endptsetupstat) |= 1 << endpt;

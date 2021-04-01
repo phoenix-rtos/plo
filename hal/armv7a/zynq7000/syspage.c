@@ -14,7 +14,7 @@
  */
 
 
-#include "../low.h"
+#include "../hal.h"
 #include "../plostd.h"
 #include "../syspage.h"
 
@@ -247,16 +247,16 @@ void syspage_save(void)
 	syspage_common.argCnt++; /* The last char is '\0' */
 	syspage_common.syspage->arg = (char *)((void *)syspage_common.syspage + syspage_common.syspage->syspagesz);
 	syspage_common.syspage->syspagesz += syspage_common.argCnt;
-	low_memcpy((void *)(syspage_common.syspage->arg), syspage_common.args, syspage_common.argCnt);
+	hal_memcpy((void *)(syspage_common.syspage->arg), syspage_common.args, syspage_common.argCnt);
 
 	syspage_common.syspage->progs = (syspage_program_t *)((void *)syspage_common.syspage + syspage_common.syspage->syspagesz);
 	syspage_common.syspage->progssz = syspage_common.progsCnt;
 	syspage_common.syspage->syspagesz += (syspage_common.progsCnt * sizeof(syspage_program_t));
-	low_memcpy((void *)(syspage_common.syspage->progs), syspage_common.progs, syspage_common.progsCnt * sizeof(syspage_program_t));
+	hal_memcpy((void *)(syspage_common.syspage->progs), syspage_common.progs, syspage_common.progsCnt * sizeof(syspage_program_t));
 
 	syspage_common.syspage->maps = (syspage_map_t *)((void *)syspage_common.syspage + syspage_common.syspage->syspagesz);
 	for (i = 0; i < syspage_common.mapsCnt; ++i)
-		low_memcpy((void *)((void *)syspage_common.syspage->maps + i * sizeof(syspage_map_t)), &syspage_common.maps[i].map, sizeof(syspage_map_t));
+		hal_memcpy((void *)((void *)syspage_common.syspage->maps + i * sizeof(syspage_map_t)), &syspage_common.maps[i].map, sizeof(syspage_map_t));
 
 	syspage_common.syspage->syspagesz += (syspage_common.mapsCnt * sizeof(syspage_map_t));
 	syspage_common.syspage->mapssz = syspage_common.mapsCnt;
@@ -315,7 +315,7 @@ int syspage_addmap(const char *name, void *start, void *end, u32 attr)
 	syspage_common.maps[mapID].map.id = mapID;
 
 	size = plostd_strlen(name) < 7 ? plostd_strlen(name) : 7;
-	low_memcpy(syspage_common.maps[mapID].map.name, name, size);
+	hal_memcpy(syspage_common.maps[mapID].map.name, name, size);
 	syspage_common.maps[mapID].map.name[size] = '\0';
 
 	syspage_common.maps[mapID].top = (u32)start;
@@ -406,7 +406,7 @@ int syspage_write2Map(const char *map, const u8 *buff, u32 len)
 		return -1;
 	}
 
-	low_memcpy((void *)syspage_common.maps[id].top, buff, len);
+	hal_memcpy((void *)syspage_common.maps[id].top, buff, len);
 
 	syspage_common.maps[id].top += len;
 
@@ -472,14 +472,14 @@ int syspage_addProg(void *start, void *end, const char *imap, const char *dmap, 
 	if (isExec)
 		syspage_common.args[syspage_common.argCnt++] = 'X';
 
-	low_memcpy((void *)&syspage_common.args[syspage_common.argCnt], name, len);
+	hal_memcpy((void *)&syspage_common.args[syspage_common.argCnt], name, len);
 
 	syspage_common.argCnt += len;
 	syspage_common.args[syspage_common.argCnt++] = ' ';
 	syspage_common.args[syspage_common.argCnt] = '\0';
 
 	/* copy only program name, without (;) args) */
-	low_memcpy(syspage_common.progs[progID].cmdline, name, pos);
+	hal_memcpy(syspage_common.progs[progID].cmdline, name, pos);
 
 	while (pos < MAX_CMDLINE_SIZE)
 		syspage_common.progs[progID].cmdline[pos++] = '\0';

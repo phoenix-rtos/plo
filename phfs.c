@@ -14,7 +14,7 @@
  */
 
 #include "errors.h"
-#include "low.h"
+#include "hal.h"
 #include "plostd.h"
 #include "phfs.h"
 
@@ -67,7 +67,7 @@ s32 phfs_close(u16 pdn, handle_t handle)
 
 void phfs_init(void)
 {
-	low_initphfs(phfs_handlers);
+	hal_initphfs(phfs_handlers);
 
 	return;
 }
