@@ -297,6 +297,7 @@ void plostd_printf(char attr, const char *fmt, ...)
 			break;
 		case 'p':
 			i = va_arg(ap, int);
+			plostd_puts("0x");
 			plostd_puts(plostd_itoah((u8 *)&i, 4, buff, 1));
 			break;
 		case 'P':
