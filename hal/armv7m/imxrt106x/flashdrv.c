@@ -13,7 +13,7 @@
  * %LICENSE%
  */
 
-#include "../low.h"
+#include "../hal.h"
 #include "../timer.h"
 #include "../errors.h"
 
@@ -190,7 +190,7 @@ s32 flashdrv_bufferedPagesWrite(flash_context_t *ctx, u32 offset, const char *bu
 			ctx->counter = offset - ctx->properties.sector_size * ctx->sectorID;
 		}
 
-		low_memcpy(ctx->buff + ctx->counter, buff + savedBytes, ctx->properties.page_size);
+		hal_memcpy(ctx->buff + ctx->counter, buff + savedBytes, ctx->properties.page_size);
 
 		savedBytes += ctx->properties.page_size;
 		ctx->counter += ctx->properties.page_size;

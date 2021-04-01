@@ -15,7 +15,7 @@
  */
 
 #include "errors.h"
-#include "low.h"
+#include "hal.h"
 #include "plostd.h"
 
 
@@ -262,7 +262,7 @@ unsigned long plostd_atol(const char *s)
 void plostd_puts(const char *s)
 {
 	for (; *s; s++)
-		low_putc(*s);
+		hal_putc(*s);
 	return;
 }
 
@@ -278,11 +278,11 @@ void plostd_printf(char attr, const char *fmt, ...)
 	va_start(ap, fmt);
 
 	if (attr != ATTR_NONE)
-		low_setattr(attr);
+		hal_setattr(attr);
 
 	for (p = fmt; *p; p++) {
 		if (*p != '%') {
-			low_putc(*p);
+			hal_putc(*p);
 			continue;
 		}
 
@@ -307,10 +307,10 @@ void plostd_printf(char attr, const char *fmt, ...)
 			plostd_puts(va_arg(ap, char *));
 			break;
 		case 'c':
-			low_putc(va_arg(ap, int));
+			hal_putc(va_arg(ap, int));
 			break;
 		case '%':
-			low_putc('%');
+			hal_putc('%');
 			break;
 		}
 	}

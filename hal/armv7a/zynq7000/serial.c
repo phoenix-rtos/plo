@@ -18,7 +18,7 @@
 #include "../serial.h"
 #include "../errors.h"
 #include "../timer.h"
-#include "../low.h"
+#include "../hal.h"
 
 
 #define MAX_TXRX_FIFO_SIZE  0x40
@@ -125,22 +125,22 @@ int serial_read(unsigned int pn, u8 *buff, u16 len, u16 timeout)
 	if (!timer_wait(timeout, TIMER_VALCHG, &serial->rxHead, serial->rxTail))
 		return ERR_SERIAL_TIMEOUT;
 
-	low_cli();
+	hal_cli();
 
 	if (serial->rxHead > serial->rxTail)
 		l = min(serial->rxHead - serial->rxTail, len);
 	else
 		l = min(BUFFER_SIZE - serial->rxTail, len);
 
-	low_memcpy(buff, &serial->rxBuff[serial->rxTail], l);
+	hal_memcpy(buff, &serial->rxBuff[serial->rxTail], l);
 	cnt = l;
 	if ((len > l) && (serial->rxHead < serial->rxTail)) {
-		low_memcpy(buff + l, &serial->rxBuff[0], min(len - l, serial->rxHead));
+		hal_memcpy(buff + l, &serial->rxBuff[0], min(len - l, serial->rxHead));
 		cnt += min(len - l, serial->rxHead);
 	}
 	serial->rxTail = ((serial->rxTail + cnt) % BUFFER_SIZE);
 
-	low_sti();
+	hal_sti();
 
 	return cnt;
 }
@@ -159,16 +159,16 @@ int serial_write(unsigned int pn, const u8 *buff, u16 len)
 	while (serial->txHead == serial->txTail && serial->tFull)
 		;
 
-	low_cli();
+	hal_cli();
 	if (serial->txHead > serial->txTail)
 		l = min(serial->txHead - serial->txTail, len);
 	else
 		l = min(BUFFER_SIZE - serial->txTail, len);
 
-	low_memcpy(&serial->txBuff[serial->txTail], buff, l);
+	hal_memcpy(&serial->txBuff[serial->txTail], buff, l);
 	cnt = l;
 	if ((len > l) && (serial->txTail >= serial->txHead)) {
-		low_memcpy(serial->txBuff, buff + l, min(len - l, serial->txHead));
+		hal_memcpy(serial->txBuff, buff + l, min(len - l, serial->txHead));
 		cnt += min(len - l, serial->txHead);
 	}
 
@@ -183,7 +183,7 @@ int serial_write(unsigned int pn, const u8 *buff, u16 len)
 
 	/* Enable TX FIFO empty irq */
 	 *(serial->base + ier) |= 1 << 3;
-	low_sti();
+	hal_sti();
 
 	return cnt;
 }
@@ -376,7 +376,7 @@ void serial_init(void)
 		 * TXEN = 0x1; RXEN = 0x1; TXRES = 0x1; RXRES = 0x1 */
 		*(serial->base + cr) = (*(serial->base + cr) & ~0x000001ff) | 0x00000017;
 
-		low_irqinst(info[i].irq, serial_irqHandler, (void *)serial);
+		hal_irqinst(info[i].irq, serial_irqHandler, (void *)serial);
 
 		/* Enable RX FIFO trigger */
 		*(serial->base + ier) |= 0x1;
@@ -404,7 +404,7 @@ void serial_done(void)
 		/* Clear status flags */
 		*(serial->base + isr) = 0xfff;
 
-		low_irquninst(serial->irq);
+		hal_irquninst(serial->irq);
 		_zynq_setAmbaClk(serial->clk, clk_disable);
 	}
 }

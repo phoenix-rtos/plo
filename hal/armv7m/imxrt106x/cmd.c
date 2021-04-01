@@ -16,7 +16,7 @@
 #include "../errors.h"
 #include "../plostd.h"
 #include "../phfs.h"
-#include "../low.h"
+#include "../hal.h"
 #include "../cmd.h"
 #include "../elf.h"
 

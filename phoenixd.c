@@ -15,7 +15,7 @@
 
 
 #include "errors.h"
-#include "low.h"
+#include "hal.h"
 #include "plostd.h"
 #include "serial.h"
 #include "msg.h"
@@ -45,7 +45,7 @@ handle_t phoenixd_open(u16 dn, const char *name, u32 flags, phfs_clbk_t *cblk)
 	l = plostd_strlen(name) + 1;
 
 	*(u32 *)smsg.data = flags;
-	low_memcpy(&smsg.data[sizeof(u32)], name, l);
+	hal_memcpy(&smsg.data[sizeof(u32)], name, l);
 	l += sizeof(u32);
 
 	msg_settype(&smsg, MSG_OPEN);
@@ -105,7 +105,7 @@ s32 phoenixd_read(u16 dn, handle_t handle, addr_t *pos, u8 *buff, u32 len, phfs_
 
 	*pos = io->pos;
 	l = min(io->len, msg_getlen(&rmsg) - hdrsz);
-	low_memcpy(buff, io->data, l);
+	hal_memcpy(buff, io->data, l);
 
 	return l;
 }

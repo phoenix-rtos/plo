@@ -17,7 +17,7 @@
 
 #include "../phoenixd.h"
 #include "../serial.h"
-#include "../low.h"
+#include "../hal.h"
 
 
 struct {

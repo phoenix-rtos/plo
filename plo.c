@@ -15,7 +15,7 @@
  */
 
 #include "cmd.h"
-#include "low.h"
+#include "hal.h"
 #include "phfs.h"
 #include "timer.h"
 #include "plostd.h"
@@ -36,9 +36,9 @@ void plo_drawspaces(char attr, unsigned int len)
 {
 	unsigned int k;
 
-	low_setattr(attr);
+	hal_setattr(attr);
 	for (k = 0; k < len; k++)
-		low_putc(' ');
+		hal_putc(' ');
 	return;
 }
 
@@ -57,7 +57,7 @@ void plo_cmdloop(void)
 
 	plostd_printf(ATTR_LOADER, "%s", PROMPT);
 	while (c != '#') {
-		low_getc(&c, &sc);
+		hal_getc(&c, &sc);
 
 		/* Regular characters */
 		if (c) {
@@ -77,8 +77,8 @@ void plo_cmdloop(void)
 
 			/* If character isn't backspace add it to line buffer */
 			if ((c != 8) && (pos < LINESZ)) {
-				low_setattr(ATTR_USER);
-				low_putc(c);
+				hal_setattr(ATTR_USER);
+				hal_putc(c);
 				history.lines[history.ll][pos++] = c;
 				history.lines[history.ll][pos] = 0;
 			}
@@ -97,7 +97,7 @@ void plo_cmdloop(void)
 				ncl = ((history.cl + HISTSZ - 1) % HISTSZ);
 				if ((ncl != history.ll) && (history.lines[ncl][0])) {
 					history.cl = ncl;
-					low_memcpy(history.lines[history.ll], history.lines[history.cl], plostd_strlen(history.lines[history.cl]) + 1);
+					hal_memcpy(history.lines[history.ll], history.lines[history.cl], plostd_strlen(history.lines[history.cl]) + 1);
 					chgfl = 1;
 				}
 				break;
@@ -109,7 +109,7 @@ void plo_cmdloop(void)
 					chgfl = 1;
 
 					if (ncl != history.ll)
-						low_memcpy(history.lines[history.ll], history.lines[history.cl], plostd_strlen(history.lines[history.cl]) + 1);
+						hal_memcpy(history.lines[history.ll], history.lines[history.cl], plostd_strlen(history.lines[history.cl]) + 1);
 					else
 						history.lines[history.ll][0] = 0;
 				}
@@ -134,7 +134,7 @@ void plo_init(void)
 {
 	u16 t = 0;
 
-	low_init();
+	hal_init();
 	phfs_init();
 	cmd_init();
 
@@ -142,7 +142,7 @@ void plo_init(void)
 	plostd_printf(ATTR_INIT, "Detected UART, setting to maximal speed %d Bps\n", serial_getBaudrate());
 
 	/* Wait and execute saved loader command */
-	for (t = low_getLaunchTimeout(); t; t--) {
+	for (t = hal_getLaunchTimeout(); t; t--) {
 		plostd_printf(ATTR_INIT, "\r%d seconds to automatic boot      ", t);
 
 		if (timer_wait(1000, TIMER_KEYB, NULL, 0))
@@ -158,7 +158,7 @@ void plo_init(void)
 	/* Enter to interactive mode */
 	plo_cmdloop();
 
-	low_done();
+	hal_done();
 
 	return;
 }

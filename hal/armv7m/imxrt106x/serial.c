@@ -18,7 +18,7 @@
 #include "../serial.h"
 #include "../errors.h"
 #include "../timer.h"
-#include "../low.h"
+#include "../hal.h"
 
 
 #define CONCATENATE(x, y) x##y
@@ -160,22 +160,22 @@ int serial_read(unsigned int pn, u8 *buff, u16 len, u16 timeout)
 	if (!timer_wait(timeout, TIMER_VALCHG, &serial->rxHead, serial->rxTail))
 		return ERR_SERIAL_TIMEOUT;
 
-	low_cli();
+	hal_cli();
 
 	if (serial->rxHead > serial->rxTail)
 		l = min(serial->rxHead - serial->rxTail, len);
 	else
 		l = min(BUFFER_SIZE - serial->rxTail, len);
 
-	low_memcpy(buff, &serial->rxBuff[serial->rxTail], l);
+	hal_memcpy(buff, &serial->rxBuff[serial->rxTail], l);
 	cnt = l;
 	if ((len > l) && (serial->rxHead < serial->rxTail)) {
-		low_memcpy(buff + l, &serial->rxBuff[0], min(len - l, serial->rxHead));
+		hal_memcpy(buff + l, &serial->rxBuff[0], min(len - l, serial->rxHead));
 		cnt += min(len - l, serial->rxHead);
 	}
 	serial->rxTail = ((serial->rxTail + cnt) % BUFFER_SIZE);
 
-	low_sti();
+	hal_sti();
 
 	return cnt;
 }
@@ -196,16 +196,16 @@ int serial_write(unsigned int pn, const u8 *buff, u16 len)
 	while (serial->txHead == serial->txTail && serial->tFull)
 		;
 
-	low_cli();
+	hal_cli();
 	if (serial->txHead > serial->txTail)
 		l = min(serial->txHead - serial->txTail, len);
 	else
 		l = min(BUFFER_SIZE - serial->txTail, len);
 
-	low_memcpy(&serial->txBuff[serial->txTail], buff, l);
+	hal_memcpy(&serial->txBuff[serial->txTail], buff, l);
 	cnt = l;
 	if ((len > l) && (serial->txTail >= serial->txHead)) {
-		low_memcpy(serial->txBuff, buff + l, min(len - l, serial->txHead));
+		hal_memcpy(serial->txBuff, buff + l, min(len - l, serial->txHead));
 		cnt += min(len - l, serial->txHead);
 	}
 
@@ -220,7 +220,7 @@ int serial_write(unsigned int pn, const u8 *buff, u16 len)
 
 	*(serial->base + ctrlr) |= 1 << 23;
 
-	low_sti();
+	hal_sti();
 
 	return cnt;
 }
@@ -498,7 +498,7 @@ void serial_init(void)
 
 		_imxrt_setDevClock(info[dev].dev, clk_state_run);
 
-		low_irqinst(info[dev].irq, serial_handleIntr, (void *)serial);
+		hal_irqinst(info[dev].irq, serial_handleIntr, (void *)serial);
 	}
 
 	return;
@@ -532,6 +532,6 @@ void serial_done(void)
 		*(serial->base + globalr) &= ~(1 << 1);
 		imxrt_dataBarrier();
 
-		low_irquninst(serial->irq);
+		hal_irquninst(serial->irq);
 	}
 }

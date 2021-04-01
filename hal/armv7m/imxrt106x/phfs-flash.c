@@ -17,7 +17,7 @@
 
 #include "phfs-flash.h"
 #include "flashdrv.h"
-#include "../low.h"
+#include "../hal.h"
 
 struct {
 	u32 buffCnt;
@@ -92,7 +92,7 @@ s32 phfsflash_write(u16 fn, handle_t handle, addr_t *pos, u8 *buff, u32 len, u8 
 
 	while (size) {
 		if (size < 0x100) {
-			low_memcpy(phfsflash_common[fn].buff, buff + buffOffs, size);
+			hal_memcpy(phfsflash_common[fn].buff, buff + buffOffs, size);
 			if (flashdrv_bufferedPagesWrite(&phfsflash_common[fn].flash_ctx, *pos + buffOffs, (const char *)phfsflash_common[fn].buff, 0x100) < 0)
 				return ERR_ARG;
 			size = 0;

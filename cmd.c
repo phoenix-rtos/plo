@@ -15,7 +15,7 @@
  */
 
 #include "errors.h"
-#include "low.h"
+#include "hal.h"
 #include "plostd.h"
 #include "phfs.h"
 #include "elf.h"
@@ -159,10 +159,10 @@ static int cmd_cpphfs2map(phfs_conf_t *src, const char *map)
 
 void cmd_init(void)
 {
-	low_initdevs(&cmd_common.devs);
+	hal_initdevs(&cmd_common.devs);
 
-	low_memcpy(cmd_common.cmds, genericCmds, sizeof(genericCmds));
-	low_appendcmds(cmd_common.cmds);
+	hal_memcpy(cmd_common.cmds, genericCmds, sizeof(genericCmds));
+	hal_appendcmds(cmd_common.cmds);
 
 	script_init();
 }
@@ -247,9 +247,9 @@ void cmd_timeout(char *s)
 		return;
 	}
 	if (*word)
-		low_setLaunchTimeout(plostd_ahtoi(word));
+		hal_setLaunchTimeout(plostd_ahtoi(word));
 
-	plostd_printf(ATTR_LOADER, "timeout=0x%x\n", low_getLaunchTimeout());
+	plostd_printf(ATTR_LOADER, "timeout=0x%x\n", hal_getLaunchTimeout());
 	return;
 }
 
@@ -257,7 +257,7 @@ void cmd_timeout(char *s)
 void cmd_go(char *s)
 {
 	plostd_printf(ATTR_NONE, "\n");
-	low_launch();
+	hal_launch();
 
 	return;
 }
@@ -276,7 +276,7 @@ void cmd_cmd(char *s)
 	s += p;
 
 	if (*s) {
-		low_memcpy(cmd, s, len);
+		hal_memcpy(cmd, s, len);
 		*((char *)cmd + len) = 0;
 	}
 
@@ -561,7 +561,7 @@ void cmd_kernel(char *s)
 					maxaddr = phdr.p_paddr + phdr.p_memsz;
 			}
 
-			loffs = (void *)low_vm2phym((addr_t)phdr.p_vaddr);
+			loffs = (void *)hal_vm2phym((addr_t)phdr.p_vaddr);
 
 			for (i = 0; i < phdr.p_filesz / sizeof(buff); i++) {
 				offs = kernelOffs + phdr.p_offset + i * sizeof(buff);
@@ -569,7 +569,7 @@ void cmd_kernel(char *s)
 					plostd_printf(ATTR_ERROR, "\nCan't read segment data, k=%d!\n", k);
 					return;
 				}
-				low_memcpy(loffs, buff, sizeof(buff));
+				hal_memcpy(loffs, buff, sizeof(buff));
 				loffs += sizeof(buff);
 
 				plostd_printf(ATTR_LOADER, "\rWriting data segment at %p: ", (u32)(loffs));
@@ -585,7 +585,7 @@ void cmd_kernel(char *s)
 					return;
 				}
 
-				low_memcpy((void *)loffs, buff, size);
+				hal_memcpy((void *)loffs, buff, size);
 			}
 		}
 	}
@@ -607,7 +607,7 @@ void cmd_kernel(char *s)
 	syspage_setKernelData(0, 0);
 
 	syspage_setKernelText((void *)minaddr, maxaddr - minaddr);
-	low_setKernelEntry(hdr.e_entry);
+	hal_setKernelEntry(hdr.e_entry);
 
 	plostd_printf(ATTR_LOADER, "[ok]\n");
 }
@@ -751,7 +751,7 @@ void cmd_app(char *s)
 		return;
 	}
 
-	low_memcpy(appData[0], name, pos);
+	hal_memcpy(appData[0], name, pos);
 	appData[0][pos] = '\0';
 
 	/* Parse (offset:size) */
@@ -778,17 +778,17 @@ void cmd_app(char *s)
 	}
 
 	/* Set default maps */
-	low_setDefaultIMAP(cmap);
-	low_setDefaultDMAP(dmap);
+	hal_setDefaultIMAP(cmap);
+	hal_setDefaultDMAP(dmap);
 
 	/* Get map for code section */
 	if ((argID + 1) < cmdArgsc) {
-		low_memcpy(cmap, cmdArgs[++argID], 8);
+		hal_memcpy(cmap, cmdArgs[++argID], 8);
 		cmap[sizeof(cmap) - 1] = '\0';
 	}
 	/* Get map for data section */
 	if ((argID + 1) < cmdArgsc) {
-		low_memcpy(dmap, cmdArgs[++argID], 8);
+		hal_memcpy(dmap, cmdArgs[++argID], 8);
 		dmap[sizeof(dmap) - 1] = '\0';
 	}
 
@@ -797,7 +797,7 @@ void cmd_app(char *s)
 			break;
 	}
 
-	low_memcpy(name, appData[0], pos);
+	hal_memcpy(name, appData[0], pos);
 	name[pos] = '\0';
 
 	if (pos > MAX_APP_NAME_SIZE) {
@@ -840,7 +840,7 @@ void cmd_map(char *s)
 	}
 
 	namesz = (plostd_strlen(args[argID]) < 7) ? (plostd_strlen(args[argID]) + 1) : 7;
-	low_memcpy(mapname, args[argID], namesz);
+	hal_memcpy(mapname, args[argID], namesz);
 	mapname[namesz] = '\0';
 
 	++argID;

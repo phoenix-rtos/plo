@@ -13,7 +13,7 @@
  * %LICENSE%
  */
 
-#include "../low.h"
+#include "../hal.h"
 #include "../plostd.h"
 #include "../timer.h"
 
@@ -79,7 +79,7 @@ int timer_wait(u32 ms, int flags, u16 *p, u16 v)
 		if (timer_common.done)
 			break;
 
-		if (((flags & TIMER_KEYB) && low_keypressed()) ||
+		if (((flags & TIMER_KEYB) && hal_keypressed()) ||
 			((flags & TIMER_VALCHG) && *p != v))
 			return 1;
 	}
@@ -123,7 +123,7 @@ void timer_init(void)
 	/* Set enable mode (ENMOD) and Free-Run mode */
 	*(timer_common.base + gpt_cr) |= (1 << 1) | (1 << 3) | (1 << 5);
 
-	low_irqinst(GPT1_IRQ, timer_isr, (void *)&timer_common);
+	hal_irqinst(GPT1_IRQ, timer_isr, (void *)&timer_common);
 
 	return;
 }
@@ -131,5 +131,5 @@ void timer_init(void)
 
 void timer_done(void)
 {
-	low_irquninst(timer_common.irq);
+	hal_irquninst(timer_common.irq);
 }

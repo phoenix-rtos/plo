@@ -14,7 +14,7 @@
  */
 
 #include "errors.h"
-#include "low.h"
+#include "hal.h"
 #include "plostd.h"
 #include "serial.h"
 #include "msg.h"

@@ -3,7 +3,7 @@
  *
  * plo - operating system loader
  *
- * low - level routines
+ * Hardware Abstraction Layer
  *
  * Copyright 2021 Phoenix Systems
  * Author: Hubert Buczynski
@@ -22,7 +22,7 @@
 #include "phfs-usb.h"
 #include "gpio.h"
 
-#include "../low.h"
+#include "../hal.h"
 #include "../plostd.h"
 #include "../serial.h"
 #include "../timer.h"
@@ -32,7 +32,7 @@
 struct{
 	u16 timeout;
 	u32 kernel_entry;
-} low_common;
+} hal_common;
 
 
 /* Board command definitions */
@@ -51,7 +51,7 @@ const cmd_device_t devices[] = {
 
 /* Initialization functions */
 
-void low_init(void)
+void hal_init(void)
 {
 	_zynq_init();
 	interrupts_init();
@@ -61,12 +61,12 @@ void low_init(void)
 	syspage_init();
 	syspage_setAddress((void *)SYSPAGE_ADDRESS);
 
-	low_common.timeout = 3;
-	low_common.kernel_entry = 0;
+	hal_common.timeout = 3;
+	hal_common.kernel_entry = 0;
 }
 
 
-void low_done(void)
+void hal_done(void)
 {
 	phfs_serialDeinit();
 	phfs_usbDeinit();
@@ -74,7 +74,7 @@ void low_done(void)
 }
 
 
-void low_initphfs(phfs_handler_t *handlers)
+void hal_initphfs(phfs_handler_t *handlers)
 {
 	handlers[PDN_COM1].open = phfs_serialOpen;
 	handlers[PDN_COM1].read = phfs_serialRead;
@@ -92,13 +92,13 @@ void low_initphfs(phfs_handler_t *handlers)
 }
 
 
-void low_initdevs(cmd_device_t **devs)
+void hal_initdevs(cmd_device_t **devs)
 {
 	*devs = (cmd_device_t *)devices;
 }
 
 
-void low_appendcmds(cmd_t *cmds)
+void hal_appendcmds(cmd_t *cmds)
 {
 	int i = 0;
 
@@ -108,26 +108,26 @@ void low_appendcmds(cmd_t *cmds)
 	if ((MAX_COMMANDS_NB - --i) < (sizeof(board_cmds) / sizeof(cmd_t)))
 		return;
 
-	low_memcpy(&cmds[i], board_cmds, sizeof(board_cmds));
+	hal_memcpy(&cmds[i], board_cmds, sizeof(board_cmds));
 }
 
 
 
 /* Setters and getters for common data */
 
-void low_setDefaultIMAP(char *imap)
+void hal_setDefaultIMAP(char *imap)
 {
-	low_memcpy(imap, "ddr", 4);
+	hal_memcpy(imap, "ddr", 4);
 }
 
 
-void low_setDefaultDMAP(char *dmap)
+void hal_setDefaultDMAP(char *dmap)
 {
-	low_memcpy(dmap, "ddr", 4);
+	hal_memcpy(dmap, "ddr", 4);
 }
 
 
-void low_setKernelEntry(u32 addr)
+void hal_setKernelEntry(u32 addr)
 {
 	u32 offs;
 
@@ -136,23 +136,23 @@ void low_setKernelEntry(u32 addr)
 		addr = ADDR_DDR + offs;
 	}
 
-	low_common.kernel_entry = addr;
+	hal_common.kernel_entry = addr;
 }
 
 
-void low_setLaunchTimeout(u32 timeout)
+void hal_setLaunchTimeout(u32 timeout)
 {
-	low_common.timeout = timeout;
+	hal_common.timeout = timeout;
 }
 
 
-u32 low_getLaunchTimeout(void)
+u32 hal_getLaunchTimeout(void)
 {
-	return low_common.timeout;
+	return hal_common.timeout;
 }
 
 
-addr_t low_vm2phym(addr_t addr)
+addr_t hal_vm2phym(addr_t addr)
 {
 	u32 offs;
 	if ((u32)VADDR_KERNEL_INIT != (u32)ADDR_DDR) {
@@ -166,27 +166,27 @@ addr_t low_vm2phym(addr_t addr)
 
 /* Functions modify registers */
 
-u8 low_inb(u16 addr)
+u8 hal_inb(u16 addr)
 {
 	//TODO
 	return 0;
 }
 
 
-void low_outb(u16 addr, u8 b)
+void hal_outb(u16 addr, u8 b)
 {
 	//TODO
 }
 
 
-u32 low_ind(u16 addr)
+u32 hal_ind(u16 addr)
 {
 	//TODO
 	return 0;
 }
 
 
-void low_outd(u16 addr, u32 d)
+void hal_outd(u16 addr, u32 d)
 {
 	//TODO
 }
@@ -195,58 +195,58 @@ void low_outd(u16 addr, u32 d)
 
 /* Functions make operations on memory */
 
-void low_setfar(u16 segm, u16 offs, u16 v)
+void hal_setfar(u16 segm, u16 offs, u16 v)
 {
 	//TODO
 }
 
 
-u16 low_getfar(u16 segm, u16 offs)
-{
-	//TODO
-	return 0;
-}
-
-
-void low_setfarbabs(u32 addr, u8 v)
-{
-	//TODO
-}
-
-
-u8 low_getfarbabs(u32 addr)
+u16 hal_getfar(u16 segm, u16 offs)
 {
 	//TODO
 	return 0;
 }
 
 
-void low_setfarabs(u32 addr, u32 v)
+void hal_setfarbabs(u32 addr, u8 v)
 {
 	//TODO
 }
 
 
-u32 low_getfarabs(u32 addr)
+u8 hal_getfarbabs(u32 addr)
 {
 	//TODO
 	return 0;
 }
 
 
-void low_copyto(u16 segm, u16 offs, void *src, unsigned int l)
+void hal_setfarabs(u32 addr, u32 v)
 {
 	//TODO
 }
 
 
-void low_copyfrom(u16 segm, u16 offs, void *dst, unsigned int l)
+u32 hal_getfarabs(u32 addr)
+{
+	//TODO
+	return 0;
+}
+
+
+void hal_copyto(u16 segm, u16 offs, void *src, unsigned int l)
 {
 	//TODO
 }
 
 
-void low_memcpy(void *dst, const void *src, unsigned int l)
+void hal_copyfrom(u16 segm, u16 offs, void *dst, unsigned int l)
+{
+	//TODO
+}
+
+
+void hal_memcpy(void *dst, const void *src, unsigned int l)
 {
 	asm volatile(" \
 		orr r3, %0, %1; \
@@ -272,40 +272,40 @@ void low_memcpy(void *dst, const void *src, unsigned int l)
 }
 
 
-void low_copytoabs(u32 addr, void *src, unsigned int l)
+void hal_copytoabs(u32 addr, void *src, unsigned int l)
 {
 	//TODO
 }
 
 
-void low_copyfromabs(u32 addr, void *dst, unsigned int l)
+void hal_copyfromabs(u32 addr, void *dst, unsigned int l)
 {
 	//TODO
 }
 
 
-u16 low_getcs(void)
-{
-	//TODO
-	return 0;
-}
-
-
-int low_mmcreate(void)
+u16 hal_getcs(void)
 {
 	//TODO
 	return 0;
 }
 
 
-int low_mmget(unsigned int n, low_mmitem_t *mmitem)
+int hal_mmcreate(void)
 {
 	//TODO
 	return 0;
 }
 
 
-int low_launch(void)
+int hal_mmget(unsigned int n, low_mmitem_t *mmitem)
+{
+	//TODO
+	return 0;
+}
+
+
+int hal_launch(void)
 {
 	syspage_save();
 
@@ -313,15 +313,15 @@ int low_launch(void)
 	timer_wait(100, TIMER_EXPIRE, NULL, 0);
 
 	/* Tidy up */
-	low_done();
+	hal_done();
 
-	low_cli();
+	hal_cli();
 	asm("mov r9, %1; \
 		 blx %0"
 		 :
-		 : "r"(low_common.kernel_entry), "r"(syspage_getAddress()));
+		 : "r"(hal_common.kernel_entry), "r"(syspage_getAddress()));
 
-	low_sti();
+	hal_sti();
 
 	return -1;
 }
@@ -330,13 +330,13 @@ int low_launch(void)
 
 /* Opeartions on interrupts */
 
-void low_cli(void)
+void hal_cli(void)
 {
 	asm("cpsid if");
 }
 
 
-void low_sti(void)
+void hal_sti(void)
 {
 	asm("cpsie if");
 }
@@ -348,27 +348,27 @@ int low_irqdispatch(u16 irq)
 }
 
 
-void low_maskirq(u16 n, u8 v)
+void hal_maskirq(u16 n, u8 v)
 {
 	//TODO
 }
 
 
-int low_irqinst(u16 irq, int (*isr)(u16, void *), void *data)
+int hal_irqinst(u16 irq, int (*isr)(u16, void *), void *data)
 {
-	low_cli();
+	hal_cli();
 	interrupts_setHandler(irq, isr, data);
-	low_sti();
+	hal_sti();
 
 	return 0;
 }
 
 
-int low_irquninst(u16 irq)
+int hal_irquninst(u16 irq)
 {
-	low_cli();
+	hal_cli();
 	interrupts_deleteHandler(irq);
-	low_sti();
+	hal_sti();
 
 	return 0;
 }
@@ -376,7 +376,7 @@ int low_irquninst(u16 irq)
 
 /* Communication functions */
 
-void low_setattr(char attr)
+void hal_setattr(char attr)
 {
 	switch (attr) {
 	case ATTR_DEBUG:
@@ -400,13 +400,13 @@ void low_setattr(char attr)
 }
 
 
-void low_putc(const char ch)
+void hal_putc(const char ch)
 {
 	serial_write(UART_CONSOLE, (u8 *)&ch, 1);
 }
 
 
-void low_getc(char *c, char *sc)
+void hal_getc(char *c, char *sc)
 {
 	while (serial_read(UART_CONSOLE, (u8 *)c, 1, 500) <= 0)
 		;
@@ -441,7 +441,7 @@ void low_getc(char *c, char *sc)
 }
 
 
-int low_keypressed(void)
+int hal_keypressed(void)
 {
 	return !serial_rxEmpty(UART_CONSOLE);
 }
