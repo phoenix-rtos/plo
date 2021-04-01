@@ -16,7 +16,7 @@
 #ifndef SYSPAGE_H_
 #define SYSPAGE_H_
 
-#include "../types.h"
+#include "types.h"
 
 
 /* TODO: Make it compatible with Phoenix-RTOS kernel;
