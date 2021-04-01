@@ -16,6 +16,7 @@
 #ifndef SYSPAGE_H_
 #define SYSPAGE_H_
 
+#include "config.h"
 #include "types.h"
 
 
@@ -44,7 +45,7 @@ extern void *syspage_getAddress(void);
 
 /* General functions */
 
-extern void syspage_save(void);
+extern int syspage_save(void);
 
 
 extern void syspage_show(void);
@@ -86,6 +87,11 @@ extern void syspage_setKernelBss(void *addr, u32 size);
 
 
 extern void syspage_setKernelData(void *addr, u32 size);
+
+
+/* Add specific architecture data */
+
+extern void syspage_setArchData(const syspage_arch_t *arch);
 
 
 #endif

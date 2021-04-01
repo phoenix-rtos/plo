@@ -60,6 +60,10 @@ extern void plo_bss(void);
 typedef u32 addr_t;
 typedef unsigned int size_t;
 
+typedef struct {
+	/* Empty architecture data */
+} syspage_arch_t;
+
 
 
 #endif
