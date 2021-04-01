@@ -13,9 +13,11 @@
  * %LICENSE%
  */
 
+
+#include "syspage.h"
+#include "errors.h"
 #include "hal.h"
 #include "plostd.h"
-#include "syspage.h"
 
 #define MAX_PROGRAMS_NB         32
 #define MAX_MAPS_NB             16
@@ -70,6 +72,8 @@ typedef struct _syspage_t {
 
 	u32 mapssz;
 	syspage_map_t *maps;
+
+	syspage_arch_t arch;
 } syspage_t;
 
 #pragma pack(pop)
@@ -100,6 +104,8 @@ struct {
 	} maps[MAX_MAPS_NB];
 
 	mapt_entry_t entries[MAX_ENTRIES_NB];     /* General entries like syspage, kernel's elf sections and plo's elf sections */
+
+	syspage_arch_t arch;
 } syspage_common;
 
 
@@ -239,26 +245,40 @@ void *syspage_getAddress(void)
 
 /* General functions */
 
-void syspage_save(void)
+int syspage_save(void)
 {
 	int i;
 
+	if (syspage_common.syspage == NULL)
+		return ERR_MEM;
+
+	/* Save syspage arguments */
 	syspage_common.argCnt++; /* The last char is '\0' */
 	syspage_common.syspage->arg = (char *)((void *)syspage_common.syspage + syspage_common.syspage->syspagesz);
 	syspage_common.syspage->syspagesz += syspage_common.argCnt;
 	hal_memcpy((void *)(syspage_common.syspage->arg), syspage_common.args, syspage_common.argCnt);
 
+	/* Save programs */
 	syspage_common.syspage->progs = (syspage_program_t *)((void *)syspage_common.syspage + syspage_common.syspage->syspagesz);
 	syspage_common.syspage->progssz = syspage_common.progsCnt;
 	syspage_common.syspage->syspagesz += (syspage_common.progsCnt * sizeof(syspage_program_t));
 	hal_memcpy((void *)(syspage_common.syspage->progs), syspage_common.progs, syspage_common.progsCnt * sizeof(syspage_program_t));
 
+	/* Save maps */
 	syspage_common.syspage->maps = (syspage_map_t *)((void *)syspage_common.syspage + syspage_common.syspage->syspagesz);
 	for (i = 0; i < syspage_common.mapsCnt; ++i)
 		hal_memcpy((void *)((void *)syspage_common.syspage->maps + i * sizeof(syspage_map_t)), &syspage_common.maps[i].map, sizeof(syspage_map_t));
 
 	syspage_common.syspage->syspagesz += (syspage_common.mapsCnt * sizeof(syspage_map_t));
 	syspage_common.syspage->mapssz = syspage_common.mapsCnt;
+
+	/* Save architecture dependent structure */
+	if (sizeof(syspage_arch_t) != 0) {
+		low_memcpy((void *)&syspage_common.syspage->arch, (void *)&syspage_common.arch, sizeof(syspage_arch_t));
+		syspage_common.syspage->syspagesz += sizeof(syspage_arch_t);
+	}
+
+	return ERR_NONE;
 }
 
 
@@ -516,4 +536,13 @@ void syspage_setKernelData(void *addr, u32 size)
 	syspage_common.syspage->kernel.datasz = size;
 
 	syspage_addEntries((u32)addr, size);
+}
+
+
+/* Add specific architecture data */
+
+void syspage_setArchData(const syspage_arch_t *arch)
+{
+	if (sizeof(syspage_arch_t) != 0)
+		low_memcpy((void *)&syspage_common.arch, (void *)arch, sizeof(syspage_arch_t));
 }
