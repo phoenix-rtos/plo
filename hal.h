@@ -63,52 +63,9 @@ extern u32 hal_getLaunchTimeout(void);
 extern addr_t hal_vm2phym(addr_t addr);
 
 
-/* Functions modify registers */
-
-extern u8 hal_inb(u16 addr);
-
-extern void hal_outb(u16 addr, u8 b);
-
-extern u32 hal_ind(u16 addr);
-
-extern void hal_outd(u16 addr, u32 d);
-
-
 /* Functions make operations on memory */
 
-extern void hal_setfar(u16 segm, u16 offs, u16 v);
-
-extern u16 hal_getfar(u16 segm, u16 offs);
-
-extern void hal_setfarbabs(u32 addr, u8 v);
-
-extern u8 hal_getfarbabs(u32 addr);
-
-extern void hal_setfarabs(u32 addr, u32 v);
-
-extern u32 hal_getfarabs(u32 addr);
-
-extern void hal_copyto(u16 segm, u16 offs, void *src, unsigned int l);
-
-extern void hal_copyfrom(u16 segm, u16 offs, void *dst, unsigned int l);
-
 extern void hal_memcpy(void *dst, const void *src, unsigned int l);
-
-extern void hal_copytoabs(u32 addr, void *src, unsigned int l);
-
-extern void hal_copyfromabs(u32 addr, void *dst, unsigned int l);
-
-extern u16 hal_getcs(void);
-
-
-/* Function prepares memory map for kernel */
-
-extern int hal_mmcreate(void);
-
-
-/* Function returns selected memory map item */
-
-extern int hal_mmget(unsigned int n, low_mmitem_t *mmitem);
 
 
 /* Function starts kernel loaded into memory */

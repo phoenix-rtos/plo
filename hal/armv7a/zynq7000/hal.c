@@ -164,88 +164,6 @@ addr_t hal_vm2phym(addr_t addr)
 }
 
 
-/* Functions modify registers */
-
-u8 hal_inb(u16 addr)
-{
-	//TODO
-	return 0;
-}
-
-
-void hal_outb(u16 addr, u8 b)
-{
-	//TODO
-}
-
-
-u32 hal_ind(u16 addr)
-{
-	//TODO
-	return 0;
-}
-
-
-void hal_outd(u16 addr, u32 d)
-{
-	//TODO
-}
-
-
-
-/* Functions make operations on memory */
-
-void hal_setfar(u16 segm, u16 offs, u16 v)
-{
-	//TODO
-}
-
-
-u16 hal_getfar(u16 segm, u16 offs)
-{
-	//TODO
-	return 0;
-}
-
-
-void hal_setfarbabs(u32 addr, u8 v)
-{
-	//TODO
-}
-
-
-u8 hal_getfarbabs(u32 addr)
-{
-	//TODO
-	return 0;
-}
-
-
-void hal_setfarabs(u32 addr, u32 v)
-{
-	//TODO
-}
-
-
-u32 hal_getfarabs(u32 addr)
-{
-	//TODO
-	return 0;
-}
-
-
-void hal_copyto(u16 segm, u16 offs, void *src, unsigned int l)
-{
-	//TODO
-}
-
-
-void hal_copyfrom(u16 segm, u16 offs, void *dst, unsigned int l)
-{
-	//TODO
-}
-
-
 void hal_memcpy(void *dst, const void *src, unsigned int l)
 {
 	asm volatile(" \
@@ -269,39 +187,6 @@ void hal_memcpy(void *dst, const void *src, unsigned int l)
 	: "+l" (dst), "+l" (src), "+l" (l)
 	:
 	: "r3", "memory", "cc");
-}
-
-
-void hal_copytoabs(u32 addr, void *src, unsigned int l)
-{
-	//TODO
-}
-
-
-void hal_copyfromabs(u32 addr, void *dst, unsigned int l)
-{
-	//TODO
-}
-
-
-u16 hal_getcs(void)
-{
-	//TODO
-	return 0;
-}
-
-
-int hal_mmcreate(void)
-{
-	//TODO
-	return 0;
-}
-
-
-int hal_mmget(unsigned int n, low_mmitem_t *mmitem)
-{
-	//TODO
-	return 0;
 }
 
 
