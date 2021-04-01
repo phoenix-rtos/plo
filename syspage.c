@@ -13,10 +13,9 @@
  * %LICENSE%
  */
 
-
-#include "../hal.h"
-#include "../plostd.h"
-#include "../syspage.h"
+#include "hal.h"
+#include "plostd.h"
+#include "syspage.h"
 
 #define MAX_PROGRAMS_NB         32
 #define MAX_MAPS_NB             16

@@ -21,7 +21,7 @@ include hal/$(TARGET_SUFF)/$(TARGET_SUBFAMILY)/Makefile
 CFLAGS += $(BOARD_CONFIG)
 CFLAGS += -I../plo/hal/$(TARGET_SUFF)/$(TARGET_SUBFAMILY)
 
-OBJS += $(PREFIX_O)plo.o $(PREFIX_O)plostd.o $(PREFIX_O)phoenixd.o $(PREFIX_O)msg.o $(PREFIX_O)phfs.o $(PREFIX_O)cmd.o
+OBJS += $(addprefix $(PREFIX_O), plo.o plostd.o phoenixd.o msg.o phfs.o cmd.o syspage.o)
 
 
 all: $(PREFIX_PROG_STRIPPED)plo-$(TARGET_FAMILY)-$(TARGET_SUBFAMILY).elf  $(PREFIX_PROG_STRIPPED)plo-$(TARGET_FAMILY)-$(TARGET_SUBFAMILY).img\
