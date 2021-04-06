@@ -75,7 +75,7 @@ typedef struct {
 	size_t mapssz;
 	syspage_map_t *maps;
 
-	syspage_arch_t arch;
+	syspage_hal_t hal;
 } syspage_t;
 
 #pragma pack(pop)
@@ -114,7 +114,7 @@ struct {
 	/* General entries: syspage, kernel's elf sections and plo's elf sections */
 	map_entry_t entries[MAX_ENTRIES_NB];
 
-	syspage_arch_t arch;
+	syspage_hal_t hal;
 } syspage_common;
 
 
@@ -286,9 +286,9 @@ int syspage_save(void)
 	syspage_common.syspage->mapssz = syspage_common.mapsCnt;
 
 	/* Save architecture dependent structure */
-	if (sizeof(syspage_arch_t) != 0) {
-		hal_memcpy((void *)&syspage_common.syspage->arch, (void *)&syspage_common.arch, sizeof(syspage_arch_t));
-		syspage_common.syspage->syspagesz += sizeof(syspage_arch_t);
+	if (sizeof(syspage_hal_t) != 0) {
+		hal_memcpy((void *)&syspage_common.syspage->hal, (void *)&syspage_common.hal, sizeof(syspage_hal_t));
+		syspage_common.syspage->syspagesz += sizeof(syspage_hal_t);
 	}
 
 	return ERR_NONE;
@@ -577,11 +577,11 @@ void syspage_setKernelData(void *addr, size_t size)
 }
 
 
-/* Add specific architecture data */
+/* Add specific hal data */
 
-void syspage_setArchData(const syspage_arch_t *arch)
+void syspage_setHalData(const syspage_hal_t *hal)
 {
-	if (sizeof(syspage_arch_t) != 0)
-		hal_memcpy((void *)&syspage_common.arch, (void *)arch, sizeof(syspage_arch_t));
+	if (sizeof(syspage_hal_t) != 0)
+		hal_memcpy((void *)&syspage_common.hal, (void *)hal, sizeof(syspage_hal_t));
 }
 
