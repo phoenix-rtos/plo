@@ -89,9 +89,9 @@ extern void syspage_setKernelBss(void *addr, size_t size);
 extern void syspage_setKernelData(void *addr, size_t size);
 
 
-/* Add specific architecture data */
+/* Add specific hal data */
 
-extern void syspage_setArchData(const syspage_arch_t *arch);
+extern void syspage_setHalData(const syspage_hal_t *hal);
 
 
 #endif
