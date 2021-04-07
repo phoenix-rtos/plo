@@ -9,6 +9,6 @@
 
 CFLAGS += -I../plo/devices
 
-include devices/usbc/Makefile
+include devices/usbc-cdc/Makefile
 
 OBJS += $(addprefix $(PREFIX_O)devices/, phfs-usb.o phfs-serial.o)
