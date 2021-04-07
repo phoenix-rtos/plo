@@ -13,12 +13,13 @@
  * %LICENSE%
  */
 
+#include "../../errors.h"
+#include "../../timer.h"
+#include "../../hal.h"
+
 #include "peripherals.h"
 #include "zynq.h"
-#include "../serial.h"
-#include "../errors.h"
-#include "../timer.h"
-#include "../hal.h"
+#include "uart.h"
 
 
 #define MAX_TXRX_FIFO_SIZE  0x40

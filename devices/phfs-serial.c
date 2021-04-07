@@ -14,11 +14,10 @@
  */
 
 #include "../errors.h"
-
 #include "../phoenixd.h"
-#include "../serial.h"
 #include "../hal.h"
 
+#include "uart.h"
 
 struct {
 	phfs_clbk_t cblks;

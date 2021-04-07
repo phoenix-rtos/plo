@@ -17,6 +17,7 @@
 #ifndef _TIMER_H_
 #define _TIMER_H_
 
+#include "types.h"
 
 #define TIMER_EXPIRE   0
 #define TIMER_KEYB     2

@@ -23,14 +23,14 @@
 #include "phfs-usb.h"
 #include "cdc-client.h"
 #include "phfs-flash.h"
+#include "uart.h"
 #include "phfs-serial.h"
 
-#include "../hal.h"
-#include "../plostd.h"
-#include "../errors.h"
-#include "../timer.h"
-#include "../serial.h"
-#include "../syspage.h"
+#include "../../hal.h"
+#include "../../plostd.h"
+#include "../../errors.h"
+#include "../../timer.h"
+#include "../../syspage.h"
 
 typedef struct {
 	void *data;

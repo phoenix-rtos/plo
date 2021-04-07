@@ -16,6 +16,7 @@
 
 #include "imxrt.h"
 #include "phfs-flash.h"
+#include "uart.h"
 #include "phfs-serial.h"
 #include "config.h"
 #include "peripherals.h"
@@ -26,7 +27,6 @@
 #include "../hal.h"
 #include "../plostd.h"
 #include "../errors.h"
-#include "../serial.h"
 #include "../syspage.h"
 #include "../phoenixd.h"
 #include "../timer.h"

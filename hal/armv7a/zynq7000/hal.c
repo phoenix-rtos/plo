@@ -17,6 +17,7 @@
 #include "cmd-board.h"
 #include "interrupts.h"
 #include "peripherals.h"
+#include "uart.h"
 #include "phfs-serial.h"
 #include "cdc-client.h"
 #include "phfs-usb.h"
@@ -24,7 +25,6 @@
 
 #include "../hal.h"
 #include "../plostd.h"
-#include "../serial.h"
 #include "../timer.h"
 #include "../syspage.h"
 
