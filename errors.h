@@ -27,7 +27,7 @@
 
 #define ERR_STD_NOTEQ       -32
 
-#define ERR_SERIAL_TIMEOUT  -48
+#define ERR_UART_TIMEOUT    -48
 
 #define ERR_MSG_IO          -64
 

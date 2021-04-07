@@ -265,19 +265,19 @@ void hal_setattr(char attr)
 {
 	switch (attr) {
 	case ATTR_DEBUG:
-		serial_safewrite(UART_CONSOLE, (u8 *)"\033[0m\033[32m", 9);
+		uart_safewrite(UART_CONSOLE, (u8 *)"\033[0m\033[32m", 9);
 		break;
 	case ATTR_USER:
-		serial_safewrite(UART_CONSOLE, (u8 *)"\033[0m", 4);
+		uart_safewrite(UART_CONSOLE, (u8 *)"\033[0m", 4);
 		break;
 	case ATTR_INIT:
-		serial_safewrite(UART_CONSOLE, (u8 *)"\033[0m\033[35m", 9);
+		uart_safewrite(UART_CONSOLE, (u8 *)"\033[0m\033[35m", 9);
 		break;
 	case ATTR_LOADER:
-		serial_safewrite(UART_CONSOLE, (u8 *)"\033[0m\033[1m", 8);
+		uart_safewrite(UART_CONSOLE, (u8 *)"\033[0m\033[1m", 8);
 		break;
 	case ATTR_ERROR:
-		serial_safewrite(UART_CONSOLE, (u8 *)"\033[0m\033[31m", 9);
+		uart_safewrite(UART_CONSOLE, (u8 *)"\033[0m\033[31m", 9);
 		break;
 	}
 
@@ -287,13 +287,13 @@ void hal_setattr(char attr)
 
 void hal_putc(const char ch)
 {
-	serial_write(UART_CONSOLE, (u8 *)&ch, 1);
+	uart_write(UART_CONSOLE, (u8 *)&ch, 1);
 }
 
 
 void hal_getc(char *c, char *sc)
 {
-	while (serial_read(UART_CONSOLE, (u8 *)c, 1, 500) <= 0)
+	while (uart_read(UART_CONSOLE, (u8 *)c, 1, 500) <= 0)
 		;
 	*sc = 0;
 
@@ -303,12 +303,12 @@ void hal_getc(char *c, char *sc)
 
 	/* Simple parser for VT100 commands */
 	else if (*c == 27) {
-		while (serial_read(UART_CONSOLE, (u8 *)c, 1, 500) <= 0)
+		while (uart_read(UART_CONSOLE, (u8 *)c, 1, 500) <= 0)
 			;
 
 		switch (*c) {
 		case 91:
-			while (serial_read(UART_CONSOLE, (u8 *)c, 1, 500) <= 0)
+			while (uart_read(UART_CONSOLE, (u8 *)c, 1, 500) <= 0)
 				;
 
 			switch (*c) {
@@ -328,5 +328,5 @@ void hal_getc(char *c, char *sc)
 
 int hal_keypressed(void)
 {
-	return !serial_rxEmpty(UART_CONSOLE);
+	return !uart_rxEmpty(UART_CONSOLE);
 }

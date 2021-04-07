@@ -19,19 +19,19 @@
 
 #include "../types.h"
 
-extern void serial_init(void);
+extern void uart_init(void);
 
-extern u32 serial_getBaudrate(void);
+extern u32 uart_getBaudrate(void);
 
-extern int serial_read(unsigned int pn, u8 *buff, u16 len, u16 timeout);
+extern int uart_read(unsigned int pn, u8 *buff, u16 len, u16 timeout);
 
-extern int serial_write(unsigned int pn, const u8 *buff, u16 len);
+extern int uart_write(unsigned int pn, const u8 *buff, u16 len);
 
-extern int serial_safewrite(unsigned int pn, const u8 *buff, u16 len);
+extern int uart_safewrite(unsigned int pn, const u8 *buff, u16 len);
 
-extern int serial_rxEmpty(unsigned int pn);
+extern int uart_rxEmpty(unsigned int pn);
 
-extern void serial_done(void);
+extern void uart_done(void);
 
 
 #endif

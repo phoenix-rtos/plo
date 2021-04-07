@@ -57,86 +57,86 @@ typedef struct {
 	u16 txHead;
 	u16 txTail;
 	u8 tFull;
-} serial_t;
+} uart_t;
 
 
 struct {
-	serial_t serials[UART_CNT];
-} serial_common;
+	uart_t uarts[UART_CNT];
+} uart_common;
 
 
-const int serialConfig[] = { UART1, UART2, UART3, UART4, UART5, UART6, UART7, UART8 };
+const int uartConfig[] = { UART1, UART2, UART3, UART4, UART5, UART6, UART7, UART8 };
 
 
-const int serialPos[] = { UART1_POS, UART2_POS, UART3_POS, UART4_POS, UART5_POS, UART6_POS,
+const int uartPos[] = { UART1_POS, UART2_POS, UART3_POS, UART4_POS, UART5_POS, UART6_POS,
 	UART7_POS, UART8_POS };
 
 
 enum { veridr = 0, paramr, globalr, pincfgr, baudr, statr, ctrlr, datar, matchr, modirr, fifor, waterr };
 
 
-static inline int serial_getRXcount(serial_t *serial)
+static inline int uart_getRXcount(uart_t *uart)
 {
-	return (*(serial->base + waterr) >> 24) & 0xff;
+	return (*(uart->base + waterr) >> 24) & 0xff;
 }
 
 
-static inline int serial_getTXcount(serial_t *serial)
+static inline int uart_getTXcount(uart_t *uart)
 {
-	return (*(serial->base + waterr) >> 8) & 0xff;
+	return (*(uart->base + waterr) >> 8) & 0xff;
 }
 
 
-int serial_rxEmpty(unsigned int pn)
+int uart_rxEmpty(unsigned int pn)
 {
-	serial_t *serial;
+	uart_t *uart;
 	--pn;
 
-	if (pn > UART_MAX_CNT || !serialConfig[pn])
+	if (pn > UART_MAX_CNT || !uartConfig[pn])
 		return ERR_ARG;
 
-	serial = &serial_common.serials[serialPos[pn]];
+	uart = &uart_common.uarts[uartPos[pn]];
 
-	return serial->rxHead == serial->rxTail;
+	return uart->rxHead == uart->rxTail;
 }
 
 
-int serial_handleIntr(u16 irq, void *buff)
+int uart_handleIntr(u16 irq, void *buff)
 {
 	u32 flags;
-	serial_t *serial = (serial_t *)buff;
+	uart_t *uart = (uart_t *)buff;
 
-	if (serial == NULL)
+	if (uart == NULL)
 		return 0;
 
 	/* Error flags: parity, framing, noise, overrun */
-	flags = *(serial->base + statr) & (0xf << 16);
+	flags = *(uart->base + statr) & (0xf << 16);
 
 	/* RX overrun: invalidate fifo */
 	if (flags & (1 << 19))
-		*(serial->base + fifor) |= 1 << 14;
+		*(uart->base + fifor) |= 1 << 14;
 
-	*(serial->base + statr) |= flags;
+	*(uart->base + statr) |= flags;
 
 	/* Receive */
-	while (serial_getRXcount(serial)) {
-		serial->rxBuff[serial->rxHead] = *(serial->base + datar);
-		serial->rxHead = (serial->rxHead + 1) % BUFFER_SIZE;
-		if (serial->rxHead == serial->rxTail) {
-			serial->rxTail = (serial->rxTail + 1) % BUFFER_SIZE;
+	while (uart_getRXcount(uart)) {
+		uart->rxBuff[uart->rxHead] = *(uart->base + datar);
+		uart->rxHead = (uart->rxHead + 1) % BUFFER_SIZE;
+		if (uart->rxHead == uart->rxTail) {
+			uart->rxTail = (uart->rxTail + 1) % BUFFER_SIZE;
 		}
 	}
 
 	/* Transmit */
-	while (serial_getTXcount(serial) < serial->txFifoSz && !((*(serial->base + statr) >> 22) & 0x1))
+	while (uart_getTXcount(uart) < uart->txFifoSz && !((*(uart->base + statr) >> 22) & 0x1))
 	{
-		serial->txHead = (serial->txHead + 1) % BUFFER_SIZE;
-		if (serial->txHead != serial->txTail) {
-			*(serial->base + datar) = serial->txBuff[serial->txHead];
-			serial->tFull = 0;
+		uart->txHead = (uart->txHead + 1) % BUFFER_SIZE;
+		if (uart->txHead != uart->txTail) {
+			*(uart->base + datar) = uart->txBuff[uart->txHead];
+			uart->tFull = 0;
 		}
 		else {
-			*(serial->base + ctrlr) &= ~(1 << 23);
+			*(uart->base + ctrlr) &= ~(1 << 23);
 			break;
 		}
 	}
@@ -145,35 +145,35 @@ int serial_handleIntr(u16 irq, void *buff)
 }
 
 
-int serial_read(unsigned int pn, u8 *buff, u16 len, u16 timeout)
+int uart_read(unsigned int pn, u8 *buff, u16 len, u16 timeout)
 {
-	serial_t *serial;
+	uart_t *uart;
 	u16 l, cnt;
 
 	--pn;
 
-	if (pn > UART_MAX_CNT || !serialConfig[pn])
+	if (pn > UART_MAX_CNT || !uartConfig[pn])
 		return ERR_ARG;
 
-	serial = &serial_common.serials[serialPos[pn]];
+	uart = &uart_common.uarts[uartPos[pn]];
 
-	if (!timer_wait(timeout, TIMER_VALCHG, &serial->rxHead, serial->rxTail))
-		return ERR_SERIAL_TIMEOUT;
+	if (!timer_wait(timeout, TIMER_VALCHG, &uart->rxHead, uart->rxTail))
+		return ERR_UART_TIMEOUT;
 
 	hal_cli();
 
-	if (serial->rxHead > serial->rxTail)
-		l = min(serial->rxHead - serial->rxTail, len);
+	if (uart->rxHead > uart->rxTail)
+		l = min(uart->rxHead - uart->rxTail, len);
 	else
-		l = min(BUFFER_SIZE - serial->rxTail, len);
+		l = min(BUFFER_SIZE - uart->rxTail, len);
 
-	hal_memcpy(buff, &serial->rxBuff[serial->rxTail], l);
+	hal_memcpy(buff, &uart->rxBuff[uart->rxTail], l);
 	cnt = l;
-	if ((len > l) && (serial->rxHead < serial->rxTail)) {
-		hal_memcpy(buff + l, &serial->rxBuff[0], min(len - l, serial->rxHead));
-		cnt += min(len - l, serial->rxHead);
+	if ((len > l) && (uart->rxHead < uart->rxTail)) {
+		hal_memcpy(buff + l, &uart->rxBuff[0], min(len - l, uart->rxHead));
+		cnt += min(len - l, uart->rxHead);
 	}
-	serial->rxTail = ((serial->rxTail + cnt) % BUFFER_SIZE);
+	uart->rxTail = ((uart->rxTail + cnt) % BUFFER_SIZE);
 
 	hal_sti();
 
@@ -181,44 +181,44 @@ int serial_read(unsigned int pn, u8 *buff, u16 len, u16 timeout)
 }
 
 
-int serial_write(unsigned int pn, const u8 *buff, u16 len)
+int uart_write(unsigned int pn, const u8 *buff, u16 len)
 {
-	serial_t *serial;
+	uart_t *uart;
 	u16 l, cnt = 0;
 
 	--pn;
 
-	if (pn > UART_MAX_CNT || !serialConfig[pn])
+	if (pn > UART_MAX_CNT || !uartConfig[pn])
 		return ERR_ARG;
 
-	serial = &serial_common.serials[serialPos[pn]];
+	uart = &uart_common.uarts[uartPos[pn]];
 
-	while (serial->txHead == serial->txTail && serial->tFull)
+	while (uart->txHead == uart->txTail && uart->tFull)
 		;
 
 	hal_cli();
-	if (serial->txHead > serial->txTail)
-		l = min(serial->txHead - serial->txTail, len);
+	if (uart->txHead > uart->txTail)
+		l = min(uart->txHead - uart->txTail, len);
 	else
-		l = min(BUFFER_SIZE - serial->txTail, len);
+		l = min(BUFFER_SIZE - uart->txTail, len);
 
-	hal_memcpy(&serial->txBuff[serial->txTail], buff, l);
+	hal_memcpy(&uart->txBuff[uart->txTail], buff, l);
 	cnt = l;
-	if ((len > l) && (serial->txTail >= serial->txHead)) {
-		hal_memcpy(serial->txBuff, buff + l, min(len - l, serial->txHead));
-		cnt += min(len - l, serial->txHead);
+	if ((len > l) && (uart->txTail >= uart->txHead)) {
+		hal_memcpy(uart->txBuff, buff + l, min(len - l, uart->txHead));
+		cnt += min(len - l, uart->txHead);
 	}
 
 	/* Initialize sending */
-	if (serial->txTail == serial->txHead)
-		*(serial->base + datar) = serial->txBuff[serial->txHead];
+	if (uart->txTail == uart->txHead)
+		*(uart->base + datar) = uart->txBuff[uart->txHead];
 
-	serial->txTail = ((serial->txTail + cnt) % BUFFER_SIZE);
+	uart->txTail = ((uart->txTail + cnt) % BUFFER_SIZE);
 
-	if (serial->txTail == serial->txHead)
-		serial->tFull = 1;
+	if (uart->txTail == uart->txHead)
+		uart->tFull = 1;
 
-	*(serial->base + ctrlr) |= 1 << 23;
+	*(uart->base + ctrlr) |= 1 << 23;
 
 	hal_sti();
 
@@ -226,12 +226,12 @@ int serial_write(unsigned int pn, const u8 *buff, u16 len)
 }
 
 
-int serial_safewrite(unsigned int pn, const u8 *buff, u16 len)
+int uart_safewrite(unsigned int pn, const u8 *buff, u16 len)
 {
 	int l;
 
 	for (l = 0; len;) {
-		if ((l = serial_write(pn, buff, len)) < 0)
+		if ((l = uart_write(pn, buff, len)) < 0)
 			return ERR_MSG_IO;
 		buff += l;
 		len -= l;
@@ -241,7 +241,7 @@ int serial_safewrite(unsigned int pn, const u8 *buff, u16 len)
 
 
 
-static int serial_muxVal(int mux)
+static int uart_muxVal(int mux)
 {
 	switch (mux) {
 		case pctl_mux_gpio_b1_12:
@@ -297,7 +297,7 @@ static u32 calculate_baudrate(int baud)
 }
 
 
-static int serial_getIsel(int mux, int *isel, int *val)
+static int uart_getIsel(int mux, int *isel, int *val)
 {
 	switch (mux) {
 		case pctl_mux_gpio_ad_b1_02: *isel = pctl_isel_lpuart2_tx; *val = 1; break;
@@ -343,7 +343,7 @@ static int serial_getIsel(int mux, int *isel, int *val)
 }
 
 
-static void serial_initPins(void)
+static void uart_initPins(void)
 {
 	int i, isel, val;
 	static const int muxes[] = {
@@ -398,28 +398,28 @@ static void serial_initPins(void)
 	};
 
 	for (i = 0; i < sizeof(muxes) / sizeof(muxes[0]); ++i) {
-		_imxrt_setIOmux(muxes[i], 0, serial_muxVal(muxes[i]));
+		_imxrt_setIOmux(muxes[i], 0, uart_muxVal(muxes[i]));
 
 
 
-		if (serial_getIsel(muxes[i], &isel, &val) < 0)
+		if (uart_getIsel(muxes[i], &isel, &val) < 0)
 			continue;
 
 		_imxrt_setIOisel(isel, val);
 	}
 }
 
-u32 serial_getBaudrate(void)
+u32 uart_getBaudrate(void)
 {
 	return UART_BAUDRATE;
 }
 
 
-void serial_init(void)
+void uart_init(void)
 {
 	u32 t;
 	int i, dev;
-	serial_t *serial;
+	uart_t *uart;
 
 	static const u32 fifoSzLut[] = { 1, 4, 8, 16, 32, 64, 128, 256 };
 	static const struct {
@@ -437,101 +437,101 @@ void serial_init(void)
 		{ UART8_BASE, UART8_CLK, UART8_IRQ }
 	};
 
-	serial_initPins();
+	uart_initPins();
 
 	_imxrt_ccmSetMux(clk_mux_uart, 0);
 	_imxrt_ccmSetDiv(clk_div_uart, 0);
 
-	for (i = 0, dev = 0; dev < sizeof(serialConfig) / sizeof(serialConfig[0]); ++dev) {
-		if (!serialConfig[dev])
+	for (i = 0, dev = 0; dev < sizeof(uartConfig) / sizeof(uartConfig[0]); ++dev) {
+		if (!uartConfig[dev])
 			continue;
 
-		serial = &serial_common.serials[i++];
-		serial->base = info[dev].base;
-		serial->rxHead = 0;
-		serial->txHead = 0;
-		serial->rxTail = 0;
+		uart = &uart_common.uarts[i++];
+		uart->base = info[dev].base;
+		uart->rxHead = 0;
+		uart->txHead = 0;
+		uart->rxTail = 0;
 
-		serial->txTail = 0;
-		serial->tFull = 0;
+		uart->txTail = 0;
+		uart->tFull = 0;
 
 		_imxrt_ccmControlGate(info[dev].dev, clk_state_run_wait);
 		/* Disable TX and RX */
-		*(serial->base + ctrlr) &= ~((1 << 19) | (1 << 18));
+		*(uart->base + ctrlr) &= ~((1 << 19) | (1 << 18));
 
 		/* Reset all internal logic and registers, except the Global Register */
-		*(serial->base + globalr) |= 1 << 1;
+		*(uart->base + globalr) |= 1 << 1;
 		imxrt_dataBarrier();
-		*(serial->base + globalr) &= ~(1 << 1);
+		*(uart->base + globalr) &= ~(1 << 1);
 		imxrt_dataBarrier();
 
 		/* Disable input trigger */
-		*(serial->base + pincfgr) &= ~3;
+		*(uart->base + pincfgr) &= ~3;
 
 		/* Set 115200 default baudrate */
-		t = *(serial->base + baudr) & ~((0x1f << 24) | (1 << 17) | 0x1fff);
-		*(serial->base + baudr) = t | calculate_baudrate(UART_BAUDRATE);
+		t = *(uart->base + baudr) & ~((0x1f << 24) | (1 << 17) | 0x1fff);
+		*(uart->base + baudr) = t | calculate_baudrate(UART_BAUDRATE);
 
 		/* Set 8 bit and no parity mode */
-		*(serial->base + ctrlr) &= ~0x117;
+		*(uart->base + ctrlr) &= ~0x117;
 
 		/* One stop bit */
-		*(serial->base + baudr) &= ~(1 << 13);
+		*(uart->base + baudr) &= ~(1 << 13);
 
-		*(serial->base + waterr) = 0;
+		*(uart->base + waterr) = 0;
 
 		/* Enable FIFO */
-		*(serial->base + fifor) |= (1 << 7) | (1 << 3);
-		*(serial->base + fifor) |= 0x3 << 14;
+		*(uart->base + fifor) |= (1 << 7) | (1 << 3);
+		*(uart->base + fifor) |= 0x3 << 14;
 
 		/* Clear all status flags */
-		*(serial->base + statr) |= 0xc01fc000;
+		*(uart->base + statr) |= 0xc01fc000;
 
-		serial->rxFifoSz = fifoSzLut[*(serial->base + fifor) & 0x7];
-		serial->txFifoSz = fifoSzLut[(*(serial->base + fifor) >> 4) & 0x7];
+		uart->rxFifoSz = fifoSzLut[*(uart->base + fifor) & 0x7];
+		uart->txFifoSz = fifoSzLut[(*(uart->base + fifor) >> 4) & 0x7];
 
 		/* Enable overrun, noise, framing error and receiver interrupts */
-		*(serial->base + ctrlr) |= (1 << 27) | (1 << 26) | (1 << 25) | (1 << 21);
+		*(uart->base + ctrlr) |= (1 << 27) | (1 << 26) | (1 << 25) | (1 << 21);
 
 		/* Enable TX and RX */
-		*(serial->base + ctrlr) |= (1 << 19) | (1 << 18);
+		*(uart->base + ctrlr) |= (1 << 19) | (1 << 18);
 
 		_imxrt_setDevClock(info[dev].dev, clk_state_run);
 
-		hal_irqinst(info[dev].irq, serial_handleIntr, (void *)serial);
+		hal_irqinst(info[dev].irq, uart_handleIntr, (void *)uart);
 	}
 
 	return;
 }
 
 
-void serial_done(void)
+void uart_done(void)
 {
 	int i, dev;
-	serial_t *serial;
+	uart_t *uart;
 
-	for (i = 0, dev = 0; dev < sizeof(serialConfig) / sizeof(serialConfig[0]); ++dev) {
-		if (!serialConfig[dev])
+	for (i = 0, dev = 0; dev < sizeof(uartConfig) / sizeof(uartConfig[0]); ++dev) {
+		if (!uartConfig[dev])
 			continue;
 
-		serial = &serial_common.serials[i++];
+		uart = &uart_common.uarts[i++];
 
 		/* Disable TX and RX */
-		*(serial->base + ctrlr) &= ~((1 << 19) | (1 << 18));
+		*(uart->base + ctrlr) &= ~((1 << 19) | (1 << 18));
 		imxrt_dataBarrier();
 
 		/* Disable overrun, noise, framing error, TX and RX interrupts */
-		*(serial->base + ctrlr) &= ~((1 << 27) | (1 << 26) | (1 << 25) | (1 << 23) | (1 << 21));
+		*(uart->base + ctrlr) &= ~((1 << 27) | (1 << 26) | (1 << 25) | (1 << 23) | (1 << 21));
 
 		/* Flush TX and RX fifo */
-		*(serial->base + fifor) |= (1 << 15) | (1 << 14);
+		*(uart->base + fifor) |= (1 << 15) | (1 << 14);
 
 		/* Safely perform LPUART software reset procedure */
-		*(serial->base + globalr) |= (1 << 1);
+		*(uart->base + globalr) |= (1 << 1);
 		imxrt_dataBarrier();
-		*(serial->base + globalr) &= ~(1 << 1);
+		*(uart->base + globalr) &= ~(1 << 1);
 		imxrt_dataBarrier();
 
-		hal_irquninst(serial->irq);
+		hal_irquninst(uart->irq);
 	}
 }
