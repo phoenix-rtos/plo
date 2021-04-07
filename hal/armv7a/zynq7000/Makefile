@@ -19,5 +19,7 @@ CFLAGS += -DVADDR_KERNEL_INIT=$(VADDR_KERNEL_INIT)
 
 GCCLIB := $(shell $(CC) $(CFLAGS) -print-libgcc-file-name)
 
+include devices/usbc-cdc/Makefile
+
 OBJS += $(addprefix $(PREFIX_O)hal/$(TARGET_SUFF)/$(TARGET_SUBFAMILY)/, _startup.o hal.o zynq.o serial.o timer.o\
-		cmd.o interrupts.o usbphy.o gpio.o)
+		cmd.o interrupts.o gpio.o)

@@ -7,6 +7,10 @@
 #
 
 include devices/usbc/Makefile
+include devices/usbphy-$(TARGET_SUBFAMILY)/Makefile
 
 CFLAGS += -I../plo/devices/usbc-cdc
+
+#TODO: remove compilation phfs-usb from usb-cdc
+OBJS += $(addprefix $(PREFIX_O)devices/, phfs-usb.o)
 OBJS += $(addprefix $(PREFIX_O)devices/usbc-cdc/, cdc-client.o)
