@@ -74,9 +74,7 @@ void hal_init(void)
 
 	hal_common.kernel_entry = 0;
 
-
 	_imxrt_init();
-
 	timer_init();
 
 	hal_setLaunchTimeout(3);

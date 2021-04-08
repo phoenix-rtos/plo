@@ -95,20 +95,6 @@ static void timer_setPrescaler(u32 freq)
 }
 
 
-/* TODO */
-void timer_cycles(u64 *c)
-{
-
-}
-
-
-/* TODO */
-void timer_cyclesdiff(u64 *c1, u64 *c2, u64 *res)
-{
-
-}
-
-
 int timer_wait(u32 ms, int flags, u16 *p, u16 v)
 {
 	/* Set value that determines when an irq t will be generated */
