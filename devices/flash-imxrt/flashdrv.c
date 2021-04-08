@@ -23,9 +23,6 @@
 #include "flashcfg.h"
 
 
-#define QSPI_FREQ_133MHZ 0xc0000008
-
-
 /* Flash config commands */
 
 static int flashdrv_setWEL(flash_context_t *ctx, u32 dstAddr)
@@ -94,6 +91,8 @@ static int flashdrv_getVendorID(flash_context_t *ctx, u32 *manID)
 	ctx->config.mem.lut[4 * READ_JEDEC_ID_SEQ_ID + 3] = 0;
 	flexspi_norFlashUpdateLUT(ctx->instance, READ_JEDEC_ID_SEQ_ID, (const u32 *)&ctx->config.mem.lut[4 * READ_JEDEC_ID_SEQ_ID], 1);
 
+	xfer.txBuffer = NULL;
+	xfer.txSize = 0;
 	xfer.rxSize = 3;
 	xfer.rxBuffer = manID;
 	xfer.baseAddress = ctx->instance;
@@ -246,15 +245,15 @@ void flashdrv_sync(flash_context_t *ctx)
 static int flashdrv_defineFlexSPI(flash_context_t *ctx)
 {
 	switch (ctx->address) {
-		case FLASH_EXT_DATA_ADDRESS:
-			ctx->instance = 0;
-			ctx->option.option0 = QSPI_FREQ_133MHZ;
+		case FLASH_FLEXSPI1:
+			ctx->instance = FLASH_FLEXSPI1_INSTANCE;
+			ctx->option.option0 = FLASH_FLEXSPI1_QSPI_FREQ;
 			ctx->option.option1 = 0;
 			break;
 
-		case FLASH_INTERNAL_DATA_ADDRESS:
-			ctx->instance = 1;
-			ctx->option.option0 = QSPI_FREQ_133MHZ;
+		case FLASH_FLEXSPI2:
+			ctx->instance = FLASH_FLEXSPI2_INSTANCE;
+			ctx->option.option0 = FLASH_FLEXSPI2_QSPI_FREQ;
 			ctx->option.option1 = 0;
 			break;
 
@@ -286,7 +285,8 @@ int flashdrv_init(flash_context_t *ctx)
 
 	/* Don't try to initialize FlexSPI if we're already XIP from it */
 	__asm__ volatile ("mov %0, pc" :"=r"(pc));
-	if (pc < 0x60000000 || pc > 0x80000000) {
+	if (!(pc >= FLASH_MIN_FLEXSPI1_XIP && pc <= FLASH_MAX_FLEXSPI1_XIP) &&
+		!(pc >= FLASH_MIN_FLEXSPI2_XIP && pc <= FLASH_MAX_FLEXSPI2_XIP)) {
 		if (flexspi_norFlashInit(ctx->instance, &ctx->config) != 0)
 			return ERR_ARG;
 	}

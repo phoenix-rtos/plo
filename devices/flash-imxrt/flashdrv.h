@@ -20,12 +20,8 @@
 #include "../../types.h"
 #include "romapi.h"
 
+#include "peripherals.h"
 
-#define FLASH_NO                     2
-#define FLASH_EXT_DATA_ADDRESS       0x60000000
-#define FLASH_INTERNAL_DATA_ADDRESS  0x70000000
-
-#define DEFAULT_SECTOR_SIZE            0x1000
 
 typedef struct {
 	u32 size;
@@ -46,7 +42,7 @@ typedef struct {
 	int sectorID;
 	int counter;
 
-	char buff[DEFAULT_SECTOR_SIZE];
+	char buff[FLASH_DEFAULT_SECTOR_SIZE];
 } flash_context_t;
 
 
