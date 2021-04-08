@@ -18,7 +18,7 @@
 #include "../errors.h"
 
 #include "lut.h"
-#include "rom_api.h"
+#include "romapi.h"
 #include "flashdrv.h"
 #include "flashcfg.h"
 

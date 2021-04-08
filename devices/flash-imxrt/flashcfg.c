@@ -13,7 +13,7 @@
  * %LICENSE%
  */
 
-#include "../errors.h"
+#include "../../errors.h"
 
 #include "lut.h"
 #include "flashcfg.h"

@@ -17,8 +17,8 @@
 #ifndef _IMXRT_FLASHDRV_H_
 #define _IMXRT_FLASHDRV_H_
 
-#include "../types.h"
-#include "rom_api.h"
+#include "../../types.h"
+#include "romapi.h"
 
 
 #define FLASH_NO                     2
