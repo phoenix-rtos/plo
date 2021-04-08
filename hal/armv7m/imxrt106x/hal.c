@@ -76,14 +76,13 @@ void hal_init(void)
 
 	_imxrt_init();
 	timer_init();
+	hal_setLaunchTimeout(3);
 
 	syspage_init();
 	syspage_setAddress((void *)SYSPAGE_ADDRESS);
 
 	/* Add entries related to plo image */
 	syspage_addEntries((u32)plo_bss, (u32)_end - (u32)plo_bss + STACK_SIZE);
-
-	hal_setLaunchTimeout(3);
 }
 
 

@@ -51,18 +51,6 @@ static int timer_isr(u16 irq, void *data)
 }
 
 
-void timer_cycles(u64 *c)
-{
-	return;
-}
-
-
-void timer_cyclesdiff(u64 *c1, u64 *c2, u64 *res)
-{
-	return;
-}
-
-
 int timer_wait(u32 ms, int flags, u16 *p, u16 v)
 {
 	/* Set value that determines when a compare event will be generated */
@@ -75,12 +63,9 @@ int timer_wait(u32 ms, int flags, u16 *p, u16 v)
 	/* Enable timer*/
 	*(timer_common.base + gpt_cr) |= 1;
 
-	for (;;) {
-		if (timer_common.done)
-			break;
-
+	while (!timer_common.done) {
 		if (((flags & TIMER_KEYB) && hal_keypressed()) ||
-			((flags & TIMER_VALCHG) && *p != v))
+		    ((flags & TIMER_VALCHG) && *p != v))
 			return 1;
 	}
 

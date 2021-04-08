@@ -55,8 +55,8 @@ void hal_init(void)
 {
 	_zynq_init();
 	interrupts_init();
-	timer_init();
 	gpio_init();
+	timer_init();
 
 	syspage_init();
 	syspage_setAddress((void *)SYSPAGE_ADDRESS);

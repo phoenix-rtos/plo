@@ -7,7 +7,7 @@
  *
  * Copyright 2012, 2020 Phoenix Systems
  * Copyright 2001, 2005 Pawel Pisarczyk
- * Author: Pawel Pisarczyk, Lukasz Kosinski
+ * Author: Pawel Pisarczyk, Lukasz Kosinski, Hubert Buczynski
  *
  * This file is part of Phoenix-RTOS.
  *
@@ -23,10 +23,6 @@
 #define TIMER_KEYB     2
 #define TIMER_VALCHG   4
 
-
-extern void timer_cycles(u64 *c);
-
-extern void timer_cyclesdiff(u64 *c1, u64 *c2, u64 *res);
 
 extern int timer_wait(u32 ms, int flags, u16 *p, u16 v);
 
