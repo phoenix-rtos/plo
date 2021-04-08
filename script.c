@@ -44,7 +44,6 @@ void script_init(void)
 			break;
 		}
 
-		cmd_skipblanks(argsScript, &pos, "\n");
 		if (cmd_getnext(argsScript, &pos, "\n", NULL, script_common.basicCmds[i], sizeof(script_common.basicCmds[i])) == NULL || (script_common.basicCmds[i][0] == '\0'))
 			break;
 		script_common.cmdCnt++;

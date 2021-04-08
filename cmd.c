@@ -297,7 +297,6 @@ void cmd_dump(char *s)
 	u8 b;
 
 	/* Get address */
-	cmd_skipblanks(s, &p, DEFAULT_BLANKS);
 
 	if (cmd_getnext(s, &p, DEFAULT_BLANKS, NULL, word, sizeof(word)) == NULL) {
 		plostd_printf(ATTR_ERROR, "\nSize error!\n");
@@ -366,7 +365,6 @@ void cmd_write(char *s)
 	}
 
 	offs = plostd_ahtoi(word);
-	cmd_skipblanks(s, &p, DEFAULT_BLANKS);
 
 	if (cmd_getnext(s, &p, DEFAULT_BLANKS, NULL, word, sizeof(word)) == NULL) {
 		plostd_printf(ATTR_ERROR, "\nSize error!\n");
@@ -378,8 +376,6 @@ void cmd_write(char *s)
 	}
 
 	size = plostd_ahtoi(word);
-
-	cmd_skipblanks(s, &p, DEFAULT_BLANKS);
 
 	data = 0x00;
 
@@ -828,7 +824,6 @@ void cmd_map(char *s)
 	char args[MAX_CMD_ARGS_NB][LINESZ + 1];
 
 	for (i = 0; argsc < MAX_CMD_ARGS_NB; ++i) {
-		cmd_skipblanks(s, &pos, "+ \t");
 		if (cmd_getnext(s, &pos, "+ \t", NULL, args[i], sizeof(args[i])) == NULL || *args[i] == 0)
 			break;
 		argsc++;
@@ -992,7 +987,6 @@ int cmd_parseArgs(char *s, char (*args)[LINESZ + 1], u16 *argsc)
 	unsigned int pos = 0;
 
 	for (i = 0; *argsc < MAX_CMD_ARGS_NB; ++i) {
-		cmd_skipblanks(s, &pos, DEFAULT_BLANKS);
 		if (cmd_getnext(s, &pos, DEFAULT_BLANKS, NULL, args[i], sizeof(args[i])) == NULL || *args[i] == 0)
 			break;
 		(*argsc)++;
