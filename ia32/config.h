@@ -41,7 +41,7 @@
 #define KERNEL_PATH  "phoenix"
 
 
-/* Kernel adresses and sizes */
+/* Kernel addresses and sizes */
 #define KERNEL_BASE  0xc0000000
 
 #define GDT_SEG      0x0100

@@ -114,7 +114,7 @@ set_loop:
 	dsb
 	isb
 
-	/* Set Vector Table Adress */
+	/* Set Vector Table Address */
 	ldr	r0, =_vector_table
 	mcr	p15, 0, r0, c12, c0, 0       /* Write to VBAR (Vector Base Address Register) */
 

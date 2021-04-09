@@ -49,7 +49,7 @@ _fcfb:
 .byte 0x1        /* readSampleClkSrc */
 .byte 0x3        /* dataHoldTime */
 .byte 0x3        /* dataSetupTime */
-.byte 0          /* columnAdressWidth */
+.byte 0          /* columnAddressWidth */
 .byte 0          /* deviceModeCfgEnable */
 .byte 0
 .byte 0, 0       /* waitTimeCfgCommnads */

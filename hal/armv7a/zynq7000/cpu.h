@@ -37,11 +37,11 @@
 #define THUMB_STATE     0x20
 
 /* Stack definition */
-#define ADDR_STACK      0xfffffff0          /* Hihgh adress of OCRAM */
+#define ADDR_STACK      0xfffffff0          /* Hihgh address of OCRAM */
 #define SIZE_STACK      5 * 1024
 
 
-/* Zynq-7000 System Adress Map */
+/* Zynq-7000 System Address Map */
 #define ADDR_OCRAM_LOW   0x00000000
 #define SIZE_OCRAM_LOW   192 * 1024
 #define ADDR_OCRAM_HIGH  0xffff0000

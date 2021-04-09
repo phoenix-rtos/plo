@@ -105,7 +105,7 @@ static int cmd_cpphfs2phfs(phfs_conf_t *src, phfs_conf_t *dst)
 		}
 
 		dst->dataOffs += res;
-		plostd_printf(ATTR_LOADER, "\rWriting to adress %p", dst->dataOffs + (addr_t)dst->handle.offs);
+		plostd_printf(ATTR_LOADER, "\rWriting to address %p", dst->dataOffs + (addr_t)dst->handle.offs);
 		cmd_showprogress(i++);
 	} while (size > 0 && res > 0);
 
@@ -147,7 +147,7 @@ static int cmd_cpphfs2map(phfs_conf_t *src, const char *map)
 		}
 
 		addr += res;
-		plostd_printf(ATTR_LOADER, "\rWriting to adress %p ", addr);
+		plostd_printf(ATTR_LOADER, "\rWriting to address %p ", addr);
 		cmd_showprogress(i++);
 	} while (size > 0 && res > 0);
 
