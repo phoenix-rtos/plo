@@ -20,5 +20,8 @@ CFLAGS+= -mfloat-abi=soft
 
 GCCLIB := $(shell $(CC) $(CFLAGS) -print-libgcc-file-name)
 
-OBJS += $(addprefix $(PREFIX_O)hal/$(TARGET_SUFF)/$(TARGET_SUBFAMILY)/, _startup.o hal.o imxrt.o serial.o cmd.o\
-		timer.o flashdrv.o rom_api.o flashcfg.o phfs-flash.o usbphy.o)
+include devices/usbc-cdc/Makefile
+include devices/uart-imxrt106x/Makefile
+include devices/flash-imxrt/Makefile
+
+OBJS += $(addprefix $(PREFIX_O)hal/$(TARGET_SUFF)/$(TARGET_SUBFAMILY)/, _startup.o hal.o imxrt.o cmd.o timer.o )

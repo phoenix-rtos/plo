@@ -17,7 +17,7 @@
 #include "errors.h"
 #include "hal.h"
 #include "plostd.h"
-#include "serial.h"
+#include "uart.h"
 #include "msg.h"
 #include "phoenixd.h"
 

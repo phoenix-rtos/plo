@@ -14,11 +14,10 @@
  */
 
 #include "../errors.h"
-
 #include "../phoenixd.h"
-#include "../serial.h"
 #include "../hal.h"
 
+#include "uart.h"
 
 struct {
 	phfs_clbk_t cblks;
@@ -28,10 +27,10 @@ struct {
 
 int phfs_serialInit(void)
 {
-	serial_init();
+	uart_init();
 
-	phfs_serialCommon.cblks.read = serial_read;
-	phfs_serialCommon.cblks.write = serial_safewrite;
+	phfs_serialCommon.cblks.read = uart_read;
+	phfs_serialCommon.cblks.write = uart_safewrite;
 
 	return ERR_NONE;
 }
@@ -42,7 +41,7 @@ void phfs_serialDeinit(void)
 	phfs_serialCommon.cblks.read = NULL;
 	phfs_serialCommon.cblks.write = NULL;
 
-	serial_done();
+	uart_done();
 }
 
 

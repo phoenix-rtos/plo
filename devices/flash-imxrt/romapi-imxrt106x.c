@@ -14,7 +14,7 @@
  */
 
 
-#include "rom_api.h"
+#include "romapi.h"
 
 
 #define FLEXSPI_DRIVER_API_ADDRESS 0x00201a60

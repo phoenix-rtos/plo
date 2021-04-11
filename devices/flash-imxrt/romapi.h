@@ -34,7 +34,7 @@ typedef enum {
 
 
 typedef struct {
-	flexspi_operation_t operation;             /* FlexSPI operation */
+	flexspi_operation_t operation;        /* FlexSPI operation */
 	u32 baseAddress;                      /* FlexSPI operation base address */
 	u32 seqId;                            /* Sequence Id */
 	u32 seqNum;                           /* Sequence Number */
@@ -64,11 +64,11 @@ typedef struct {
 	u8 deviceModeCfgEnable;                /* Device Mode Configure enable flag, 1 - Enable, 0 - Disable */
 	u8 deviceModeType;                     /* Specify the configuration command type:Quad Enable, DPI/QPI/OPI switch, */
 	u16 waitTimeCfgCommands;               /* Wait time for all configuration commands, unit: 100us, Used for */
-	flexspi_lutSeq_t deviceModeSeq;             /* Device mode sequence info, [7:0] - LUT sequence id, [15:8] - LUt */
+	flexspi_lutSeq_t deviceModeSeq;        /* Device mode sequence info, [7:0] - LUT sequence id, [15:8] - LUt */
 	u32 deviceModeArg;                     /* Argument/Parameter for device configuration */
 	u8 configCmdEnable;                    /* Configure command Enable Flag, 1 - Enable, 0 - Disable */
 	u8 configModeType[3];                  /* Configure Mode Type, similar as deviceModeTpe */
-	flexspi_lutSeq_t configCmdSeqs[3];          /* Sequence info for Device Configuration command, similar as deviceModeSeq */
+	flexspi_lutSeq_t configCmdSeqs[3];     /* Sequence info for Device Configuration command, similar as deviceModeSeq */
 	u32 reserved1;                         /* Reserved for future use */
 	u32 configCmdArgs[3];                  /* Arguments/Parameters for device Configuration commands */
 	u32 reserved2;                         /* Reserved for future use */
@@ -92,13 +92,13 @@ typedef struct {
 	u16 busyOffset;                        /* Busy offset, valid value: 0-31 */
 	u16 busyBitPolarity;                   /* Busy flag polarity, 0 - busy flag is 1 when flash device is busy, 1 - */
 	u32 lut[64];                           /* Lookup table holds Flash command sequences */
-	flexspi_lutSeq_t lutCustomSeq[12];          /* Customizable LUT Sequences */
+	flexspi_lutSeq_t lutCustomSeq[12];     /* Customizable LUT Sequences */
 	u32 reserved4[4];                      /* Reserved for future use */
 } flexspi_memConfig_t;
 
 
 typedef struct {
-	volatile flexspi_memConfig_t mem;           /* Common memory configuration info via FlexSPI */
+	volatile flexspi_memConfig_t mem;      /* Common memory configuration info via FlexSPI */
 	u32 pageSize;                          /* Page size of Serial NOR */
 	u32 sectorSize;                        /* Sector size of Serial NOR */
 	u8 ipcmdSerialClkFreq;                 /* Clock frequency for IP command */

@@ -28,22 +28,24 @@ struct {
 
 int phfsflash_init(void)
 {
-	/* Initialize flash memory 1 */
-	phfsflash_common[0].flash_ctx.address = FLASH_FLEXSPI1;
+	int i;
 
-	if (flashdrv_init(&phfsflash_common[0].flash_ctx) < 0)
-		return ERR_ARG;
+	if (FLASH_FLEXSPI1_MOUNTED) {
+		phfsflash_common[0].flash_ctx.address = FLASH_FLEXSPI1;
+		if (flashdrv_init(&phfsflash_common[0].flash_ctx) < 0)
+			return ERR_ARG;
 
-#if 0 /* TODO handle no flash memory connected to the MCU */
-	/* Initialize flash memory 2 */
-	phfsflash_common[1].flash_ctx.address = FLASH_FLEXSPI2;
-	if (flashdrv_init(&phfsflash_common[1].flash_ctx) < 0)
-		return  ERR_ARG;
-#endif
+		for (i = 0; i < 0x100; ++i)
+			phfsflash_common[0].buff[i] = 0xff;
+	}
 
-	for (int i = 0; i < 0x100; ++i) {
-		phfsflash_common[0].buff[i] = 0xff;
-//		phfsflash_common[1].buff[i] = 0xff;
+	if (FLASH_FLEXSPI2_MOUNTED) {
+		phfsflash_common[1].flash_ctx.address = FLASH_FLEXSPI2;
+		if (flashdrv_init(&phfsflash_common[1].flash_ctx) < 0)
+			return  ERR_ARG;
+
+		for (i = 0; i < 0x100; ++i)
+			phfsflash_common[1].buff[i] = 0xff;
 	}
 
 	return 0;

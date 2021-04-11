@@ -13,10 +13,11 @@
  * %LICENSE%
  */
 
-#include "../errors.h"
+#include "../../errors.h"
 
 #include "lut.h"
 #include "flashcfg.h"
+#include "peripherals.h"
 
 
 static int flashcfg_getWindbondConfig(flash_context_t *ctx)
@@ -25,7 +26,7 @@ static int flashcfg_getWindbondConfig(flash_context_t *ctx)
 		case WINDBOND_W25Q32JV_IQ:
 			ctx->properties.size = 0x400000;
 			ctx->properties.page_size = 0x100;
-			ctx->properties.sector_size = DEFAULT_SECTOR_SIZE;
+			ctx->properties.sector_size = FLASH_DEFAULT_SECTOR_SIZE;
 			break;
 
 		default :
@@ -99,7 +100,7 @@ static int flashcfg_getIssiConfig(flash_context_t *ctx)
 		case ISSI_DEV_IS25WP064A:
 			ctx->properties.size = 0x800000;
 			ctx->properties.page_size = 0x100;
-			ctx->properties.sector_size = DEFAULT_SECTOR_SIZE;
+			ctx->properties.sector_size = FLASH_DEFAULT_SECTOR_SIZE;
 			break;
 
 		default :
@@ -122,13 +123,13 @@ static int flashcfg_getMicronConfig(flash_context_t *ctx)
 		case MICRON_MT25QL512ABB:
 			ctx->properties.size = 0x4000000;
 			ctx->properties.page_size = 0x100;
-			ctx->properties.sector_size = DEFAULT_SECTOR_SIZE;
+			ctx->properties.sector_size = FLASH_DEFAULT_SECTOR_SIZE;
 			break;
 
 		case MICORN_MT25QL01GBBB:
 			ctx->properties.size = 0x8000000;
 			ctx->properties.page_size = 0x100;
-			ctx->properties.sector_size = DEFAULT_SECTOR_SIZE;
+			ctx->properties.sector_size = FLASH_DEFAULT_SECTOR_SIZE;
 			break;
 
 

@@ -229,4 +229,24 @@
 #define GPT2_CLK            pctl_clk_gpt2
 #define GPT2_IRQ            gpt2_irq
 
+
+/* FLASH */
+
+#define FLASH_NO                   FLASH_FLEXSPI1_MOUNTED + FLASH_FLEXSPI2_MOUNTED
+#define FLASH_DEFAULT_SECTOR_SIZE  0x1000
+
+#define FLASH_FLEXSPI1_MOUNTED     1
+#define FLASH_MIN_FLEXSPI1_XIP     0x30000000
+#define FLASH_MAX_FLEXSPI1_XIP     0x3fffffff
+#define FLASH_FLEXSPI1             0x30000000
+#define FLASH_FLEXSPI1_INSTANCE    0x1
+#define FLASH_FLEXSPI1_QSPI_FREQ   0xc0000007
+
+#define FLASH_FLEXSPI2_MOUNTED     0
+#define FLASH_FLEXSPI2             0x60000000
+#define FLASH_MIN_FLEXSPI2_XIP     0x60000000
+#define FLASH_MAX_FLEXSPI2_XIP     0x7f7fffff
+#define FLASH_FLEXSPI2_INSTANCE    0x2
+#define FLASH_FLEXSPI2_QSPI_FREQ   0xc0000007
+
 #endif

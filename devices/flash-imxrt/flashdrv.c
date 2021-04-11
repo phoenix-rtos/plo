@@ -18,12 +18,9 @@
 #include "../errors.h"
 
 #include "lut.h"
-#include "rom_api.h"
+#include "romapi.h"
 #include "flashdrv.h"
 #include "flashcfg.h"
-
-
-#define QSPI_FREQ_133MHZ 0xc0000007
 
 
 /* Flash config commands */
@@ -98,7 +95,7 @@ static int flashdrv_getVendorID(flash_context_t *ctx, u32 *manID)
 	xfer.txSize = 0;
 	xfer.rxSize = 3;
 	xfer.rxBuffer = manID;
-	xfer.baseAddress = 0;
+	xfer.baseAddress = ctx->instance;
 	xfer.operation = kFlexSpiOperation_Read;
 	xfer.seqId = READ_JEDEC_ID_SEQ_ID;
 	xfer.seqNum = 1;
@@ -245,6 +242,28 @@ void flashdrv_sync(flash_context_t *ctx)
 
 /* Init functions */
 
+static int flashdrv_defineFlexSPI(flash_context_t *ctx)
+{
+	switch (ctx->address) {
+		case FLASH_FLEXSPI1:
+			ctx->instance = FLASH_FLEXSPI1_INSTANCE;
+			ctx->option.option0 = FLASH_FLEXSPI1_QSPI_FREQ;
+			ctx->option.option1 = 0;
+			break;
+
+		case FLASH_FLEXSPI2:
+			ctx->instance = FLASH_FLEXSPI2_INSTANCE;
+			ctx->option.option0 = FLASH_FLEXSPI2_QSPI_FREQ;
+			ctx->option.option1 = 0;
+			break;
+
+		default:
+			return ERR_ARG;
+	}
+
+	return ERR_NONE;
+}
+
 
 int flashdrv_init(flash_context_t *ctx)
 {
@@ -258,20 +277,19 @@ int flashdrv_init(flash_context_t *ctx)
 	ctx->config.mem.serialClkFreq = 8;
 	ctx->config.mem.sflashPadType = 4;
 
-	ctx->instance = 1;
-	ctx->option.option0 = 0xc0000007;
-	ctx->option.option1 = 0x00000000;
-
-	/* Don't try to initialize FlexSPI if we're already XIP from it */
-	__asm__ volatile ("mov %0, pc" :"=r"(pc));
-	if (pc >= 0x30000000 && pc < 0x40000000)
-		return 0;
+	if ((res = flashdrv_defineFlexSPI(ctx)) < 0)
+		return res;
 
 	if (flexspi_norGetConfig(ctx->instance, &ctx->config, &ctx->option) != 0)
 		return ERR_ARG;
 
-	if (flexspi_norFlashInit(ctx->instance, &ctx->config) != 0)
-		return ERR_ARG;
+	/* Don't try to initialize FlexSPI if we're already XIP from it */
+	__asm__ volatile ("mov %0, pc" :"=r"(pc));
+	if (!(pc >= FLASH_MIN_FLEXSPI1_XIP && pc <= FLASH_MAX_FLEXSPI1_XIP) &&
+		!(pc >= FLASH_MIN_FLEXSPI2_XIP && pc <= FLASH_MAX_FLEXSPI2_XIP)) {
+		if (flexspi_norFlashInit(ctx->instance, &ctx->config) != 0)
+			return ERR_ARG;
+	}
 
 	if (flashdrv_getVendorID(ctx, &ctx->flashID) != 0)
 		return ERR_ARG;

@@ -19,7 +19,7 @@
 #include "phfs.h"
 #include "timer.h"
 #include "plostd.h"
-#include "serial.h"
+#include "uart.h"
 
 #include "config.h"
 
@@ -139,7 +139,7 @@ void plo_init(void)
 	cmd_init();
 
 	plostd_printf(ATTR_LOADER, "%s \n", PLO_WELCOME);
-	plostd_printf(ATTR_INIT, "Detected UART, setting to maximal speed %d Bps\n", serial_getBaudrate());
+	plostd_printf(ATTR_INIT, "Detected UART, setting to maximal speed %d Bps\n", uart_getBaudrate());
 
 	/* Wait and execute saved loader command */
 	for (t = hal_getLaunchTimeout(); t; t--) {
