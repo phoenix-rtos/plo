@@ -249,12 +249,14 @@ static int flashdrv_defineFlexSPI(flash_context_t *ctx)
 	switch (ctx->address) {
 		case FLASH_FLEXSPI1:
 			ctx->instance = FLASH_FLEXSPI1_INSTANCE;
+			ctx->maxSize = FLASH_SIZE_FLEXSPI1;
 			ctx->option.option0 = FLASH_FLEXSPI1_QSPI_FREQ;
 			ctx->option.option1 = 0;
 			break;
 
 		case FLASH_FLEXSPI2:
 			ctx->instance = FLASH_FLEXSPI2_INSTANCE;
+			ctx->maxSize = FLASH_SIZE_FLEXSPI2;
 			ctx->option.option0 = FLASH_FLEXSPI2_QSPI_FREQ;
 			ctx->option.option1 = 0;
 			break;
@@ -271,7 +273,6 @@ int flashdrv_init(flash_context_t *ctx)
 {
 	int res = ERR_NONE;
 	u32 pc;
-	addr_t xipStart, xipStop;
 
 	ctx->sectorID = -1;
 	ctx->counter = 0;
@@ -283,18 +284,9 @@ int flashdrv_init(flash_context_t *ctx)
 	if ((res = flashdrv_defineFlexSPI(ctx)) < 0)
 		return res;
 
-	if (ctx->instance == FLASH_FLEXSPI1_INSTANCE) {
-		xipStart = FLASH_MIN_FLEXSPI1_XIP;
-		xipStop = FLASH_MAX_FLEXSPI1_XIP;
-	}
-	else {
-		xipStart = FLASH_MIN_FLEXSPI2_XIP;
-		xipStop = FLASH_MAX_FLEXSPI2_XIP;
-	}
-
 	/* Don't try to initialize FlexSPI if we're already XIP from it */
 	__asm__ volatile ("mov %0, pc" :"=r"(pc));
-	if (!(pc >= xipStart && pc <= xipStop)) {
+	if (!(pc >= ctx->address && pc < ctx->address + ctx->maxSize)) {
 		if (flexspi_norGetConfig(ctx->instance, &ctx->config, &ctx->option) != 0)
 			return ERR_ARG;
 
