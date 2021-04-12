@@ -22,6 +22,8 @@
 #include "flashdrv.h"
 #include "flashcfg.h"
 
+extern int _fcfb;
+
 
 /* Flash config commands */
 
@@ -269,6 +271,7 @@ int flashdrv_init(flash_context_t *ctx)
 {
 	int res = ERR_NONE;
 	u32 pc;
+	addr_t xipStart, xipStop;
 
 	ctx->sectorID = -1;
 	ctx->counter = 0;
@@ -280,15 +283,26 @@ int flashdrv_init(flash_context_t *ctx)
 	if ((res = flashdrv_defineFlexSPI(ctx)) < 0)
 		return res;
 
-	if (flexspi_norGetConfig(ctx->instance, &ctx->config, &ctx->option) != 0)
-		return ERR_ARG;
+	if (ctx->instance == FLASH_FLEXSPI1_INSTANCE) {
+		xipStart = FLASH_MIN_FLEXSPI1_XIP;
+		xipStop = FLASH_MAX_FLEXSPI1_XIP;
+	}
+	else {
+		xipStart = FLASH_MIN_FLEXSPI2_XIP;
+		xipStop = FLASH_MAX_FLEXSPI2_XIP;
+	}
 
 	/* Don't try to initialize FlexSPI if we're already XIP from it */
 	__asm__ volatile ("mov %0, pc" :"=r"(pc));
-	if (!(pc >= FLASH_MIN_FLEXSPI1_XIP && pc <= FLASH_MAX_FLEXSPI1_XIP) &&
-		!(pc >= FLASH_MIN_FLEXSPI2_XIP && pc <= FLASH_MAX_FLEXSPI2_XIP)) {
+	if (!(pc >= xipStart && pc <= xipStop)) {
+		if (flexspi_norGetConfig(ctx->instance, &ctx->config, &ctx->option) != 0)
+			return ERR_ARG;
+
 		if (flexspi_norFlashInit(ctx->instance, &ctx->config) != 0)
 			return ERR_ARG;
+	}
+	else {
+		hal_memcpy((void *)&ctx->config.mem, &_fcfb, sizeof(ctx->config.mem));
 	}
 
 	if (flashdrv_getVendorID(ctx, &ctx->flashID) != 0)
