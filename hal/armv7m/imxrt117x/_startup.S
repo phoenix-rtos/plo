@@ -40,8 +40,10 @@ boot_data_ram:
 	.word 0                                  /* plugin */
 	.word 0
 
-.org 0x400, 1
+.org 0x400, 0xff
 
+.globl _fcfb
+.type _fcfb, %object
 _fcfb:
 .word 0x42464346 /* Tag */
 .word 0x56010400 /* Version */
@@ -124,7 +126,7 @@ _fcfb:
 .word 0x00000000, 0x00000000, 0x00000000, 0x00000000
 .word 0x00000000, 0x00000000, 0x00000000, 0x00000000
 
-.org 0x1000, 0x0
+.org 0x1000, 0xff
 
 ivt_flash:
 	.word 0x402000d1                         /* hdr */
@@ -144,7 +146,7 @@ flash_boot_data:
 
 ivt_end:
 
-.org 0x1100, 0x0
+.org 0x1100, 0xff
 
 .globl _init_vectors
 .type _init_vectors, %object

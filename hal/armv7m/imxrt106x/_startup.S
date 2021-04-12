@@ -30,6 +30,8 @@
 
 .section .init, "x"
 
+.globl _fcfb
+.type _fcfb, %object
 _fcfb:
 .word 0x42464346 /* Tag */
 .word 0x56010400 /* Version */
@@ -98,12 +100,12 @@ _fcfb:
 .word 0x00000000
 .word 0x00040000
 
-.org _fcfb + 512
+.org _fcfb + 512, 0xff
 
 .type _syspage, %object
 _syspage:
 
-.org _fcfb + 0x1000, 0x0
+.org _fcfb + 0x1000, 0xff
 
 ivt_flash:
     .word 0x412000d1                         /* hdr */
@@ -123,7 +125,7 @@ flash_boot_data:
 
 ivt_flash_end:
 
-.org _fcfb + 0x1050, 0x0
+.org _fcfb + 0x1050, 0xff
 
 ivt:
     .word 0x412000d1                         /* hdr */
@@ -143,7 +145,7 @@ boot_data:
 
 ivt_end:
 
-.org _fcfb + 0x1100, 0x0
+.org _fcfb + 0x1100, 0xff
 
 .globl _init_vectors
 .type _init_vectors, %object
