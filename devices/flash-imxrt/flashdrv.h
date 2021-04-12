@@ -36,6 +36,7 @@ typedef struct {
 	flexspi_norConfig_t config;
 
 	u32 address;
+	u32 maxSize;
 	u32 instance;
 	u32 flashID;
 
