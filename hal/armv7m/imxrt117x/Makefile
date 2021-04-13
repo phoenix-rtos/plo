@@ -10,7 +10,7 @@ INIT_RAM = 0x20250000
 INIT_FLASH = 0x30000000
 
 BSS=-Tbss=20011000
-LDFLAGS+=--defsym=plo_bss=0x20011000
+LDFLAGS+=--defsym _plo_bss=0x20011000
 
 LDFLAGS:=$(filter-out -Tbss% , $(LDFLAGS))
 LDFLAGS:=$(filter-out -Tdata% , $(LDFLAGS))

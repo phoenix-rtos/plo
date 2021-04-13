@@ -42,7 +42,7 @@
 
 /* Linker symbols */
 extern void _end(void);
-extern void plo_bss(void);
+extern void _plo_bss(void);
 
 
 /* PHFS sources  */
@@ -62,6 +62,8 @@ extern void plo_bss(void);
 
 typedef u32 addr_t;
 typedef unsigned int size_t;
+typedef int ssize_t;
+
 
 typedef struct {
 	/* Empty hal data */
