@@ -67,6 +67,8 @@ extern addr_t hal_vm2phym(addr_t addr);
 
 extern void hal_memcpy(void *dst, const void *src, unsigned int l);
 
+extern void hal_memset(void *dst, int v, unsigned int l);
+
 
 /* Function starts kernel loaded into memory */
 

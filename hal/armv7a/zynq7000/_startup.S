@@ -153,7 +153,7 @@ set_loop:
 
 
 	/* Jump to plo */
-	ldr r8, =plo_init
+	ldr r8, =_startc
 	bx r8
 
 

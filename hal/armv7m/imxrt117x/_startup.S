@@ -205,7 +205,7 @@ _start:
 	str r1, [r0]
 	ldr r0, [r1]
 	msr msp, r0
-	ldr r8, =plo_init
+	ldr r8, =_startc
 	bx r8
 
 .size _start, .-_start
