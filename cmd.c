@@ -265,22 +265,19 @@ void cmd_go(char *s)
 
 void cmd_cmd(char *s)
 {
-	int len;
 	char cmd[CMD_SIZE];
-	unsigned int p = 0;
+	unsigned int len = 0, p = 0;
 
-	len = min(plostd_strlen(s), CMD_SIZE - 1);
-
-	plostd_printf(ATTR_LOADER, "\n");
 	cmd_skipblanks(s, &p, DEFAULT_BLANKS);
 	s += p;
 
 	if (*s) {
+		len = min(plostd_strlen(s), CMD_SIZE - 1);
 		hal_memcpy(cmd, s, len);
-		*((char *)cmd + len) = 0;
 	}
+	cmd[len] = '\0';
 
-	plostd_printf(ATTR_LOADER, "cmd=%s\n", (char *)cmd);
+	plostd_printf(ATTR_LOADER, "\ncmd=%s\n", cmd);
 
 	return;
 }
@@ -735,7 +732,6 @@ void cmd_app(char *s)
 	/* Check app name and aliases */
 	name = cmdArgs[argID];
 
-	pos = plostd_strlen(name);
 	if (name[0] == '@') {
 		if (script_expandAlias(&name) < 0) {
 			plostd_printf(ATTR_ERROR, "\nWrong arguments!!\n");
@@ -743,7 +739,10 @@ void cmd_app(char *s)
 		}
 
 		name++;
-		pos--;
+	}
+	for (pos = 0; name[pos]; pos++) {
+		if (name[pos] == '(')
+			break;
 	}
 
 	if (!plostd_isalnum(name[0])) {
