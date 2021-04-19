@@ -15,9 +15,7 @@
 
 
 #include "imxrt.h"
-#include "phfs-flash.h"
 #include "uart.h"
-#include "phfs-serial.h"
 #include "config.h"
 #include "peripherals.h"
 #include "flashdrv.h"
@@ -46,14 +44,6 @@ const cmd_t board_cmds[] = {
 };
 
 
-const cmd_device_t devices[] = {
-	{ "flash0", PDN_FLASH0 },
-	{ "com1", PDN_COM1 },
-	{ NULL, NULL }
-};
-
-
-
 struct{
 	u16 timeout;
 	u32 kernel_entry;
@@ -65,17 +55,9 @@ struct{
 
 void hal_init(void)
 {
-	int i;
-
-	for (i = 0; i < SIZE_INTERRUPTS; ++i) {
-		hal_common.irqs[i].data = NULL;
-		hal_common.irqs[i].isr = NULL;
-	}
-
-	hal_common.kernel_entry = 0;
-
 	_imxrt_init();
 	timer_init();
+	uart_init(); /* TODO: remove */
 
 	hal_setLaunchTimeout(3);
 
@@ -91,31 +73,6 @@ void hal_init(void)
 void hal_done(void)
 {
 	//TODO
-}
-
-
-void hal_initphfs(phfs_handler_t *handlers)
-{
-	/* Handlers for flash memory */
-	handlers[PDN_FLASH0].open = phfsflash_open;
-	handlers[PDN_FLASH0].read = phfsflash_read;
-	handlers[PDN_FLASH0].write = phfsflash_write;
-	handlers[PDN_FLASH0].close = phfsflash_close;
-	handlers[PDN_FLASH0].dn = PDN_FLASH0;
-	phfsflash_init();
-
-	handlers[PDN_COM1].open = phfs_serialOpen;
-	handlers[PDN_COM1].read = phfs_serialRead;
-	handlers[PDN_COM1].write = phfs_serialWrite;
-	handlers[PDN_COM1].close = phfs_serialClose;
-	handlers[PDN_COM1].dn = PHFS_SERIAL_LOADER_ID;
-	phfs_serialInit();
-}
-
-
-void hal_initdevs(cmd_device_t **devs)
-{
-	*devs = (cmd_device_t *)devices;
 }
 
 

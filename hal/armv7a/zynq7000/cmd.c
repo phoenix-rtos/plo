@@ -28,9 +28,8 @@ void cmd_bitstream(char *s)
 {
 	int res;
 	u8 buff[384];
-	u32 offs = 0;
-	handle_t handle;
-	unsigned int pdn;
+	addr_t offs = 0;
+	handler_t handler;
 	addr_t addr = BISTREAM_ADDR;
 
 	u16 argsc = 0;
@@ -41,25 +40,21 @@ void cmd_bitstream(char *s)
 		return;
 	}
 
-	if (cmd_checkDev(args[0], &pdn) < 0)
-		return;
-
-	plostd_printf(ATTR_LOADER, "\nOpening device %s\n", args[0]);
-	handle = phfs_open(pdn, args[1], 0);
-	if (handle.h < 0) {
+	if (phfs_open(args[0], args[1], 0, &handler) < 0) {
 		plostd_printf(ATTR_ERROR, "Cannot initialize device: %s\n", args[0]);
 		return;
 	}
 
-	plostd_printf(ATTR_LOADER, "Loading bitstream into DDR\n");
+	plostd_printf(ATTR_LOADER, "\nLoading bitstream into DDR\n");
 	do {
-		if ((res = phfs_read(pdn, handle, (addr_t *)&offs, buff, sizeof(buff))) < 0) {
+		if ((res = phfs_read(handler, offs, buff, sizeof(buff))) < 0) {
 			plostd_printf(ATTR_ERROR, "\nCan't read segment data\n");
 			return;
 		}
 
 		hal_memcpy((void *)addr, buff, res);
 		addr += res;
+		offs += res;
 	} while (res != 0);
 
 	plostd_printf(ATTR_LOADER, "Loading bitstream into PL\n");

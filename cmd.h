@@ -32,12 +32,6 @@
 
 
 typedef struct {
-	char *name;
-	unsigned int pdn;
-} cmd_device_t;
-
-
-typedef struct {
 	void (*f)(char *);
 	char *cmd;
 	char *help;
@@ -95,6 +89,15 @@ extern void cmd_map(char *args);
 extern void cmd_syspage(char *s);
 
 
+extern void cmd_phfs(char *s);
+
+
+extern void cmd_devs(char *s);
+
+
+extern void cmd_console(char *s);
+
+
 /* Auxiliary functions */
 extern void cmd_showprogress(u32 p);
 
@@ -106,9 +109,6 @@ extern char *cmd_getnext(char *line, unsigned int *pos, char *blanks, char *cite
 
 
 extern int cmd_parseArgs(char *s, char (*args)[LINESZ + 1], u16 *argsc);
-
-
-extern int cmd_checkDev(const char *devName, unsigned int *dn);
 
 
 #endif

@@ -447,8 +447,8 @@ int syspage_write2Map(const char *map, const u8 *buff, size_t len)
 	}
 
 	ploMap = &syspage_common.maps[id];
-	freesz = ploMap->map.end - ploMap->top;
 
+	freesz = ploMap->map.end - ploMap->top;
 	if (freesz < len) {
 		plostd_printf(ATTR_ERROR, "\nThere isn't any free space in %s !\n", map);
 		return ERR_ARG;

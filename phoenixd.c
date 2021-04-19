@@ -13,13 +13,18 @@
  * %LICENSE%
  */
 
-
-#include "errors.h"
-#include "hal.h"
-#include "plostd.h"
-#include "uart.h"
-#include "msg.h"
 #include "phoenixd.h"
+#include "msg.h"
+#include "hal.h"
+#include "errors.h"
+#include "plostd.h"
+
+
+/* Message types */
+#define MSG_OPEN    1
+#define MSG_READ    2
+#define MSG_WRITE   3
+#define MSG_COPY    4
 
 
 typedef struct _msg_phoenixd_t {
@@ -30,22 +35,19 @@ typedef struct _msg_phoenixd_t {
 } msg_phoenixd_t;
 
 
-handle_t phoenixd_open(u16 dn, const char *name, u32 flags, phfs_clbk_t *cblk)
+int phoenixd_open(const char *file, unsigned int flags, const phfs_clbk_t *cblk)
 {
 	u16 l;
+	unsigned int fd;
 	msg_t smsg, rmsg;
-	handle_t handle;
 
-	if (cblk == NULL) {
-		handle.h = ERR_PHFS_IO;
-		return handle;
-	}
+	if (cblk == NULL)
+		return ERR_PHFS_IO;
 
-	handle.offs = 0;
-	l = plostd_strlen(name) + 1;
+	l = plostd_strlen(file) + 1;
 
 	*(u32 *)smsg.data = flags;
-	hal_memcpy(&smsg.data[sizeof(u32)], name, l);
+	hal_memcpy(&smsg.data[sizeof(u32)], file, l);
 	l += sizeof(u32);
 
 	msg_settype(&smsg, MSG_OPEN);
@@ -54,20 +56,20 @@ handle_t phoenixd_open(u16 dn, const char *name, u32 flags, phfs_clbk_t *cblk)
 	smsg.write = cblk->write;
 	rmsg.read = cblk->read;
 
-	if (msg_send(dn, &smsg, &rmsg) < 0)
-		handle.h = ERR_PHFS_IO;
+	if (msg_send(cblk->dn, &smsg, &rmsg) < 0)
+		return ERR_PHFS_IO;
 	else if (msg_gettype(&rmsg) != MSG_OPEN)
-		handle.h = ERR_PHFS_PROTO;
+		return ERR_PHFS_PROTO;
 	else if (msg_getlen(&rmsg) != sizeof(u32))
-		handle.h = ERR_PHFS_PROTO;
-	else if (!(handle.h = *(u32 *)rmsg.data))
-		handle.h = ERR_PHFS_FILE;
+		return ERR_PHFS_PROTO;
+	else if (!(fd = *(u32 *)rmsg.data))
+		return ERR_PHFS_FILE;
 
-	return handle;
+	return fd;
 }
 
 
-s32 phoenixd_read(u16 dn, handle_t handle, addr_t *pos, u8 *buff, u32 len, phfs_clbk_t *cblk)
+ssize_t phoenixd_read(unsigned int fd, addr_t offs, u8 *buff, unsigned int len, const phfs_clbk_t *cblk)
 {
 	msg_t smsg, rmsg;
 	msg_phoenixd_t *io;
@@ -78,11 +80,11 @@ s32 phoenixd_read(u16 dn, handle_t handle, addr_t *pos, u8 *buff, u32 len, phfs_
 	io = (msg_phoenixd_t *)smsg.data;
 	hdrsz = (u16)((u32)io->data - (u32)io);
 
-	if ((handle.h <= 0) || (len > MSG_MAXLEN - hdrsz) || cblk == NULL)
+	if ((len > MSG_MAXLEN - hdrsz) || cblk == NULL)
 		return ERR_ARG;
 
-	io->handle = handle.h;
-	io->pos = *pos;
+	io->handle = fd;
+	io->pos = offs;
 	io->len = len;
 
 	msg_settype(&smsg, MSG_READ);
@@ -91,7 +93,7 @@ s32 phoenixd_read(u16 dn, handle_t handle, addr_t *pos, u8 *buff, u32 len, phfs_
 	smsg.write = cblk->write;
 	rmsg.read = cblk->read;
 
-	if (msg_send(dn, &smsg, &rmsg) < 0)
+	if (msg_send(cblk->dn, &smsg, &rmsg) < 0)
 		return ERR_PHFS_IO;
 
 	if (msg_gettype(&rmsg) != MSG_READ) {
@@ -103,7 +105,8 @@ s32 phoenixd_read(u16 dn, handle_t handle, addr_t *pos, u8 *buff, u32 len, phfs_
 		return ERR_PHFS_FILE;
 	}
 
-	*pos = io->pos;
+	/* TODO: check io->pos */
+	// *pos = io->pos;
 	l = min(io->len, msg_getlen(&rmsg) - hdrsz);
 	hal_memcpy(buff, io->data, l);
 
@@ -111,14 +114,14 @@ s32 phoenixd_read(u16 dn, handle_t handle, addr_t *pos, u8 *buff, u32 len, phfs_
 }
 
 
-s32 phoenixd_write(u16 dn, handle_t handle, addr_t *pos, u8 *buff, u32 len, u8 sync, phfs_clbk_t *cblk)
+ssize_t phoenixd_write(unsigned int fd, addr_t offs, const u8 *buff, unsigned int len, const phfs_clbk_t *cblk)
 {
 	/* TODO */
 	return ERR_NONE;
 }
 
 
-s32 phoenixd_close(u16 dn, handle_t handle, phfs_clbk_t *cblk)
+int phoenixd_close(unsigned int fd, const phfs_clbk_t *cblk)
 {
 	/* TODO */
 	return ERR_NONE;
