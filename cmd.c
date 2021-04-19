@@ -737,7 +737,7 @@ void cmd_app(char *s)
 
 	pos = plostd_strlen(name);
 	if (name[0] == '@') {
-		if (script_expandAlias(&name) < 0) {
+		if (script_expandAlias(name) < 0) {
 			plostd_printf(ATTR_ERROR, "\nWrong arguments!!\n");
 			return;
 		}
