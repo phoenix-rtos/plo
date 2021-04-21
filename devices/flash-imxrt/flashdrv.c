@@ -14,6 +14,7 @@
  */
 
 #include "../hal.h"
+#include "../devs.h"
 #include "../timer.h"
 #include "../errors.h"
 
@@ -25,62 +26,14 @@
 extern int _fcfb;
 
 
+struct {
+	flash_context_t ctx[FLASH_NO];
+	u8 buff[0x100];
+} flashdrv_common;
+
+
+
 /* Flash config commands */
-
-static int flashdrv_setWEL(flash_context_t *ctx, u32 dstAddr)
-{
-	flexspi_xfer_t xfer;
-
-	xfer.baseAddress = dstAddr;
-	xfer.operation = kFlexSpiOperation_Command;
-	xfer.seqId = WRITE_ENABLE_SEQ_ID;
-	xfer.seqNum = 1;
-	xfer.isParallelModeEnable = 0;
-
-	return -flexspi_norFlashExecuteSeq(ctx->instance, &xfer);
-}
-
-
-static int flashdrv_writeBytes(flash_context_t *ctx, u32 dstAddr, u32 *src, u32 size)
-{
-	flexspi_xfer_t xfer;
-
-	xfer.txSize = size;
-	xfer.txBuffer = src;
-	xfer.baseAddress = dstAddr;
-	xfer.operation = kFlexSpiOperation_Write;
-	xfer.seqId = PAGE_PROGRAM_SEQ_ID;
-	xfer.seqNum = 1;
-
-	return -flexspi_norFlashExecuteSeq(ctx->instance, &xfer);
-}
-
-
-static int flashdrv_waitBusBusy(flash_context_t *ctx)
-{
-	int err = ERR_NONE;
-	u32 buff;
-	u8 retrans;
-	flexspi_xfer_t xfer;
-	const u8 MAX_RETRANS = 8;
-
-	retrans = 0;
-	xfer.rxSize = 4;
-	xfer.rxBuffer = &buff;
-	xfer.baseAddress = ctx->instance;
-	xfer.operation = kFlexSpiOperation_Read;
-	xfer.seqId = READ_STATUS_REG_SEQ_ID;
-	xfer.seqNum = 1;
-	xfer.isParallelModeEnable = 0;
-
-	do {
-		err = flexspi_norFlashExecuteSeq(ctx->instance, &xfer);
-		timer_wait(100, 0, NULL, 0);
-	} while ((buff & (0x1 << 1)) && (++retrans < MAX_RETRANS) && (err == 0));
-
-	return err;
-}
-
 
 static int flashdrv_getVendorID(flash_context_t *ctx, u32 *manID)
 {
@@ -118,109 +71,7 @@ static int flashdrv_isValidAddress(flash_context_t *context, u32 addr, u32 size)
 }
 
 
-s32 flashdrv_readData(flash_context_t *ctx, u32 offset, char *buff, u32 size)
-{
-	if (flashdrv_isValidAddress(ctx, offset, size))
-		return -1;
-
-	if (flexspi_norFlashRead(ctx->instance, &ctx->config, buff, offset, size) < 0)
-		return -1;
-
-	return size;
-}
-
-
-s32 flashdrv_directBytesWrite(flash_context_t *ctx, u32 offset, const char *buff, u32 size)
-{
-	int err;
-	u32 chunk;
-	u32 len = size;
-
-	while (len) {
-		if ((chunk = ctx->properties.page_size - (offset & 0xff)) > len)
-			chunk = len;
-
-		if ((err = flashdrv_waitBusBusy(ctx)) < 0)
-			return -1;
-
-		if ((err = flashdrv_setWEL(ctx, offset)) < 0)
-			return -1;
-
-		if ((err = flashdrv_writeBytes(ctx, offset, (u32 *)buff, chunk)) < 0)
-			return -1;
-
-		if ((err = flashdrv_waitBusBusy(ctx)) < 0)
-			return -1;
-
-		offset += chunk;
-		len -= chunk;
-		buff = (char *)buff + chunk;
-	}
-
-	return size - len;
-}
-
-
-s32 flashdrv_bufferedPagesWrite(flash_context_t *ctx, u32 offset, const char *buff, u32 size)
-{
-	u32 pageAddr;
-	u16 sector_id;
-	u32 savedBytes = 0;
-
-	if (size % ctx->properties.page_size)
-		return -1;
-
-	if (flashdrv_isValidAddress(ctx, offset, size))
-		return -1;
-
-	while (savedBytes < size) {
-		pageAddr = offset + savedBytes;
-		sector_id = pageAddr / ctx->properties.sector_size;
-
-		/* If sector_id has changed, data from previous sector have to be saved and new sector is read. */
-		if (sector_id != ctx->sectorID) {
-			flashdrv_sync(ctx);
-
-			if (flashdrv_readData(ctx, ctx->properties.sector_size * sector_id, ctx->buff, ctx->properties.sector_size) <= 0)
-				return savedBytes;
-
-			if (flexspi_norFlashErase(ctx->instance, &ctx->config, ctx->properties.sector_size * sector_id, ctx->properties.sector_size) != 0)
-				return savedBytes;
-
-			ctx->sectorID = sector_id;
-			ctx->counter = offset - ctx->properties.sector_size * ctx->sectorID;
-		}
-
-		hal_memcpy(ctx->buff + ctx->counter, buff + savedBytes, ctx->properties.page_size);
-
-		savedBytes += ctx->properties.page_size;
-		ctx->counter += ctx->properties.page_size;
-
-		/* Save filled buffer */
-		if (ctx->counter >= ctx->properties.sector_size)
-			flashdrv_sync(ctx);
-	}
-
-	return size;
-}
-
-
-int flashdrv_chipErase(flash_context_t *ctx)
-{
-	return flexspi_norFlashEraseAll(ctx->instance, &ctx->config);
-}
-
-
-int flashdrv_sectorErase(flash_context_t *ctx, u32 offset)
-{
-	if (offset % ctx->properties.sector_size)
-		return -1;
-
-	return flexspi_norFlashErase(ctx->instance, &ctx->config, offset, ctx->properties.sector_size);
-}
-
-
-void flashdrv_sync(flash_context_t *ctx)
+static void flashdrv_syncCtx(flash_context_t *ctx)
 {
 	int i;
 	u32 dstAddr;
@@ -242,7 +93,61 @@ void flashdrv_sync(flash_context_t *ctx)
 }
 
 
-/* Init functions */
+static s32 flashdrv_readData(flash_context_t *ctx, u32 offset, char *buff, u32 size)
+{
+	if (flashdrv_isValidAddress(ctx, offset, size))
+		return ERR_ARG;
+
+	if (flexspi_norFlashRead(ctx->instance, &ctx->config, buff, offset, size) < 0)
+		return ERR_ARG;
+
+	return size;
+}
+
+
+static s32 flashdrv_bufferedPagesWrite(flash_context_t *ctx, u32 offset, const char *buff, u32 size)
+{
+	u32 pageAddr;
+	u16 sector_id;
+	u32 savedBytes = 0;
+
+	if (size % ctx->properties.page_size)
+		return ERR_ARG;
+
+	if (flashdrv_isValidAddress(ctx, offset, size))
+		return ERR_ARG;
+
+	while (savedBytes < size) {
+		pageAddr = offset + savedBytes;
+		sector_id = pageAddr / ctx->properties.sector_size;
+
+		/* If sector_id has changed, data from previous sector have to be saved and new sector is read. */
+		if (sector_id != ctx->sectorID) {
+			flashdrv_syncCtx(ctx);
+
+			if (flashdrv_readData(ctx, ctx->properties.sector_size * sector_id, ctx->buff, ctx->properties.sector_size) <= 0)
+				return savedBytes;
+
+			if (flexspi_norFlashErase(ctx->instance, &ctx->config, ctx->properties.sector_size * sector_id, ctx->properties.sector_size) != 0)
+				return savedBytes;
+
+			ctx->sectorID = sector_id;
+			ctx->counter = offset - ctx->properties.sector_size * ctx->sectorID;
+		}
+
+		hal_memcpy(ctx->buff + ctx->counter, buff + savedBytes, ctx->properties.page_size);
+
+		savedBytes += ctx->properties.page_size;
+		ctx->counter += ctx->properties.page_size;
+
+		/* Save filled buffer */
+		if (ctx->counter >= ctx->properties.sector_size)
+			flashdrv_syncCtx(ctx);
+	}
+
+	return size;
+}
+
 
 static int flashdrv_defineFlexSPI(flash_context_t *ctx)
 {
@@ -269,10 +174,101 @@ static int flashdrv_defineFlexSPI(flash_context_t *ctx)
 }
 
 
-int flashdrv_init(flash_context_t *ctx)
+/* Device interafce */
+
+static ssize_t flashdrv_read(unsigned int dn, addr_t offs, u8 *buff, unsigned int len)
 {
-	int res = ERR_NONE;
+	ssize_t res;
+
+	if (dn >= FLASH_NO)
+		return ERR_ARG;
+
+	if ((res = flashdrv_readData(&flashdrv_common.ctx[dn], offs, (char *)buff, len)) < 0)
+		return res;
+
+	return res;
+}
+
+
+static ssize_t flashdrv_write(unsigned int dn, addr_t offs, const u8 *buff, unsigned int len)
+{
+	addr_t bOffs = 0;
+	flash_context_t *ctx;
+	size_t size, buffSz = sizeof(flashdrv_common.buff);
+
+	size = len;
+	if (!len)
+		return ERR_NONE;
+
+	if (dn >= FLASH_NO || offs % buffSz)
+		return ERR_ARG;
+
+	ctx = &flashdrv_common.ctx[dn];
+
+	while (size) {
+		if (size < buffSz) {
+			hal_memcpy(flashdrv_common.buff, buff + bOffs, size);
+			hal_memset(flashdrv_common.buff + size, 0xff, buffSz - size);
+			if (flashdrv_bufferedPagesWrite(ctx, offs + bOffs, (const char *)flashdrv_common.buff, buffSz) < 0)
+				return ERR_ARG;
+			size = 0;
+			break;
+		}
+
+		if (flashdrv_bufferedPagesWrite(ctx, offs + bOffs, (const char *)(buff + bOffs), buffSz) < 0)
+			return ERR_ARG;
+
+		bOffs += buffSz;
+		size -= buffSz;
+	}
+
+	return len - size;
+}
+
+
+static int flashdrv_deinit(unsigned int dn)
+{
+	if (dn >= FLASH_NO)
+		return ERR_ARG;
+
+	/* TBD */
+
+	return ERR_NONE;
+}
+
+
+static int flashdrv_sync(unsigned int dn)
+{
+	if (dn >= FLASH_NO)
+		return ERR_ARG;
+
+	flashdrv_syncCtx(&flashdrv_common.ctx[dn]);
+
+	return ERR_NONE;
+}
+
+
+static int flashdrv_init(unsigned int dn, dev_handler_t *h)
+{
 	u32 pc;
+	int res = ERR_NONE;
+	flash_context_t *ctx;
+
+	if (dn >= FLASH_NO)
+		return ERR_ARG;
+
+	/* TODO: move information about dn to device tree module */
+	if (dn == 0 && FLASH_FLEXSPI1_MOUNTED) {
+		ctx = &flashdrv_common.ctx[dn];
+		ctx->address = FLASH_FLEXSPI1;
+	}
+	else if (dn == 1 && FLASH_FLEXSPI2_MOUNTED) {
+		ctx = &flashdrv_common.ctx[dn];
+		ctx->address = FLASH_FLEXSPI2;
+	}
+	else {
+		return ERR_ARG;
+	}
 
 	ctx->sectorID = -1;
 	ctx->counter = 0;
@@ -303,12 +299,16 @@ int flashdrv_init(flash_context_t *ctx)
 	if (flashcfg_getCfg(ctx) != 0)
 		return ERR_ARG;
 
+	h->read = flashdrv_read;
+	h->write = flashdrv_write;
+	h->deinit = flashdrv_deinit;
+	h->sync = flashdrv_sync;
+
 	return res;
 }
 
 
-void flashdrv_contextDestroy(flash_context_t *ctx)
+__attribute__((constructor)) static void flashdrv_reg(void)
 {
-	ctx->address = 0;
-	flashdrv_sync(ctx);
+	devs_regDriver(DEV_FLASH, flashdrv_init);
 }
