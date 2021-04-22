@@ -102,13 +102,13 @@ static int cmd_cpphfs2phfs(phfs_conf_t *src, phfs_conf_t *dst)
 
 	return 0;
 }
+#endif
 
-
-static int cmd_cpphfs2map(phfs_conf_t *src, const char *map)
+static int cmd_cpphfs2map(handler_t handler, addr_t offs, size_t size, const char *map)
 {
 	void *addr;
 	int res, i = 0;
-	u32 size, chunk;
+	size_t chunkSz;
 	u8 buff[MSG_BUFF_SZ];
 
 	if (syspage_getMapTop(map, &addr) < 0) {
@@ -116,15 +116,15 @@ static int cmd_cpphfs2map(phfs_conf_t *src, const char *map)
 		return ERR_ARG;
 	}
 
-	size = (src->handle.offs != 0) ? src->datasz : -1;
+	size = (size == 0) ? -1 : size;
 
 	do {
 		if (size > sizeof(buff))
-			chunk = sizeof(buff);
+			chunkSz = sizeof(buff);
 		else
-			chunk = size;
+			chunkSz = size;
 
-		if ((res = phfs_read(src->dn, src->handle, &src->dataOffs, buff, chunk)) < 0) {
+		if ((res = phfs_read(handler, offs, buff, chunkSz)) < 0) {
 			plostd_printf(ATTR_ERROR, "\nCan't read segment data\n");
 			return ERR_PHFS_FILE;
 		}
@@ -132,19 +132,17 @@ static int cmd_cpphfs2map(phfs_conf_t *src, const char *map)
 		if (syspage_write2Map(map, buff, res) < 0)
 			return ERR_ARG;
 
-		if (src->handle.offs != 0) {
-			src->dataOffs += res;
+		offs += res;
+		if (size != 0)
 			size -= res;
-		}
 
-		addr += res;
-		plostd_printf(ATTR_LOADER, "\rWriting to address %p ", addr);
+		plostd_printf(ATTR_LOADER, "\rWriting to address %p ", offs);
 		cmd_showprogress(i++);
 	} while (size > 0 && res > 0);
 
-	return 0;
+	return ERR_NONE;
 }
-#endif
+
 
 
 /* Initialization function */
@@ -602,28 +600,21 @@ void cmd_kernel(char *s)
 }
 
 
-#if 0
-static int cmd_loadApp(phfs_conf_t *phfs, const char *name, const char *imap, const char *dmap, const char *cmdline, u32 flags)
+
+static int cmd_loadApp(handler_t handler, addr_t offs, size_t size, const char *imap, const char *dmap, const char *cmdline, u32 flags)
 {
+	int res;
 	Elf32_Ehdr hdr;
 	void *start, *end;
-	int res;
-
-	phfs->handle = phfs_open(phfs->dn, name, 0);
-	if (phfs->handle.h < 0) {
-		plostd_printf(ATTR_ERROR, "\nCannot initialize source: %s!\n", name);
-		return ERR_PHFS_IO;
-	}
-
 
 	/* Check ELF header */
-	if ((res = phfs_read(phfs->dn, phfs->handle, &phfs->dataOffs, (u8 *)&hdr, (u32)sizeof(Elf32_Ehdr))) < 0) {
-		plostd_printf(ATTR_ERROR, "\nCan't read ELF header %d!\n", res);
+	if ((res = phfs_read(handler, offs, (u8 *)&hdr, (u32)sizeof(Elf32_Ehdr))) < 0) {
+		plostd_printf(ATTR_ERROR, "\nCan't read ELF header %d\n", res);
 		return ERR_PHFS_FILE;
 	}
 
 	if ((hdr.e_ident[0] != 0x7f) || (hdr.e_ident[1] != 'E') || (hdr.e_ident[2] != 'L') || (hdr.e_ident[3] != 'F')) {
-		plostd_printf(ATTR_ERROR, "\nFile isn't ELF object!\n");
+		plostd_printf(ATTR_ERROR, "\nFile isn't ELF object\n");
 		return ERR_PHFS_FILE;
 	}
 
@@ -633,70 +624,58 @@ static int cmd_loadApp(phfs_conf_t *phfs, const char *name, const char *imap, co
 
 	/* Get instruction begining address */
 	if (syspage_getMapTop(imap, &start) < 0) {
-		plostd_printf(ATTR_ERROR, "\n%s does not exist!\n", imap);
+		plostd_printf(ATTR_ERROR, "\n%s does not exist\n", imap);
 		return ERR_ARG;
 	}
 
-	/* Get data from memory storage */
-	if (phfs->datasz) {
-		/* Check wheter device is in the the same map as imap */
-		if ((void *)phfs->handle.offs <= (start + phfs->dataOffs) && (void *)phfs->handle.offs >= start) {
-			start += phfs->dataOffs;
-			end = start + phfs->datasz;
-			plostd_printf(ATTR_LOADER, "Code is located in %s map. Data has not been copied.\n", imap);
-		}
-		else {
-			cmd_cpphfs2map(phfs, imap);
-
-			/* Get file end address */
-			if (syspage_getMapTop(imap, &end) < 0) {
-				plostd_printf(ATTR_ERROR, "\n%s does not exist!\n", imap);
+	/* TODO: check whether device is in the same map as imap */
+	if (0) {
+		/* Get offset and size using file descriptor */
+		if (offs == 0 && size == 0) {
+			if (phfs_getFileAddr(handler, &offs) < 0)
 				return ERR_ARG;
-			}
-		}
-	}
-	/* Get data from external source i.e. serial or USB device */
-	else {
-		if (syspage_write2Map(imap, (u8 *)&hdr, (u32)sizeof(Elf32_Ehdr)) < 0)
-			return ERR_ARG;
 
-		cmd_cpphfs2map(phfs, imap);
+			if (phfs_getFileSize(handler, &size) < 0)
+				return ERR_ARG;
+		}
+		start = (void *)offs;
+		end = start + size;
+
+		plostd_printf(ATTR_LOADER, "\nCode is located in %s map. Data has not been copied.\n", imap);
+	}
+	else {
+		cmd_cpphfs2map(handler, offs, size, imap);
 
 		/* Get file end address */
 		if (syspage_getMapTop(imap, &end) < 0) {
-			plostd_printf(ATTR_ERROR, "\n%s does not exist!\n", imap);
+			plostd_printf(ATTR_ERROR, "\n%s does not exist\n", imap);
 			return ERR_ARG;
 		}
 	}
 
 	if (syspage_addProg(start, end, imap, dmap, cmdline, flags) < 0) {
-		plostd_printf(ATTR_LOADER, "[failed]\n");
-		return -1;
+		plostd_printf(ATTR_LOADER, "\nCannot add program to syspage\n");
+		return ERR_ARG;
 	}
 
-	plostd_printf(ATTR_LOADER, "[ok]\n");
-
-	return 0;
+	return ERR_NONE;
 }
-#endif
 
 
 void cmd_app(char *s)
 {
-#if 0
-	u16 cmdArgsc = 0;
 	int i, argID = 0;
+	u16 cmdArgsc = 0;
 	char cmdArgs[MAX_CMD_ARGS_NB][LINESZ + 1];
 
-	char *name;
+	char *cmdline;
 	unsigned int pos = 0, flags = 0;
-	char cmap[8], dmap[8];
+	char cmap[8], dmap[8], appName[MAX_APP_NAME_SIZE];
 	char appData[3][LINESZ + 1];
 
-	phfs_conf_t phfs;
-
-	phfs.datasz = 0;
-	phfs.dataOffs = 0;
+	size_t sz = 0;
+	addr_t offs = 0;
+	handler_t handler;
 
 	/* Parse command arguments */
 	if (cmd_parseArgs(s, cmdArgs, &cmdArgsc) < 0 || cmdArgsc < 2 || cmdArgsc > 6) {
@@ -704,10 +683,10 @@ void cmd_app(char *s)
 		return;
 	}
 
-	if (cmd_checkDev(cmdArgs[argID++], &phfs.dn) < 0)
-		return;
+	/* ARG_0: alias to device - it will be check in phfs_open */
 
-	/* Check optional flags */
+	/* ARG_1: optional flags */
+	argID = 1;
 	if (cmdArgs[argID][0] == '-') {
 		if ((cmdArgs[argID][1] | 0x20) == 'x' && cmdArgs[argID][2] == '\0') {
 			flags |= flagSyspageExec;
@@ -724,86 +703,77 @@ void cmd_app(char *s)
 		return;
 	}
 
-	/* Check app name and aliases */
-	name = cmdArgs[argID];
+	/* ARG_2:  Parse application data - cmdline(offset:size) */
+	for (i = 0; i < 3; ++i) {
+		if (cmd_getnext(cmdArgs[argID], &pos, "@ (:) \t", NULL, appData[i], sizeof(appData[i])) == NULL || *appData[i] == 0)
+				break;
 
-	pos = plostd_strlen(name);
-	if (name[0] == '@') {
-		if (script_expandAlias(&name) < 0) {
-			plostd_printf(ATTR_ERROR, "\nWrong arguments!!\n");
-			return;
+		switch (i) {
+			case 0:
+				cmdline = appData[0];
+				break;
+
+			case 1:
+				if (plostd_ishex(appData[i]) < 0) {
+					plostd_printf(ATTR_ERROR, "\nOffset is not a hex value !!\n");
+					return;
+				}
+
+				offs = plostd_ahtoi(appData[i]);
+				break;
+
+			case 2:
+				if (plostd_ishex(appData[i]) < 0) {
+					plostd_printf(ATTR_ERROR, "\nSize is not a hex value !!\n");
+					return;
+				}
+
+				sz = plostd_ahtoi(appData[i]);
+				break;
+
+			default:
+				break;
 		}
-
-		name++;
-		pos--;
 	}
 
-	if (!plostd_isalnum(name[0])) {
-		plostd_printf(ATTR_ERROR, "\nWrong arguments!!\n");
+	/* Get app name from cmdline */
+	for (pos = 0; cmdline[pos]; pos++) {
+		if (appData[0][pos] == ';')
+			break;
+	}
+
+	if (pos > MAX_APP_NAME_SIZE) {
+		plostd_printf(ATTR_ERROR, "\nApp %s name is too long!\n", cmdline);
 		return;
 	}
 
-	hal_memcpy(appData[0], name, pos);
-	appData[0][pos] = '\0';
+	hal_memcpy(appName, appData[0], pos);
+	appName[pos] = '\0';
 
-	/* Parse (offset:size) */
-	for (i = 1; i < 3; ++i) {
-		if (cmd_getnext(name, &pos, "(:) \t", NULL, appData[i], sizeof(appData[i])) == NULL || *appData[i] == 0)
-			break;
-
-		if (i == 1) {
-			if (plostd_ishex(appData[i]) < 0) {
-				plostd_printf(ATTR_ERROR, "\nOffset is not a hex value !!\n");
-				return;
-			}
-
-			phfs.dataOffs = plostd_ahtoi(appData[i]);
-		}
-		else if (i == 2) {
-			if (plostd_ishex(appData[i]) < 0) {
-				plostd_printf(ATTR_ERROR, "\nSize is not a hex value !!\n");
-				return;
-			}
-
-			phfs.datasz = plostd_ahtoi(appData[i]);
-		}
-	}
-
-	/* Set default maps */
+	/* ARG_3: Get map for instruction section */
 	hal_setDefaultIMAP(cmap);
-	hal_setDefaultDMAP(dmap);
-
-	/* Get map for code section */
 	if ((argID + 1) < cmdArgsc) {
 		hal_memcpy(cmap, cmdArgs[++argID], 8);
 		cmap[sizeof(cmap) - 1] = '\0';
 	}
-	/* Get map for data section */
+	/* ARG_4: Get map for data section */
+	hal_setDefaultDMAP(dmap);
 	if ((argID + 1) < cmdArgsc) {
 		hal_memcpy(dmap, cmdArgs[++argID], 8);
 		dmap[sizeof(dmap) - 1] = '\0';
 	}
 
-	for (pos = 0; appData[0][pos]; pos++) {
-		if (appData[0][pos] == ';')
-			break;
-	}
-
-	hal_memcpy(name, appData[0], pos);
-	name[pos] = '\0';
-
-	if (pos > MAX_APP_NAME_SIZE) {
-		plostd_printf(ATTR_ERROR, "\nApp %s name is too long!\n", name);
+	/* If offset and size are set, appName is ommitted and phfs does not use file abstraction */
+	if (phfs_open(cmdArgs[0], ((offs == 0 && sz == 0) ? appName : NULL), 0, &handler) < 0) {
+		plostd_printf(ATTR_ERROR, "\nWrong arguments!!\n");
 		return;
 	}
 
-	if (phfs.dataOffs != 0 && phfs.datasz != 0)
-		plostd_printf(ATTR_LOADER, "\nLoading %s (offs=%p, size=%p, cmap=%s, dmap=%s, flags=%x)\n", name, phfs.dataOffs, phfs.datasz, cmap, dmap, flags);
-	else
-		plostd_printf(ATTR_LOADER, "\nLoading %s (offs=UNDEF, size=UNDEF, imap=%s, dmap=%s, flags=%x)\n", name, cmap, dmap, flags);
+	plostd_printf(ATTR_LOADER, "\nLoading %s (offs=%p, size=%p, imap=%s, dmap=%s, flags=%x)\n", appName, offs, sz, cmap, dmap, flags);
+	cmd_loadApp(handler, offs, sz, cmap, dmap, cmdline, flags);
 
-	cmd_loadApp(&phfs, name, cmap, dmap, appData[0], flags);
-#endif
+	if (phfs_close(handler) < 0)
+		plostd_printf(ATTR_ERROR, "\nCannot close file\n");
 }
 
 
