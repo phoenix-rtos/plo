@@ -52,27 +52,21 @@ struct {
 
 /* Auxiliary functions */
 
-#if 0
-static int cmd_cpphfs2phfs(phfs_conf_t *src, phfs_conf_t *dst)
+static int cmd_cpphfs2phfs(handler_t srcHandler, addr_t srcAddr, size_t srcSz, handler_t dstHandler, addr_t dstAddr, size_t dstSz)
 {
 	int res, i = 0;
-	u32 size, chunk;
+	size_t size, chunk;
 	u8 buff[MSG_BUFF_SZ];
 
-	if (src->handle.offs != 0) {
-		if (src->datasz == 0 && dst->datasz == 0) {
-			size = 0;
-		}
-		else {
-			if (src->datasz == 0 || dst->datasz == 0)
-				size = (src->datasz > dst->datasz) ? src->datasz : dst->datasz;
-			else
-				size = (src->datasz < dst->datasz) ? src->datasz : dst->datasz;
-		}
-	}
-	else {
+	/* Size is not defined, copy the whole file                 */
+	if (srcSz == 0 && dstSz == 0)
 		size = -1;
-	}
+	/* Size is defined, use smaller one to copy piece of memory */
+	else if (srcSz != 0 && dstSz != 0)
+		size = (srcSz < dstSz) ? srcSz : dstSz;
+	/* One of the size is not defined, use the defined one      */
+	else
+		size = (srcSz > dstSz) ? srcSz : dstSz;
 
 	do {
 		if (size > sizeof(buff))
@@ -80,29 +74,26 @@ static int cmd_cpphfs2phfs(phfs_conf_t *src, phfs_conf_t *dst)
 		else
 			chunk = size;
 
-		if ((res = phfs_read(src->dn, src->handle, &src->dataOffs, buff, chunk)) < 0) {
-			plostd_printf(ATTR_ERROR, "\nCan't read segment data\n");
+		if ((res = phfs_read(srcHandler, srcAddr, buff, chunk)) < 0) {
+			plostd_printf(ATTR_ERROR, "\nCan't read data\n");
 			return ERR_PHFS_FILE;
 		}
+		srcAddr += res;
+		size -= res;
 
-		if (phfs_write(dst->dn, dst->handle, &dst->dataOffs, buff, res, 1) < 0) {
-			plostd_printf(ATTR_ERROR, "\nCan't write segment data!\n");
+		if ((res = phfs_write(dstHandler, dstAddr, buff, res)) < 0) {
+			plostd_printf(ATTR_ERROR, "\nCan't write data!\n");
 			return ERR_PHFS_FILE;
 		}
+		dstAddr += res;
 
-		if (src->handle.offs != 0) {
-			src->dataOffs += res;
-			size -= res;
-		}
-
-		dst->dataOffs += res;
-		plostd_printf(ATTR_LOADER, "\rWriting to address %p", dst->dataOffs + (addr_t)dst->handle.offs);
+		plostd_printf(ATTR_LOADER, "\rWriting to address %p", dstAddr);
 		cmd_showprogress(i++);
 	} while (size > 0 && res > 0);
 
 	return 0;
 }
-#endif
+
 
 static int cmd_cpphfs2map(handler_t handler, addr_t offs, size_t size, const char *map)
 {
@@ -384,89 +375,81 @@ void cmd_write(char *s)
 }
 
 
-/* Function parse device name or parameters. There is distinction whether it is storage or external dev.
- * For external dev, name shall be provided. For storage device offset and size shall be provided. */
-#if 0
-static int cmd_parseDev(phfs_conf_t *dev, const char (*args)[LINESZ + 1], u16 *argsID, u16 cmdArgsc)
+static int cmd_parseDev(handler_t *h, addr_t *offs, size_t *sz, const char (*args)[LINESZ + 1], u16 *argsID, u16 argsc)
 {
-	if (plostd_ishex(args[++(*argsID)]) < 0) {
-		plostd_printf(ATTR_LOADER, "\nOpening device %s ..\n", cmd_common.devs[dev->dn].name);
-		dev->handle = phfs_open(dev->dn, args[(*argsID)], 0);
+	const char *alias = args[(*argsID)++];
 
-		if (dev->handle.h < 0) {
-			plostd_printf(ATTR_ERROR, "Cannot initialize source: %s!\n", cmd_common.devs[dev->dn].name);
+	if ((*argsID) >= argsc) {
+		plostd_printf(ATTR_ERROR, "\nWrong number of arguments\n");
+		return ERR_ARG;
+	}
+
+	/* Open device using alias to file */
+	if (plostd_ishex(args[(*argsID)]) < 0) {
+		*offs = 0;
+		*sz = 0;
+		if (phfs_open(alias, args[(*argsID)++], 0, h) < 0) {
+			plostd_printf(ATTR_ERROR, "\nCannot initialize source: %s\n", alias);
 			return ERR_PHFS_IO;
 		}
 	}
+	/* Open device using direct access to memory */
 	else {
 		/* check whether size is provided */
-		if (((*argsID) + 1) >= cmdArgsc || plostd_ishex(args[(*argsID) + 1]) < 0)
-			return -1;
+		if (((*argsID) + 1) >= argsc || plostd_ishex(args[(*argsID) + 1]) < 0) {
+			plostd_printf(ATTR_ERROR, "\nWrong number of arguments\n");
+			return ERR_ARG;
+		}
 
-		dev->dataOffs = plostd_ahtoi(args[(*argsID)]);
+		*offs = plostd_ahtoi(args[(*argsID)]);
+		*sz = plostd_ahtoi(args[++(*argsID)]);
 
-		dev->datasz = plostd_ahtoi(args[++(*argsID)]);
-
-		plostd_printf(ATTR_LOADER, "\nOpening device %s ..\n", cmd_common.devs[dev->dn].name);
-		dev->handle = phfs_open(dev->dn, NULL, 0);
-		if (dev->handle.h < 0) {
-			plostd_printf(ATTR_ERROR, "Cannot initialize source: %s!\n", cmd_common.devs[dev->dn].name);
+		if (phfs_open(alias, NULL, 0, h) < 0) {
+			plostd_printf(ATTR_ERROR, "\nCannot initialize source: %s\n", alias);
 			return ERR_PHFS_IO;
 		}
 	}
 
-	return 0;
+	return ERR_NONE;
 }
-#endif
 
 
 void cmd_copy(char *s)
 {
-#if 0
-	phfs_conf_t phfses[2];
+	size_t sz[2];
+	addr_t offs[2];
+	handler_t h[2];
 
-	u16 cmdArgsc = 0, argsID = 0;
-	char cmdArgs[MAX_CMD_ARGS_NB][LINESZ + 1];
-
-	phfses[0].datasz = phfses[1].datasz = 0;
-	phfses[0].dataOffs = phfses[1].dataOffs = 0;
-
+	u16 argsc = 0, argsID = 0;
+	char args[MAX_CMD_ARGS_NB][LINESZ + 1];
 
 	/* Parse all comand's arguments */
-	if (cmd_parseArgs(s, cmdArgs, &cmdArgsc) < 0 || cmdArgsc < 4) {
+	if (cmd_parseArgs(s, args, &argsc) < 0 || argsc < 4) {
 		plostd_printf(ATTR_ERROR, "\nWrong arguments!!\n");
 		return;
 	}
 
-	/* Parse source parameters */
-	if (cmd_checkDev(cmdArgs[argsID], &phfses[0].dn) < 0)
-		return;
-
-	if (cmd_parseDev(&phfses[0], cmdArgs, &argsID, cmdArgsc) < 0) {
-		phfs_close(phfses[0].dn, phfses[0].handle);
+	if (cmd_parseDev(&h[0], &offs[0], &sz[0], args, &argsID, argsc) < 0) {
+		phfs_close(h[0]);
 		return;
 	}
 
-	/* Parse destination parameters */
-	if (cmd_checkDev(cmdArgs[++argsID], &phfses[1].dn) < 0)
-		return;
-
-	if (cmd_parseDev(&phfses[1], cmdArgs, &argsID, cmdArgsc) < 0) {
-		phfs_close(phfses[0].dn, phfses[0].handle);
-		phfs_close(phfses[1].dn, phfses[1].handle);
+	if (cmd_parseDev(&h[1], &offs[1], &sz[1], args, &argsID, argsc) < 0) {
+		phfs_close(h[0]);
+		phfs_close(h[1]);
 		return;
 	}
 
 	/* Copy data between devices */
-	cmd_cpphfs2phfs(&phfses[0], &phfses[1]);
+	if (cmd_cpphfs2phfs(h[0], offs[0], sz[0], h[1], offs[1], sz[1]) < 0)
+		plostd_printf(ATTR_ERROR, "\nOperation failed\n");
+	else
+		plostd_printf(ATTR_LOADER, "\nFinished copying\n");
 
-	plostd_printf(ATTR_LOADER, "\nFinished copying\n");
-
-	phfs_close(phfses[0].dn, phfses[0].handle);
-	phfs_close(phfses[1].dn, phfses[1].handle);
+	phfs_close(h[0]);
+	phfs_close(h[1]);
 
 	return;
-#endif
 }
 
 
