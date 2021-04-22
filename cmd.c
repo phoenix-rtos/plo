@@ -40,6 +40,9 @@ const cmd_t genericCmds[] = {
 	{ cmd_app,     "app", "       - loads app, usage:\n           app [<boot device>] [-x] [@]<name>|<name(offset:size)> [imap] [dmap]" },
 	{ cmd_map,     "map", "       - define multimap, usage: map <start> <end> <name> <attributes>"},
 	{ cmd_syspage, "syspage", "   - shows syspage contents, usage: syspage" },
+	{ cmd_phfs,    "phfs", "      - register device in phfs, usage: phfs <alias> <major.minor> [protocol]" },
+	{ cmd_devs,    "devs", "      - show registered devs in phfs, usage: devs" },
+	{ cmd_console, "console", "   - set console to device, usage: console <major.minor>" },
 	{ NULL, NULL, NULL }
 };
 
@@ -51,7 +54,6 @@ struct {
 
 
 /* Auxiliary functions */
-
 static int cmd_cpphfs2phfs(handler_t srcHandler, addr_t srcAddr, size_t srcSz, handler_t dstHandler, addr_t dstAddr, size_t dstSz)
 {
 	int res, i = 0;
@@ -95,6 +97,7 @@ static int cmd_cpphfs2phfs(handler_t srcHandler, addr_t srcAddr, size_t srcSz, h
 }
 
 
+
 static int cmd_cpphfs2map(handler_t handler, addr_t offs, size_t size, const char *map)
 {
 	void *addr;
@@ -133,7 +136,6 @@ static int cmd_cpphfs2map(handler_t handler, addr_t offs, size_t size, const cha
 
 	return ERR_NONE;
 }
-
 
 
 /* Initialization function */
@@ -579,9 +581,7 @@ void cmd_kernel(char *s)
 	if (phfs_close(handler) < 0)
 		plostd_printf(ATTR_ERROR, "\nCannot close file\n");
 
-
 }
-
 
 
 static int cmd_loadApp(handler_t handler, addr_t offs, size_t size, const char *imap, const char *dmap, const char *cmdline, u32 flags)
@@ -842,6 +842,75 @@ void cmd_syspage(char *s)
 	syspage_show();
 }
 
+
+void cmd_phfs(char *s)
+{
+	u16 argsc = 0;
+	unsigned int i, major, minor, pos = 0;
+	char args[5][LINESZ + 1];
+
+	for (i = 0; argsc < 5; ++i) {
+		if (cmd_getnext(s, &pos, ". \t", NULL, args[i], sizeof(args[i])) == NULL || *args[i] == 0)
+			break;
+		argsc++;
+	}
+
+	if (argsc < 3 || argsc > 4) {
+		plostd_printf(ATTR_ERROR, "\nWrong arguments!!\n");
+		return;
+	}
+
+	/* Get major/minor */
+	major = plostd_ahtoi(args[1]);
+	minor = plostd_ahtoi(args[2]);
+
+	if (phfs_regDev(args[0], major, minor, (argsc == 3) ? NULL : args[3]) < 0)
+		plostd_printf(ATTR_ERROR, "\n%s is not registered!\n", args[0]);
+}
+
+
+void cmd_devs(char *s)
+{
+	unsigned int pos = 0;
+
+	cmd_skipblanks(s, &pos, DEFAULT_BLANKS);
+	s += pos;
+
+	if (*s) {
+		plostd_printf(ATTR_ERROR, "\nCommand should not consist of any args\n");
+		return;
+	}
+
+	phfs_showDevs();
+}
+
+
+void cmd_console(char *s)
+{
+	u16 argsc = 0;
+	unsigned int i, major, minor, pos = 0;
+	char args[3][LINESZ + 1];
+
+	for (i = 0; argsc < 3; ++i) {
+		if (cmd_getnext(s, &pos, ". \t", NULL, args[i], sizeof(args[i])) == NULL || *args[i] == 0)
+			break;
+		argsc++;
+	}
+
+	if (argsc != 2) {
+		plostd_printf(ATTR_ERROR, "\nWrong arguments!!\n");
+		return;
+	}
+
+	/* Get major/minor */
+	major = plostd_ahtoi(args[0]);
+	minor = plostd_ahtoi(args[1]);
+
+	/* TODO: set console in hal */
+	plostd_printf(ATTR_ERROR, "\n%d.%d!!\n", major, minor);
+
+	return;
+}
 
 
 /* Auxiliary functions */
