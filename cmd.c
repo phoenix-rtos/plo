@@ -490,19 +490,17 @@ void cmd_save(char *s)
 
 void cmd_kernel(char *s)
 {
-#if 0
-	Elf32_Shdr shdr;
 	u8 buff[384];
-	handle_t handle;
-	addr_t minaddr = 0xffffffff, maxaddr = 0;
-	addr_t offs = 0, kernelOffs = 0;
 	void *loffs;
+	handler_t handler;
+	addr_t minaddr = 0xffffffff, maxaddr = 0;
+	addr_t offs = 0;
 
-	unsigned int pdn;
 	u16 argsc = 0;
 	char args[MAX_CMD_ARGS_NB][LINESZ + 1];
 
 	Elf32_Ehdr hdr;
+	Elf32_Shdr shdr;
 	Elf32_Phdr phdr;
 	Elf32_Word i = 0, k = 0, size = 0;
 
@@ -513,23 +511,14 @@ void cmd_kernel(char *s)
 		return;
 	}
 
-	if (cmd_checkDev(args[0], &pdn) < 0)
-		return;
-
-	plostd_printf(ATTR_LOADER, "\nOpening device %s ...\n", args[0]);
-	handle = phfs_open(pdn, KERNEL_PATH, 0);
-
-	if (handle.h < 0) {
-		plostd_printf(ATTR_ERROR, "\nCannot initialize device: %s\n", args[0]);
+	if (phfs_open(args[0], KERNEL_PATH, 0, &handler) < 0) {
+		plostd_printf(ATTR_ERROR, "\nCannot initialize device %s, error: %d\nLook at the device list:", args[0]);
+		phfs_showDevs();
 		return;
 	}
 
-	if (handle.offs > 0)
-		kernelOffs = DISK_KERNEL_OFFS;
-
 	/* Read ELF header */
-	offs = kernelOffs;
-	if (phfs_read(pdn, handle, &offs, (u8 *)&hdr, (u32)sizeof(Elf32_Ehdr)) < 0) {
+	if (phfs_read(handler, offs, (u8 *)&hdr, (u32)sizeof(Elf32_Ehdr)) < 0) {
 		plostd_printf(ATTR_ERROR, "Can't read ELF header!\n");
 		return;
 	}
@@ -541,8 +530,8 @@ void cmd_kernel(char *s)
 
 	/* Read program segments */
 	for (k = 0; k < hdr.e_phnum; k++) {
-		offs = kernelOffs + hdr.e_phoff + k * sizeof(Elf32_Phdr);
-		if (phfs_read(pdn, handle, &offs , (u8 *)&phdr, (u32)sizeof(Elf32_Phdr)) < 0) {
+		offs = hdr.e_phoff + k * sizeof(Elf32_Phdr);
+		if (phfs_read(handler, offs, (u8 *)&phdr, (u32)sizeof(Elf32_Phdr)) < 0) {
 			plostd_printf(ATTR_ERROR, "Can't read Elf32_Phdr, k=%d!\n", k);
 			return;
 		}
@@ -559,8 +548,8 @@ void cmd_kernel(char *s)
 			loffs = (void *)hal_vm2phym((addr_t)phdr.p_vaddr);
 
 			for (i = 0; i < phdr.p_filesz / sizeof(buff); i++) {
-				offs = kernelOffs + phdr.p_offset + i * sizeof(buff);
-				if (phfs_read(pdn, handle, &offs, buff, (u32)sizeof(buff)) < 0) {
+				offs = phdr.p_offset + i * sizeof(buff);
+				if (phfs_read(handler, offs, buff, (u32)sizeof(buff)) < 0) {
 					plostd_printf(ATTR_ERROR, "\nCan't read segment data, k=%d!\n", k);
 					return;
 				}
@@ -574,8 +563,8 @@ void cmd_kernel(char *s)
 			/* Last segment part */
 			size = phdr.p_filesz % sizeof(buff);
 			if (size != 0) {
-				offs = kernelOffs + phdr.p_offset + i * sizeof(buff);
-				if (phfs_read(pdn, handle, &offs, buff, size) < 0) {
+				offs = phdr.p_offset + i * sizeof(buff);
+				if (phfs_read(handler, offs, buff, size) < 0) {
 					plostd_printf(ATTR_ERROR, "\nCan't read last segment data, k=%d!\n", k);
 					return;
 				}
@@ -586,9 +575,9 @@ void cmd_kernel(char *s)
 	}
 
 	for (k = 0; k < hdr.e_shnum; k++) {
-		offs = kernelOffs + hdr.e_shoff + k * sizeof(Elf32_Shdr);
+		offs = hdr.e_shoff + k * sizeof(Elf32_Shdr);
 
-		if (phfs_read(pdn, handle, &offs , (u8 *)&shdr, (u32)sizeof(Elf32_Shdr)) < 0) {
+		if (phfs_read(handler, offs, (u8 *)&shdr, (u32)sizeof(Elf32_Shdr)) < 0) {
 			plostd_printf(ATTR_ERROR, "Can't read Elf32_Shdr, k=%d!\n", k);
 			return;
 		}
@@ -605,7 +594,11 @@ void cmd_kernel(char *s)
 	hal_setKernelEntry(hdr.e_entry);
 
 	plostd_printf(ATTR_LOADER, "[ok]\n");
-#endif
+
+	if (phfs_close(handler) < 0)
+		plostd_printf(ATTR_ERROR, "\nCannot close file\n");
+
+
 }
 
 
