@@ -27,7 +27,4 @@ extern void script_init(void);
 extern void script_run(void);
 
 
-extern int script_expandAlias(char **name);
-
-
 #endif
