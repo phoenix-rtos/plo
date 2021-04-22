@@ -31,7 +31,6 @@
 #define MAX_APP_NAME_SIZE         15
 
 
-
 typedef struct {
 	void (*f)(char *);
 	char *cmd;
@@ -88,6 +87,15 @@ extern void cmd_map(char *args);
 
 
 extern void cmd_syspage(char *s);
+
+
+extern void cmd_phfs(char *s);
+
+
+extern void cmd_devs(char *s);
+
+
+extern void cmd_console(char *s);
 
 
 /* Auxiliary functions */
