@@ -28,7 +28,7 @@
 #define MAX_COMMANDS_NB           20
 
 #define MAX_CMD_ARGS_NB           10
-#define MAX_APP_NAME_SIZE         17
+#define MAX_APP_NAME_SIZE         15
 
 
 
