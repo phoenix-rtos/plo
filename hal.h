@@ -41,10 +41,6 @@ extern void hal_init(void);
 
 extern void hal_done(void);
 
-extern void hal_initphfs(phfs_handler_t *handlers);
-
-extern void hal_initdevs(cmd_device_t **devs);
-
 extern void hal_appendcmds(cmd_t *cmds);
 
 
