@@ -19,6 +19,9 @@
 
 #include "peripherals.h"
 #include "zynq.h"
+#include "devs.h"
+
+/* TODO: remove header */
 #include "uart.h"
 
 
@@ -54,7 +57,23 @@ enum {
 
 struct {
 	uart_t uarts[UARTS_MAX_CNT];
+	int clkInit;
 } uart_common;
+
+
+/* TODO: specific uart information should be get from a device tree,
+ *       using hardcoded defines is a temporary solution           */
+const struct {
+	volatile u32 *base;
+	u16 irq;
+	u16 clk;
+	u16 rxPin;
+	u16 txPin;
+} info[UARTS_MAX_CNT] = {
+	{ UART0_BASE_ADDR, UART0_IRQ, UART0_CLK, UART0_RX, UART0_TX },
+	{ UART1_BASE_ADDR, UART1_IRQ, UART1_CLK, UART1_RX, UART1_TX }
+};
+
 
 
 static inline void uart_rxData(uart_t *uart)
@@ -113,6 +132,7 @@ static int uart_irqHandler(u16 n, void *data)
 }
 
 
+/* TODO: when hal_console will be introduced, uart_read should be replaced by dev interface */
 int uart_read(unsigned int pn, u8 *buff, u16 len, u16 timeout)
 {
 	u16 l, cnt = 0;
@@ -147,6 +167,7 @@ int uart_read(unsigned int pn, u8 *buff, u16 len, u16 timeout)
 }
 
 
+/* TODO: when hal_console will be introduced, uart_write should be replaced by dev interface */
 int uart_write(unsigned int pn, const u8 *buff, u16 len)
 {
 	int l, cnt = 0;
@@ -222,18 +243,11 @@ int uart_rxEmpty(unsigned int pn)
 *  baud_rate = ref_clk / (bgen * (bdiv + 1))
 *  bgen: 2 - 65535
 *  bdiv: 4 - 255                             */
-static int uart_calcBaudarate(int pn, int baudrate)
+static int uart_calcBaudarate(uart_t *uart, int baudrate)
 {
 	u32 bestDiff, diff;
 	u32 calcBaudrate;
 	u32 bdiv, bgen, bestBdiv = 4, bestBgen = 2;
-
-	uart_t *uart;
-
-	if (pn >= UARTS_MAX_CNT)
-		return ERR_ARG;
-
-	uart = &uart_common.uarts[pn];
 
 	bestDiff = (u32)baudrate;
 
@@ -321,91 +335,123 @@ u32 uart_getBaudrate(void)
 }
 
 
-void uart_init(void)
+/* Device interafce */
+
+ssize_t uart_devRead(unsigned int dn, addr_t offs, u8 *buff, unsigned int len)
 {
-	int i;
-	uart_t *uart;
+	if (dn >= UARTS_MAX_CNT)
+		return ERR_ARG;
 
-	static const struct {
-		volatile u32 *base;
-		u16 irq;
-		u16 clk;
-		u16 rxPin;
-		u16 txPin;
-	} info[UARTS_MAX_CNT] = {
-		{ UART0_BASE_ADDR, UART0_IRQ, UART0_CLK, UART0_RX, UART0_TX },
-		{ UART1_BASE_ADDR, UART1_IRQ, UART1_CLK, UART1_RX, UART1_TX }
-	};
-
-
-	/* UART Clock Controller configuration */
-	uart_initCtrlClock();
-
-	for (i = 0; i < UARTS_MAX_CNT; ++i) {
-		if (_zynq_setAmbaClk(info[i].clk, clk_enable) < 0)
-			return;
-
-		if (uart_setPin(info[i].rxPin) < 0 || uart_setPin(info[i].txPin) < 0)
-			return;
-
-		uart = &uart_common.uarts[i];
-
-		uart->rxHead = 0;
-		uart->txHead = 0;
-		uart->rxTail = 0;
-		uart->txTail = 0;
-		uart->tFull = 0;
-
-		uart->irq = info[i].irq;
-		uart->clk = info[i].clk;
-		uart->base = info[i].base;
-
-		/* Reset RX & TX */
-		*(uart->base + cr) = 0x3;
-
-		/* Uart Mode Register
-		 * normal mode, 1 stop bit, no parity, 8 bits, uart_ref_clk as source clock
-		 * PAR = 0x4 */
-		*(uart->base + mr) = (*(uart->base + mr) & ~0x000003ff) | 0x00000020;
-
-		/* Disable TX and RX */
-		*(uart->base + cr) = (*(uart->base + cr) & ~0x000001ff) | 0x00000028;
-
-		uart_calcBaudarate(i, UART_BAUDRATE);
-
-		/* Uart Control Register
-		 * TXEN = 0x1; RXEN = 0x1; TXRES = 0x1; RXRES = 0x1 */
-		*(uart->base + cr) = (*(uart->base + cr) & ~0x000001ff) | 0x00000017;
-
-		hal_irqinst(info[i].irq, uart_irqHandler, (void *)uart);
-
-		/* Enable RX FIFO trigger */
-		*(uart->base + ier) |= 0x1;
-		/* Set trigger level, range: 1-63 */
-		*(uart->base + rxwm) = 1;
-	}
+	return uart_read(dn, buff, len, 500);
 }
 
 
-void uart_done(void)
+ssize_t uart_devWrite(unsigned int dn, addr_t offs, const u8 *buff, unsigned int len)
 {
-	int i;
+	if (dn >= UARTS_MAX_CNT)
+		return ERR_ARG;
+
+	return uart_write(dn, buff, len);
+}
+
+
+int uart_sync(unsigned int dn)
+{
+	if (dn >= UARTS_MAX_CNT)
+		return ERR_ARG;
+
+	/* TBD */
+
+	return ERR_NONE;
+}
+
+
+int uart_deinit(unsigned int dn)
+{
 	uart_t *uart;
 
-	for (i = 0; i < UARTS_MAX_CNT; ++i) {
-		uart = &uart_common.uarts[i];
-		/* Disable interrupts */
-		*(uart->base + idr) = 0xfff;
+	if (dn >= UARTS_MAX_CNT)
+		return ERR_ARG;
 
-		/* Disable RX & TX */
-		*(uart->base + cr) = (1 << 5) | (1 << 3);
-		/* Reset RX & TX */
-		*(uart->base + cr) = 0x3;
+	uart = &uart_common.uarts[dn];
 
-		/* Clear status flags */
-		*(uart->base + isr) = 0xfff;
+	/* Disable interrupts */
+	*(uart->base + idr) = 0xfff;
 
-		hal_irquninst(uart->irq);
-		_zynq_setAmbaClk(uart->clk, clk_disable);
+	/* Disable RX & TX */
+	*(uart->base + cr) = (1 << 5) | (1 << 3);
+	/* Reset RX & TX */
+	*(uart->base + cr) = 0x3;
+
+	/* Clear status flags */
+	*(uart->base + isr) = 0xfff;
+
+	hal_irquninst(uart->irq);
+	_zynq_setAmbaClk(uart->clk, clk_disable);
+
+	return ERR_NONE;
+}
+
+
+int uart_init(unsigned int dn, dev_handler_t *h)
+{
+	uart_t *uart;
+
+	if (dn >= UARTS_MAX_CNT)
+		return ERR_ARG;
+
+	/* UART Clock Controller configuration */
+	if (uart_common.clkInit == 0) {
+		uart_initCtrlClock();
+		uart_common.clkInit = 1;
 	}
+
+	if (_zynq_setAmbaClk(info[dn].clk, clk_enable) < 0)
+		return ERR_ARG;
+
+	if (uart_setPin(info[dn].rxPin) < 0 || uart_setPin(info[dn].txPin) < 0)
+		return ERR_ARG;
+
+	uart = &uart_common.uarts[dn];
+
+	uart->irq = info[dn].irq;
+	uart->clk = info[dn].clk;
+	uart->base = info[dn].base;
+
+	/* Reset RX & TX */
+	*(uart->base + cr) = 0x3;
+
+	/* Uart Mode Register
+		* normal mode, 1 stop bit, no parity, 8 bits, uart_ref_clk as source clock
+		* PAR = 0x4 */
+	*(uart->base + mr) = (*(uart->base + mr) & ~0x000003ff) | 0x00000020;
+
+	/* Disable TX and RX */
+	*(uart->base + cr) = (*(uart->base + cr) & ~0x000001ff) | 0x00000028;
+
+	uart_calcBaudarate(uart, UART_BAUDRATE);
+
+	/* Uart Control Register
+		* TXEN = 0x1; RXEN = 0x1; TXRES = 0x1; RXRES = 0x1 */
+	*(uart->base + cr) = (*(uart->base + cr) & ~0x000001ff) | 0x00000017;
+
+	hal_irqinst(info[dn].irq, uart_irqHandler, (void *)uart);
+
+	/* Enable RX FIFO trigger */
+	*(uart->base + ier) |= 0x1;
+	/* Set trigger level, range: 1-63 */
+	*(uart->base + rxwm) = 1;
+
+	h->deinit = uart_deinit;
+	h->sync = uart_sync;
+	h->read = uart_devRead;
+	h->write = uart_devWrite;
+
+	return ERR_NONE;
+}
+
+
+__attribute__((constructor)) static void uart_reg(void)
+{
+	devs_regDriver(DEV_UART, uart_init);
 }

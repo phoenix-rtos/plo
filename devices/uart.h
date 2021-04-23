@@ -19,7 +19,6 @@
 
 #include "../types.h"
 
-extern void uart_init(void);
 
 extern u32 uart_getBaudrate(void);
 
@@ -30,8 +29,6 @@ extern int uart_write(unsigned int pn, const u8 *buff, u16 len);
 extern int uart_safewrite(unsigned int pn, const u8 *buff, u16 len);
 
 extern int uart_rxEmpty(unsigned int pn);
-
-extern void uart_done(void);
 
 
 #endif

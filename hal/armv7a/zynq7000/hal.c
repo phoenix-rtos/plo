@@ -47,7 +47,6 @@ void hal_init(void)
 	interrupts_init();
 	gpio_init();
 	timer_init();
-	uart_init();
 
 	syspage_init();
 	syspage_setAddress((void *)SYSPAGE_ADDRESS);
