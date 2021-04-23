@@ -23,6 +23,8 @@
 #define SIZE_INTERRUPTS 167
 
 /* UART */
+#define UART_MAX_CNT 8
+
 #ifndef UART1
 #define UART1 1
 #endif
