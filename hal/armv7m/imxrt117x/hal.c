@@ -57,7 +57,6 @@ void hal_init(void)
 {
 	_imxrt_init();
 	timer_init();
-	uart_init(); /* TODO: remove */
 
 	hal_setLaunchTimeout(3);
 
@@ -192,7 +191,6 @@ int hal_launch(void)
 	timer_wait(100, TIMER_EXPIRE, NULL, 0);
 
 	/* Tidy up */
-	uart_done();
 	timer_done();
 
 	hal_done();
