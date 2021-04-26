@@ -20,29 +20,13 @@
 #include "peripherals.h"
 #include "imxrt.h"
 #include "uart.h"
+#include "devs.h"
 
 #define CONCATENATE(x, y) x##y
 #define PIN2MUX(x) CONCATENATE(pctl_mux_gpio_, x)
 #define PIN2PAD(x) CONCATENATE(pctl_pad_gpio_, x)
 
 #define UART_MAX_CNT 12
-
-#define UART1_POS 0
-#define UART2_POS (UART1_POS + UART1)
-#define UART3_POS (UART2_POS + UART2)
-#define UART4_POS (UART3_POS + UART3)
-#define UART5_POS (UART4_POS + UART4)
-#define UART6_POS (UART5_POS + UART5)
-#define UART7_POS (UART6_POS + UART6)
-#define UART8_POS (UART7_POS + UART7)
-#define UART9_POS (UART8_POS + UART8)
-#define UART10_POS (UART9_POS + UART9)
-#define UART11_POS (UART10_POS + UART10)
-#define UART12_POS (UART11_POS + UART11)
-
-#define UART_CNT (UART1 + UART2 + UART3 + UART4 + UART5 + UART6 + \
-	UART7 + UART8 + UART9 + UART10 + UART11 + UART12)
-
 
 #define BUFFER_SIZE 0x200
 
@@ -66,19 +50,49 @@ typedef struct {
 
 
 struct {
-	uart_t uarts[UART_CNT];
+	uart_t uarts[UART_MAX_CNT];
+	int init;
 } uart_common;
 
 
-const int uartConfig[] = { UART1, UART2, UART3, UART4, UART5, UART6,
-	UART7, UART8, UART9, UART10, UART11, UART12 };
-
-
-const int uartPos[] = { UART1_POS, UART2_POS, UART3_POS, UART4_POS, UART5_POS, UART6_POS,
-	UART7_POS, UART8_POS, UART9_POS, UART10_POS, UART11_POS, UART12_POS };
-
-
 enum { veridr = 0, paramr, globalr, pincfgr, baudr, statr, ctrlr, datar, matchr, modirr, fifor, waterr };
+
+
+static const u32 fifoSzLut[] = { 1, 4, 8, 16, 32, 64, 128, 256 };
+
+const int uartLut[] = { UART1, UART2, UART3, UART4, UART5, UART6, UART7, UART8, UART9, UART10, UART11, UART12 };
+
+static const struct {
+	volatile u32 *base;
+	int dev;
+	unsigned irq;
+} infoUarts[] = {
+	{ UART1_BASE, UART1_CLK, UART1_IRQ },
+	{ UART2_BASE, UART2_CLK, UART2_IRQ },
+	{ UART3_BASE, UART3_CLK, UART3_IRQ },
+	{ UART4_BASE, UART4_CLK, UART4_IRQ },
+	{ UART5_BASE, UART5_CLK, UART5_IRQ },
+	{ UART6_BASE, UART6_CLK, UART6_IRQ },
+	{ UART7_BASE, UART7_CLK, UART7_IRQ },
+	{ UART8_BASE, UART8_CLK, UART8_IRQ },
+	{ UART9_BASE, UART9_CLK, UART9_IRQ },
+	{ UART10_BASE, UART10_CLK, UART10_IRQ },
+	{ UART11_BASE, UART11_CLK, UART11_IRQ },
+	{ UART12_BASE, UART12_CLK, UART12_IRQ }
+};
+
+
+/* TODO: temporary solution, it should be moved to device tree */
+static uart_t *uart_getInstance(unsigned int dn)
+{
+	if (dn < 1 || dn > UART_MAX_CNT)
+ 		return NULL;
+
+	if (uartLut[dn - 1] == 0)
+		return NULL;
+
+	return &uart_common.uarts[dn - 1];
+}
 
 
 int uart_getRXcount(uart_t *uart)
@@ -93,15 +107,12 @@ int uart_getTXcount(uart_t *uart)
 }
 
 
-int uart_rxEmpty(unsigned int pn)
+int uart_rxEmpty(unsigned int dn)
 {
 	uart_t *uart;
-	--pn;
 
-	if (pn >= (sizeof(uartConfig) / sizeof(uartConfig[0])) || !uartConfig[pn])
+	if ((uart = uart_getInstance(dn)) == NULL)
 		return ERR_ARG;
-
-	uart = &uart_common.uarts[uartPos[pn]];
 
 	return uart->rxHead == uart->rxTail;
 }
@@ -141,17 +152,14 @@ int uart_handleIntr(u16 irq, void *buff)
 }
 
 
-int uart_read(unsigned int pn, u8 *buff, u16 len, u16 timeout)
+/* TODO: when hal_console will be introduced, uart_read should be replaced by dev interface */
+int uart_read(unsigned int dn, u8 *buff, u16 len, u16 timeout)
 {
 	uart_t *uart;
 	u16 l, cnt;
 
-	--pn;
-
-	if (pn >= (sizeof(uartConfig) / sizeof(uartConfig[0])) || !uartConfig[pn])
+	if ((uart = uart_getInstance(dn)) == NULL)
 		return ERR_ARG;
-
-	uart = &uart_common.uarts[uartPos[pn]];
 
 	if (!timer_wait(timeout, TIMER_VALCHG, &uart->rxHead, uart->rxTail))
 		return ERR_UART_TIMEOUT;
@@ -177,17 +185,14 @@ int uart_read(unsigned int pn, u8 *buff, u16 len, u16 timeout)
 }
 
 
-int uart_write(unsigned int pn, const u8 *buff, u16 len)
+/* TODO: when hal_console will be introduced, uart_write should be replaced by dev interface */
+int uart_write(unsigned int dn, const u8 *buff, u16 len)
 {
 	uart_t *uart;
 	u16 l, cnt = 0;
 
-	--pn;
-
-	if (pn >= (sizeof(uartConfig) / sizeof(uartConfig[0])) || !uartConfig[pn])
+	if ((uart = uart_getInstance(dn)) == NULL)
 		return ERR_ARG;
-
-	uart = &uart_common.uarts[uartPos[pn]];
 
 	while (uart->txHead == uart->txTail && uart->tFull)
 		;
@@ -234,7 +239,6 @@ int uart_safewrite(unsigned int pn, const u8 *buff, u16 len)
 	}
 	return 0;
 }
-
 
 
 static int uart_muxVal(int uart, int mux)
@@ -497,111 +501,130 @@ u32 uart_getBaudrate(void)
 }
 
 
-void uart_init(void)
+/* Device interafce */
+
+ssize_t uart_devRead(unsigned int dn, addr_t offs, u8 *buff, unsigned int len)
 {
-	u32 t;
-	int i, dev;
 	uart_t *uart;
 
-	static const u32 fifoSzLut[] = { 1, 4, 8, 16, 32, 64, 128, 256 };
-	static const struct {
-		volatile u32 *base;
-		int dev;
-		unsigned irq;
-	} info[] = {
-		{ UART1_BASE, UART1_CLK, UART1_IRQ },
-		{ UART2_BASE, UART2_CLK, UART2_IRQ },
-		{ UART3_BASE, UART3_CLK, UART3_IRQ },
-		{ UART4_BASE, UART4_CLK, UART4_IRQ },
-		{ UART5_BASE, UART5_CLK, UART5_IRQ },
-		{ UART6_BASE, UART6_CLK, UART6_IRQ },
-		{ UART7_BASE, UART7_CLK, UART7_IRQ },
-		{ UART8_BASE, UART8_CLK, UART8_IRQ },
-		{ UART9_BASE, UART9_CLK, UART9_IRQ },
-		{ UART10_BASE, UART10_CLK, UART10_IRQ },
-		{ UART11_BASE, UART11_CLK, UART11_IRQ },
-		{ UART12_BASE, UART12_CLK, UART12_IRQ }
-	};
+	if ((uart = uart_getInstance(dn)) == NULL)
+		return ERR_ARG;
 
-	uart_initPins();
-
-	for (i = 0, dev = 0; dev < sizeof(uartConfig) / sizeof(uartConfig[0]); ++dev) {
-		if (!uartConfig[dev])
-			continue;
-
-		_imxrt_setDevClock(info[dev].dev, 0, 0, 0, 0, 1);
-
-		uart = &uart_common.uarts[i++];
-		uart->base = info[dev].base;
-		uart->rxHead = 0;
-		uart->txHead = 0;
-		uart->rxTail = 0;
-
-		uart->txTail = 0;
-		uart->tFull = 0;
-
-		/* Disable TX and RX */
-		*(uart->base + ctrlr) &= ~((1 << 19) | (1 << 18));
-
-		/* Reset all internal logic and registers, except the Global Register */
-		*(uart->base + globalr) |= 1 << 1;
-		imxrt_dataBarrier();
-		*(uart->base + globalr) &= ~(1 << 1);
-		imxrt_dataBarrier();
-
-		/* Disable input trigger */
-		*(uart->base + pincfgr) &= ~3;
-
-		/* Set 115200 default baudrate */
-		t = *(uart->base + baudr) & ~((0x1f << 24) | (1 << 17) | 0xfff);
-		*(uart->base + baudr) = t | calculate_baudrate(UART_BAUDRATE);
-
-		/* Set 8 bit and no parity mode */
-		*(uart->base + ctrlr) &= ~0x117;
-
-		/* One stop bit */
-		*(uart->base + baudr) &= ~(1 << 13);
-
-		*(uart->base + waterr) = 0;
-
-		/* Enable FIFO */
-		*(uart->base + fifor) |= (1 << 7) | (1 << 3);
-		*(uart->base + fifor) |= 0x3 << 14;
-
-		/* Clear all status flags */
-		*(uart->base + statr) |= 0xc01fc000;
-
-		uart->rxFifoSz = fifoSzLut[*(uart->base + fifor) & 0x7];
-		uart->txFifoSz = fifoSzLut[(*(uart->base + fifor) >> 4) & 0x7];
-
-		/* Enable receiver interrupt */
-		*(uart->base + ctrlr) |= 1 << 21;
-
-		/* Enable TX and RX */
-		*(uart->base + ctrlr) |= (1 << 19) | (1 << 18);
-
-		hal_irqinst(info[dev].irq, uart_handleIntr, (void *)uart);
-	}
-
-	return;
+	return uart_read(dn, buff, len, 500);
 }
 
 
-void uart_done(void)
+ssize_t uart_devWrite(unsigned int dn, addr_t offs, const u8 *buff, unsigned int len)
 {
-	int i, dev;
 	uart_t *uart;
 
-	for (i = 0, dev = 0; dev < sizeof(uartConfig) / sizeof(uartConfig[0]); ++dev) {
-		if (!uartConfig[dev])
-			continue;
+	if ((uart = uart_getInstance(dn)) == NULL)
+		return ERR_ARG;
 
-		uart = &uart_common.uarts[i++];
+	return uart_write(dn, buff, len);
+}
 
-		/* disable TX and RX */
-		*(uart->base + ctrlr) &= ~((1 << 19) | (1 << 18));
-		*(uart->base + ctrlr) &= ~((1 << 23) | (1 << 21));
 
-		hal_irquninst(uart->irq);
+int uart_sync(unsigned int dn)
+{
+	uart_t *uart;
+
+	if ((uart = uart_getInstance(dn)) == NULL)
+		return ERR_ARG;
+
+	/* TBD */
+
+	return ERR_NONE;
+}
+
+
+int uart_deinit(unsigned int dn)
+{
+	uart_t *uart;
+
+	if ((uart = uart_getInstance(dn)) == NULL)
+		return ERR_ARG;
+
+	/* disable TX and RX */
+	*(uart->base + ctrlr) &= ~((1 << 19) | (1 << 18));
+	*(uart->base + ctrlr) &= ~((1 << 23) | (1 << 21));
+
+	hal_irquninst(uart->irq);
+
+	return ERR_NONE;
+}
+
+
+int uart_init(unsigned int dn, dev_handler_t *h)
+{
+	u32 t, id;
+	uart_t *uart;
+
+	if ((uart = uart_getInstance(dn)) == NULL)
+		return ERR_ARG;
+
+	if (uart_common.init == 0) {
+		uart_initPins();
+		uart_common.init = 1;
 	}
+
+	id = dn - 1;
+	uart->base = infoUarts[id].base;
+
+	_imxrt_setDevClock(infoUarts[id].dev, 0, 0, 0, 0, 1);
+
+	/* Disable TX and RX */
+	*(uart->base + ctrlr) &= ~((1 << 19) | (1 << 18));
+
+	/* Reset all internal logic and registers, except the Global Register */
+	*(uart->base + globalr) |= 1 << 1;
+	imxrt_dataBarrier();
+	*(uart->base + globalr) &= ~(1 << 1);
+	imxrt_dataBarrier();
+
+	/* Disable input trigger */
+	*(uart->base + pincfgr) &= ~3;
+
+	/* Set 115200 default baudrate */
+	t = *(uart->base + baudr) & ~((0x1f << 24) | (1 << 17) | 0xfff);
+	*(uart->base + baudr) = t | calculate_baudrate(UART_BAUDRATE);
+
+	/* Set 8 bit and no parity mode */
+	*(uart->base + ctrlr) &= ~0x117;
+
+	/* One stop bit */
+	*(uart->base + baudr) &= ~(1 << 13);
+
+	*(uart->base + waterr) = 0;
+
+	/* Enable FIFO */
+	*(uart->base + fifor) |= (1 << 7) | (1 << 3);
+	*(uart->base + fifor) |= 0x3 << 14;
+
+	/* Clear all status flags */
+	*(uart->base + statr) |= 0xc01fc000;
+
+	uart->rxFifoSz = fifoSzLut[*(uart->base + fifor) & 0x7];
+	uart->txFifoSz = fifoSzLut[(*(uart->base + fifor) >> 4) & 0x7];
+
+	/* Enable receiver interrupt */
+	*(uart->base + ctrlr) |= 1 << 21;
+
+	/* Enable TX and RX */
+	*(uart->base + ctrlr) |= (1 << 19) | (1 << 18);
+
+	hal_irqinst(infoUarts[id].irq, uart_handleIntr, (void *)uart);
+
+	h->deinit = uart_deinit;
+	h->sync = uart_sync;
+	h->read = uart_devRead;
+	h->write = uart_devWrite;
+
+	return ERR_NONE;
+}
+
+
+__attribute__((constructor)) static void uart_reg(void)
+{
+	devs_regDriver(DEV_UART, uart_init);
 }
