@@ -26,6 +26,7 @@
 
 void cmd_bitstream(char *s)
 {
+#if 0
 	int res;
 	u8 buff[384];
 	u32 offs = 0;
@@ -69,4 +70,5 @@ void cmd_bitstream(char *s)
 	}
 
 	plostd_printf(ATTR_LOADER, "PL was successfully initialized\n");
+#endif
 }

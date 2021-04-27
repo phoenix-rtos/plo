@@ -16,6 +16,7 @@
 
 #include "cmd.h"
 #include "hal.h"
+#include "devs.h"
 #include "phfs.h"
 #include "timer.h"
 #include "plostd.h"
@@ -135,7 +136,7 @@ void plo_init(void)
 	u16 t = 0;
 
 	hal_init();
-	phfs_init();
+	devs_init();
 	cmd_init();
 
 	plostd_printf(ATTR_LOADER, "%s \n", PLO_WELCOME);

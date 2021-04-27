@@ -31,11 +31,6 @@
 #define MAX_APP_NAME_SIZE         17
 
 
-typedef struct {
-	char *name;
-	unsigned int pdn;
-} cmd_device_t;
-
 
 typedef struct {
 	void (*f)(char *);
@@ -106,9 +101,6 @@ extern char *cmd_getnext(char *line, unsigned int *pos, char *blanks, char *cite
 
 
 extern int cmd_parseArgs(char *s, char (*args)[LINESZ + 1], u16 *argsc);
-
-
-extern int cmd_checkDev(const char *devName, unsigned int *dn);
 
 
 #endif

@@ -44,10 +44,6 @@ extern void _plo_bss(void);
 
 
 /* PHFS sources  */
-#define PDN_NB                   2
-#define PDN_COM1                 0
-#define PDN_ACM0                 1
-
 #define PHFS_ACM_PORTS_NB        1    /* Number of ports define by CDC driver; min = 1, max = 2               */
 #define PHFS_SERIAL_LOADER_ID    0    /* UART ID on which data exchange is established with phoenixd host app */
 

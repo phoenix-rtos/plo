@@ -38,7 +38,7 @@ static u32 msg_csum(msg_t *msg)
 }
 
 
-static int msg_write(u16 pn, msg_t *msg)
+static int msg_write(u16 dn, msg_t *msg)
 {
 	u8 *p = (u8 *)msg;
 	u8 cs[2];
@@ -47,7 +47,7 @@ static int msg_write(u16 pn, msg_t *msg)
 
 	/* Frame start */
 	cs[0] = MSG_MARK;
-	if ((res = msg->write(pn, cs, 1)) < 0)
+	if ((res = msg->write(dn, 0, cs, 1)) < 0)
 		return res;
 
 	for (k = 0; k < MSG_HDRSZ + msg_getlen(msg); k++) {
@@ -55,11 +55,11 @@ static int msg_write(u16 pn, msg_t *msg)
 			cs[0] = MSG_ESC;
 			cs[1] = p[k] == MSG_MARK ? MSG_ESCMARK : MSG_ESCESC;
 
-			if ((res = msg->write(pn, cs, 2)) < 0)
+			if ((res = msg->write(dn, 0, cs, 2)) < 0)
 				return res;
 		}
 		else {
-			if ((res = msg->write(pn, &p[k], 1)) < 0)
+			if ((res = msg->write(dn, 0, &p[k], 1)) < 0)
 				return res;
 		}
 	}
@@ -67,7 +67,7 @@ static int msg_write(u16 pn, msg_t *msg)
 }
 
 
-static int msg_read(u16 pn, msg_t *msg, u16 timeout, int *state)
+static int msg_read(u16 dn, msg_t *msg, u16 timeout, int *state)
 {
 	u8 c;
 	u8 buff[MSG_HDRSZ + MSG_MAXLEN];
@@ -75,7 +75,7 @@ static int msg_read(u16 pn, msg_t *msg, u16 timeout, int *state)
 	unsigned int l = 0;
 
 	for (;;) {
-		if ((res = msg->read(pn, buff, sizeof(buff), timeout)) < 0)
+		if ((res = msg->read(dn, 0, buff, sizeof(buff))) < 0)
 			break;
 
 		for (i = 0; i < res; ++i) {
@@ -130,7 +130,7 @@ static int msg_read(u16 pn, msg_t *msg, u16 timeout, int *state)
 }
 
 
-int msg_send(u16 pn, msg_t *smsg, msg_t *rmsg)
+int msg_send(unsigned int dn, msg_t *smsg, msg_t *rmsg)
 {
 	unsigned int retr;
 	int state = MSGREAD_DESYN;
@@ -140,10 +140,10 @@ int msg_send(u16 pn, msg_t *smsg, msg_t *rmsg)
 
 	msg_setcsum(smsg, msg_csum(smsg));
 	for (retr = 0; retr < MSGRECV_MAXRETR; retr++) {
-		if (msg_write(pn, smsg) < 0)
+		if (msg_write(dn, smsg) < 0)
 			continue;
 
-		if ((msg_read(pn, rmsg, MSGRECV_TIMEOUT, &state)) > 0) {
+		if ((msg_read(dn, rmsg, MSGRECV_TIMEOUT, &state)) > 0) {
 			return ERR_NONE;
 		}
 	}

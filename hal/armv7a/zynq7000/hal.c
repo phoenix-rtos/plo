@@ -18,9 +18,6 @@
 #include "interrupts.h"
 #include "peripherals.h"
 #include "uart.h"
-#include "phfs-serial.h"
-#include "cdc-client.h"
-#include "phfs-usb.h"
 #include "gpio.h"
 
 #include "../hal.h"
@@ -42,12 +39,6 @@ const cmd_t board_cmds[] = {
 };
 
 
-const cmd_device_t devices[] = {
-	{ "com1", PDN_COM1 },
-	{ "usb0", PDN_ACM0 },
-	{ NULL, NULL }
-};
-
 /* Initialization functions */
 
 void hal_init(void)
@@ -56,6 +47,7 @@ void hal_init(void)
 	interrupts_init();
 	gpio_init();
 	timer_init();
+	uart_init();
 
 	syspage_init();
 	syspage_setAddress((void *)SYSPAGE_ADDRESS);
@@ -67,33 +59,7 @@ void hal_init(void)
 
 void hal_done(void)
 {
-	phfs_serialDeinit();
-	phfs_usbDeinit();
 	timer_done();
-}
-
-
-void hal_initphfs(phfs_handler_t *handlers)
-{
-	handlers[PDN_COM1].open = phfs_serialOpen;
-	handlers[PDN_COM1].read = phfs_serialRead;
-	handlers[PDN_COM1].write = phfs_serialWrite;
-	handlers[PDN_COM1].close = phfs_serialClose;
-	handlers[PDN_COM1].dn = PHFS_SERIAL_LOADER_ID;
-	phfs_serialInit();
-
-	handlers[PDN_ACM0].open = phfs_usbOpen;
-	handlers[PDN_ACM0].read = phfs_usbRead;
-	handlers[PDN_ACM0].write = phfs_usbWrite;
-	handlers[PDN_ACM0].close = phfs_usbClose;
-	handlers[PDN_ACM0].dn = endpt_bulk_acm0;
-	phfs_usbInit();
-}
-
-
-void hal_initdevs(cmd_device_t **devs)
-{
-	*devs = (cmd_device_t *)devices;
 }
 
 

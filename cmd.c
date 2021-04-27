@@ -26,15 +26,6 @@
 #define MSG_BUFF_SZ 0x100
 
 
-typedef struct {
-	unsigned int dn;
-	handle_t handle;
-
-	addr_t dataOffs;
-	u32 datasz;
-} phfs_conf_t;
-
-
 const cmd_t genericCmds[] = {
 	{ cmd_help,    "help", "      - prints this message" },
 	{ cmd_timeout, "timeout", "   - boot timeout, usage: timeout [<timeout>]" },
@@ -55,13 +46,13 @@ const cmd_t genericCmds[] = {
 
 struct {
 	cmd_t cmds[MAX_COMMANDS_NB + 1];
-	cmd_device_t *devs;
 } cmd_common;
 
 
 
 /* Auxiliary functions */
 
+#if 0
 static int cmd_cpphfs2phfs(phfs_conf_t *src, phfs_conf_t *dst)
 {
 	int res, i = 0;
@@ -153,14 +144,13 @@ static int cmd_cpphfs2map(phfs_conf_t *src, const char *map)
 
 	return 0;
 }
+#endif
 
 
 /* Initialization function */
 
 void cmd_init(void)
 {
-	hal_initdevs(&cmd_common.devs);
-
 	hal_memcpy(cmd_common.cmds, genericCmds, sizeof(genericCmds));
 	hal_appendcmds(cmd_common.cmds);
 
@@ -398,6 +388,7 @@ void cmd_write(char *s)
 
 /* Function parse device name or parameters. There is distinction whether it is storage or external dev.
  * For external dev, name shall be provided. For storage device offset and size shall be provided. */
+#if 0
 static int cmd_parseDev(phfs_conf_t *dev, const char (*args)[LINESZ + 1], u16 *argsID, u16 cmdArgsc)
 {
 	if (plostd_ishex(args[++(*argsID)]) < 0) {
@@ -428,10 +419,12 @@ static int cmd_parseDev(phfs_conf_t *dev, const char (*args)[LINESZ + 1], u16 *a
 
 	return 0;
 }
+#endif
 
 
 void cmd_copy(char *s)
 {
+#if 0
 	phfs_conf_t phfses[2];
 
 	u16 cmdArgsc = 0, argsID = 0;
@@ -475,6 +468,7 @@ void cmd_copy(char *s)
 	phfs_close(phfses[1].dn, phfses[1].handle);
 
 	return;
+#endif
 }
 
 
@@ -496,6 +490,7 @@ void cmd_save(char *s)
 
 void cmd_kernel(char *s)
 {
+#if 0
 	Elf32_Shdr shdr;
 	u8 buff[384];
 	handle_t handle;
@@ -610,9 +605,11 @@ void cmd_kernel(char *s)
 	hal_setKernelEntry(hdr.e_entry);
 
 	plostd_printf(ATTR_LOADER, "[ok]\n");
+#endif
 }
 
 
+#if 0
 static int cmd_loadApp(phfs_conf_t *phfs, const char *name, const char *imap, const char *dmap, const char *cmdline, u32 flags)
 {
 	Elf32_Ehdr hdr;
@@ -688,10 +685,12 @@ static int cmd_loadApp(phfs_conf_t *phfs, const char *name, const char *imap, co
 
 	return 0;
 }
+#endif
 
 
 void cmd_app(char *s)
 {
+#if 0
 	u16 cmdArgsc = 0;
 	int i, argID = 0;
 	char cmdArgs[MAX_CMD_ARGS_NB][LINESZ + 1];
@@ -811,6 +810,7 @@ void cmd_app(char *s)
 		plostd_printf(ATTR_LOADER, "\nLoading %s (offs=UNDEF, size=UNDEF, imap=%s, dmap=%s, flags=%x)\n", name, cmap, dmap, flags);
 
 	cmd_loadApp(&phfs, name, cmap, dmap, appData[0], flags);
+#endif
 }
 
 
@@ -1000,38 +1000,6 @@ int cmd_parseArgs(char *s, char (*args)[LINESZ + 1], u16 *argsc)
 
 	if (!*argsc)
 		return ERR_ARG;
-
-	return 0;
-}
-
-
-int cmd_checkDev(const char *devName, unsigned int *dn)
-{
-	unsigned int i;
-
-	/* Show boot devices if parameter is empty */
-
-	if (*devName == 0) {
-		plostd_printf(ATTR_LOADER, "\nBoot devices: ");
-
-		for (i = 0; cmd_common.devs[i].name; i++)
-			plostd_printf(ATTR_LOADER, "%s ", cmd_common.devs[i].name);
-		plostd_printf(ATTR_LOADER, "\n");
-
-		return ERR_ARG;
-	}
-
-	for (i = 0; cmd_common.devs[i].name != NULL; i++)  {
-		if (!plostd_strcmp(devName, cmd_common.devs[i].name))
-			break;
-	}
-
-	if (cmd_common.devs[i].name == NULL) {
-		plostd_printf(ATTR_ERROR, "\n'%s' - unknown boot device!\n", devName);
-		return ERR_ARG;
-	}
-
-	*dn = i;
 
 	return 0;
 }

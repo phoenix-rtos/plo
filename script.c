@@ -16,8 +16,10 @@
 
 #include "script.h"
 #include "plostd.h"
+#include "phfs.h"
 #include "cmd.h"
 #include "hal.h"
+#include "errors.h"
 
 
 /* Linker symbol points to the beginning of .data section */
@@ -25,9 +27,40 @@ extern char script[];
 
 
 struct {
-	u32 cmdCnt;
-	char basicCmds[MAX_SCRIPT_LINES_NB][LINESZ];
+	u32 cnt;
+	char cmds[MAX_SCRIPT_LINES_NB][LINESZ];
 } script_common;
+
+
+static int script_regFile(char *cmd)
+{
+	int i;
+	size_t sz = 0;
+	addr_t addr = 0;
+	unsigned int pos = 0;
+	char alias[3][LINESZ + 1];
+
+	for (i = 0; i < 3; ++i) {
+		if (cmd_getnext(cmd, &pos, "(:) \t", NULL, alias[i], sizeof(alias[i])) == NULL || *alias[i] == 0)
+			break;
+
+		if (i == 0)
+			continue;
+
+		if (plostd_ishex(alias[i]) < 0)
+			return ERR_ARG;
+
+		if (i == 1)
+			addr = plostd_ahtoi(alias[i]);
+		else if (i == 2)
+			sz = plostd_ahtoi(alias[i]);
+	}
+
+	if (phfs_regFile(alias[0] + 1, addr, sz) < 0)
+		return ERR_ARG;
+
+	return ERR_NONE;
+}
 
 
 void script_init(void)
@@ -36,8 +69,6 @@ void script_init(void)
 	unsigned int pos = 0;
 	char *argsScript = (char *)script;
 
-	script_common.cmdCnt = 0;
-
 	for (i = 0;; ++i) {
 		if (i >= MAX_SCRIPT_LINES_NB) {
 			plostd_printf(ATTR_ERROR, "\nWarning: too many script lines, only %d loaded.\n", MAX_SCRIPT_LINES_NB);
@@ -45,9 +76,16 @@ void script_init(void)
 		}
 
 		cmd_skipblanks(argsScript, &pos, "\n");
-		if (cmd_getnext(argsScript, &pos, "\n", NULL, script_common.basicCmds[i], sizeof(script_common.basicCmds[i])) == NULL || (script_common.basicCmds[i][0] == '\0'))
+		if (cmd_getnext(argsScript, &pos, "\n", NULL, script_common.cmds[script_common.cnt], sizeof(script_common.cmds[script_common.cnt])) == NULL || (script_common.cmds[script_common.cnt][0] == '\0'))
 			break;
-		script_common.cmdCnt++;
+
+		/* Alliases to files are not registered as commands */
+		if (script_common.cmds[script_common.cnt][0] == '@') {
+			script_regFile(script_common.cmds[script_common.cnt]);
+			continue;
+		}
+
+		script_common.cnt++;
 	}
 }
 
@@ -56,38 +94,8 @@ void script_run(void)
 {
 	int i;
 
-	for (i = 0; i < script_common.cmdCnt; ++i) {
-		if (script_common.basicCmds[i][0] != '@') {
-			plostd_printf(ATTR_INIT, "\n%s", script_common.basicCmds[i]);
-			cmd_parse(script_common.basicCmds[i]);
-		}
+	for (i = 0; i < script_common.cnt; ++i) {
+		plostd_printf(ATTR_INIT, "\n%s", script_common.cmds[i]);
+		cmd_parse(script_common.cmds[i]);
 	}
 }
-
-
-int script_expandAlias(char **name)
-{
-	int i;
-	unsigned int len;
-
-	for (i = 0; i < script_common.cmdCnt; ++i) {
-		if (script_common.basicCmds[i][0] == '@') {
-			len = 1;
-			/* Omit program arguments */
-			while (len < plostd_strlen(*name)) {
-				if ((*name)[len] == ';')
-					break;
-				++len;
-			}
-			--len;
-			if (plostd_strncmp(*name + 1, script_common.basicCmds[i] + 1, len) == 0) {
-				/* Copy size and offset to app name */
-				hal_memcpy(*name + plostd_strlen(*name), script_common.basicCmds[i] + len + 1, plostd_strlen(script_common.basicCmds[i]) - len);
-				return 0;
-			}
-		}
-	}
-
-	return -1;
-}
-
