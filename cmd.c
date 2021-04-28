@@ -377,9 +377,14 @@ void cmd_write(char *s)
 }
 
 
-static int cmd_parseDev(handler_t *h, addr_t *offs, size_t *sz, const char (*args)[LINESZ + 1], u16 *argsID, u16 argsc)
+static int cmd_parseDev(handler_t *h, addr_t *offs, size_t *sz, char (*args)[LINESZ + 1], u16 *argsID, u16 argsc)
 {
-	const char *alias = args[(*argsID)++];
+	char *alias;
+
+	if (h == NULL || offs == NULL || sz == NULL || args == NULL || argsID == NULL)
+		return ERR_ARG;
+
+	alias = args[(*argsID)++];
 
 	if ((*argsID) >= argsc) {
 		plostd_printf(ATTR_ERROR, "\nWrong number of arguments\n");
@@ -432,13 +437,12 @@ void cmd_copy(char *s)
 	}
 
 	if (cmd_parseDev(&h[0], &offs[0], &sz[0], args, &argsID, argsc) < 0) {
-		phfs_close(h[0]);
+		plostd_printf(ATTR_ERROR, "\nCannot open file\n");
 		return;
 	}
 
 	if (cmd_parseDev(&h[1], &offs[1], &sz[1], args, &argsID, argsc) < 0) {
-		phfs_close(h[0]);
-		phfs_close(h[1]);
+		plostd_printf(ATTR_ERROR, "\nCannot open file\n");
 		return;
 	}
 
@@ -691,32 +695,20 @@ void cmd_app(char *s)
 		if (cmd_getnext(cmdArgs[argID], &pos, "@ (:) \t", NULL, appData[i], sizeof(appData[i])) == NULL || *appData[i] == 0)
 				break;
 
-		switch (i) {
-			case 0:
-				cmdline = appData[0];
-				break;
-
-			case 1:
-				if (plostd_ishex(appData[i]) < 0) {
-					plostd_printf(ATTR_ERROR, "\nOffset is not a hex value !!\n");
-					return;
-				}
-
-				offs = plostd_ahtoi(appData[i]);
-				break;
-
-			case 2:
-				if (plostd_ishex(appData[i]) < 0) {
-					plostd_printf(ATTR_ERROR, "\nSize is not a hex value !!\n");
-					return;
-				}
-
-				sz = plostd_ahtoi(appData[i]);
-				break;
-
-			default:
-				break;
+		if (i == 0) {
+			cmdline = appData[0];
+			continue;
 		}
+
+		if (plostd_ishex(appData[i]) < 0) {
+			plostd_printf(ATTR_ERROR, "\nOffset is not a hex value !!\n");
+			return;
+		}
+
+		if (i == 1)
+			offs = plostd_ahtoi(appData[i]);
+		else if (i == 2)
+			sz = plostd_ahtoi(appData[i]);
 	}
 
 	/* Get app name from cmdline */
@@ -762,7 +754,6 @@ void cmd_app(char *s)
 
 void cmd_map(char *s)
 {
-	int i;
 	u32 attr = 0;
 	addr_t start, end;
 	u16 argID = 0, argsc = 0;
@@ -773,11 +764,9 @@ void cmd_map(char *s)
 	unsigned int pos = 0;
 	char args[MAX_CMD_ARGS_NB][LINESZ + 1];
 
-	for (i = 0; argsc < MAX_CMD_ARGS_NB; ++i) {
-		cmd_skipblanks(s, &pos, "+ \t");
-		if (cmd_getnext(s, &pos, "+ \t", NULL, args[i], sizeof(args[i])) == NULL || *args[i] == 0)
+	for (argsc = 0; argsc < MAX_CMD_ARGS_NB; ++argsc) {
+		if (cmd_getnext(s, &pos, "+ \t", NULL, args[argsc], sizeof(args[argsc])) == NULL || *args[argsc] == 0)
 			break;
-		argsc++;
 	}
 
 	if (argsc < 4) {
@@ -845,14 +834,13 @@ void cmd_syspage(char *s)
 
 void cmd_phfs(char *s)
 {
-	u16 argsc = 0;
-	unsigned int i, major, minor, pos = 0;
+	u16 argsc;
+	unsigned int major, minor, pos = 0;
 	char args[5][LINESZ + 1];
 
-	for (i = 0; argsc < 5; ++i) {
-		if (cmd_getnext(s, &pos, ". \t", NULL, args[i], sizeof(args[i])) == NULL || *args[i] == 0)
+	for (argsc = 0; argsc < 5; ++argsc) {
+		if (cmd_getnext(s, &pos, ". \t", NULL, args[argsc], sizeof(args[argsc])) == NULL || *args[argsc] == 0)
 			break;
-		argsc++;
 	}
 
 	if (argsc < 3 || argsc > 4) {
@@ -877,7 +865,7 @@ void cmd_devs(char *s)
 	s += pos;
 
 	if (*s) {
-		plostd_printf(ATTR_ERROR, "\nCommand should not consist of any args\n");
+		plostd_printf(ATTR_ERROR, "\nCommand devs does not take any arguments\n");
 		return;
 	}
 
@@ -887,18 +875,17 @@ void cmd_devs(char *s)
 
 void cmd_console(char *s)
 {
-	u16 argsc = 0;
-	unsigned int i, major, minor, pos = 0;
+	u16 argsc;
+	unsigned int major, minor, pos = 0;
 	char args[3][LINESZ + 1];
 
-	for (i = 0; argsc < 3; ++i) {
-		if (cmd_getnext(s, &pos, ". \t", NULL, args[i], sizeof(args[i])) == NULL || *args[i] == 0)
+	for (argsc = 0; argsc < 3; ++argsc) {
+		if (cmd_getnext(s, &pos, ". \t", NULL, args[argsc], sizeof(args[argsc])) == NULL || *args[argsc] == 0)
 			break;
-		argsc++;
 	}
 
 	if (argsc != 2) {
-		plostd_printf(ATTR_ERROR, "\nWrong arguments!!\n");
+		plostd_printf(ATTR_ERROR, "\nWrong number of arguments!!\n");
 		return;
 	}
 
