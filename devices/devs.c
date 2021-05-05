@@ -16,134 +16,121 @@
 #include "devs.h"
 #include "../errors.h"
 
-#define SIZE_DEV             4
-#define SIZE_DEV_INSTANCES   16
+#define SIZE_MAJOR   4
+#define SIZE_MINOR   16
 
 
 struct {
-	dev_handler_t devs[SIZE_DEV][SIZE_DEV_INSTANCES];
-	int (*init[SIZE_DEV])(unsigned int dn, dev_handler_t *h);
+	dev_handler_t *devs[SIZE_MAJOR][SIZE_MINOR];
 } devs_common;
 
 
-void devs_regDriver(unsigned int dev, int (*init)(unsigned int dn, dev_handler_t *h))
+void devs_register(unsigned int major, unsigned int nb, dev_handler_t *h)
 {
-	if (dev >= SIZE_DEV)
+	unsigned int minor = 0, i = 0;
+
+	if (major >= SIZE_MAJOR || nb >= SIZE_MINOR)
 		return;
 
-	devs_common.init[dev] = init;
+	while (minor < SIZE_MAJOR && i < nb) {
+		if (devs_common.devs[major][minor] == NULL) {
+			devs_common.devs[major][minor] = h;
+			++i;
+		}
+		++minor;
+	}
 }
 
 
 void devs_init(void)
 {
-	unsigned int i, j;
 	dev_handler_t *handler;
+	unsigned int major, minor;
 
-	for (i = 0; i < SIZE_DEV; ++i) {
-		if (devs_common.init[i] != NULL) {
-			for (j = 0; j < SIZE_DEV_INSTANCES; ++j) {
+	for (major = 0; major < SIZE_MAJOR; ++major) {
+		for (minor = 0; minor < SIZE_MINOR; ++minor) {
+			handler = devs_common.devs[major][minor];
+			if (handler != NULL && handler->init != NULL) {
 				/* TODO: check in dtb the availability of a device in the current platform */
-				handler = &devs_common.devs[i][j];
 				/* TODO: check initialization */
-				devs_common.init[i](j, handler);
+				handler->init(minor);
 			}
 		}
 	}
 }
 
 
-int devs_getHandler(unsigned int dev, unsigned int dn, dev_handler_t **h)
+int devs_check(unsigned int major, unsigned int minor)
 {
-	dev_handler_t *temph;
+	dev_handler_t *handler;
 
-	if (dev >= SIZE_DEV || dn >= SIZE_DEV_INSTANCES)
+	if (major >= SIZE_MAJOR || minor >= SIZE_MINOR)
 		return ERR_ARG;
 
-	temph = &devs_common.devs[dev][dn];
-	if (temph->deinit == NULL ||
-		temph->sync == NULL ||
-		temph->read == NULL ||
-		temph->write == NULL)
+	handler = devs_common.devs[major][minor];
+	if (handler == NULL || handler->init == NULL || handler->done == NULL ||
+	    handler->sync == NULL || handler->read == NULL || handler->write == NULL)
 		return ERR_ARG;
-
-	*h = temph;
 
 	return ERR_NONE;
 }
 
 
-ssize_t devs_read(unsigned int dev, unsigned int dn, addr_t offs, u8 *buff, unsigned int len)
+ssize_t devs_read(unsigned int major, unsigned int minor, addr_t offs, u8 *buff, unsigned int len)
 {
 	dev_handler_t *handler;
 
-	if (dev >= SIZE_DEV || dn >= SIZE_DEV_INSTANCES)
+	if (major >= SIZE_MAJOR || minor >= SIZE_MINOR)
 		return ERR_ARG;
 
-	handler = &devs_common.devs[dev][dn];
-	if (handler->read == NULL)
+	handler = devs_common.devs[major][minor];
+	if (handler == NULL || handler->read == NULL)
 		return ERR_ARG;
 
-	return handler->read(dn, offs, buff, len);
+	return handler->read(minor, offs, buff, len);
 }
 
 
-ssize_t devs_write(unsigned int dev, unsigned int dn, addr_t offs, const u8 *buff, unsigned int len)
+ssize_t devs_write(unsigned int major, unsigned int minor, addr_t offs, const u8 *buff, unsigned int len)
 {
 	dev_handler_t *handler;
 
-	if (dev >= SIZE_DEV || dn >= SIZE_DEV_INSTANCES)
+	if (major >= SIZE_MAJOR || minor >= SIZE_MINOR)
 		return ERR_ARG;
 
-	handler = &devs_common.devs[dev][dn];
-	if (handler->write == NULL)
+	handler = devs_common.devs[major][minor];
+	if (handler == NULL || handler->write == NULL)
 		return ERR_ARG;
 
-	return handler->write(dn, offs, buff, len);
+	return handler->write(minor, offs, buff, len);
 }
 
 
-int devs_deinit(unsigned int dev, unsigned int dn)
+int devs_sync(unsigned int major, unsigned int minor)
 {
 	dev_handler_t *handler;
 
-	if (dev >= SIZE_DEV || dn >= SIZE_DEV_INSTANCES)
+	if (major >= SIZE_MAJOR || minor >= SIZE_MINOR)
 		return ERR_ARG;
 
-	handler = &devs_common.devs[dev][dn];
-	if (handler->deinit == NULL)
+	handler = devs_common.devs[major][minor];
+	if (handler == NULL || handler->sync == NULL)
 		return ERR_ARG;
 
-	return handler->deinit(dn);
+	return handler->sync(minor);
 }
 
 
-int devs_sync(unsigned int dev, unsigned int dn)
+void devs_done(void)
 {
 	dev_handler_t *handler;
+	unsigned int major, minor;
 
-	if (dev >= SIZE_DEV || dn >= SIZE_DEV_INSTANCES)
-		return ERR_ARG;
-
-	handler = &devs_common.devs[dev][dn];
-	if (handler->sync == NULL)
-		return ERR_ARG;
-
-	return handler->sync(dn);
-}
-
-
-
-void devs_deinitAll(void)
-{
-	unsigned int i, j;
-	dev_handler_t *handler;
-
-	for (i = 0; i < SIZE_DEV; ++i) {
-		for (j = 0; j < SIZE_DEV_INSTANCES; ++j) {
-			handler = &devs_common.devs[i][j];
-			if (handler->deinit != NULL)
-				handler->deinit(i);
+	for (major = 0; major < SIZE_MAJOR; ++major) {
+		for (minor = 0; minor < SIZE_MINOR; ++minor) {
+			handler = devs_common.devs[major][minor];
+			if (handler != NULL && handler->done != NULL)
+				handler->done(minor);
 		}
 	}
 }

@@ -35,9 +35,7 @@ typedef struct {
 	unsigned int major;
 	unsigned int minor;
 	unsigned int prot;
-
-	dev_handler_t *h;
-} phfs_handler_t;
+} phfs_device_t;
 
 
 typedef struct {
@@ -48,8 +46,8 @@ typedef struct {
 
 
 struct {
-	phfs_handler_t handlers[SIZE_PHFS_HANDLERS];
-	unsigned int hCnt;
+	phfs_device_t devices[SIZE_PHFS_HANDLERS];
+	unsigned int dCnt;
 
 	phfs_file_t files[SIZE_PHFS_FILES];
 	unsigned int fCnt;
@@ -71,12 +69,12 @@ static const char *phfs_getProtName(unsigned int id)
 }
 
 
-static int phfs_setProt(phfs_handler_t *ph, const char *prot)
+static int phfs_setProt(phfs_device_t *pd, const char *prot)
 {
 	if (prot == NULL || (plostd_strcmp(prot, "raw") == 0))
-		ph->prot = phfs_prot_raw;
+		pd->prot = phfs_prot_raw;
 	else if (plostd_strcmp(prot, "phoenixd") == 0)
-		ph->prot = phfs_prot_phoenixd;
+		pd->prot = phfs_prot_phoenixd;
 	else
 		return ERR_ARG;
 
@@ -87,11 +85,11 @@ static int phfs_setProt(phfs_handler_t *ph, const char *prot)
 static int phfs_getHandlerId(const char *alias)
 {
 	int i;
-	phfs_handler_t *ph;
+	phfs_device_t *pd;
 
-	for (i = 0; i < phfs_common.hCnt; ++i) {
-		ph = &phfs_common.handlers[i];
-		if ((plostd_strcmp(alias, ph->alias) == 0))
+	for (i = 0; i < phfs_common.dCnt; ++i) {
+		pd = &phfs_common.devices[i];
+		if ((plostd_strcmp(alias, pd->alias) == 0))
 			return i;
 	}
 
@@ -102,18 +100,17 @@ static int phfs_getHandlerId(const char *alias)
 int phfs_regDev(const char *alias, unsigned int major, unsigned int minor, const char *prot)
 {
 	size_t sz;
-	dev_handler_t *dh;
-	phfs_handler_t *ph;
+	phfs_device_t *pd;
 
 	if (alias == NULL)
 		return ERR_ARG;
 
-	if (phfs_common.hCnt >= SIZE_PHFS_HANDLERS) {
+	if (phfs_common.dCnt >= SIZE_PHFS_HANDLERS) {
 		plostd_printf(ATTR_ERROR, "\nToo many devices");
 		return ERR_ARG;
 	}
 
-	if (devs_getHandler(major, minor, &dh) < 0) {
+	if (devs_check(major, minor) < 0) {
 		plostd_printf(ATTR_ERROR, "\n%d.%d - device does not exist", major, minor);
 		return ERR_ARG;
 	}
@@ -124,22 +121,21 @@ int phfs_regDev(const char *alias, unsigned int major, unsigned int minor, const
 		return ERR_ARG;
 	}
 
-	ph = &phfs_common.handlers[phfs_common.hCnt];
-	if (phfs_setProt(ph, prot) < 0) {
+	pd = &phfs_common.devices[phfs_common.dCnt];
+	if (phfs_setProt(pd, prot) < 0) {
 		plostd_printf(ATTR_ERROR, "\n%s - wrong protocol name\n\t use: \"%s\", \"%s\"", prot,
 		              phfs_getProtName(phfs_prot_raw), phfs_getProtName(phfs_prot_phoenixd));
 		return ERR_ARG;
 	}
 
 	sz = plostd_strlen(alias);
-	sz = (sz < (sizeof(ph->alias) - 1)) ? (sz + 1) : (sizeof(ph->alias) - 1);
-	hal_memcpy(ph->alias, alias, sz);
-	ph->alias[sz] = '\0';
+	sz = (sz < (sizeof(pd->alias) - 1)) ? (sz + 1) : (sizeof(pd->alias) - 1);
+	hal_memcpy(pd->alias, alias, sz);
+	pd->alias[sz] = '\0';
 
-	ph->h = dh;
-	ph->major = major;
-	ph->minor = minor;
-	phfs_common.hCnt++;
+	pd->major = major;
+	pd->minor = minor;
+	phfs_common.dCnt++;
 
 	return ERR_NONE;
 }
@@ -147,10 +143,10 @@ int phfs_regDev(const char *alias, unsigned int major, unsigned int minor, const
 
 int phfs_getFileAddr(handler_t h, addr_t *addr)
 {
-	if (h.fd >= SIZE_PHFS_FILES)
+	if (h.id >= SIZE_PHFS_FILES)
 		return ERR_ARG;
 
-	*addr = phfs_common.files[h.fd].addr;
+	*addr = phfs_common.files[h.id].addr;
 
 	return ERR_NONE;
 }
@@ -158,10 +154,10 @@ int phfs_getFileAddr(handler_t h, addr_t *addr)
 
 int phfs_getFileSize(handler_t h, size_t *size)
 {
-	if (h.fd >= SIZE_PHFS_FILES)
+	if (h.id >= SIZE_PHFS_FILES)
 		return ERR_ARG;
 
-	*size = phfs_common.files[h.fd].size;
+	*size = phfs_common.files[h.id].size;
 
 	return ERR_NONE;
 }
@@ -170,17 +166,17 @@ int phfs_getFileSize(handler_t h, size_t *size)
 void phfs_showDevs(void)
 {
 	int i;
-	phfs_handler_t *ph;
+	phfs_device_t *pd;
 
-	if (phfs_common.hCnt == 0) {
+	if (phfs_common.dCnt == 0) {
 		plostd_printf(ATTR_ERROR, "\nNone of the devices have been registered\n");
 		return;
 	}
 
 	plostd_printf(ATTR_LOADER, "\nALIAS\tID\tPROTOCOL\n");
-	for (i = 0; i < phfs_common.hCnt; ++i) {
-		ph = &phfs_common.handlers[i];
-		plostd_printf(ATTR_NONE, "%s\t%d.%d\t%s\n", ph->alias, ph->major, ph->minor, phfs_getProtName(ph->prot));
+	for (i = 0; i < phfs_common.dCnt; ++i) {
+		pd = &phfs_common.devices[i];
+		plostd_printf(ATTR_NONE, "%s\t%d.%d\t%s\n", pd->alias, pd->major, pd->minor, phfs_getProtName(pd->prot));
 	}
 }
 
@@ -238,36 +234,31 @@ int phfs_regFile(const char *alias, addr_t addr, size_t size)
 int phfs_open(const char *alias, const char *file, unsigned int flags, handler_t *handler)
 {
 	int res;
-	phfs_clbk_t clbk;
-	phfs_handler_t *ph;
+	phfs_device_t *pd;
 
 	if ((res = phfs_getHandlerId(alias)) < 0)
 		return ERR_ARG;
 
-	handler->pn = res;
-	ph = &phfs_common.handlers[handler->pn];
+	handler->pd = res;
+	pd = &phfs_common.devices[handler->pd];
 
-	switch (ph->prot) {
+	switch (pd->prot) {
 	case phfs_prot_phoenixd:
-		clbk.dn = ph->minor;
-		clbk.read = ph->h->read;
-		clbk.write = ph->h->write;
-
-		if ((res = phoenixd_open(file, flags, &clbk)) < 0)
+		if ((res = phoenixd_open(file, pd->major, pd->minor, flags)) < 0)
 			return res;
 
-		handler->fd = res;
+		handler->id = res;
 		break;
 
 	case phfs_prot_raw:
 		/* NULL file means that phfs refers to raw device data */
-		handler->fd = -1;
+		handler->id = -1;
 		if (file == NULL)
 			break;
 
 		if ((res = phfs_getFileId(file)) < 0)
 			return res;
-		handler->fd = res;
+		handler->id = res;
 		break;
 
 	default:
@@ -280,37 +271,32 @@ int phfs_open(const char *alias, const char *file, unsigned int flags, handler_t
 
 ssize_t phfs_read(handler_t handler, addr_t offs, u8 *buff, unsigned int len)
 {
-	phfs_clbk_t clbk;
 	phfs_file_t *file;
-	phfs_handler_t *ph;
+	phfs_device_t *pd;
 
-	if (handler.pn >= SIZE_PHFS_HANDLERS)
+	if (handler.pd >= SIZE_PHFS_HANDLERS)
 		return ERR_ARG;
 
-	ph = &phfs_common.handlers[handler.pn];
+	pd = &phfs_common.devices[handler.pd];
 
-	switch (ph->prot) {
+	switch (pd->prot) {
 	case phfs_prot_phoenixd:
-		clbk.dn = ph->minor;
-		clbk.read = ph->h->read;
-		clbk.write = ph->h->write;
-
-		return phoenixd_read(handler.fd, offs, buff, len, &clbk);
+		return phoenixd_read(handler.id, pd->major, pd->minor, offs, buff, len);
 
 	case phfs_prot_raw:
 		/* Reading raw data from device */
-		if (handler.fd == -1)
-			return ph->h->read(ph->minor, offs, buff, len);
+		if (handler.id == -1)
+			return devs_read(pd->major, pd->minor, offs, buff, len);
 
 		/* Reading file defined by alias */
-		if (handler.fd >= SIZE_PHFS_FILES)
+		if (handler.id >= SIZE_PHFS_FILES)
 			return ERR_ARG;
 
-		file = &phfs_common.files[handler.fd];
+		file = &phfs_common.files[handler.id];
 		if (offs + len < file->size)
-			return ph->h->read(ph->minor, file->addr + offs, buff, len);
+			return devs_read(pd->major, pd->minor, file->addr + offs, buff, len);
 		else
-			return ph->h->read(ph->minor, file->addr + offs, buff, file->size - offs);
+			return devs_read(pd->major, pd->minor, file->addr + offs, buff, file->size - offs);
 
 	default:
 		break;
@@ -322,37 +308,32 @@ ssize_t phfs_read(handler_t handler, addr_t offs, u8 *buff, unsigned int len)
 
 ssize_t phfs_write(handler_t handler, addr_t offs, const u8 *buff, unsigned int len)
 {
-	phfs_clbk_t clbk;
-	phfs_handler_t *ph;
+	phfs_device_t *pd;
 	phfs_file_t *file;
 
-	if (handler.pn >= SIZE_PHFS_HANDLERS)
+	if (handler.pd >= SIZE_PHFS_HANDLERS)
 		return ERR_ARG;
 
-	ph = &phfs_common.handlers[handler.pn];
+	pd = &phfs_common.devices[handler.pd];
 
-	switch (ph->prot) {
+	switch (pd->prot) {
 	case phfs_prot_phoenixd:
-		clbk.dn = ph->minor;
-		clbk.read = ph->h->read;
-		clbk.write = ph->h->write;
-
-		return phoenixd_write(handler.fd, offs, buff, len, &clbk);
+		return phoenixd_write(handler.id, pd->major, pd->minor, offs, buff, len);
 
 	case phfs_prot_raw:
 		/* Writing raw data to device */
-		if (handler.fd == -1)
-			return ph->h->write(ph->minor, offs, buff, len);
+		if (handler.id == -1)
+			return devs_write(pd->major, pd->minor, offs, buff, len);
 
 		/* Writing data to file defined by alias */
-		if (handler.fd >= SIZE_PHFS_FILES)
+		if (handler.id >= SIZE_PHFS_FILES)
 			return ERR_ARG;
 
-		file = &phfs_common.files[handler.fd];
+		file = &phfs_common.files[handler.id];
 		if (offs + len < file->size)
-			return ph->h->write(ph->minor, file->addr + offs, buff, len);
+			return devs_write(pd->major, pd->minor, file->addr + offs, buff, len);
 		else
-			return ph->h->write(ph->minor, file->addr + offs, buff, file->size - offs);
+			return devs_write(pd->major, pd->minor, file->addr + offs, buff, file->size - offs);
 
 	default:
 		break;
@@ -365,21 +346,16 @@ ssize_t phfs_write(handler_t handler, addr_t offs, const u8 *buff, unsigned int 
 int phfs_close(handler_t handler)
 {
 	int res;
-	phfs_clbk_t clbk;
-	phfs_handler_t *ph;
+	phfs_device_t *pd;
 
-	if (handler.pn >= SIZE_PHFS_HANDLERS)
+	if (handler.pd >= SIZE_PHFS_HANDLERS)
 		return ERR_ARG;
 
-	ph = &phfs_common.handlers[handler.pn];
+	pd = &phfs_common.devices[handler.pd];
 
-	switch (ph->prot) {
+	switch (pd->prot) {
 	case phfs_prot_phoenixd:
-		clbk.dn = ph->minor;
-		clbk.read = ph->h->read;
-		clbk.write = ph->h->write;
-
-		if ((res = phoenixd_close(handler.fd, &clbk)) < 0)
+		if ((res = phoenixd_close(handler.id, pd->major, pd->minor)) < 0)
 			return res;
 		break;
 
@@ -388,7 +364,7 @@ int phfs_close(handler_t handler)
 		break;
 	}
 
-	if (ph->h->sync(ph->minor) < 0)
+	if (devs_sync(pd->major, pd->minor) < 0)
 		return ERR_ARG;
 
 	return ERR_NONE;

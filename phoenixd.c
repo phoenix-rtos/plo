@@ -35,14 +35,11 @@ typedef struct _msg_phoenixd_t {
 } msg_phoenixd_t;
 
 
-int phoenixd_open(const char *file, unsigned int flags, const phfs_clbk_t *cblk)
+int phoenixd_open(const char *file, unsigned int major, unsigned int minor, unsigned int flags)
 {
 	u16 l;
 	unsigned int fd;
 	msg_t smsg, rmsg;
-
-	if (cblk == NULL)
-		return ERR_PHFS_IO;
 
 	l = plostd_strlen(file) + 1;
 
@@ -53,10 +50,7 @@ int phoenixd_open(const char *file, unsigned int flags, const phfs_clbk_t *cblk)
 	msg_settype(&smsg, MSG_OPEN);
 	msg_setlen(&smsg, l);
 
-	smsg.write = cblk->write;
-	rmsg.read = cblk->read;
-
-	if (msg_send(cblk->dn, &smsg, &rmsg) < 0)
+	if (msg_send(major, minor, &smsg, &rmsg) < 0)
 		return ERR_PHFS_IO;
 	else if (msg_gettype(&rmsg) != MSG_OPEN)
 		return ERR_PHFS_PROTO;
@@ -69,7 +63,7 @@ int phoenixd_open(const char *file, unsigned int flags, const phfs_clbk_t *cblk)
 }
 
 
-ssize_t phoenixd_read(unsigned int fd, addr_t offs, u8 *buff, unsigned int len, const phfs_clbk_t *cblk)
+ssize_t phoenixd_read(unsigned int fd, unsigned int major, unsigned int minor, addr_t offs, u8 *buff, unsigned int len)
 {
 	msg_t smsg, rmsg;
 	msg_phoenixd_t *io;
@@ -80,7 +74,7 @@ ssize_t phoenixd_read(unsigned int fd, addr_t offs, u8 *buff, unsigned int len, 
 	io = (msg_phoenixd_t *)smsg.data;
 	hdrsz = (u16)((u32)io->data - (u32)io);
 
-	if ((len > MSG_MAXLEN - hdrsz) || cblk == NULL)
+	if (len > MSG_MAXLEN - hdrsz)
 		return ERR_ARG;
 
 	io->handle = fd;
@@ -90,10 +84,7 @@ ssize_t phoenixd_read(unsigned int fd, addr_t offs, u8 *buff, unsigned int len, 
 	msg_settype(&smsg, MSG_READ);
 	msg_setlen(&smsg, hdrsz);
 
-	smsg.write = cblk->write;
-	rmsg.read = cblk->read;
-
-	if (msg_send(cblk->dn, &smsg, &rmsg) < 0)
+	if (msg_send(major, minor, &smsg, &rmsg) < 0)
 		return ERR_PHFS_IO;
 
 	if (msg_gettype(&rmsg) != MSG_READ) {
@@ -114,14 +105,14 @@ ssize_t phoenixd_read(unsigned int fd, addr_t offs, u8 *buff, unsigned int len, 
 }
 
 
-ssize_t phoenixd_write(unsigned int fd, addr_t offs, const u8 *buff, unsigned int len, const phfs_clbk_t *cblk)
+ssize_t phoenixd_write(unsigned int fd, unsigned int major, unsigned int minor, addr_t offs, const u8 *buff, unsigned int len)
 {
 	/* TODO */
 	return ERR_NONE;
 }
 
 
-int phoenixd_close(unsigned int fd, const phfs_clbk_t *cblk)
+int phoenixd_close(unsigned int fd, unsigned int major, unsigned int minor)
 {
 	/* TODO */
 	return ERR_NONE;

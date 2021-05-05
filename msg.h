@@ -39,10 +39,6 @@ typedef struct _msg_t {
 	u32 csum;
 	u32 type;
 	u8  data[MSG_MAXLEN];
-	union {
-		ssize_t (*read)(unsigned int, addr_t, u8 *, unsigned int);
-		ssize_t (*write)(unsigned int, addr_t, const u8 *, unsigned int);
-	};
 } msg_t;
 
 
@@ -63,7 +59,7 @@ typedef struct _msg_t {
 #define msg_getseq(m)      ((m)->csum >> 16)
 
 
-extern int msg_send(unsigned int dn, msg_t *smsg, msg_t *rmsg);
+extern int msg_send(unsigned int major, unsigned int minor, msg_t *smsg, msg_t *rmsg);
 
 
 #endif

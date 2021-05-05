@@ -21,17 +21,9 @@
 #include "config.h"
 
 typedef struct {
-	unsigned int pn; /* phfs device number descriptor */
-	unsigned int fd; /* file descriptor               */
+	unsigned int pd; /* phfs device descriptor */
+	unsigned int id; /* file id               */
 } handler_t;
-
-
-/* Protocols callbacks structure */
-typedef struct {
-	unsigned int dn;
-	ssize_t (*read)(unsigned int dn, addr_t offs, u8 *buff, unsigned int len);
-	ssize_t (*write)(unsigned int dn, addr_t offs, const u8 *buff, unsigned int len);
-} phfs_clbk_t;
 
 
 /* Initialization functions */
