@@ -201,6 +201,17 @@ int hal_launch(void)
 }
 
 
+extern void hal_invalDCacheAll(void)
+{
+	_imxrt_invalDCacheAll();
+}
+
+
+void hal_invalDCacheAddr(addr_t addr, size_t sz)
+{
+	_imxrt_invalDCacheAddr((void *)addr, sz);
+}
+
 
 /* Opeartions on interrupts */
 

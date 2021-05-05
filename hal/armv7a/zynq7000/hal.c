@@ -205,6 +205,17 @@ int hal_launch(void)
 }
 
 
+extern void hal_invalDCacheAll(void)
+{
+	/* TODO */
+}
+
+
+void hal_invalDCacheAddr(addr_t addr, size_t sz)
+{
+	/* TODO */
+}
+
 
 /* Opeartions on interrupts */
 

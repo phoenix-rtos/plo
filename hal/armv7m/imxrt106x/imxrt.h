@@ -634,6 +634,12 @@ extern void  _imxrt_cleanDCache(void);
 extern void _imxrt_enableICache(void);
 
 
+extern void _imxrt_invalDCacheAll(void);
+
+
+extern void _imxrt_invalDCacheAddr(void *addr, u32 sz);
+
+
 extern void _imxrt_disableICache(void);
 
 
