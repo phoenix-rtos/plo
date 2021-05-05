@@ -24,6 +24,9 @@
 #include "../errors.h"
 
 
+#define SIZE_USB_ENDPTS        2 * PHFS_ACM_PORTS_NB + 1 /* Add control endpoint */
+
+
 struct {
 	usb_desc_list_t *descList;
 
@@ -50,6 +53,7 @@ struct {
 	usb_desc_list_t strprod;
 
 	u32 init;
+	dev_handler_t handler;
 } cdc_common;
 
 
@@ -340,21 +344,21 @@ const usb_string_desc_t dStrprod = {
 };
 
 
-static ssize_t cdc_recv(unsigned int endpt, addr_t offs, u8 *buff, unsigned int len)
+static ssize_t cdc_recv(unsigned int minor, addr_t offs, u8 *buff, unsigned int len)
 {
-	if (endpt > PHFS_ACM_PORTS_NB * 2)
+	if (minor > SIZE_USB_ENDPTS)
 		return ERR_ARG;
 
-	return usbclient_receive(endpt, buff, len);
+	return usbclient_receive(minor, buff, len);
 }
 
 
-static ssize_t cdc_send(unsigned int endpt, addr_t offs, const u8 *buff, unsigned int len)
+static ssize_t cdc_send(unsigned int minor, addr_t offs, const u8 *buff, unsigned int len)
 {
-	if (endpt > PHFS_ACM_PORTS_NB * 2)
+	if (minor > SIZE_USB_ENDPTS)
 		return ERR_ARG;
 
-	return usbclient_send(endpt, buff, len);
+	return usbclient_send(minor, buff, len);
 }
 
 
@@ -424,15 +428,15 @@ static int cdc_initUsbClient(void)
 }
 
 
-static int cdc_deinit(unsigned int dn)
+static int cdc_done(unsigned int minor)
 {
 	return usbclient_destroy();
 }
 
 
-static int cdc_sync(unsigned int dn)
+static int cdc_sync(unsigned int minor)
 {
-	if (dn > PHFS_ACM_PORTS_NB * 2)
+	if (minor > SIZE_USB_ENDPTS)
 		return ERR_ARG;
 
 	/* TBD */
@@ -441,7 +445,7 @@ static int cdc_sync(unsigned int dn)
 }
 
 
-static int cdc_init(unsigned int dn, dev_handler_t *h)
+static int cdc_init(unsigned int minor)
 {
 	int res = ERR_NONE;
 
@@ -451,16 +455,17 @@ static int cdc_init(unsigned int dn, dev_handler_t *h)
 	if ((res = cdc_initUsbClient()) < 0)
 		return res;
 
-	h->read = cdc_recv;
-	h->write = cdc_send;
-	h->deinit = cdc_deinit;
-	h->sync = cdc_sync;
-
 	return res;
 }
 
 
 __attribute__((constructor)) static void cdc_reg(void)
 {
-	devs_regDriver(DEV_USB, cdc_init);
+	cdc_common.handler.init = cdc_init;
+	cdc_common.handler.done = cdc_done;
+	cdc_common.handler.read = cdc_recv;
+	cdc_common.handler.write = cdc_send;
+	cdc_common.handler.sync = cdc_sync;
+
+	devs_register(DEV_USB, SIZE_USB_ENDPTS, &cdc_common.handler);
 }

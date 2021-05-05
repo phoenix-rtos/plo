@@ -29,6 +29,7 @@ extern int _fcfb;
 struct {
 	flash_context_t ctx[FLASH_NO];
 	u8 buff[0x100];
+	dev_handler_t handler;
 } flashdrv_common;
 
 
@@ -176,21 +177,21 @@ static int flashdrv_defineFlexSPI(flash_context_t *ctx)
 
 /* Device interafce */
 
-static ssize_t flashdrv_read(unsigned int dn, addr_t offs, u8 *buff, unsigned int len)
+static ssize_t flashdrv_read(unsigned int minor, addr_t offs, u8 *buff, unsigned int len)
 {
 	ssize_t res;
 
-	if (dn >= FLASH_NO)
+	if (minor >= FLASH_NO)
 		return ERR_ARG;
 
-	if ((res = flashdrv_readData(&flashdrv_common.ctx[dn], offs, (char *)buff, len)) < 0)
+	if ((res = flashdrv_readData(&flashdrv_common.ctx[minor], offs, (char *)buff, len)) < 0)
 		return res;
 
 	return res;
 }
 
 
-static ssize_t flashdrv_write(unsigned int dn, addr_t offs, const u8 *buff, unsigned int len)
+static ssize_t flashdrv_write(unsigned int minor, addr_t offs, const u8 *buff, unsigned int len)
 {
 	addr_t bOffs = 0;
 	flash_context_t *ctx;
@@ -200,10 +201,10 @@ static ssize_t flashdrv_write(unsigned int dn, addr_t offs, const u8 *buff, unsi
 	if (!len)
 		return ERR_NONE;
 
-	if (dn >= FLASH_NO || offs % buffSz)
+	if (minor >= FLASH_NO || offs % buffSz)
 		return ERR_ARG;
 
-	ctx = &flashdrv_common.ctx[dn];
+	ctx = &flashdrv_common.ctx[minor];
 
 	while (size) {
 		if (size < buffSz) {
@@ -226,9 +227,9 @@ static ssize_t flashdrv_write(unsigned int dn, addr_t offs, const u8 *buff, unsi
 }
 
 
-static int flashdrv_deinit(unsigned int dn)
+static int flashdrv_done(unsigned int minor)
 {
-	if (dn >= FLASH_NO)
+	if (minor >= FLASH_NO)
 		return ERR_ARG;
 
 	/* TBD */
@@ -237,33 +238,33 @@ static int flashdrv_deinit(unsigned int dn)
 }
 
 
-static int flashdrv_sync(unsigned int dn)
+static int flashdrv_sync(unsigned int minor)
 {
-	if (dn >= FLASH_NO)
+	if (minor >= FLASH_NO)
 		return ERR_ARG;
 
-	flashdrv_syncCtx(&flashdrv_common.ctx[dn]);
+	flashdrv_syncCtx(&flashdrv_common.ctx[minor]);
 
 	return ERR_NONE;
 }
 
 
-static int flashdrv_init(unsigned int dn, dev_handler_t *h)
+static int flashdrv_init(unsigned int minor)
 {
 	u32 pc;
 	int res = ERR_NONE;
 	flash_context_t *ctx;
 
-	if (dn >= FLASH_NO)
+	if (minor >= FLASH_NO)
 		return ERR_ARG;
 
 	/* TODO: move information about dn to device tree module */
-	if (dn == 0 && FLASH_FLEXSPI1_MOUNTED) {
-		ctx = &flashdrv_common.ctx[dn];
+	if (minor == 0 && FLASH_FLEXSPI1_MOUNTED) {
+		ctx = &flashdrv_common.ctx[minor];
 		ctx->address = FLASH_FLEXSPI1;
 	}
-	else if (dn == 1 && FLASH_FLEXSPI2_MOUNTED) {
-		ctx = &flashdrv_common.ctx[dn];
+	else if (minor == 1 && FLASH_FLEXSPI2_MOUNTED) {
+		ctx = &flashdrv_common.ctx[minor];
 		ctx->address = FLASH_FLEXSPI2;
 	}
 	else {
@@ -299,16 +300,17 @@ static int flashdrv_init(unsigned int dn, dev_handler_t *h)
 	if (flashcfg_getCfg(ctx) != 0)
 		return ERR_ARG;
 
-	h->read = flashdrv_read;
-	h->write = flashdrv_write;
-	h->deinit = flashdrv_deinit;
-	h->sync = flashdrv_sync;
-
 	return res;
 }
 
 
 __attribute__((constructor)) static void flashdrv_reg(void)
 {
-	devs_regDriver(DEV_FLASH, flashdrv_init);
+	flashdrv_common.handler.init = flashdrv_init;
+	flashdrv_common.handler.done = flashdrv_done;
+	flashdrv_common.handler.read = flashdrv_read;
+	flashdrv_common.handler.write = flashdrv_write;
+	flashdrv_common.handler.sync = flashdrv_sync;
+
+	devs_register(DEV_FLASH, FLASH_NO, &flashdrv_common.handler);
 }

@@ -21,11 +21,11 @@
 
 #include "uart.h"
 
-#include "../../hal.h"
-#include "../../plostd.h"
-#include "../../errors.h"
-#include "../../timer.h"
-#include "../../syspage.h"
+#include "../../../hal.h"
+#include "../../../plostd.h"
+#include "../../../errors.h"
+#include "../../../timer.h"
+#include "../../../syspage.h"
 
 typedef struct {
 	void *data;

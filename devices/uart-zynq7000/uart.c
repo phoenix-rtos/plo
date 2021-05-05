@@ -58,6 +58,7 @@ enum {
 struct {
 	uart_t uarts[UARTS_MAX_CNT];
 	int clkInit;
+	dev_handler_t handler;
 } uart_common;
 
 
@@ -337,27 +338,27 @@ u32 uart_getBaudrate(void)
 
 /* Device interafce */
 
-ssize_t uart_devRead(unsigned int dn, addr_t offs, u8 *buff, unsigned int len)
+ssize_t uart_devRead(unsigned int minor, addr_t offs, u8 *buff, unsigned int len)
 {
-	if (dn >= UARTS_MAX_CNT)
+	if (minor >= UARTS_MAX_CNT)
 		return ERR_ARG;
 
-	return uart_read(dn, buff, len, 500);
+	return uart_read(minor, buff, len, 500);
 }
 
 
-ssize_t uart_devWrite(unsigned int dn, addr_t offs, const u8 *buff, unsigned int len)
+ssize_t uart_devWrite(unsigned int minor, addr_t offs, const u8 *buff, unsigned int len)
 {
-	if (dn >= UARTS_MAX_CNT)
+	if (minor >= UARTS_MAX_CNT)
 		return ERR_ARG;
 
-	return uart_write(dn, buff, len);
+	return uart_write(minor, buff, len);
 }
 
 
-int uart_sync(unsigned int dn)
+int uart_sync(unsigned int minor)
 {
-	if (dn >= UARTS_MAX_CNT)
+	if (minor >= UARTS_MAX_CNT)
 		return ERR_ARG;
 
 	/* TBD */
@@ -366,14 +367,14 @@ int uart_sync(unsigned int dn)
 }
 
 
-int uart_deinit(unsigned int dn)
+int uart_done(unsigned int minor)
 {
 	uart_t *uart;
 
-	if (dn >= UARTS_MAX_CNT)
+	if (minor >= UARTS_MAX_CNT)
 		return ERR_ARG;
 
-	uart = &uart_common.uarts[dn];
+	uart = &uart_common.uarts[minor];
 
 	/* Disable interrupts */
 	*(uart->base + idr) = 0xfff;
@@ -393,11 +394,11 @@ int uart_deinit(unsigned int dn)
 }
 
 
-int uart_init(unsigned int dn, dev_handler_t *h)
+int uart_init(unsigned int minor)
 {
 	uart_t *uart;
 
-	if (dn >= UARTS_MAX_CNT)
+	if (minor >= UARTS_MAX_CNT)
 		return ERR_ARG;
 
 	/* UART Clock Controller configuration */
@@ -406,17 +407,17 @@ int uart_init(unsigned int dn, dev_handler_t *h)
 		uart_common.clkInit = 1;
 	}
 
-	if (_zynq_setAmbaClk(info[dn].clk, clk_enable) < 0)
+	if (_zynq_setAmbaClk(info[minor].clk, clk_enable) < 0)
 		return ERR_ARG;
 
-	if (uart_setPin(info[dn].rxPin) < 0 || uart_setPin(info[dn].txPin) < 0)
+	if (uart_setPin(info[minor].rxPin) < 0 || uart_setPin(info[minor].txPin) < 0)
 		return ERR_ARG;
 
-	uart = &uart_common.uarts[dn];
+	uart = &uart_common.uarts[minor];
 
-	uart->irq = info[dn].irq;
-	uart->clk = info[dn].clk;
-	uart->base = info[dn].base;
+	uart->irq = info[minor].irq;
+	uart->clk = info[minor].clk;
+	uart->base = info[minor].base;
 
 	/* Reset RX & TX */
 	*(uart->base + cr) = 0x3;
@@ -435,17 +436,12 @@ int uart_init(unsigned int dn, dev_handler_t *h)
 		* TXEN = 0x1; RXEN = 0x1; TXRES = 0x1; RXRES = 0x1 */
 	*(uart->base + cr) = (*(uart->base + cr) & ~0x000001ff) | 0x00000017;
 
-	hal_irqinst(info[dn].irq, uart_irqHandler, (void *)uart);
+	hal_irqinst(info[minor].irq, uart_irqHandler, (void *)uart);
 
 	/* Enable RX FIFO trigger */
 	*(uart->base + ier) |= 0x1;
 	/* Set trigger level, range: 1-63 */
 	*(uart->base + rxwm) = 1;
-
-	h->deinit = uart_deinit;
-	h->sync = uart_sync;
-	h->read = uart_devRead;
-	h->write = uart_devWrite;
 
 	return ERR_NONE;
 }
@@ -453,5 +449,11 @@ int uart_init(unsigned int dn, dev_handler_t *h)
 
 __attribute__((constructor)) static void uart_reg(void)
 {
-	devs_regDriver(DEV_UART, uart_init);
+	uart_common.handler.init = uart_init;
+	uart_common.handler.done = uart_done;
+	uart_common.handler.read = uart_devRead;
+	uart_common.handler.write = uart_devWrite;
+	uart_common.handler.sync = uart_sync;
+
+	devs_register(DEV_UART, UARTS_MAX_CNT, &uart_common.handler);
 }

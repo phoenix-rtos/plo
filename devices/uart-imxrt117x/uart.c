@@ -52,6 +52,7 @@ typedef struct {
 struct {
 	uart_t uarts[UART_MAX_CNT];
 	int init;
+	dev_handler_t handler;
 } uart_common;
 
 
@@ -83,15 +84,15 @@ static const struct {
 
 
 /* TODO: temporary solution, it should be moved to device tree */
-static uart_t *uart_getInstance(unsigned int dn)
+static uart_t *uart_getInstance(unsigned int minor)
 {
-	if (dn < 1 || dn > UART_MAX_CNT)
+	if (minor < 1 || minor > UART_MAX_CNT)
  		return NULL;
 
-	if (uartLut[dn - 1] == 0)
+	if (uartLut[minor - 1] == 0)
 		return NULL;
 
-	return &uart_common.uarts[dn - 1];
+	return &uart_common.uarts[minor - 1];
 }
 
 
@@ -107,11 +108,11 @@ int uart_getTXcount(uart_t *uart)
 }
 
 
-int uart_rxEmpty(unsigned int dn)
+int uart_rxEmpty(unsigned int minor)
 {
 	uart_t *uart;
 
-	if ((uart = uart_getInstance(dn)) == NULL)
+	if ((uart = uart_getInstance(minor)) == NULL)
 		return ERR_ARG;
 
 	return uart->rxHead == uart->rxTail;
@@ -153,12 +154,12 @@ int uart_handleIntr(u16 irq, void *buff)
 
 
 /* TODO: when hal_console will be introduced, uart_read should be replaced by dev interface */
-int uart_read(unsigned int dn, u8 *buff, u16 len, u16 timeout)
+int uart_read(unsigned int minor, u8 *buff, u16 len, u16 timeout)
 {
 	uart_t *uart;
 	u16 l, cnt;
 
-	if ((uart = uart_getInstance(dn)) == NULL)
+	if ((uart = uart_getInstance(minor)) == NULL)
 		return ERR_ARG;
 
 	if (!timer_wait(timeout, TIMER_VALCHG, &uart->rxHead, uart->rxTail))
@@ -186,12 +187,12 @@ int uart_read(unsigned int dn, u8 *buff, u16 len, u16 timeout)
 
 
 /* TODO: when hal_console will be introduced, uart_write should be replaced by dev interface */
-int uart_write(unsigned int dn, const u8 *buff, u16 len)
+int uart_write(unsigned int minor, const u8 *buff, u16 len)
 {
 	uart_t *uart;
 	u16 l, cnt = 0;
 
-	if ((uart = uart_getInstance(dn)) == NULL)
+	if ((uart = uart_getInstance(minor)) == NULL)
 		return ERR_ARG;
 
 	while (uart->txHead == uart->txTail && uart->tFull)
@@ -503,33 +504,33 @@ u32 uart_getBaudrate(void)
 
 /* Device interafce */
 
-ssize_t uart_devRead(unsigned int dn, addr_t offs, u8 *buff, unsigned int len)
+ssize_t uart_devRead(unsigned int minor, addr_t offs, u8 *buff, unsigned int len)
 {
 	uart_t *uart;
 
-	if ((uart = uart_getInstance(dn)) == NULL)
+	if ((uart = uart_getInstance(minor)) == NULL)
 		return ERR_ARG;
 
-	return uart_read(dn, buff, len, 500);
+	return uart_read(minor, buff, len, 500);
 }
 
 
-ssize_t uart_devWrite(unsigned int dn, addr_t offs, const u8 *buff, unsigned int len)
+ssize_t uart_devWrite(unsigned int minor, addr_t offs, const u8 *buff, unsigned int len)
 {
 	uart_t *uart;
 
-	if ((uart = uart_getInstance(dn)) == NULL)
+	if ((uart = uart_getInstance(minor)) == NULL)
 		return ERR_ARG;
 
-	return uart_write(dn, buff, len);
+	return uart_write(minor, buff, len);
 }
 
 
-int uart_sync(unsigned int dn)
+int uart_sync(unsigned int minor)
 {
 	uart_t *uart;
 
-	if ((uart = uart_getInstance(dn)) == NULL)
+	if ((uart = uart_getInstance(minor)) == NULL)
 		return ERR_ARG;
 
 	/* TBD */
@@ -538,11 +539,11 @@ int uart_sync(unsigned int dn)
 }
 
 
-int uart_deinit(unsigned int dn)
+int uart_done(unsigned int minor)
 {
 	uart_t *uart;
 
-	if ((uart = uart_getInstance(dn)) == NULL)
+	if ((uart = uart_getInstance(minor)) == NULL)
 		return ERR_ARG;
 
 	/* disable TX and RX */
@@ -555,12 +556,12 @@ int uart_deinit(unsigned int dn)
 }
 
 
-int uart_init(unsigned int dn, dev_handler_t *h)
+int uart_init(unsigned int minor)
 {
 	u32 t, id;
 	uart_t *uart;
 
-	if ((uart = uart_getInstance(dn)) == NULL)
+	if ((uart = uart_getInstance(minor)) == NULL)
 		return ERR_ARG;
 
 	if (uart_common.init == 0) {
@@ -568,7 +569,7 @@ int uart_init(unsigned int dn, dev_handler_t *h)
 		uart_common.init = 1;
 	}
 
-	id = dn - 1;
+	id = minor - 1;
 	uart->base = infoUarts[id].base;
 
 	_imxrt_setDevClock(infoUarts[id].dev, 0, 0, 0, 0, 1);
@@ -615,16 +616,17 @@ int uart_init(unsigned int dn, dev_handler_t *h)
 
 	hal_irqinst(infoUarts[id].irq, uart_handleIntr, (void *)uart);
 
-	h->deinit = uart_deinit;
-	h->sync = uart_sync;
-	h->read = uart_devRead;
-	h->write = uart_devWrite;
-
 	return ERR_NONE;
 }
 
 
 __attribute__((constructor)) static void uart_reg(void)
 {
-	devs_regDriver(DEV_UART, uart_init);
+	uart_common.handler.init = uart_init;
+	uart_common.handler.done = uart_done;
+	uart_common.handler.read = uart_devRead;
+	uart_common.handler.write = uart_devWrite;
+	uart_common.handler.sync = uart_sync;
+
+	devs_register(DEV_UART, UART_MAX_CNT, &uart_common.handler);
 }
