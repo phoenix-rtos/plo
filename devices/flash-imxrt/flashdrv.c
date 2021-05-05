@@ -77,6 +77,7 @@ static void flashdrv_syncCtx(flash_context_t *ctx)
 	int i;
 	u32 dstAddr;
 	const u32 *src;
+	u32 initAddr = ctx->address + ctx->sectorID * ctx->properties.sector_size;
 	const u32 pagesNumber = ctx->properties.sector_size / ctx->properties.page_size;
 
 	if (ctx->counter == 0)
@@ -88,6 +89,8 @@ static void flashdrv_syncCtx(flash_context_t *ctx)
 
 		flexspi_norFlashPageProgram(ctx->instance, &ctx->config, dstAddr, src);
 	}
+
+	hal_invalDCacheAddr(initAddr, ctx->properties.sector_size);
 
 	ctx->counter = 0;
 	ctx->sectorID = -1;
@@ -132,6 +135,8 @@ static s32 flashdrv_bufferedPagesWrite(flash_context_t *ctx, u32 offset, const c
 			if (flexspi_norFlashErase(ctx->instance, &ctx->config, ctx->properties.sector_size * sector_id, ctx->properties.sector_size) != 0)
 				return savedBytes;
 
+			hal_invalDCacheAddr(ctx->address + ctx->properties.sector_size * sector_id, ctx->properties.sector_size);
+
 			ctx->sectorID = sector_id;
 			ctx->counter = offset - ctx->properties.sector_size * ctx->sectorID;
 		}
@@ -175,19 +180,16 @@ static int flashdrv_defineFlexSPI(flash_context_t *ctx)
 }
 
 
+
 /* Device interafce */
 
 static ssize_t flashdrv_read(unsigned int minor, addr_t offs, u8 *buff, unsigned int len)
 {
-	ssize_t res;
-
 	if (minor >= FLASH_NO)
 		return ERR_ARG;
 
-	if ((res = flashdrv_readData(&flashdrv_common.ctx[minor], offs, (char *)buff, len)) < 0)
-		return res;
-
-	return res;
+	hal_memcpy(buff, (void *)(flashdrv_common.ctx[minor].address + offs), len);
+	return len;
 }
 
 
