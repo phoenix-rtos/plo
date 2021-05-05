@@ -21,6 +21,7 @@
 #include "cmd.h"
 #include "phfs.h"
 #include "types.h"
+#include "config.h"
 
 #define min(a, b)   ((a > b) ? b : a)
 
@@ -69,6 +70,14 @@ extern void hal_memset(void *dst, int v, unsigned int l);
 /* Function starts kernel loaded into memory */
 
 extern int hal_launch(void);
+
+
+/* Cache */
+
+extern void hal_invalDCacheAll(void);
+
+extern void hal_invalDCacheAddr(addr_t addr, size_t sz);
+
 
 
 /* Opeartions on interrupts */

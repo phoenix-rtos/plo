@@ -97,7 +97,7 @@ enum { scb_cpuid = 0, scb_icsr, scb_vtor, scb_aircr, scb_scr, scb_ccr, scb_shp0,
 	scb_pfr1, scb_dfr, scb_afr, scb_mmfr0, scb_mmfr1, scb_mmfr2, scb_mmf3, scb_isar0, scb_isar1,
 	scb_isar2, scb_isar3, scb_isar4, /* reserved */ scb_clidr = 30, scb_ctr, scb_ccsidr, scb_csselr,
 	scb_cpacr, /* 93 reserved */ scb_stir = 128, /* 15 reserved */ scb_mvfr0 = 144, scb_mvfr1,
-	scb_mvfr2, /* reserved */ scb_iciallu = 148, /* reserved */ scb_icimvau = 150, scb_scimvac,
+	scb_mvfr2, /* reserved */ scb_iciallu = 148, /* reserved */ scb_icimvau = 150, scb_dcimvac,
 	scb_dcisw, scb_dccmvau, scb_dccmvac, scb_dccsw, scb_dccimvac, scb_dccisw, /* 6 reserved */
 	scb_itcmcr = 164, scb_dtcmcr, scb_ahbpcr, scb_cacr, scb_ahbscr, /* reserved */ scb_abfsr = 170 };
 
@@ -1784,6 +1784,51 @@ void _imxrt_cleanDCache(void)
 }
 
 
+void _imxrt_invalDCacheAddr(void *addr, u32 sz)
+{
+	u32 daddr;
+	int dsize;
+
+	if (sz == 0)
+		return;
+
+	daddr = (((u32)addr) & ~0x1f);
+	dsize = sz + ((u32)addr & 0x1f);
+
+	imxrt_dataSyncBarrier();
+
+	do {
+		*(imxrt_common.scb + scb_dcimvac) = daddr;
+		daddr += 0x20;
+		dsize -= 0x20;
+	} while (dsize > 0);
+
+	imxrt_dataSyncBarrier();
+	imxrt_dataInstrBarrier();
+}
+
+
+void _imxrt_invalDCacheAll(void)
+{
+	u32 ccsidr, sets, ways;
+
+	/* select Level 1 data cache */
+	*(imxrt_common.scb + scb_csselr) = 0;
+	imxrt_dataSyncBarrier();
+	ccsidr = *(imxrt_common.scb + scb_ccsidr);
+
+	sets = (ccsidr >> 13) & 0x7fff;
+	do {
+		ways =  (ccsidr >> 3) & 0x3ff;
+		do {
+			*(imxrt_common.scb + scb_dcisw) = ((sets & 0x1ff) << 5) | ((ways & 0x3) << 30);
+		} while (ways-- != 0U);
+	} while(sets-- != 0U);
+
+	imxrt_dataSyncBarrier();
+	imxrt_dataInstrBarrier();
+}
+
 
 void _imxrt_enableICache(void)
 {
@@ -1884,6 +1929,7 @@ void _imxrt_init(void)
 	_imxrt_ccmSetDiv(clk_div_arm, 0x1);
 	_imxrt_ccmSetDiv(clk_div_ahb, 0x0);
 	_imxrt_ccmSetDiv(clk_div_ipg, 0x3);
+
 
 	/* Now CPU runs again on ARM PLL at 528M (with divider 2) */
 	_imxrt_ccmSetMux(clk_mux_prePeriph, 0x3);
