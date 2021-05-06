@@ -37,9 +37,11 @@ extern int phfs_regDev(const char *alias, unsigned int major, unsigned int minor
 extern int phfs_regFile(const char *alias, addr_t addr, size_t size);
 
 
+/* Get file's address based on the given handler */
 extern int phfs_getFileAddr(handler_t h, addr_t *addr);
 
 
+/* Get file's size based on the given handler */
 extern int phfs_getFileSize(handler_t h, size_t *size);
 
 
@@ -55,15 +57,19 @@ extern void phfs_showDevs(void);
 extern int phfs_open(const char *alias, const char *file, unsigned int flags, handler_t *handler);
 
 
+/* Read data from registered device */
 extern ssize_t phfs_read(handler_t handler, addr_t offs, u8 *buff, unsigned int len);
 
 
+/* Write data to registered device */
 extern ssize_t phfs_write(handler_t handler, addr_t offs, const u8 *buff, unsigned int len);
 
 
+/* Close connection with the device */
 extern int phfs_close(handler_t handler);
 
 
+/* Check whether device's region is mappable to map's region. If device is mappable, the device offset in memory map is written to devOffs */
 extern int phfs_isMappable(handler_t handler, addr_t addr, size_t sz, int mode, addr_t memaddr, size_t memsz, int memmode, addr_t *devOffs);
 
 

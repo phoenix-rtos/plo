@@ -13,7 +13,6 @@
  * %LICENSE%
  */
 
-
 #ifndef _DEVS_H_
 #define _DEVS_H_
 
@@ -40,28 +39,35 @@ typedef struct {
 
 
 /* This function should be called only before devs_init(),
- * preferably from device drivers constructors. */
+ * preferably from device drivers constructors */
 extern void devs_register(unsigned int major, unsigned int nb, dev_handler_t *h);
 
 
+/* Initialize registered devices */
 extern void devs_init(void);
 
 
+/* Check whether device is available */
 extern int devs_check(unsigned int major, unsigned int minor);
 
 
+/* Make synchronization on device. Preferred usage after write function */
 extern int devs_sync(unsigned int major, unsigned int minor);
 
 
+/* Check whether device's region is mappable to map's region. If device is mappable, the device offset in memory map is written to devOffs */
 extern int devs_isMappable(unsigned int major, unsigned int minor, addr_t addr, size_t sz, int mode, addr_t memaddr, size_t memsz, int memmode, addr_t *devOffs);
 
 
+/* Read data from device */
 extern ssize_t devs_read(unsigned int major, unsigned int minor, addr_t offs, u8 *buff, unsigned int len);
 
 
+/* Write data to device */
 extern ssize_t devs_write(unsigned int major, unsigned int minor, addr_t offs, const u8 *buff, unsigned int len);
 
 
+/* Reset registered devices */
 extern void devs_done(void);
 
 
