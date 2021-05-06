@@ -134,15 +134,15 @@ static int uart_irqHandler(u16 n, void *data)
 
 
 /* TODO: when hal_console will be introduced, uart_read should be replaced by dev interface */
-int uart_read(unsigned int pn, u8 *buff, u16 len, u16 timeout)
+int uart_read(unsigned int minor, u8 *buff, u16 len, u16 timeout)
 {
 	u16 l, cnt = 0;
 	uart_t *uart;
 
-	if (pn >= UARTS_MAX_CNT)
+	if (minor >= UARTS_MAX_CNT)
 		return ERR_ARG;
 
-	uart = &uart_common.uarts[pn];
+	uart = &uart_common.uarts[minor];
 
 	if (!timer_wait(timeout, TIMER_VALCHG, &uart->rxHead, uart->rxTail))
 		return ERR_UART_TIMEOUT;
@@ -169,15 +169,15 @@ int uart_read(unsigned int pn, u8 *buff, u16 len, u16 timeout)
 
 
 /* TODO: when hal_console will be introduced, uart_write should be replaced by dev interface */
-int uart_write(unsigned int pn, const u8 *buff, u16 len)
+int uart_write(unsigned int minor, const u8 *buff, u16 len)
 {
 	int l, cnt = 0;
 	uart_t *uart;
 
-	if (pn >= UARTS_MAX_CNT)
+	if (minor >= UARTS_MAX_CNT)
 		return ERR_ARG;
 
-	uart = &uart_common.uarts[pn];
+	uart = &uart_common.uarts[minor];
 
 	while (uart->txHead == uart->txTail && uart->tFull)
 		;
@@ -212,12 +212,12 @@ int uart_write(unsigned int pn, const u8 *buff, u16 len)
 }
 
 
-int uart_safewrite(unsigned int pn, const u8 *buff, u16 len)
+int uart_safewrite(unsigned int minor, const u8 *buff, u16 len)
 {
 	int l;
 
 	for (l = 0; len;) {
-		if ((l = uart_write(pn, buff, len)) < 0)
+		if ((l = uart_write(minor, buff, len)) < 0)
 			return ERR_MSG_IO;
 		buff += l;
 		len -= l;
@@ -227,14 +227,14 @@ int uart_safewrite(unsigned int pn, const u8 *buff, u16 len)
 }
 
 
-int uart_rxEmpty(unsigned int pn)
+int uart_rxEmpty(unsigned int minor)
 {
 	uart_t *uart;
 
-	if (pn >= UARTS_MAX_CNT)
+	if (minor >= UARTS_MAX_CNT)
 		return ERR_ARG;
 
-	uart = &uart_common.uarts[pn];
+	uart = &uart_common.uarts[minor];
 
 	return uart->rxHead == uart->rxTail;
 }
@@ -338,12 +338,12 @@ u32 uart_getBaudrate(void)
 
 /* Device interafce */
 
-ssize_t uart_devRead(unsigned int minor, addr_t offs, u8 *buff, unsigned int len)
+ssize_t uart_devRead(unsigned int minor, addr_t offs, u8 *buff, unsigned int len, unsigned int timeout)
 {
 	if (minor >= UARTS_MAX_CNT)
 		return ERR_ARG;
 
-	return uart_read(minor, buff, len, 500);
+	return uart_read(minor, buff, len, timeout);
 }
 
 

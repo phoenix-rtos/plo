@@ -24,6 +24,8 @@
 #define SIZE_PHFS_HANDLERS    8
 #define SIZE_PHFS_FILES       10
 
+#define PHFS_TIMEOUT_MS       500
+
 
 enum { phfs_prot_raw = 0, phfs_prot_phoenixd };
 
@@ -284,7 +286,7 @@ ssize_t phfs_read(handler_t handler, addr_t offs, u8 *buff, unsigned int len)
 	case phfs_prot_raw:
 		/* Reading raw data from device */
 		if (handler.id == -1)
-			return devs_read(pd->major, pd->minor, offs, buff, len);
+			return devs_read(pd->major, pd->minor, offs, buff, len, PHFS_TIMEOUT_MS);
 
 		/* Reading file defined by alias */
 		if (handler.id >= SIZE_PHFS_FILES)
@@ -292,9 +294,9 @@ ssize_t phfs_read(handler_t handler, addr_t offs, u8 *buff, unsigned int len)
 
 		file = &phfs_common.files[handler.id];
 		if (offs + len < file->size)
-			return devs_read(pd->major, pd->minor, file->addr + offs, buff, len);
+			return devs_read(pd->major, pd->minor, file->addr + offs, buff, len, PHFS_TIMEOUT_MS);
 		else
-			return devs_read(pd->major, pd->minor, file->addr + offs, buff, file->size - offs);
+			return devs_read(pd->major, pd->minor, file->addr + offs, buff, file->size - offs, PHFS_TIMEOUT_MS);
 
 	default:
 		break;

@@ -76,7 +76,7 @@ static int msg_read(unsigned int major, unsigned int minor, msg_t *msg, u16 time
 	unsigned int l = 0;
 
 	for (;;) {
-		if ((res = devs_read(major, minor, 0, buff, sizeof(buff))) < 0)
+		if ((res = devs_read(major, minor, 0, buff, sizeof(buff), MSGRECV_TIMEOUT)) < 0)
 			break;
 
 		for (i = 0; i < res; ++i) {

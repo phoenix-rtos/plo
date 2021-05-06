@@ -76,7 +76,7 @@ int devs_check(unsigned int major, unsigned int minor)
 }
 
 
-ssize_t devs_read(unsigned int major, unsigned int minor, addr_t offs, u8 *buff, unsigned int len)
+ssize_t devs_read(unsigned int major, unsigned int minor, addr_t offs, u8 *buff, unsigned int len, unsigned int timeout)
 {
 	dev_handler_t *handler;
 
@@ -87,7 +87,7 @@ ssize_t devs_read(unsigned int major, unsigned int minor, addr_t offs, u8 *buff,
 	if (handler == NULL || handler->read == NULL)
 		return ERR_ARG;
 
-	return handler->read(minor, offs, buff, len);
+	return handler->read(minor, offs, buff, len, timeout);
 }
 
 

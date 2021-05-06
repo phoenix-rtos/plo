@@ -344,7 +344,7 @@ const usb_string_desc_t dStrprod = {
 };
 
 
-static ssize_t cdc_recv(unsigned int minor, addr_t offs, u8 *buff, unsigned int len)
+static ssize_t cdc_recv(unsigned int minor, addr_t offs, u8 *buff, unsigned int len, unsigned int timeout)
 {
 	if (minor > SIZE_USB_ENDPTS)
 		return ERR_ARG;

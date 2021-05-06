@@ -183,7 +183,7 @@ static int flashdrv_defineFlexSPI(flash_context_t *ctx)
 
 /* Device interafce */
 
-static ssize_t flashdrv_read(unsigned int minor, addr_t offs, u8 *buff, unsigned int len)
+static ssize_t flashdrv_read(unsigned int minor, addr_t offs, u8 *buff, unsigned int len, unsigned int timeout)
 {
 	if (minor >= FLASH_NO)
 		return ERR_ARG;

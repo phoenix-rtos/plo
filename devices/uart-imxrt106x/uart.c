@@ -422,14 +422,14 @@ u32 uart_getBaudrate(void)
 
 /* Device interafce */
 
-ssize_t uart_devRead(unsigned int minor, addr_t offs, u8 *buff, unsigned int len)
+ssize_t uart_devRead(unsigned int minor, addr_t offs, u8 *buff, unsigned int len, unsigned int timeout)
 {
 	uart_t *uart;
 
 	if ((uart = uart_getInstance(minor)) == NULL)
 		return ERR_ARG;
 
-	return uart_read(minor, buff, len, 500);
+	return uart_read(minor, buff, len, timeout);
 }
 
 
