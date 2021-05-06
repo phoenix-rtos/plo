@@ -396,7 +396,7 @@ int uart_done(unsigned int minor)
 
 static int uart_isMappable(unsigned int minor, addr_t addr, size_t sz, int mode, addr_t memaddr, size_t memsz, int memmode, addr_t *devOffs)
 {
-	if (minor >= UART_MAX_CNT)
+	if (minor >= UARTS_MAX_CNT)
 		return ERR_ARG;
 
 	/* Device mode cannot be higher than map mode to copy data */
