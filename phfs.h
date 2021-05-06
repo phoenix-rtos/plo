@@ -18,6 +18,7 @@
 #ifndef _PHFS_H_
 #define _PHFS_H_
 
+#include "devs.h"
 #include "config.h"
 
 typedef struct {
@@ -61,6 +62,9 @@ extern ssize_t phfs_write(handler_t handler, addr_t offs, const u8 *buff, unsign
 
 
 extern int phfs_close(handler_t handler);
+
+
+extern int phfs_isMappable(handler_t handler, addr_t addr, size_t sz, int mode, addr_t memaddr, size_t memsz, int memmode, addr_t *devOffs);
 
 
 #endif

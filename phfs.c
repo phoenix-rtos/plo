@@ -14,7 +14,6 @@
  */
 
 #include "phfs.h"
-#include "devs.h"
 #include "hal.h"
 
 #include "phoenixd.h"
@@ -24,7 +23,6 @@
 
 #define SIZE_PHFS_HANDLERS    8
 #define SIZE_PHFS_FILES       10
-
 
 
 enum { phfs_prot_raw = 0, phfs_prot_phoenixd };
@@ -368,4 +366,17 @@ int phfs_close(handler_t handler)
 		return ERR_ARG;
 
 	return ERR_NONE;
+}
+
+
+int phfs_isMappable(handler_t handler, addr_t addr, size_t sz, int mode, addr_t memaddr, size_t memsz, int memmode, addr_t *devOffs)
+{
+	phfs_device_t *pd;
+
+	if (handler.pd >= SIZE_PHFS_HANDLERS)
+		return ERR_ARG;
+
+	pd = &phfs_common.devices[handler.pd];
+
+	return devs_isMappable(pd->major, pd->minor, addr, sz, mode, memaddr, memsz, memmode, devOffs);
 }
