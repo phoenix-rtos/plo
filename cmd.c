@@ -98,18 +98,20 @@ static int cmd_cpphfs2phfs(handler_t srcHandler, addr_t srcAddr, size_t srcSz, h
 
 
 
-static int cmd_cpphfs2map(handler_t handler, addr_t offs, size_t size, const char *map)
+static int cmd_cpphfs2map(handler_t handler, addr_t offs, size_t size, const char *map, addr_t *devOffs)
 {
-	void *addr;
-	int res, i = 0;
+	void *mapAddr;
+	int len, res, i = 0;
 	size_t chunkSz;
 	u8 buff[MSG_BUFF_SZ];
+	unsigned int attr;
 
-	if (syspage_getMapTop(map, &addr) < 0) {
+	if (syspage_getMapTop(map, &mapAddr) < 0 || syspage_getMapAttr(map, &attr) < 0) {
 		plostd_printf(ATTR_ERROR, "\n%s does not exist!\n", map);
 		return ERR_ARG;
 	}
 
+	/* If user specifes size as 0, it is defined with max value */
 	size = (size == 0) ? -1 : size;
 
 	do {
@@ -118,21 +120,38 @@ static int cmd_cpphfs2map(handler_t handler, addr_t offs, size_t size, const cha
 		else
 			chunkSz = size;
 
-		if ((res = phfs_read(handler, offs, buff, chunkSz)) < 0) {
+		if ((res = phfs_isMappable(handler, offs, chunkSz, mAttrRead | mAttrWrite, (addr_t)mapAddr, chunkSz, attr, devOffs)) < 0)
+			return res;
+
+		if ((len = phfs_read(handler, offs, buff, chunkSz)) < 0) {
 			plostd_printf(ATTR_ERROR, "\nCan't read segment data\n");
 			return ERR_PHFS_FILE;
 		}
 
-		if (syspage_write2Map(map, buff, res) < 0)
-			return ERR_ARG;
+		switch (res) {
+			/* Copy data to map */
+			case dev_isNotMappable:
+				if (syspage_write2Map(map, buff, len) < 0)
+					return ERR_ARG;
 
-		offs += res;
+				plostd_printf(ATTR_LOADER, "\rWriting to address %p ", mapAddr);
+				cmd_showprogress(i++);
+
+				/* Update current map adress */
+				syspage_getMapTop(map, &mapAddr);
+				break;
+
+			/* Device is consistent with map */
+			case dev_isMappable:
+			default:
+				break;
+		}
+
+		offs += len;
 		if (size != 0)
-			size -= res;
+			size -= len;
 
-		plostd_printf(ATTR_LOADER, "\rWriting to address %p ", offs);
-		cmd_showprogress(i++);
-	} while (size > 0 && res > 0);
+	} while (size > 0 && len > 0);
 
 	return ERR_NONE;
 }
@@ -593,6 +612,7 @@ static int cmd_loadApp(handler_t handler, addr_t offs, size_t size, const char *
 	int res;
 	Elf32_Ehdr hdr;
 	void *start, *end;
+	addr_t devAddr;
 
 	/* Check ELF header */
 	if ((res = phfs_read(handler, offs, (u8 *)&hdr, (u32)sizeof(Elf32_Ehdr))) < 0) {
@@ -609,15 +629,25 @@ static int cmd_loadApp(handler_t handler, addr_t offs, size_t size, const char *
 	if (syspage_alignMapTop(imap) < 0)
 		return ERR_ARG;
 
-	/* Get instruction begining address */
+	/* Get map top address before copying */
 	if (syspage_getMapTop(imap, &start) < 0) {
 		plostd_printf(ATTR_ERROR, "\n%s does not exist\n", imap);
 		return ERR_ARG;
 	}
 
-	/* TODO: check whether device is in the same map as imap */
-	if (0) {
-		/* Get offset and size using file descriptor */
+	if (cmd_cpphfs2map(handler, offs, size, imap, &devAddr) < 0) {
+		plostd_printf(ATTR_ERROR, "App cannot be copied to %s\n", imap);
+		return ERR_PHFS_IO;
+	}
+
+	/* Get map top address after copying */
+	if (syspage_getMapTop(imap, &end) < 0) {
+		plostd_printf(ATTR_ERROR, "\n%s does not exist\n", imap);
+		return ERR_ARG;
+	}
+
+	/* Data has not been copied to map */
+	if (start == end) {
 		if (offs == 0 && size == 0) {
 			if (phfs_getFileAddr(handler, &offs) < 0)
 				return ERR_ARG;
@@ -625,19 +655,10 @@ static int cmd_loadApp(handler_t handler, addr_t offs, size_t size, const char *
 			if (phfs_getFileSize(handler, &size) < 0)
 				return ERR_ARG;
 		}
-		start = (void *)offs;
+		start = (void *)(offs + devAddr);
 		end = start + size;
 
 		plostd_printf(ATTR_LOADER, "\nCode is located in %s map. Data has not been copied.\n", imap);
-	}
-	else {
-		cmd_cpphfs2map(handler, offs, size, imap);
-
-		/* Get file end address */
-		if (syspage_getMapTop(imap, &end) < 0) {
-			plostd_printf(ATTR_ERROR, "\n%s does not exist\n", imap);
-			return ERR_ARG;
-		}
 	}
 
 	if (syspage_addProg(start, end, imap, dmap, cmdline, flags) < 0) {
