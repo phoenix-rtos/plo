@@ -72,6 +72,9 @@ extern int syspage_write2Map(const char *map, const u8 *buff, size_t len);
 extern void syspage_addEntries(addr_t start, size_t sz);
 
 
+extern int syspage_getMapAttr(const char *map, unsigned int *attr);
+
+
 
 /* Program's functions */
 

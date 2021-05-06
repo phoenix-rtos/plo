@@ -487,6 +487,20 @@ void syspage_addEntries(addr_t start, size_t sz)
 }
 
 
+int syspage_getMapAttr(const char *map, unsigned int *attr)
+{
+	u8 id;
+
+	if (syspage_getMapID(map, &id) < 0) {
+		plostd_printf(ATTR_ERROR, "\nMAPS for %s does not exist!\n", map);
+		return ERR_ARG;
+	}
+
+	*attr = syspage_common.maps[id].map.attr;
+
+	return ERR_NONE;
+}
+
 
 /* Program's functions */
 
