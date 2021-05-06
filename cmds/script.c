@@ -15,11 +15,11 @@
 
 
 #include "script.h"
-#include "plostd.h"
 #include "phfs.h"
 #include "cmd.h"
-#include "hal.h"
-#include "errors.h"
+#include "../hal.h"
+#include "../errors.h"
+#include "../plostd.h"
 
 
 /* Linker symbol points to the beginning of .data section */

@@ -16,7 +16,7 @@
 #ifndef SCRIPT_H_
 #define SCRIPT_H_
 
-#include "types.h"
+#include "../types.h"
 
 #define MAX_SCRIPT_LINES_NB 64
 

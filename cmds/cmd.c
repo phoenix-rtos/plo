@@ -14,13 +14,12 @@
  * %LICENSE%
  */
 
-#include "errors.h"
-#include "hal.h"
-#include "plostd.h"
+#include "../errors.h"
+#include "../hal.h"
+#include "../syspage.h"
 #include "phfs.h"
 #include "elf.h"
 #include "cmd.h"
-#include "syspage.h"
 #include "script.h"
 
 #define MSG_BUFF_SZ 0x100

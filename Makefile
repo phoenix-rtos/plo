@@ -17,12 +17,13 @@ include ../phoenix-rtos-build/Makefile.$(TARGET_SUFF)
 include lib/Makefile
 include devices/Makefile
 include phfs/Makefile
+include cmds/Makefile
 include hal/$(TARGET_SUFF)/$(TARGET_SUBFAMILY)/Makefile
 
 CFLAGS += $(BOARD_CONFIG)
 CFLAGS += -I../plo/hal/$(TARGET_SUFF)/$(TARGET_SUBFAMILY)
 
-OBJS += $(addprefix $(PREFIX_O), _startc.o plo.o plostd.o cmd.o syspage.o)
+OBJS += $(addprefix $(PREFIX_O), _startc.o plo.o plostd.o syspage.o)
 
 
 all: $(PREFIX_PROG_STRIPPED)plo-$(TARGET_FAMILY)-$(TARGET_SUBFAMILY).elf  $(PREFIX_PROG_STRIPPED)plo-$(TARGET_FAMILY)-$(TARGET_SUBFAMILY).img\
@@ -34,10 +35,10 @@ $(BUILD_DIR)/script.plo:
 	@printf "TOUCH script.plo\n"
 	$(SIL)touch $(BUILD_DIR)/script.plo
 
-$(PREFIX_O)/script.o.plo: $(PREFIX_O)script.o $(BUILD_DIR)/script.plo
+$(PREFIX_O)/script.o.plo: $(PREFIX_O)cmds/script.o $(BUILD_DIR)/script.plo
 	@mkdir -p $(@D)
 	@printf "EMBED script.plo\n"
-	$(SIL)$(OBJCOPY) --update-section .data=$(BUILD_DIR)/script.plo $(PREFIX_O)script.o --add-symbol script=.data:0 $(PREFIX_O)script.o.plo
+	$(SIL)$(OBJCOPY) --update-section .data=$(BUILD_DIR)/script.plo $(PREFIX_O)cmds/script.o --add-symbol script=.data:0 $(PREFIX_O)script.o.plo
 
 
 $(PREFIX_PROG)plo-$(TARGET_FAMILY)-$(TARGET_SUBFAMILY).elf: $(OBJS) $(PREFIX_O)/script.o.plo $(STARTUP)
