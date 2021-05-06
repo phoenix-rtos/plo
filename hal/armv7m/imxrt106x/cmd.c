@@ -15,12 +15,12 @@
 
 #include "../errors.h"
 #include "../plostd.h"
-#include "../phfs.h"
 #include "../hal.h"
 #include "../cmd.h"
 #include "../elf.h"
 
 
+#include "phfs.h"
 #include "config.h"
 #include "cmd-board.h"
 

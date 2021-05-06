@@ -13,9 +13,9 @@
  * %LICENSE%
  */
 
-#include "errors.h"
-#include "hal.h"
-#include "plostd.h"
+#include "../errors.h"
+#include "../hal.h"
+#include "../plostd.h"
 #include "uart.h"
 #include "msg.h"
 #include "devs.h"

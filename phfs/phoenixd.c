@@ -15,9 +15,9 @@
 
 #include "phoenixd.h"
 #include "msg.h"
-#include "hal.h"
-#include "errors.h"
-#include "plostd.h"
+#include "../hal.h"
+#include "../errors.h"
+#include "../plostd.h"
 
 
 /* Message types */

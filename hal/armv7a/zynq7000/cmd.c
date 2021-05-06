@@ -15,11 +15,11 @@
 
 #include "../errors.h"
 #include "../cmd.h"
-#include "../phfs.h"
 #include "../hal.h"
 #include "../cmd.h"
 
 #include "zynq.h"
+#include "phfs.h"
 #include "config.h"
 #include "cmd-board.h"
 

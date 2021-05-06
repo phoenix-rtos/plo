@@ -14,11 +14,11 @@
  */
 
 #include "phfs.h"
-#include "hal.h"
-
 #include "phoenixd.h"
-#include "plostd.h"
-#include "errors.h"
+
+#include "../hal.h"
+#include "../plostd.h"
+#include "../errors.h"
 
 
 #define SIZE_PHFS_HANDLERS    8

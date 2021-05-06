@@ -16,12 +16,13 @@ include ../phoenix-rtos-build/Makefile.$(TARGET_SUFF)
 
 include lib/Makefile
 include devices/Makefile
+include phfs/Makefile
 include hal/$(TARGET_SUFF)/$(TARGET_SUBFAMILY)/Makefile
 
 CFLAGS += $(BOARD_CONFIG)
 CFLAGS += -I../plo/hal/$(TARGET_SUFF)/$(TARGET_SUBFAMILY)
 
-OBJS += $(addprefix $(PREFIX_O), _startc.o plo.o plostd.o phoenixd.o msg.o phfs.o cmd.o syspage.o)
+OBJS += $(addprefix $(PREFIX_O), _startc.o plo.o plostd.o cmd.o syspage.o)
 
 
 all: $(PREFIX_PROG_STRIPPED)plo-$(TARGET_FAMILY)-$(TARGET_SUBFAMILY).elf  $(PREFIX_PROG_STRIPPED)plo-$(TARGET_FAMILY)-$(TARGET_SUBFAMILY).img\

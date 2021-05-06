@@ -16,7 +16,7 @@
 #ifndef _MSG_H_
 #define _MSG_H_
 
-#include "types.h"
+#include "../types.h"
 #include "config.h"
 
 /* Special characters */
