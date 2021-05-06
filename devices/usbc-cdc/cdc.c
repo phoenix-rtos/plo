@@ -445,6 +445,20 @@ static int cdc_sync(unsigned int minor)
 }
 
 
+static int cdc_isMappable(unsigned int minor, addr_t addr, size_t sz, int mode, addr_t memaddr, size_t memsz, int memmode, addr_t *devOffs)
+{
+	if (minor > PHFS_ACM_PORTS_NB * 2)
+		return ERR_ARG;
+
+	/* Device mode cannot be higher than map mode to copy data */
+	if ((mode & memmode) != mode)
+		return ERR_ARG;
+
+	/* Cdc is not mappable to any region */
+	return dev_isNotMappable;
+}
+
+
 static int cdc_init(unsigned int minor)
 {
 	int res = ERR_NONE;
@@ -466,6 +480,7 @@ __attribute__((constructor)) static void cdc_reg(void)
 	cdc_common.handler.read = cdc_recv;
 	cdc_common.handler.write = cdc_send;
 	cdc_common.handler.sync = cdc_sync;
+	cdc_common.handler.isMappable = cdc_isMappable;
 
 	devs_register(DEV_USB, SIZE_USB_ENDPTS, &cdc_common.handler);
 }

@@ -556,6 +556,20 @@ int uart_done(unsigned int minor)
 }
 
 
+static int uart_isMappable(unsigned int minor, addr_t addr, size_t sz, int mode, addr_t memaddr, size_t memsz, int memmode, addr_t *devOffs)
+{
+	if (minor >= UARTS_MAX_CNT)
+		return ERR_ARG;
+
+	/* Device mode cannot be higher than map mode to copy data */
+	if ((mode & memmode) != mode)
+		return ERR_ARG;
+
+	/* uart is not mappable to any region */
+	return dev_isNotMappable;
+}
+
+
 int uart_init(unsigned int minor)
 {
 	u32 t, id;
@@ -627,6 +641,7 @@ __attribute__((constructor)) static void uart_reg(void)
 	uart_common.handler.read = uart_devRead;
 	uart_common.handler.write = uart_devWrite;
 	uart_common.handler.sync = uart_sync;
+	uart_common.handler.isMappable = uart_isMappable;
 
 	devs_register(DEV_UART, UART_MAX_CNT, &uart_common.handler);
 }

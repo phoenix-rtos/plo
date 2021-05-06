@@ -251,6 +251,36 @@ static int flashdrv_sync(unsigned int minor)
 }
 
 
+static int flashdrv_isMappable(unsigned int minor, addr_t addr, size_t sz, int mode, addr_t memaddr, size_t memsz, int memmode, addr_t *devOffs)
+{
+	size_t fSz;
+	addr_t fStart;
+
+	if (minor >= FLASH_NO)
+		return ERR_ARG;
+
+	fStart = flashdrv_common.ctx[minor].address;
+	fSz = flashdrv_common.ctx[minor].properties.size;
+
+	/* Check if region is located on flash */
+	if ((addr + sz) > fSz)
+		return ERR_ARG;
+
+	/* Check if flash is mappable to map region */
+	if (fStart <= memaddr && (fStart + fSz) >= (memaddr + memsz)) {
+		*devOffs = fStart;
+		return dev_isMappable;
+	}
+
+	/* Device mode cannot be higher than map mode to copy data */
+	if ((mode & memmode) != mode)
+		return ERR_ARG;
+
+	/* Data can be copied from device to map */
+	return dev_isNotMappable;
+}
+
+
 static int flashdrv_init(unsigned int minor)
 {
 	u32 pc;
@@ -313,6 +343,7 @@ __attribute__((constructor)) static void flashdrv_reg(void)
 	flashdrv_common.handler.read = flashdrv_read;
 	flashdrv_common.handler.write = flashdrv_write;
 	flashdrv_common.handler.sync = flashdrv_sync;
+	flashdrv_common.handler.isMappable = flashdrv_isMappable;
 
 	devs_register(DEV_FLASH, FLASH_NO, &flashdrv_common.handler);
 }
