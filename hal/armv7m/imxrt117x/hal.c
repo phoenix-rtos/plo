@@ -233,7 +233,7 @@ void hal_sti(void)
 }
 
 
-int low_irqdispatch(u16 irq)
+int hal_irqdispatch(u16 irq)
 {
 	if (hal_common.irqs[irq].isr == NULL)
 		return -1;

@@ -222,7 +222,7 @@ _interrupts_dispatch:
 	stmdb sp!, {r1-r2, r4-r11, lr}
 
 _intd0:
-	bl low_irqdispatch
+	bl hal_irqdispatch
 	ldr sp, [sp]
 _intd1:
 	ldmia sp!, {r0-r1, r4-r11, lr}
