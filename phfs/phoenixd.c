@@ -25,9 +25,28 @@
 #define MSG_READ    2
 #define MSG_WRITE   3
 #define MSG_COPY    4
+#define MSG_FSTAT   6
 
 
-typedef struct _msg_phoenixd_t {
+typedef struct {
+	u32 st_dev;
+	u32 st_ino;
+	u16 st_mode;
+	u16 st_nlink;
+	u16 st_uid;
+	u16 st_gid;
+	u32 st_rdev;
+	u32 st_size;
+
+	u32 st_atime_;
+	u32 st_mtime_;
+	u32 st_ctime_;
+	s32 st_blksize;
+	s32 st_blocks;
+} phoenixd_stat_t;
+
+
+typedef struct {
 	u32 handle;
 	u32 pos;
 	u32 len;
@@ -70,7 +89,6 @@ ssize_t phoenixd_read(unsigned int fd, unsigned int major, unsigned int minor, a
 	u16 hdrsz;
 	u32 l;
 
-	/* Read from serial */
 	io = (msg_phoenixd_t *)smsg.data;
 	hdrsz = (u16)((u32)io->data - (u32)io);
 
@@ -87,14 +105,13 @@ ssize_t phoenixd_read(unsigned int fd, unsigned int major, unsigned int minor, a
 	if (msg_send(major, minor, &smsg, &rmsg) < 0)
 		return ERR_PHFS_IO;
 
-	if (msg_gettype(&rmsg) != MSG_READ) {
+	if (msg_gettype(&rmsg) != MSG_READ)
 		return ERR_PHFS_PROTO;
-	}
+
 	io = (msg_phoenixd_t *)rmsg.data;
 
-	if ((long)io->len < 0) {
+	if ((long)io->len < 0)
 		return ERR_PHFS_FILE;
-	}
 
 	/* TODO: check io->pos */
 	// *pos = io->pos;
@@ -108,6 +125,41 @@ ssize_t phoenixd_read(unsigned int fd, unsigned int major, unsigned int minor, a
 ssize_t phoenixd_write(unsigned int fd, unsigned int major, unsigned int minor, addr_t offs, const u8 *buff, unsigned int len)
 {
 	/* TODO */
+	return ERR_NONE;
+}
+
+
+int phoenixd_stat(unsigned int fd, unsigned int major, unsigned int minor, phfs_stat_t *stat)
+{
+	msg_t smsg, rmsg;
+	msg_phoenixd_t *io;
+	phoenixd_stat_t *pstat;
+	u16 hdrsz;
+
+	io = (msg_phoenixd_t *)smsg.data;
+	hdrsz = (u16)((u32)io->data - (u32)io);
+
+	io->handle = fd;
+	io->pos = 0;
+	io->len = 0;
+
+	smsg.type = 0;
+	msg_settype(&smsg, MSG_FSTAT);
+	msg_setlen(&smsg, hdrsz);
+
+	if (msg_send(major, minor, &smsg, &rmsg) < 0)
+		return ERR_PHFS_IO;
+
+	if (msg_gettype(&rmsg) != MSG_FSTAT)
+		return ERR_PHFS_PROTO;
+
+	io = (msg_phoenixd_t *)rmsg.data;
+	if (io->len != sizeof(phoenixd_stat_t))
+		return ERR_PHFS_FILE;
+
+	pstat = (phoenixd_stat_t *)io->data;
+	stat->size = pstat->st_size;
+
 	return ERR_NONE;
 }
 
