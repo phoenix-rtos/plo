@@ -96,66 +96,6 @@ static int cmd_cpphfs2phfs(handler_t srcHandler, addr_t srcAddr, size_t srcSz, h
 }
 
 
-
-static int cmd_cpphfs2map(handler_t handler, addr_t offs, size_t size, const char *map, addr_t *a)
-{
-	void *mapAddr;
-	int len, res, i = 0;
-	size_t chunkSz;
-	u8 buff[MSG_BUFF_SZ];
-	unsigned int attr;
-
-	if (syspage_getMapTop(map, &mapAddr) < 0 || syspage_getMapAttr(map, &attr) < 0) {
-		plostd_printf(ATTR_ERROR, "\n%s does not exist!\n", map);
-		return ERR_ARG;
-	}
-
-	/* If user specifes size as 0, it is defined with max value */
-	size = (size == 0) ? -1 : size;
-
-	do {
-		if (size > sizeof(buff))
-			chunkSz = sizeof(buff);
-		else
-			chunkSz = size;
-
-		if ((res = phfs_map(handler, offs, chunkSz, mAttrRead | mAttrWrite, (addr_t)mapAddr, chunkSz, attr, a)) < 0)
-			return res;
-
-		if ((len = phfs_read(handler, offs, buff, chunkSz)) < 0) {
-			plostd_printf(ATTR_ERROR, "\nCan't read segment data\n");
-			return ERR_PHFS_FILE;
-		}
-
-		switch (res) {
-			/* Copy data to map */
-			case dev_isNotMappable:
-				if (syspage_write2Map(map, buff, len) < 0)
-					return ERR_ARG;
-
-				plostd_printf(ATTR_LOADER, "\rWriting to address %p ", mapAddr);
-				cmd_showprogress(i++);
-
-				/* Update current map adress */
-				syspage_getMapTop(map, &mapAddr);
-				break;
-
-			/* Device is consistent with map */
-			case dev_isMappable:
-			default:
-				break;
-		}
-
-		offs += len;
-		if (size != 0)
-			size -= len;
-
-	} while (size > 0 && len > 0);
-
-	return ERR_NONE;
-}
-
-
 /* Initialization function */
 
 void cmd_init(void)
@@ -608,10 +548,13 @@ void cmd_kernel(char *s)
 
 static int cmd_loadApp(handler_t handler, addr_t offs, size_t size, const char *imap, const char *dmap, const char *cmdline, u32 flags)
 {
-	int res;
+	int res, i = 0;
 	Elf32_Ehdr hdr;
 	void *start, *end;
 	addr_t addr;
+	unsigned int attr;
+	size_t chunkSz;
+	u8 buff[MSG_BUFF_SZ];
 
 	/* Check ELF header */
 	if ((res = phfs_read(handler, offs, (u8 *)&hdr, (u32)sizeof(Elf32_Ehdr))) < 0) {
@@ -628,36 +571,56 @@ static int cmd_loadApp(handler_t handler, addr_t offs, size_t size, const char *
 	if (syspage_alignMapTop(imap) < 0)
 		return ERR_ARG;
 
-	/* Get map top address before copying */
-	if (syspage_getMapTop(imap, &start) < 0) {
-		plostd_printf(ATTR_ERROR, "\n%s does not exist\n", imap);
+	/* Get top address of map and its attributes */
+	if (syspage_getMapTop(imap, &start) < 0 || syspage_getMapAttr(imap, &attr) < 0) {
+		plostd_printf(ATTR_ERROR, "\n%s does not exist!\n", imap);
 		return ERR_ARG;
 	}
 
-	if (cmd_cpphfs2map(handler, offs, size, imap, &addr) < 0) {
-		plostd_printf(ATTR_ERROR, "App cannot be copied to %s\n", imap);
-		return ERR_PHFS_IO;
+	if ((res = phfs_map(handler, offs, size, mAttrRead | mAttrWrite, (addr_t)start, size, attr, &addr)) < 0) {
+		plostd_printf(ATTR_ERROR, "\nDevice is not mappable in %s\n", imap);
+		return ERR_ARG;
+	}
+
+	/* Copy data to map */
+	if (res == dev_isNotMappable) {
+		do {
+			if (size > sizeof(buff))
+				chunkSz = sizeof(buff);
+			else
+				chunkSz = size;
+
+			if ((res = phfs_read(handler, offs, buff, chunkSz)) < 0) {
+				plostd_printf(ATTR_ERROR, "\nCan't read segment data\n");
+				return ERR_PHFS_FILE;
+			}
+
+			if (syspage_write2Map(imap, buff, res) < 0)
+				return ERR_ARG;
+
+			plostd_printf(ATTR_LOADER, "\rWriting to address %p ", start);
+			cmd_showprogress(i++);
+
+			offs += res;
+			size -= res;
+		} while (size > 0 && res > 0);
+	}
+	else if (res == dev_isMappable) {
+		plostd_printf(ATTR_LOADER, "\nCode is located in %s map. Data has not been copied.\n", imap);
 	}
 
 	/* Get map top address after copying */
-	if (syspage_getMapTop(imap, &end) < 0) {
-		plostd_printf(ATTR_ERROR, "\n%s does not exist\n", imap);
-		return ERR_ARG;
-	}
+	syspage_getMapTop(imap, &end);
 
 	/* Data has not been copied to map */
 	if (start == end) {
-		if (offs == 0 && size == 0) {
+		/* User don't provide offset, get from phfs */
+		if (offs == 0) {
 			if (phfs_getFileAddr(handler, &offs) < 0)
-				return ERR_ARG;
-
-			if (phfs_getFileSize(handler, &size) < 0)
 				return ERR_ARG;
 		}
 		start = (void *)(offs + addr);
 		end = start + size;
-
-		plostd_printf(ATTR_LOADER, "\nCode is located in %s map. Data has not been copied.\n", imap);
 	}
 
 	if (syspage_addProg(start, end, imap, dmap, cmdline, flags) < 0) {
@@ -683,6 +646,7 @@ void cmd_app(char *s)
 	size_t sz = 0;
 	addr_t offs = 0;
 	handler_t handler;
+	phfs_stat_t stat;
 
 	/* Parse command arguments */
 	if (cmd_parseArgs(s, cmdArgs, &cmdArgsc) < 0 || cmdArgsc < 2 || cmdArgsc > 6) {
@@ -762,6 +726,15 @@ void cmd_app(char *s)
 	if (phfs_open(cmdArgs[0], ((offs == 0 && sz == 0) ? appName : NULL), 0, &handler) < 0) {
 		plostd_printf(ATTR_ERROR, "\nWrong arguments!!\n");
 		return;
+	}
+
+	/* Size is not defined by user */
+	if (sz == 0) {
+		if (phfs_stat(handler, &stat) < 0) {
+			plostd_printf(ATTR_ERROR, "\nCannot get stat from file %s\n", cmdArgs[0]);
+			return;
+		}
+		sz = stat.size;
 	}
 
 	plostd_printf(ATTR_LOADER, "\nLoading %s (offs=%p, size=%p, imap=%s, dmap=%s, flags=%x)\n", appName, offs, sz, cmap, dmap, flags);
