@@ -604,16 +604,11 @@ static int cmd_loadApp(handler_t handler, addr_t offs, size_t size, const char *
 			offs += res;
 			size -= res;
 		} while (size > 0 && res > 0);
+
+		/* Get map top address after copying */
+		syspage_getMapTop(imap, &end);
 	}
 	else if (res == dev_isMappable) {
-		plostd_printf(ATTR_LOADER, "\nCode is located in %s map. Data has not been copied.\n", imap);
-	}
-
-	/* Get map top address after copying */
-	syspage_getMapTop(imap, &end);
-
-	/* Data has not been copied to map */
-	if (start == end) {
 		/* User don't provide offset, get from phfs */
 		if (offs == 0) {
 			if (phfs_getFileAddr(handler, &offs) < 0)
@@ -621,6 +616,12 @@ static int cmd_loadApp(handler_t handler, addr_t offs, size_t size, const char *
 		}
 		start = (void *)(offs + addr);
 		end = start + size;
+
+		plostd_printf(ATTR_LOADER, "\nCode is located in %s map. Data has not been copied.\n", imap);
+	}
+	else {
+		plostd_printf(ATTR_LOADER, "\nDevice returns wrong mapping result.\n");
+		return ERR_PHFS_FILE;
 	}
 
 	if (syspage_addProg(start, end, imap, dmap, cmdline, flags) < 0) {
