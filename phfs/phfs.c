@@ -382,3 +382,34 @@ int phfs_map(handler_t handler, addr_t addr, size_t sz, int mode, addr_t memaddr
 
 	return devs_map(pd->major, pd->minor, addr, sz, mode, memaddr, memsz, memmode, a);
 }
+
+
+int phfs_stat(handler_t handler, phfs_stat_t *stat)
+{
+	int res;
+	phfs_device_t *pd;
+	phfs_file_t *file;
+
+	if (handler.pd >= SIZE_PHFS_HANDLERS)
+		return ERR_ARG;
+
+	pd = &phfs_common.devices[handler.pd];
+
+	switch (pd->prot) {
+	case phfs_prot_phoenixd:
+		if ((res = phoenixd_stat(handler.id, pd->major, pd->minor, stat)) < 0)
+			return res;
+		break;
+
+	case phfs_prot_raw:
+		if (handler.id == -1 || handler.id >= SIZE_PHFS_FILES)
+			return ERR_ARG;
+
+		file = &phfs_common.files[handler.id];
+		stat->size = file->size;
+	default:
+		break;
+	}
+
+	return ERR_NONE;
+}

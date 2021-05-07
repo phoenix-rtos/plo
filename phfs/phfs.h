@@ -27,6 +27,11 @@ typedef struct {
 } handler_t;
 
 
+typedef struct {
+	u32 size;
+} phfs_stat_t;
+
+
 /* Initialization functions */
 
 /* Register alias to device based on minor/major number and assign protocol to alias */
@@ -71,6 +76,9 @@ extern int phfs_close(handler_t handler);
 
 /* Check whether device's region is mappable to map's region. If device is mappable, the device address in memory map is written to a */
 extern int phfs_map(handler_t handler, addr_t addr, size_t sz, int mode, addr_t memaddr, size_t memsz, int memmode, addr_t *a);
+
+
+extern int phfs_stat(handler_t handler, phfs_stat_t *stat);
 
 
 #endif
