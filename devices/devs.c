@@ -121,7 +121,7 @@ int devs_sync(unsigned int major, unsigned int minor)
 }
 
 
-int devs_isMappable(unsigned int major, unsigned int minor, addr_t addr, size_t sz, int mode, addr_t memaddr, size_t memsz, int memmode, addr_t *devOffs)
+int devs_map(unsigned int major, unsigned int minor, addr_t addr, size_t sz, int mode, addr_t memaddr, size_t memsz, int memmode, addr_t *a)
 {
 	dev_handler_t *h;
 
@@ -129,10 +129,10 @@ int devs_isMappable(unsigned int major, unsigned int minor, addr_t addr, size_t 
 		return ERR_ARG;
 
 	h = devs_common.devs[major][minor];
-	if (h == NULL || h->isMappable == NULL)
+	if (h == NULL || h->map == NULL)
 		return ERR_ARG;
 
-	return h->isMappable(minor, addr, sz, mode, memaddr, memsz, memmode, devOffs);
+	return h->map(minor, addr, sz, mode, memaddr, memsz, memmode, a);
 }
 
 

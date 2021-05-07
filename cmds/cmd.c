@@ -97,7 +97,7 @@ static int cmd_cpphfs2phfs(handler_t srcHandler, addr_t srcAddr, size_t srcSz, h
 
 
 
-static int cmd_cpphfs2map(handler_t handler, addr_t offs, size_t size, const char *map, addr_t *devOffs)
+static int cmd_cpphfs2map(handler_t handler, addr_t offs, size_t size, const char *map, addr_t *a)
 {
 	void *mapAddr;
 	int len, res, i = 0;
@@ -119,7 +119,7 @@ static int cmd_cpphfs2map(handler_t handler, addr_t offs, size_t size, const cha
 		else
 			chunkSz = size;
 
-		if ((res = phfs_isMappable(handler, offs, chunkSz, mAttrRead | mAttrWrite, (addr_t)mapAddr, chunkSz, attr, devOffs)) < 0)
+		if ((res = phfs_map(handler, offs, chunkSz, mAttrRead | mAttrWrite, (addr_t)mapAddr, chunkSz, attr, a)) < 0)
 			return res;
 
 		if ((len = phfs_read(handler, offs, buff, chunkSz)) < 0) {
@@ -611,7 +611,7 @@ static int cmd_loadApp(handler_t handler, addr_t offs, size_t size, const char *
 	int res;
 	Elf32_Ehdr hdr;
 	void *start, *end;
-	addr_t devAddr;
+	addr_t addr;
 
 	/* Check ELF header */
 	if ((res = phfs_read(handler, offs, (u8 *)&hdr, (u32)sizeof(Elf32_Ehdr))) < 0) {
@@ -634,7 +634,7 @@ static int cmd_loadApp(handler_t handler, addr_t offs, size_t size, const char *
 		return ERR_ARG;
 	}
 
-	if (cmd_cpphfs2map(handler, offs, size, imap, &devAddr) < 0) {
+	if (cmd_cpphfs2map(handler, offs, size, imap, &addr) < 0) {
 		plostd_printf(ATTR_ERROR, "App cannot be copied to %s\n", imap);
 		return ERR_PHFS_IO;
 	}
@@ -654,7 +654,7 @@ static int cmd_loadApp(handler_t handler, addr_t offs, size_t size, const char *
 			if (phfs_getFileSize(handler, &size) < 0)
 				return ERR_ARG;
 		}
-		start = (void *)(offs + devAddr);
+		start = (void *)(offs + addr);
 		end = start + size;
 
 		plostd_printf(ATTR_LOADER, "\nCode is located in %s map. Data has not been copied.\n", imap);

@@ -394,7 +394,7 @@ int uart_done(unsigned int minor)
 }
 
 
-static int uart_isMappable(unsigned int minor, addr_t addr, size_t sz, int mode, addr_t memaddr, size_t memsz, int memmode, addr_t *devOffs)
+static int uart_map(unsigned int minor, addr_t addr, size_t sz, int mode, addr_t memaddr, size_t memsz, int memmode, addr_t *a)
 {
 	if (minor >= UARTS_MAX_CNT)
 		return ERR_ARG;
@@ -468,7 +468,7 @@ __attribute__((constructor)) static void uart_reg(void)
 	uart_common.handler.read = uart_devRead;
 	uart_common.handler.write = uart_devWrite;
 	uart_common.handler.sync = uart_sync;
-	uart_common.handler.isMappable = uart_isMappable;
+	uart_common.handler.map = uart_map;
 
 	devs_register(DEV_UART, UARTS_MAX_CNT, &uart_common.handler);
 }

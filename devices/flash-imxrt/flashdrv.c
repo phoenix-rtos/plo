@@ -251,7 +251,7 @@ static int flashdrv_sync(unsigned int minor)
 }
 
 
-static int flashdrv_isMappable(unsigned int minor, addr_t addr, size_t sz, int mode, addr_t memaddr, size_t memsz, int memmode, addr_t *devOffs)
+static int flashdrv_map(unsigned int minor, addr_t addr, size_t sz, int mode, addr_t memaddr, size_t memsz, int memmode, addr_t *a)
 {
 	size_t fSz;
 	addr_t fStart;
@@ -268,7 +268,7 @@ static int flashdrv_isMappable(unsigned int minor, addr_t addr, size_t sz, int m
 
 	/* Check if flash is mappable to map region */
 	if (fStart <= memaddr && (fStart + fSz) >= (memaddr + memsz)) {
-		*devOffs = fStart;
+		*a = fStart;
 		return dev_isMappable;
 	}
 
@@ -343,7 +343,7 @@ __attribute__((constructor)) static void flashdrv_reg(void)
 	flashdrv_common.handler.read = flashdrv_read;
 	flashdrv_common.handler.write = flashdrv_write;
 	flashdrv_common.handler.sync = flashdrv_sync;
-	flashdrv_common.handler.isMappable = flashdrv_isMappable;
+	flashdrv_common.handler.map = flashdrv_map;
 
 	devs_register(DEV_FLASH, FLASH_NO, &flashdrv_common.handler);
 }

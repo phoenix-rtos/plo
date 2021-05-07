@@ -31,7 +31,7 @@ typedef struct {
 	int (*init)(unsigned int minor);
 	int (*done)(unsigned int minor);
 	int (*sync)(unsigned int minor);
-	int (*isMappable)(unsigned int minor, addr_t addr, size_t sz, int mode, addr_t memaddr, size_t memsz, int memmode, addr_t *devOffs);
+	int (*map)(unsigned int minor, addr_t addr, size_t sz, int mode, addr_t memaddr, size_t memsz, int memmode, addr_t *a);
 
 	ssize_t (*read)(unsigned int minor, addr_t offs, u8 *buff, unsigned int len, unsigned int timeout);
 	ssize_t (*write)(unsigned int minor, addr_t offs, const u8 *buff, unsigned int len);
@@ -55,8 +55,8 @@ extern int devs_check(unsigned int major, unsigned int minor);
 extern int devs_sync(unsigned int major, unsigned int minor);
 
 
-/* Check whether device's region is mappable to map's region. If device is mappable, the device offset in memory map is written to devOffs */
-extern int devs_isMappable(unsigned int major, unsigned int minor, addr_t addr, size_t sz, int mode, addr_t memaddr, size_t memsz, int memmode, addr_t *devOffs);
+/* Check whether device's region is mappable to map's region. If device is mappable, the device address in memory map is written to a */
+extern int devs_map(unsigned int major, unsigned int minor, addr_t addr, size_t sz, int mode, addr_t memaddr, size_t memsz, int memmode, addr_t *a);
 
 
 /* Read data from device */

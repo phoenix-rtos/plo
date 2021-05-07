@@ -371,7 +371,7 @@ int phfs_close(handler_t handler)
 }
 
 
-int phfs_isMappable(handler_t handler, addr_t addr, size_t sz, int mode, addr_t memaddr, size_t memsz, int memmode, addr_t *devOffs)
+int phfs_map(handler_t handler, addr_t addr, size_t sz, int mode, addr_t memaddr, size_t memsz, int memmode, addr_t *a)
 {
 	phfs_device_t *pd;
 
@@ -380,5 +380,5 @@ int phfs_isMappable(handler_t handler, addr_t addr, size_t sz, int mode, addr_t 
 
 	pd = &phfs_common.devices[handler.pd];
 
-	return devs_isMappable(pd->major, pd->minor, addr, sz, mode, memaddr, memsz, memmode, devOffs);
+	return devs_map(pd->major, pd->minor, addr, sz, mode, memaddr, memsz, memmode, a);
 }
