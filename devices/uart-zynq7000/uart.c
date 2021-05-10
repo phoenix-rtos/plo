@@ -15,9 +15,9 @@
 
 #include "../../errors.h"
 #include "../../timer.h"
-#include "../../hal.h"
 
 #include "peripherals.h"
+#include "hal.h"
 #include "zynq.h"
 #include "devs.h"
 

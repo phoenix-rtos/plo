@@ -15,8 +15,8 @@
  */
 
 #include "../errors.h"
-#include "../hal.h"
 #include "../syspage.h"
+#include "hal.h"
 #include "phfs.h"
 #include "elf.h"
 #include "cmd.h"

@@ -14,6 +14,7 @@
  */
 
 
+#include "hal.h"
 #include "imxrt.h"
 #include "config.h"
 #include "cmd-board.h"
@@ -21,7 +22,6 @@
 
 #include "uart.h"
 
-#include "../../../hal.h"
 #include "../../../plostd.h"
 #include "../../../errors.h"
 #include "../../../timer.h"

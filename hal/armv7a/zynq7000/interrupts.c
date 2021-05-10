@@ -13,10 +13,10 @@
  * %LICENSE%
  */
 
+#include "hal.h"
 #include "interrupts.h"
 #include "cpu.h"
 
-#include "../hal.h"
 #include "../types.h"
 #include "../errors.h"
 

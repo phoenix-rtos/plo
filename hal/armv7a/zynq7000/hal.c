@@ -13,6 +13,7 @@
  * %LICENSE%
  */
 
+#include "hal.h"
 #include "zynq.h"
 #include "cmd-board.h"
 #include "interrupts.h"
@@ -20,7 +21,6 @@
 #include "uart.h"
 #include "gpio.h"
 
-#include "../hal.h"
 #include "../plostd.h"
 #include "../timer.h"
 #include "../syspage.h"

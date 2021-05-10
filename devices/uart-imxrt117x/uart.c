@@ -15,9 +15,9 @@
 
 #include "../../errors.h"
 #include "../../timer.h"
-#include "../../hal.h"
 
 #include "peripherals.h"
+#include "hal.h"
 #include "imxrt.h"
 #include "uart.h"
 #include "devs.h"

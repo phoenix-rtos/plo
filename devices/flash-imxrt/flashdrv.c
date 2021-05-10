@@ -13,7 +13,7 @@
  * %LICENSE%
  */
 
-#include "../hal.h"
+#include "hal.h"
 #include "../devs.h"
 #include "../timer.h"
 #include "../errors.h"

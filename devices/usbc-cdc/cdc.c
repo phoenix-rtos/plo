@@ -20,7 +20,7 @@
 
 #include "list.h"
 #include "config.h"
-#include "../hal.h"
+#include "hal.h"
 #include "../errors.h"
 
 

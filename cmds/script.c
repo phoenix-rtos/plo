@@ -17,7 +17,7 @@
 #include "script.h"
 #include "phfs.h"
 #include "cmd.h"
-#include "../hal.h"
+#include "hal.h"
 #include "../errors.h"
 #include "../plostd.h"
 

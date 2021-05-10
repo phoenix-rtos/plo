@@ -14,8 +14,8 @@
  */
 
 #include "../errors.h"
-#include "../hal.h"
 
+#include "hal.h"
 #include "cmd.h"
 #include "zynq.h"
 #include "phfs.h"

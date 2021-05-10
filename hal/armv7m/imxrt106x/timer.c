@@ -13,10 +13,10 @@
  * %LICENSE%
  */
 
-#include "../hal.h"
 #include "../plostd.h"
 #include "../timer.h"
 
+#include "hal.h"
 #include "imxrt.h"
 #include "peripherals.h"
 

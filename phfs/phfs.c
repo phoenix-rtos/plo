@@ -13,10 +13,10 @@
  * %LICENSE%
  */
 
+#include "hal.h"
 #include "phfs.h"
 #include "phoenixd.h"
 
-#include "../hal.h"
 #include "../plostd.h"
 #include "../errors.h"
 

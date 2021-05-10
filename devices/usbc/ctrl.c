@@ -13,7 +13,7 @@
  * %LICENSE%
  */
 
-#include "../hal.h"
+#include "hal.h"
 #include "../errors.h"
 
 #include "client.h"

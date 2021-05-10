@@ -20,8 +20,8 @@
 
 #include "cmd.h"
 #include "phfs.h"
-#include "types.h"
 #include "config.h"
+#include "../types.h"
 
 #define min(a, b)   ((a > b) ? b : a)
 

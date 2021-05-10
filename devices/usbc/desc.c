@@ -13,9 +13,9 @@
  * %LICENSE%
  */
 
-#include "../hal.h"
 #include "../errors.h"
 
+#include "hal.h"
 #include "client.h"
 
 

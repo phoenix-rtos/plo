@@ -14,14 +14,14 @@ KERNEL=1
 include ../phoenix-rtos-build/Makefile.common
 include ../phoenix-rtos-build/Makefile.$(TARGET_SUFF)
 
+include hal/$(TARGET_SUFF)/$(TARGET_SUBFAMILY)/Makefile
 include lib/Makefile
 include devices/Makefile
 include phfs/Makefile
 include cmds/Makefile
-include hal/$(TARGET_SUFF)/$(TARGET_SUBFAMILY)/Makefile
 
 CFLAGS += $(BOARD_CONFIG)
-CFLAGS += -I../plo/hal/$(TARGET_SUFF)/$(TARGET_SUBFAMILY)
+CFLAGS += -I../plo/hal -I../plo/hal/$(TARGET_SUFF)/$(TARGET_SUBFAMILY)
 
 OBJS += $(addprefix $(PREFIX_O), _startc.o plo.o plostd.o syspage.o)
 

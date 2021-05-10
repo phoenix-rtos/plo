@@ -14,15 +14,14 @@
  */
 
 
+#include "hal.h"
 #include "imxrt.h"
 #include "uart.h"
 #include "config.h"
 #include "peripherals.h"
-#include "flashdrv.h"
 #include "cmd-board.h"
 
 
-#include "../hal.h"
 #include "../plostd.h"
 #include "../errors.h"
 #include "../syspage.h"
