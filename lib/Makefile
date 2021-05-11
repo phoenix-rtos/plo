@@ -9,4 +9,4 @@
 
 CFLAGS += -I../plo/lib
 
-OBJS += $(addprefix $(PREFIX_O)lib/, list.o)
+OBJS += $(addprefix $(PREFIX_O)lib/, list.o console.o)
