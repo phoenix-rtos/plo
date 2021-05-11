@@ -17,10 +17,9 @@
 #include "../../timer.h"
 
 #include "hal.h"
-#include "peripherals.h"
-#include "imxrt.h"
-#include "uart.h"
 #include "devs.h"
+#include "imxrt.h"
+#include "peripherals.h"
 
 #define CONCATENATE(x, y) x##y
 #define PIN2MUX(x) CONCATENATE(pctl_mux_gpio_, x)
@@ -105,18 +104,7 @@ static uart_t *uart_getInstance(unsigned int minor)
 }
 
 
-int uart_rxEmpty(unsigned int minor)
-{
-	uart_t *uart;
-
-	if ((uart = uart_getInstance(minor)) == NULL)
-		return ERR_ARG;
-
-	return uart->rxHead == uart->rxTail;
-}
-
-
-int uart_handleIntr(u16 irq, void *buff)
+static int uart_handleIntr(u16 irq, void *buff)
 {
 	u32 flags;
 	uart_t *uart = (uart_t *)buff;
@@ -158,94 +146,6 @@ int uart_handleIntr(u16 irq, void *buff)
 
 	return 0;
 }
-
-/* TODO: when hal_console will be introduced, uart_read should be replaced by dev interface */
-int uart_read(unsigned int minor, u8 *buff, u16 len, u16 timeout)
-{
-	u16 l, cnt;
-	uart_t *uart;
-
-	if ((uart = uart_getInstance(minor)) == NULL)
-		return ERR_ARG;
-
-	if (!timer_wait(timeout, TIMER_VALCHG, &uart->rxHead, uart->rxTail))
-		return ERR_UART_TIMEOUT;
-
-	hal_cli();
-
-	if (uart->rxHead > uart->rxTail)
-		l = min(uart->rxHead - uart->rxTail, len);
-	else
-		l = min(BUFFER_SIZE - uart->rxTail, len);
-
-	hal_memcpy(buff, &uart->rxBuff[uart->rxTail], l);
-	cnt = l;
-	if ((len > l) && (uart->rxHead < uart->rxTail)) {
-		hal_memcpy(buff + l, &uart->rxBuff[0], min(len - l, uart->rxHead));
-		cnt += min(len - l, uart->rxHead);
-	}
-	uart->rxTail = ((uart->rxTail + cnt) % BUFFER_SIZE);
-
-	hal_sti();
-
-	return cnt;
-}
-
-/* TODO: when hal_console will be introduced, uart_write should be replaced by dev interface */
-int uart_write(unsigned int minor, const u8 *buff, u16 len)
-{
-	u16 l, cnt = 0;
-	uart_t *uart;
-
-	if ((uart = uart_getInstance(minor)) == NULL)
-		return ERR_ARG;
-
-	while (uart->txHead == uart->txTail && uart->tFull)
-		;
-
-	hal_cli();
-	if (uart->txHead > uart->txTail)
-		l = min(uart->txHead - uart->txTail, len);
-	else
-		l = min(BUFFER_SIZE - uart->txTail, len);
-
-	hal_memcpy(&uart->txBuff[uart->txTail], buff, l);
-	cnt = l;
-	if ((len > l) && (uart->txTail >= uart->txHead)) {
-		hal_memcpy(uart->txBuff, buff + l, min(len - l, uart->txHead));
-		cnt += min(len - l, uart->txHead);
-	}
-
-	/* Initialize sending */
-	if (uart->txTail == uart->txHead)
-		*(uart->base + datar) = uart->txBuff[uart->txHead];
-
-	uart->txTail = ((uart->txTail + cnt) % BUFFER_SIZE);
-
-	if (uart->txTail == uart->txHead)
-		uart->tFull = 1;
-
-	*(uart->base + ctrlr) |= 1 << 23;
-
-	hal_sti();
-
-	return cnt;
-}
-
-
-int uart_safewrite(unsigned int minor, const u8 *buff, u16 len)
-{
-	int l;
-
-	for (l = 0; len;) {
-		if ((l = uart_write(minor, buff, len)) < 0)
-			return ERR_MSG_IO;
-		buff += l;
-		len -= l;
-	}
-	return 0;
-}
-
 
 
 static int uart_muxVal(int mux)
@@ -414,37 +314,97 @@ static void uart_initPins(void)
 }
 
 
-u32 uart_getBaudrate(void)
-{
-	return UART_BAUDRATE;
-}
-
-
 /* Device interafce */
 
-ssize_t uart_devRead(unsigned int minor, addr_t offs, u8 *buff, unsigned int len, unsigned int timeout)
+static ssize_t uart_read(unsigned int minor, addr_t offs, u8 *buff, unsigned int len, unsigned int timeout)
 {
+	u16 l, cnt;
 	uart_t *uart;
 
 	if ((uart = uart_getInstance(minor)) == NULL)
 		return ERR_ARG;
 
-	return uart_read(minor, buff, len, timeout);
+	if (!timer_wait(timeout, TIMER_VALCHG, &uart->rxHead, uart->rxTail))
+		return ERR_UART_TIMEOUT;
+
+	hal_cli();
+
+	if (uart->rxHead > uart->rxTail)
+		l = min(uart->rxHead - uart->rxTail, len);
+	else
+		l = min(BUFFER_SIZE - uart->rxTail, len);
+
+	hal_memcpy(buff, &uart->rxBuff[uart->rxTail], l);
+	cnt = l;
+	if ((len > l) && (uart->rxHead < uart->rxTail)) {
+		hal_memcpy(buff + l, &uart->rxBuff[0], min(len - l, uart->rxHead));
+		cnt += min(len - l, uart->rxHead);
+	}
+	uart->rxTail = ((uart->rxTail + cnt) % BUFFER_SIZE);
+
+	hal_sti();
+
+	return cnt;
 }
 
 
-ssize_t uart_devWrite(unsigned int minor, addr_t offs, const u8 *buff, unsigned int len)
+static ssize_t uart_write(unsigned int minor, const u8 *buff,  unsigned int len)
 {
+	unsigned int l, cnt = 0;
 	uart_t *uart;
 
 	if ((uart = uart_getInstance(minor)) == NULL)
 		return ERR_ARG;
 
-	return uart_write(minor, buff, len);
+	while (uart->txHead == uart->txTail && uart->tFull)
+		;
+
+	hal_cli();
+	if (uart->txHead > uart->txTail)
+		l = min(uart->txHead - uart->txTail, len);
+	else
+		l = min(BUFFER_SIZE - uart->txTail, len);
+
+	hal_memcpy(&uart->txBuff[uart->txTail], buff, l);
+	cnt = l;
+	if ((len > l) && (uart->txTail >= uart->txHead)) {
+		hal_memcpy(uart->txBuff, buff + l, min(len - l, uart->txHead));
+		cnt += min(len - l, uart->txHead);
+	}
+
+	/* Initialize sending */
+	if (uart->txTail == uart->txHead)
+		*(uart->base + datar) = uart->txBuff[uart->txHead];
+
+	uart->txTail = ((uart->txTail + cnt) % BUFFER_SIZE);
+
+	if (uart->txTail == uart->txHead)
+		uart->tFull = 1;
+
+	*(uart->base + ctrlr) |= 1 << 23;
+
+	hal_sti();
+
+	return cnt;
 }
 
 
-int uart_sync(unsigned int minor)
+static ssize_t uart_safeWrite(unsigned int minor, addr_t offs, const u8 *buff, unsigned int len)
+{
+	unsigned int l;
+
+	for (l = 0; len;) {
+		if ((l = uart_write(minor, buff, len)) < 0)
+			return ERR_MSG_IO;
+		buff += l;
+		len -= l;
+	}
+
+	return len;
+}
+
+
+static int uart_sync(unsigned int minor)
 {
 	uart_t *uart;
 
@@ -457,7 +417,7 @@ int uart_sync(unsigned int minor)
 }
 
 
-int uart_done(unsigned int minor)
+static int uart_done(unsigned int minor)
 {
 	uart_t *uart;
 
@@ -500,7 +460,7 @@ static int uart_map(unsigned int minor, addr_t addr, size_t sz, int mode, addr_t
 }
 
 
-int uart_init(unsigned int minor)
+static int uart_init(unsigned int minor)
 {
 	u32 t, id;
 	uart_t *uart;
@@ -572,8 +532,8 @@ __attribute__((constructor)) static void uart_reg(void)
 {
 	uart_common.handler.init = uart_init;
 	uart_common.handler.done = uart_done;
-	uart_common.handler.read = uart_devRead;
-	uart_common.handler.write = uart_devWrite;
+	uart_common.handler.read = uart_read;
+	uart_common.handler.write = uart_safeWrite;
 	uart_common.handler.sync = uart_sync;
 	uart_common.handler.map = uart_map;
 
