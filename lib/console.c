@@ -16,8 +16,7 @@
 #include "hal.h"
 #include "devs.h"
 #include "console.h"
-#include "../errors.h"
-#include "../plostd.h"
+#include "errors.h"
 
 
 struct {
@@ -33,7 +32,7 @@ void console_puts(const char *s)
 		return;
 	}
 
-	devs_write(consol_common.major, consol_common.minor, 0, (const u8 *)s, plostd_strlen(s));
+	devs_write(consol_common.major, consol_common.minor, 0, (const u8 *)s, hal_strlen(s));
 }
 
 
