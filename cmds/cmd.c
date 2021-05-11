@@ -17,6 +17,7 @@
 #include "../errors.h"
 #include "../syspage.h"
 #include "hal.h"
+#include "console.h"
 #include "phfs.h"
 #include "elf.h"
 #include "cmd.h"
@@ -886,9 +887,7 @@ void cmd_console(char *s)
 	/* Get major/minor */
 	major = plostd_ahtoi(args[0]);
 	minor = plostd_ahtoi(args[1]);
-
-	/* TODO: set console in hal */
-	plostd_printf(ATTR_ERROR, "\n%d.%d!!\n", major, minor);
+	console_set(major, minor);
 
 	return;
 }
