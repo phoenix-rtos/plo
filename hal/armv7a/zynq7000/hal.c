@@ -18,10 +18,8 @@
 #include "cmd-board.h"
 #include "interrupts.h"
 #include "peripherals.h"
-#include "uart.h"
 #include "gpio.h"
 
-#include "../plostd.h"
 #include "../timer.h"
 #include "../syspage.h"
 
@@ -47,6 +45,7 @@ void hal_init(void)
 	interrupts_init();
 	gpio_init();
 	timer_init();
+	hal_consoleInit();
 
 	syspage_init();
 	syspage_setAddress((void *)SYSPAGE_ADDRESS);
@@ -260,77 +259,4 @@ int hal_irquninst(u16 irq)
 	hal_sti();
 
 	return 0;
-}
-
-
-/* Communication functions */
-
-void hal_setattr(char attr)
-{
-	switch (attr) {
-	case ATTR_DEBUG:
-		uart_safewrite(UART_CONSOLE, (u8 *)"\033[0m\033[32m", 9);
-		break;
-	case ATTR_USER:
-		uart_safewrite(UART_CONSOLE, (u8 *)"\033[0m", 4);
-		break;
-	case ATTR_INIT:
-		uart_safewrite(UART_CONSOLE, (u8 *)"\033[0m\033[35m", 9);
-		break;
-	case ATTR_LOADER:
-		uart_safewrite(UART_CONSOLE, (u8 *)"\033[0m\033[1m", 8);
-		break;
-	case ATTR_ERROR:
-		uart_safewrite(UART_CONSOLE, (u8 *)"\033[0m\033[31m", 9);
-		break;
-	}
-
-	return;
-}
-
-
-void hal_putc(const char ch)
-{
-	uart_write(UART_CONSOLE, (u8 *)&ch, 1);
-}
-
-
-void hal_getc(char *c, char *sc)
-{
-	while (uart_read(UART_CONSOLE, (u8 *)c, 1, 500) <= 0)
-		;
-	*sc = 0;
-
-	/* Translate backspace */
-	if (*c == 127)
-		*c = 8;
-
-	/* Simple parser for VT100 commands */
-	else if (*c == 27) {
-		while (uart_read(UART_CONSOLE, (u8 *)c, 1, 500) <= 0)
-			;
-
-		switch (*c) {
-		case 91:
-			while (uart_read(UART_CONSOLE, (u8 *)c, 1, 500) <= 0)
-				;
-
-			switch (*c) {
-			case 'A':             /* UP */
-				*sc = 72;
-				break;
-			case 'B':             /* DOWN */
-				*sc = 80;
-				break;
-			}
-			break;
-		}
-		*c = 0;
-	}
-}
-
-
-int hal_keypressed(void)
-{
-	return !uart_rxEmpty(UART_CONSOLE);
 }

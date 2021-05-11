@@ -23,4 +23,4 @@ GCCLIB := $(shell $(CC) $(CFLAGS) -print-libgcc-file-name)
 include devices/uart-imxrt117x/Makefile
 include devices/flash-imxrt/Makefile
 
-OBJS += $(addprefix $(PREFIX_O)hal/$(TARGET_SUFF)/$(TARGET_SUBFAMILY)/, _startup.o hal.o imxrt.o cmd.o timer.o )
+OBJS += $(addprefix $(PREFIX_O)hal/$(TARGET_SUFF)/$(TARGET_SUBFAMILY)/, _startup.o hal.o imxrt.o cmd.o timer.o console.o)

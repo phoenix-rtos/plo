@@ -93,15 +93,11 @@ extern int hal_irqinst(u16 irq, int (*isr)(u16, void *), void *data);
 extern int hal_irquninst(u16 irq);
 
 
-/* Communication functions */
+/* Console functions */
 
-extern void hal_setattr(char attr);
+extern void hal_consoleInit(void);
 
-extern void hal_putc(char c);
-
-extern void hal_getc(char *c, char *sc);
-
-extern int hal_keypressed(void);
+extern void hal_consolePrint(const char *s);
 
 
 #endif

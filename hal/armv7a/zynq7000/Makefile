@@ -25,4 +25,4 @@ include devices/usbc-cdc/Makefile
 include devices/uart-zynq7000/Makefile
 
 OBJS += $(addprefix $(PREFIX_O)hal/$(TARGET_SUFF)/$(TARGET_SUBFAMILY)/, _startup.o hal.o zynq.o timer.o\
-		cmd.o interrupts.o)
+		cmd.o interrupts.o console.o)
