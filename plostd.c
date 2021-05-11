@@ -17,6 +17,7 @@
 #include "errors.h"
 #include "hal.h"
 #include "plostd.h"
+#include "console.h"
 
 
 int plostd_ishex(const char *s)
@@ -259,10 +260,26 @@ unsigned long plostd_atol(const char *s)
 }
 
 
-void plostd_puts(const char *s)
+void plostd_setattr(char attr)
 {
-	for (; *s; s++)
-		hal_putc(*s);
+	switch (attr) {
+	case ATTR_DEBUG:
+		console_puts("\033[0m\033[32m");
+		break;
+	case ATTR_USER:
+		console_puts("\033[0m");
+		break;
+	case ATTR_INIT:
+		console_puts("\033[0m\033[35m");
+		break;
+	case ATTR_LOADER:
+		console_puts("\033[0m\033[1m");
+		break;
+	case ATTR_ERROR:
+		console_puts("\033[0m\033[31m");
+		break;
+	}
+
 	return;
 }
 
@@ -278,40 +295,40 @@ void plostd_printf(char attr, const char *fmt, ...)
 	va_start(ap, fmt);
 
 	if (attr != ATTR_NONE)
-		hal_setattr(attr);
+		plostd_setattr(attr);
 
 	for (p = fmt; *p; p++) {
 		if (*p != '%') {
-			hal_putc(*p);
+			console_putc(*p);
 			continue;
 		}
 
 		switch (*++p) {
 		case 'd':
 			i = va_arg(ap, int);
-			plostd_puts(plostd_itoa(i, buff));
+			console_puts(plostd_itoa(i, buff));
 			break;
 		case 'x':
 			i = va_arg(ap, int);
-			plostd_puts(plostd_itoah((u8 *)&i, 2, buff, 0));
+			console_puts(plostd_itoah((u8 *)&i, 2, buff, 0));
 			break;
 		case 'p':
 			i = va_arg(ap, int);
-			plostd_puts("0x");
-			plostd_puts(plostd_itoah((u8 *)&i, 4, buff, 1));
+			console_puts("0x");
+			console_puts(plostd_itoah((u8 *)&i, 4, buff, 1));
 			break;
 		case 'P':
 			l = va_arg(ap, long);
-			plostd_puts(plostd_itoah((u8 *)&l, 4, buff, 1));
+			console_puts(plostd_itoah((u8 *)&l, 4, buff, 1));
 			break;
 		case 's':
-			plostd_puts(va_arg(ap, char *));
+			console_puts((const char *)va_arg(ap, char *));
 			break;
 		case 'c':
-			hal_putc(va_arg(ap, int));
+			console_puts((const char *)va_arg(ap, int));
 			break;
 		case '%':
-			hal_putc('%');
+			console_putc('%');
 			break;
 		}
 	}
@@ -319,7 +336,7 @@ void plostd_printf(char attr, const char *fmt, ...)
 
 	/* CSI normal: all attributes off */
 	if (attr != ATTR_NONE)
-		plostd_puts("\033[0m");
+		console_puts("\033[0m");
 
 	return;
 }

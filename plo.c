@@ -16,14 +16,8 @@
 
 #include "cmd.h"
 #include "hal.h"
-#include "devs.h"
-#include "phfs.h"
-#include "timer.h"
 #include "plostd.h"
-#include "uart.h"
-
-#include "config.h"
-
+#include "console.h"
 
 struct {
 	int  ll;
@@ -37,13 +31,13 @@ void plo_drawspaces(char attr, unsigned int len)
 {
 	unsigned int k;
 
-	hal_setattr(attr);
+	plostd_setattr(attr);
 	for (k = 0; k < len; k++)
-		hal_putc(' ');
-	return;
+		console_putc(' ');
 }
 
 
+/* TODO: clean up and move to cmds */
 void plo_cmdloop(void)
 {
 	char c = 0, sc = 0;
@@ -58,7 +52,36 @@ void plo_cmdloop(void)
 
 	plostd_printf(ATTR_LOADER, "%s", PROMPT);
 	while (c != '#') {
-		hal_getc(&c, &sc);
+		while (console_getc(&c) <= 0)
+			;
+
+		sc = 0;
+		/* Translate backspace */
+		if (c == 127) {
+			c = 8;
+		}
+		/* Simple parser for VT100 commands */
+		else if (c == 27) {
+			while (console_getc(&c) <= 0)
+				;
+
+			switch (c) {
+			case 91:
+				while (console_getc(&c) <= 0)
+					;
+
+				switch (c) {
+				case 'A':             /* UP */
+					sc = 72;
+					break;
+				case 'B':             /* DOWN */
+					sc = 80;
+					break;
+				}
+				break;
+			}
+			c = 0;
+		}
 
 		/* Regular characters */
 		if (c) {
@@ -78,8 +101,8 @@ void plo_cmdloop(void)
 
 			/* If character isn't backspace add it to line buffer */
 			if ((c != 8) && (pos < LINESZ)) {
-				hal_setattr(ATTR_USER);
-				hal_putc(c);
+				plostd_setattr(ATTR_USER);
+				console_putc(c);
 				history.lines[history.ll][pos++] = c;
 				history.lines[history.ll][pos] = 0;
 			}
@@ -90,7 +113,6 @@ void plo_cmdloop(void)
 				plostd_printf(ATTR_USER, "%c %c", 8, 8);
 			}
 		}
-
 		/* Control characters */
 		else {
 			switch (sc) {
@@ -127,39 +149,50 @@ void plo_cmdloop(void)
 			}
 		}
 	}
-	return;
+}
+
+
+void plo_wait(void)
+{
+	int i, t;
+	char c = 0;
+
+	plostd_printf(ATTR_NONE, "\n");
+	for (t = hal_getLaunchTimeout(); t; t--) {
+		plostd_printf(ATTR_LOADER, "\rWaiting for keyboard, %d seconds", t);
+		for (i = 0; i < 1000; i+= CONSOLE_TIMEOUT_MS)
+			if (console_getc(&c) > 0)
+				break;
+	}
+	plostd_printf(ATTR_LOADER, "\rWaiting for keyboard, %d seconds", t);
+
+	if (t == 0) {
+		/* TODO: run user script */
+	}
+
+	plostd_printf(ATTR_INIT, "\n");
 }
 
 
 void plo_init(void)
 {
-	u16 t = 0;
-
 	hal_init();
+	console_init();
+
+	plostd_printf(ATTR_LOADER, "\nPhoenix-RTOS loader v. 1.21\n");
 	devs_init();
 	cmd_init();
 
-	plostd_printf(ATTR_LOADER, "%s \n", PLO_WELCOME);
-	plostd_printf(ATTR_INIT, "Detected UART, setting to maximal speed %d Bps\n", uart_getBaudrate());
+	/* Run base script
+	 * TODO: change function's name */
+	cmd_default();
 
-	/* Wait and execute saved loader command */
-	for (t = hal_getLaunchTimeout(); t; t--) {
-		plostd_printf(ATTR_INIT, "\r%d seconds to automatic boot      ", t);
-
-		if (timer_wait(1000, TIMER_KEYB, NULL, 0))
-			break;
-	}
-
-	if (t == 0) {
-		plostd_printf(ATTR_INIT, "\n%s\n", PROMPT);
-		cmd_default();
-	}
-	plostd_printf(ATTR_INIT, "\n");
+	/* Wait for interaction with user, otherwise run user script */
+	plo_wait();
 
 	/* Enter to interactive mode */
 	plo_cmdloop();
 
+	devs_done();
 	hal_done();
-
-	return;
 }

@@ -57,6 +57,8 @@ extern unsigned long plostd_atol(const char *s);
 
 extern void plostd_puts(const char *s);
 
+extern void plostd_setattr(char attr);
+
 extern void plostd_printf(char attr, const char *, ...);
 
 
