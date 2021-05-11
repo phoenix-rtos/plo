@@ -40,7 +40,7 @@ typedef struct {
 
 /* This function should be called only before devs_init(),
  * preferably from device drivers constructors */
-extern void devs_register(unsigned int major, unsigned int nb, dev_handler_t *h);
+extern void devs_register(unsigned int major, unsigned int nb, const dev_handler_t *h);
 
 
 /* Initialize registered devices */
