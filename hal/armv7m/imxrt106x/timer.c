@@ -64,8 +64,7 @@ int timer_wait(u32 ms, int flags, u16 *p, u16 v)
 	*(timer_common.base + gpt_cr) |= 1;
 
 	while (!timer_common.done) {
-		if (((flags & TIMER_KEYB) && hal_keypressed()) ||
-		    ((flags & TIMER_VALCHG) && *p != v))
+		if ((flags & TIMER_VALCHG) && *p != v)
 			return 1;
 	}
 
