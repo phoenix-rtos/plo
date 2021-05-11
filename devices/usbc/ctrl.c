@@ -14,10 +14,9 @@
  */
 
 #include "hal.h"
-#include "../errors.h"
-
 #include "client.h"
 #include "usbphy.h"
+#include "errors.h"
 
 
 struct {

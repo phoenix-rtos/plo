@@ -13,11 +13,10 @@
  * %LICENSE%
  */
 
-#include "../../errors.h"
-
 #include "lut.h"
 #include "flashcfg.h"
 #include "peripherals.h"
+#include "errors.h"
 
 
 static int flashcfg_getWindbondConfig(flash_context_t *ctx)

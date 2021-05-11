@@ -17,9 +17,8 @@
 #include "script.h"
 #include "phfs.h"
 #include "cmd.h"
-#include "hal.h"
-#include "../errors.h"
-#include "../plostd.h"
+#include "lib.h"
+#include "errors.h"
 
 
 /* Linker symbol points to the beginning of .data section */
@@ -47,13 +46,13 @@ static int script_regFile(char *cmd)
 		if (i == 0)
 			continue;
 
-		if (plostd_ishex(alias[i]) < 0)
+		if (lib_ishex(alias[i]) < 0)
 			return ERR_ARG;
 
 		if (i == 1)
-			addr = plostd_ahtoi(alias[i]);
+			addr = lib_strtoul(alias[i], NULL, 16);
 		else if (i == 2)
-			sz = plostd_ahtoi(alias[i]);
+			sz = lib_strtoul(alias[i], NULL, 16);
 	}
 
 	if (phfs_regFile(alias[0] + 1, addr, sz) < 0)
@@ -71,7 +70,7 @@ void script_init(void)
 
 	for (i = 0;; ++i) {
 		if (i >= MAX_SCRIPT_LINES_NB) {
-			plostd_printf(ATTR_ERROR, "\nWarning: too many script lines, only %d loaded.\n", MAX_SCRIPT_LINES_NB);
+			lib_printf("\nWarning: too many script lines, only %d loaded.\n", MAX_SCRIPT_LINES_NB);
 			break;
 		}
 
@@ -95,7 +94,7 @@ void script_run(void)
 	int i;
 
 	for (i = 0; i < script_common.cnt; ++i) {
-		plostd_printf(ATTR_INIT, "\n%s", script_common.cmds[i]);
+		lib_printf("\n%s", script_common.cmds[i]);
 		cmd_parse(script_common.cmds[i]);
 	}
 }

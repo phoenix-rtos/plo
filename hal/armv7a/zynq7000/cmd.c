@@ -17,6 +17,7 @@
 
 #include "hal.h"
 #include "cmd.h"
+#include "lib.h"
 #include "zynq.h"
 #include "phfs.h"
 #include "config.h"
@@ -35,19 +36,19 @@ void cmd_bitstream(char *s)
 	char args[MAX_CMD_ARGS_NB][LINESZ + 1];
 
 	if ((cmd_parseArgs(s, args, &argsc) < 0) || argsc > 2) {
-		plostd_printf(ATTR_ERROR, "\nWrong arguments!!\n");
+		lib_printf("\nWrong arguments!!\n");
 		return;
 	}
 
 	if (phfs_open(args[0], args[1], 0, &handler) < 0) {
-		plostd_printf(ATTR_ERROR, "Cannot initialize device: %s\n", args[0]);
+		lib_printf("Cannot initialize device: %s\n", args[0]);
 		return;
 	}
 
-	plostd_printf(ATTR_LOADER, "\nLoading bitstream into DDR\n");
+	lib_printf("\nLoading bitstream into DDR\n");
 	do {
 		if ((res = phfs_read(handler, offs, buff, sizeof(buff))) < 0) {
-			plostd_printf(ATTR_ERROR, "\nCan't read segment data\n");
+			lib_printf("\nCan't read segment data\n");
 			return;
 		}
 
@@ -56,11 +57,11 @@ void cmd_bitstream(char *s)
 		offs += res;
 	} while (res != 0);
 
-	plostd_printf(ATTR_LOADER, "Loading bitstream into PL\n");
+	lib_printf("Loading bitstream into PL\n");
 	if (_zynq_loadPL(BISTREAM_ADDR, addr - BISTREAM_ADDR) < 0) {
-		plostd_printf(ATTR_ERROR, "PL was not initialized, bitstream is incorrect\n");
+		lib_printf("PL was not initialized, bitstream is incorrect\n");
 		return;
 	}
 
-	plostd_printf(ATTR_LOADER, "PL was successfully initialized\n");
+	lib_printf("PL was successfully initialized\n");
 }

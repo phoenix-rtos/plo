@@ -16,7 +16,7 @@
 #ifndef _DEVS_H_
 #define _DEVS_H_
 
-#include "../types.h"
+#include "types.h"
 #include "config.h"
 
 #define DEV_UART    0

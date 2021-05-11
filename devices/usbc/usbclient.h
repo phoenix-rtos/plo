@@ -16,8 +16,8 @@
 #ifndef _USBCLIENT_H_
 #define _USBCLIENT_H_
 
-#include "../types.h"
 #include "usb.h"
+#include "types.h"
 
 
 /* Library configuration structure */

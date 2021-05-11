@@ -13,14 +13,13 @@
  * %LICENSE%
  */
 
-#include "../../errors.h"
-#include "../../timer.h"
-
 #include "peripherals.h"
 #include "hal.h"
 #include "zynq.h"
 #include "devs.h"
 
+#include "errors.h"
+#include "timer.h"
 
 #define MAX_TXRX_FIFO_SIZE  0x40
 #define BUFFER_SIZE         0x200

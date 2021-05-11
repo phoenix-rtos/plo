@@ -13,8 +13,7 @@
  * %LICENSE%
  */
 
-#include "../plostd.h"
-#include "../timer.h"
+#include "timer.h"
 
 #include "hal.h"
 #include "imxrt.h"

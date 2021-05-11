@@ -13,11 +13,10 @@
  * %LICENSE%
  */
 
-#include "../errors.h"
-
 #include "hal.h"
 #include "usbphy.h"
 #include "client.h"
+#include "errors.h"
 
 
 struct {

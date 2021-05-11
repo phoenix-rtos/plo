@@ -14,9 +14,9 @@
  */
 
 #include "hal.h"
-#include "../devs.h"
-#include "../timer.h"
-#include "../errors.h"
+#include "devs.h"
+#include "timer.h"
+#include "errors.h"
 
 #include "lut.h"
 #include "romapi.h"

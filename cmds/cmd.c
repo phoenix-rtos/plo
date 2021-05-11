@@ -14,9 +14,10 @@
  * %LICENSE%
  */
 
-#include "../errors.h"
-#include "../syspage.h"
+#include "errors.h"
+#include "syspage.h"
 #include "hal.h"
+#include "lib.h"
 #include "console.h"
 #include "phfs.h"
 #include "elf.h"
@@ -77,19 +78,19 @@ static int cmd_cpphfs2phfs(handler_t srcHandler, addr_t srcAddr, size_t srcSz, h
 			chunk = size;
 
 		if ((res = phfs_read(srcHandler, srcAddr, buff, chunk)) < 0) {
-			plostd_printf(ATTR_ERROR, "\nCan't read data\n");
+			lib_printf("\nCan't read data\n");
 			return ERR_PHFS_FILE;
 		}
 		srcAddr += res;
 		size -= res;
 
 		if ((res = phfs_write(dstHandler, dstAddr, buff, res)) < 0) {
-			plostd_printf(ATTR_ERROR, "\nCan't write data!\n");
+			lib_printf("\nCan't write data!\n");
 			return ERR_PHFS_FILE;
 		}
 		dstAddr += res;
 
-		plostd_printf(ATTR_LOADER, "\rWriting to address %p", dstAddr);
+		lib_printf("\rWriting to address %p", dstAddr);
 		cmd_showprogress(i++);
 	} while (size > 0 && res > 0);
 
@@ -124,7 +125,7 @@ void cmd_parse(char *line)
 
 	for (;;) {
 		if (cmd_getnext(line, &p, "\n", DEFAULT_CITES, word, sizeof(word)) == NULL) {
-			plostd_printf(ATTR_ERROR, "\nSyntax error!\n");
+			lib_printf("\nSyntax error!\n");
 			return;
 		}
 		if (*word == 0)
@@ -132,20 +133,20 @@ void cmd_parse(char *line)
 
 		wp = 0;
 		if (cmd_getnext(word, &wp, DEFAULT_BLANKS, DEFAULT_CITES, cmd, sizeof(cmd)) == NULL) {
-			plostd_printf(ATTR_ERROR, "\nSyntax error!\n");
+			lib_printf("\nSyntax error!\n");
 			return;
 		}
 
 		/* Find command and launch associated function */
 		/* TODO: hide cursor while commands are executed */
 		for (k = 0; cmd_common.cmds[k].cmd != NULL; k++) {
-			if (!plostd_strcmp(cmd, cmd_common.cmds[k].cmd)) {
+			if (!hal_strcmp(cmd, cmd_common.cmds[k].cmd)) {
 				cmd_common.cmds[k].f(word + wp);
 				break;
 			}
 		}
 		if (!cmd_common.cmds[k].cmd)
-			plostd_printf(ATTR_ERROR, "\n'%s' - unknown command!\n", cmd);
+			lib_printf("\n'%s' - unknown command!\n", cmd);
 	}
 
 	return;
@@ -158,19 +159,19 @@ void cmd_help(char *s)
 {
 	int i, platformCmdsID;
 
-	plostd_printf(ATTR_LOADER, "\n");
-	plostd_printf(ATTR_LOADER, "Loader commands:\n");
-	plostd_printf(ATTR_LOADER, "----------------\n");
+	lib_printf("\n");
+	lib_printf("Loader commands:\n");
+	lib_printf("----------------\n");
 
 	platformCmdsID = sizeof(genericCmds) / sizeof(cmd_t) - 1;
 
 	for (i = 0; cmd_common.cmds[i].cmd; i++) {
 		if (i == platformCmdsID)  {
-			plostd_printf(ATTR_LOADER, "\nPlatform specific commands: \n");
-			plostd_printf(ATTR_LOADER, "----------------\n");
+			lib_printf("\nPlatform specific commands: \n");
+			lib_printf("----------------\n");
 		}
 
-		plostd_printf(ATTR_LOADER, "%s %s\n", cmd_common.cmds[i].cmd, cmd_common.cmds[i].help);
+		lib_printf("%s %s\n", cmd_common.cmds[i].cmd, cmd_common.cmds[i].help);
 	}
 }
 
@@ -180,23 +181,23 @@ void cmd_timeout(char *s)
 	char word[LINESZ + 1];
 	unsigned int p = 0;
 
-	plostd_printf(ATTR_LOADER, "\n");
+	lib_printf("\n");
 
 	if (cmd_getnext(s, &p, DEFAULT_BLANKS, DEFAULT_CITES, word, sizeof(word)) == NULL) {
-		plostd_printf(ATTR_ERROR, "Syntax error!\n");
+		lib_printf("Syntax error!\n");
 		return;
 	}
 	if (*word)
-		hal_setLaunchTimeout(plostd_ahtoi(word));
+		hal_setLaunchTimeout(lib_strtoul(word, NULL, 16));
 
-	plostd_printf(ATTR_LOADER, "timeout=0x%x\n", hal_getLaunchTimeout());
+	lib_printf("timeout=0x%x\n", hal_getLaunchTimeout());
 	return;
 }
 
 
 void cmd_go(char *s)
 {
-	plostd_printf(ATTR_NONE, "\n");
+	lib_printf("\n");
 	hal_launch();
 
 	return;
@@ -209,9 +210,9 @@ void cmd_cmd(char *s)
 	char cmd[CMD_SIZE];
 	unsigned int p = 0;
 
-	len = min(plostd_strlen(s), CMD_SIZE - 1);
+	len = min(hal_strlen(s), CMD_SIZE - 1);
 
-	plostd_printf(ATTR_LOADER, "\n");
+	lib_printf("\n");
 	cmd_skipblanks(s, &p, DEFAULT_BLANKS);
 	s += p;
 
@@ -220,7 +221,7 @@ void cmd_cmd(char *s)
 		*((char *)cmd + len) = 0;
 	}
 
-	plostd_printf(ATTR_LOADER, "cmd=%s\n", (char *)cmd);
+	lib_printf("cmd=%s\n", (char *)cmd);
 
 	return;
 }
@@ -240,48 +241,48 @@ void cmd_dump(char *s)
 	cmd_skipblanks(s, &p, DEFAULT_BLANKS);
 
 	if (cmd_getnext(s, &p, DEFAULT_BLANKS, NULL, word, sizeof(word)) == NULL) {
-		plostd_printf(ATTR_ERROR, "\nSize error!\n");
+		lib_printf("\nSize error!\n");
 		return;
 	}
 	if (*word == 0) {
-		plostd_printf(ATTR_ERROR, "\nBad segment!\n");
+		lib_printf("\nBad segment!\n");
 		return;
 	}
 
-	offs = plostd_ahtoi(word);
+	offs = lib_strtoul(word, NULL, 16);
 
-	plostd_printf(ATTR_LOADER, "\n");
-	plostd_printf(ATTR_NONE, "Memory dump from %p:\n", offs);
-	plostd_printf(ATTR_NONE, "--------------------------\n");
+	lib_printf("\n");
+	lib_printf("Memory dump from %p:\n", offs);
+	lib_printf("--------------------------\n");
 
 	for (y = 0; y < ysize; y++) {
-		plostd_printf(ATTR_NONE, "%p   ", offs);
+		lib_printf("%p   ", offs);
 
 		/* Print byte values */
 		for (x = 0; x < xsize; x++) {
 			b = *(u8 *)(offs + x);
 			if (b & 0xf0)
-				plostd_printf(ATTR_NONE, "%x ", b);
+				lib_printf("%x ", b);
 			else
-				plostd_printf(ATTR_NONE, "0%x ", b);
+				lib_printf("0%x ", b);
 		}
-		plostd_printf(ATTR_NONE, "  ");
+		lib_printf("  ");
 
 		/* Print ASCII representation */
 		for (x = 0; x < xsize; x++) {
 			b = *(u8 *)(offs + x);
 			if ((b <= 32) || (b > 127))
-				plostd_printf(ATTR_NONE, ".", b);
+				lib_printf(".", b);
 			else
-				plostd_printf(ATTR_NONE, "%c", b);
+				lib_printf("%c", b);
 		}
 
-		plostd_printf(ATTR_NONE, "\n");
+		lib_printf("\n");
 
 		offs += xsize;
 	}
 
-	plostd_printf(ATTR_LOADER, "");
+	lib_printf("");
 	return;
 }
 
@@ -297,27 +298,27 @@ void cmd_write(char *s)
 	cmd_skipblanks(s, &p, DEFAULT_BLANKS);
 
 	if (cmd_getnext(s, &p, DEFAULT_BLANKS, NULL, word, sizeof(word)) == NULL) {
-		plostd_printf(ATTR_ERROR, "\nSize error!\n");
+		lib_printf("\nSize error!\n");
 		return;
 	}
 	if (*word == 0) {
-		plostd_printf(ATTR_ERROR, "\nBad segment!\n");
+		lib_printf("\nBad segment!\n");
 		return;
 	}
 
-	offs = plostd_ahtoi(word);
+	offs = lib_strtoul(word, NULL, 16);
 	cmd_skipblanks(s, &p, DEFAULT_BLANKS);
 
 	if (cmd_getnext(s, &p, DEFAULT_BLANKS, NULL, word, sizeof(word)) == NULL) {
-		plostd_printf(ATTR_ERROR, "\nSize error!\n");
+		lib_printf("\nSize error!\n");
 		return;
 	}
 	if (*word == 0) {
-		plostd_printf(ATTR_ERROR, "\nBad size!\n");
+		lib_printf("\nBad size!\n");
 		return;
 	}
 
-	size = plostd_ahtoi(word);
+	size = lib_strtoul(word, NULL, 16);
 
 	cmd_skipblanks(s, &p, DEFAULT_BLANKS);
 
@@ -325,7 +326,7 @@ void cmd_write(char *s)
 
 	if (cmd_getnext(s, &p, DEFAULT_BLANKS, NULL, word, sizeof(word)) != NULL) {
 		if (*word != 0)
-			data = plostd_ahtoi(word);
+			data = lib_strtoul(word, NULL, 16);
 	}
 
 	for (y = offs; y < offs + size; y++) {
@@ -346,32 +347,32 @@ static int cmd_parseDev(handler_t *h, addr_t *offs, size_t *sz, char (*args)[LIN
 	alias = args[(*argsID)++];
 
 	if ((*argsID) >= argsc) {
-		plostd_printf(ATTR_ERROR, "\nWrong number of arguments\n");
+		lib_printf("\nWrong number of arguments\n");
 		return ERR_ARG;
 	}
 
 	/* Open device using alias to file */
-	if (plostd_ishex(args[(*argsID)]) < 0) {
+	if (lib_ishex(args[(*argsID)]) < 0) {
 		*offs = 0;
 		*sz = 0;
 		if (phfs_open(alias, args[(*argsID)++], 0, h) < 0) {
-			plostd_printf(ATTR_ERROR, "\nCannot initialize source: %s\n", alias);
+			lib_printf("\nCannot initialize source: %s\n", alias);
 			return ERR_PHFS_IO;
 		}
 	}
 	/* Open device using direct access to memory */
 	else {
 		/* check whether size is provided */
-		if (((*argsID) + 1) >= argsc || plostd_ishex(args[(*argsID) + 1]) < 0) {
-			plostd_printf(ATTR_ERROR, "\nWrong number of arguments\n");
+		if (((*argsID) + 1) >= argsc || lib_ishex(args[(*argsID) + 1]) < 0) {
+			lib_printf("\nWrong number of arguments\n");
 			return ERR_ARG;
 		}
 
-		*offs = plostd_ahtoi(args[(*argsID)]);
-		*sz = plostd_ahtoi(args[++(*argsID)]);
+		*offs = lib_strtoul(args[(*argsID)], NULL, 16);
+		*sz = lib_strtoul(args[++(*argsID)], NULL, 16);
 
 		if (phfs_open(alias, NULL, 0, h) < 0) {
-			plostd_printf(ATTR_ERROR, "\nCannot initialize source: %s\n", alias);
+			lib_printf("\nCannot initialize source: %s\n", alias);
 			return ERR_PHFS_IO;
 		}
 	}
@@ -391,25 +392,25 @@ void cmd_copy(char *s)
 
 	/* Parse all comand's arguments */
 	if (cmd_parseArgs(s, args, &argsc) < 0 || argsc < 4) {
-		plostd_printf(ATTR_ERROR, "\nWrong arguments!!\n");
+		lib_printf("\nWrong arguments!!\n");
 		return;
 	}
 
 	if (cmd_parseDev(&h[0], &offs[0], &sz[0], args, &argsID, argsc) < 0) {
-		plostd_printf(ATTR_ERROR, "\nCannot open file\n");
+		lib_printf("\nCannot open file\n");
 		return;
 	}
 
 	if (cmd_parseDev(&h[1], &offs[1], &sz[1], args, &argsID, argsc) < 0) {
-		plostd_printf(ATTR_ERROR, "\nCannot open file\n");
+		lib_printf("\nCannot open file\n");
 		return;
 	}
 
 	/* Copy data between devices */
 	if (cmd_cpphfs2phfs(h[0], offs[0], sz[0], h[1], offs[1], sz[1]) < 0)
-		plostd_printf(ATTR_ERROR, "\nOperation failed\n");
+		lib_printf("\nOperation failed\n");
 	else
-		plostd_printf(ATTR_LOADER, "\nFinished copying\n");
+		lib_printf("\nFinished copying\n");
 
 	phfs_close(h[0]);
 	phfs_close(h[1]);
@@ -421,7 +422,7 @@ void cmd_copy(char *s)
 void cmd_memmap(char *s)
 {
 	/* TODO */
-	plostd_printf(ATTR_LOADER, "\nMEMMAP in progress...\n");
+	lib_printf("\nMEMMAP in progress...\n");
 }
 
 
@@ -430,7 +431,7 @@ void cmd_memmap(char *s)
 void cmd_save(char *s)
 {
 	/* TODO */
-	plostd_printf(ATTR_LOADER, "\nSAVE in progress...\n");
+	lib_printf("\nSAVE in progress...\n");
 }
 
 
@@ -453,24 +454,24 @@ void cmd_kernel(char *s)
 
 	/* Parse arguments */
 	if (cmd_parseArgs(s, args, &argsc) < 0) {
-		plostd_printf(ATTR_ERROR, "\nWrong arguments!!\n");
+		lib_printf("\nWrong arguments!!\n");
 		return;
 	}
 
 	if (phfs_open(args[0], KERNEL_PATH, 0, &handler) < 0) {
-		plostd_printf(ATTR_ERROR, "\nCannot initialize device %s, error: %d\nLook at the device list:", args[0]);
+		lib_printf("\nCannot initialize device %s, error: %d\nLook at the device list:", args[0]);
 		phfs_showDevs();
 		return;
 	}
 
 	/* Read ELF header */
 	if (phfs_read(handler, offs, (u8 *)&hdr, (u32)sizeof(Elf32_Ehdr)) < 0) {
-		plostd_printf(ATTR_ERROR, "Can't read ELF header!\n");
+		lib_printf("Can't read ELF header!\n");
 		return;
 	}
 
 	if ((hdr.e_ident[0] != 0x7f) || (hdr.e_ident[1] != 'E') || (hdr.e_ident[2] != 'L') || (hdr.e_ident[3] != 'F')) {
-		plostd_printf(ATTR_ERROR, "File isn't ELF object!\n");
+		lib_printf("File isn't ELF object!\n");
 		return;
 	}
 
@@ -478,7 +479,7 @@ void cmd_kernel(char *s)
 	for (k = 0; k < hdr.e_phnum; k++) {
 		offs = hdr.e_phoff + k * sizeof(Elf32_Phdr);
 		if (phfs_read(handler, offs, (u8 *)&phdr, (u32)sizeof(Elf32_Phdr)) < 0) {
-			plostd_printf(ATTR_ERROR, "Can't read Elf32_Phdr, k=%d!\n", k);
+			lib_printf("Can't read Elf32_Phdr, k=%d!\n", k);
 			return;
 		}
 
@@ -496,13 +497,13 @@ void cmd_kernel(char *s)
 			for (i = 0; i < phdr.p_filesz / sizeof(buff); i++) {
 				offs = phdr.p_offset + i * sizeof(buff);
 				if (phfs_read(handler, offs, buff, (u32)sizeof(buff)) < 0) {
-					plostd_printf(ATTR_ERROR, "\nCan't read segment data, k=%d!\n", k);
+					lib_printf("\nCan't read segment data, k=%d!\n", k);
 					return;
 				}
 				hal_memcpy(loffs, buff, sizeof(buff));
 				loffs += sizeof(buff);
 
-				plostd_printf(ATTR_LOADER, "\rWriting data segment at %p: ", (u32)(loffs));
+				lib_printf("\rWriting data segment at %p: ", (u32)(loffs));
 				cmd_showprogress(i);
 			}
 
@@ -511,7 +512,7 @@ void cmd_kernel(char *s)
 			if (size != 0) {
 				offs = phdr.p_offset + i * sizeof(buff);
 				if (phfs_read(handler, offs, buff, size) < 0) {
-					plostd_printf(ATTR_ERROR, "\nCan't read last segment data, k=%d!\n", k);
+					lib_printf("\nCan't read last segment data, k=%d!\n", k);
 					return;
 				}
 
@@ -524,7 +525,7 @@ void cmd_kernel(char *s)
 		offs = hdr.e_shoff + k * sizeof(Elf32_Shdr);
 
 		if (phfs_read(handler, offs, (u8 *)&shdr, (u32)sizeof(Elf32_Shdr)) < 0) {
-			plostd_printf(ATTR_ERROR, "Can't read Elf32_Shdr, k=%d!\n", k);
+			lib_printf("Can't read Elf32_Shdr, k=%d!\n", k);
 			return;
 		}
 
@@ -539,10 +540,10 @@ void cmd_kernel(char *s)
 	syspage_setKernelText((void *)minaddr, maxaddr - minaddr);
 	hal_setKernelEntry(hdr.e_entry);
 
-	plostd_printf(ATTR_LOADER, "[ok]\n");
+	lib_printf("[ok]\n");
 
 	if (phfs_close(handler) < 0)
-		plostd_printf(ATTR_ERROR, "\nCannot close file\n");
+		lib_printf("\nCannot close file\n");
 
 }
 
@@ -559,12 +560,12 @@ static int cmd_loadApp(handler_t handler, addr_t offs, size_t size, const char *
 
 	/* Check ELF header */
 	if ((res = phfs_read(handler, offs, (u8 *)&hdr, (u32)sizeof(Elf32_Ehdr))) < 0) {
-		plostd_printf(ATTR_ERROR, "\nCan't read ELF header %d\n", res);
+		lib_printf("\nCan't read ELF header %d\n", res);
 		return ERR_PHFS_FILE;
 	}
 
 	if ((hdr.e_ident[0] != 0x7f) || (hdr.e_ident[1] != 'E') || (hdr.e_ident[2] != 'L') || (hdr.e_ident[3] != 'F')) {
-		plostd_printf(ATTR_ERROR, "\nFile isn't ELF object\n");
+		lib_printf("\nFile isn't ELF object\n");
 		return ERR_PHFS_FILE;
 	}
 
@@ -574,12 +575,12 @@ static int cmd_loadApp(handler_t handler, addr_t offs, size_t size, const char *
 
 	/* Get top address of map and its attributes */
 	if (syspage_getMapTop(imap, &start) < 0 || syspage_getMapAttr(imap, &attr) < 0) {
-		plostd_printf(ATTR_ERROR, "\n%s does not exist!\n", imap);
+		lib_printf("\n%s does not exist!\n", imap);
 		return ERR_ARG;
 	}
 
 	if ((res = phfs_map(handler, offs, size, mAttrRead | mAttrWrite, (addr_t)start, size, attr, &addr)) < 0) {
-		plostd_printf(ATTR_ERROR, "\nDevice is not mappable in %s\n", imap);
+		lib_printf("\nDevice is not mappable in %s\n", imap);
 		return ERR_ARG;
 	}
 
@@ -592,14 +593,14 @@ static int cmd_loadApp(handler_t handler, addr_t offs, size_t size, const char *
 				chunkSz = size;
 
 			if ((res = phfs_read(handler, offs, buff, chunkSz)) < 0) {
-				plostd_printf(ATTR_ERROR, "\nCan't read segment data\n");
+				lib_printf("\nCan't read segment data\n");
 				return ERR_PHFS_FILE;
 			}
 
 			if (syspage_write2Map(imap, buff, res) < 0)
 				return ERR_ARG;
 
-			plostd_printf(ATTR_LOADER, "\rWriting to address %p ", start);
+			lib_printf("\rWriting to address %p ", start);
 			cmd_showprogress(i++);
 
 			offs += res;
@@ -618,15 +619,15 @@ static int cmd_loadApp(handler_t handler, addr_t offs, size_t size, const char *
 		start = (void *)(offs + addr);
 		end = start + size;
 
-		plostd_printf(ATTR_LOADER, "\nCode is located in %s map. Data has not been copied.\n", imap);
+		lib_printf("\nCode is located in %s map. Data has not been copied.\n", imap);
 	}
 	else {
-		plostd_printf(ATTR_LOADER, "\nDevice returns wrong mapping result.\n");
+		lib_printf("\nDevice returns wrong mapping result.\n");
 		return ERR_PHFS_FILE;
 	}
 
 	if (syspage_addProg(start, end, imap, dmap, cmdline, flags) < 0) {
-		plostd_printf(ATTR_LOADER, "\nCannot add program to syspage\n");
+		lib_printf("\nCannot add program to syspage\n");
 		return ERR_ARG;
 	}
 
@@ -652,7 +653,7 @@ void cmd_app(char *s)
 
 	/* Parse command arguments */
 	if (cmd_parseArgs(s, cmdArgs, &cmdArgsc) < 0 || cmdArgsc < 2 || cmdArgsc > 6) {
-		plostd_printf(ATTR_ERROR, "\nWrong arguments!!\n");
+		lib_printf("\nWrong arguments!!\n");
 		return;
 	}
 
@@ -666,13 +667,13 @@ void cmd_app(char *s)
 			argID++;
 		}
 		else {
-			plostd_printf(ATTR_ERROR, "\nWrong arguments!!\n");
+			lib_printf("\nWrong arguments!!\n");
 			return;
 		}
 	}
 
 	if (argID >= cmdArgsc) {
-		plostd_printf(ATTR_ERROR, "\nWrong arguments!!\n");
+		lib_printf("\nWrong arguments!!\n");
 		return;
 	}
 
@@ -686,15 +687,15 @@ void cmd_app(char *s)
 			continue;
 		}
 
-		if (plostd_ishex(appData[i]) < 0) {
-			plostd_printf(ATTR_ERROR, "\nOffset is not a hex value !!\n");
+		if (lib_ishex(appData[i]) < 0) {
+			lib_printf("\nOffset is not a hex value !!\n");
 			return;
 		}
 
 		if (i == 1)
-			offs = plostd_ahtoi(appData[i]);
+			offs = lib_strtoul(appData[i], NULL, 16);
 		else if (i == 2)
-			sz = plostd_ahtoi(appData[i]);
+			sz = lib_strtoul(appData[i], NULL, 16);
 	}
 
 	/* Get app name from cmdline */
@@ -704,7 +705,7 @@ void cmd_app(char *s)
 	}
 
 	if (pos > MAX_APP_NAME_SIZE) {
-		plostd_printf(ATTR_ERROR, "\nApp %s name is too long!\n", cmdline);
+		lib_printf("\nApp %s name is too long!\n", cmdline);
 		return;
 	}
 
@@ -726,24 +727,24 @@ void cmd_app(char *s)
 
 	/* If offset and size are set, appName is ommitted and phfs does not use file abstraction */
 	if (phfs_open(cmdArgs[0], ((offs == 0 && sz == 0) ? appName : NULL), 0, &handler) < 0) {
-		plostd_printf(ATTR_ERROR, "\nWrong arguments!!\n");
+		lib_printf("\nWrong arguments!!\n");
 		return;
 	}
 
 	/* Size is not defined by user */
 	if (sz == 0) {
 		if (phfs_stat(handler, &stat) < 0) {
-			plostd_printf(ATTR_ERROR, "\nCannot get stat from file %s\n", cmdArgs[0]);
+			lib_printf("\nCannot get stat from file %s\n", cmdArgs[0]);
 			return;
 		}
 		sz = stat.size;
 	}
 
-	plostd_printf(ATTR_LOADER, "\nLoading %s (offs=%p, size=%p, imap=%s, dmap=%s, flags=%x)\n", appName, offs, sz, cmap, dmap, flags);
+	lib_printf("\nLoading %s (offs=%p, size=%p, imap=%s, dmap=%s, flags=%x)\n", appName, offs, sz, cmap, dmap, flags);
 	cmd_loadApp(handler, offs, sz, cmap, dmap, cmdline, flags);
 
 	if (phfs_close(handler) < 0)
-		plostd_printf(ATTR_ERROR, "\nCannot close file\n");
+		lib_printf("\nCannot close file\n");
 }
 
 
@@ -765,18 +766,18 @@ void cmd_map(char *s)
 	}
 
 	if (argsc < 4) {
-		plostd_printf(ATTR_ERROR, "\nWrong arguments!!\n");
+		lib_printf("\nWrong arguments!!\n");
 		return;
 	}
 
-	namesz = (plostd_strlen(args[argID]) < 7) ? (plostd_strlen(args[argID]) + 1) : 7;
+	namesz = (hal_strlen(args[argID]) < 7) ? (hal_strlen(args[argID]) + 1) : 7;
 	hal_memcpy(mapname, args[argID], namesz);
 	mapname[namesz] = '\0';
 
 	++argID;
-	start = plostd_ahtoi(args[argID]);
+	start = lib_strtoul(args[argID], NULL, 16);
 	++argID;
-	end = plostd_ahtoi(args[argID]);
+	end = lib_strtoul(args[argID], NULL, 16);
 
 	while (++argID < argsc) {
 		switch (args[argID][0]) {
@@ -805,17 +806,17 @@ void cmd_map(char *s)
 			break;
 
 		default:
-			plostd_printf(ATTR_ERROR, "Wrong attribute - '%c'. Map cannot be created.\n", args[argID][0]);
+			lib_printf("Wrong attribute - '%c'. Map cannot be created.\n", args[argID][0]);
 			return;
 		}
 	}
 
 	if (syspage_addmap(mapname, (void *)start, (void *)end, attr) < 0) {
-		plostd_printf(ATTR_ERROR, "\nMap cannot be created. Check map range and parameters!!\n");
+		lib_printf("\nMap cannot be created. Check map range and parameters!!\n");
 		return;
 	}
 
-	plostd_printf(ATTR_LOADER, "\nMap: %s offs: %p size %p has been created.\n", mapname, start, end);
+	lib_printf("\nMap: %s offs: %p size %p has been created.\n", mapname, start, end);
 
 	return;
 }
@@ -839,16 +840,16 @@ void cmd_phfs(char *s)
 	}
 
 	if (argsc < 3 || argsc > 4) {
-		plostd_printf(ATTR_ERROR, "\nWrong arguments!!\n");
+		lib_printf("\nWrong arguments!!\n");
 		return;
 	}
 
 	/* Get major/minor */
-	major = plostd_ahtoi(args[1]);
-	minor = plostd_ahtoi(args[2]);
+	major = lib_strtoul(args[1], NULL, 16);
+	minor = lib_strtoul(args[2], NULL, 16);
 
 	if (phfs_regDev(args[0], major, minor, (argsc == 3) ? NULL : args[3]) < 0)
-		plostd_printf(ATTR_ERROR, "\n%s is not registered!\n", args[0]);
+		lib_printf("\n%s is not registered!\n", args[0]);
 }
 
 
@@ -860,7 +861,7 @@ void cmd_devs(char *s)
 	s += pos;
 
 	if (*s) {
-		plostd_printf(ATTR_ERROR, "\nCommand devs does not take any arguments\n");
+		lib_printf("\nCommand devs does not take any arguments\n");
 		return;
 	}
 
@@ -880,13 +881,13 @@ void cmd_console(char *s)
 	}
 
 	if (argsc != 2) {
-		plostd_printf(ATTR_ERROR, "\nWrong number of arguments!!\n");
+		lib_printf("\nWrong number of arguments!!\n");
 		return;
 	}
 
 	/* Get major/minor */
-	major = plostd_ahtoi(args[0]);
-	minor = plostd_ahtoi(args[1]);
+	major = lib_strtoul(args[0], NULL, 16);
+	minor = lib_strtoul(args[1], NULL, 16);
 	console_set(major, minor);
 
 	return;
@@ -900,7 +901,7 @@ void cmd_showprogress(u32 p)
 {
 	char *states = "-\\|/";
 
-	plostd_printf(ATTR_LOADER, "%c", states[p % plostd_strlen(states)]);
+	lib_printf("%c", states[p % hal_strlen(states)]);
 	return;
 }
 
@@ -913,7 +914,7 @@ void cmd_skipblanks(char *line, unsigned int *pos, char *blanks)
 
 	while ((c = *((char *)(line + *pos))) != 0) {
 		blfl = 0;
-		for (i = 0; i < plostd_strlen(blanks); i++) {
+		for (i = 0; i < hal_strlen(blanks); i++) {
 			if (c == *(char *)(blanks + i)) {
 				blfl = 1;
 				break;

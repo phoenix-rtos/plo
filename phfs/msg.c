@@ -13,10 +13,10 @@
  * %LICENSE%
  */
 
-#include "../errors.h"
 #include "hal.h"
 #include "msg.h"
 #include "devs.h"
+#include "errors.h"
 
 
 #define MSGREAD_DESYN   0

@@ -16,8 +16,7 @@
 #include "phoenixd.h"
 #include "msg.h"
 #include "hal.h"
-#include "../errors.h"
-#include "../plostd.h"
+#include "errors.h"
 
 
 /* Message types */
@@ -60,7 +59,7 @@ int phoenixd_open(const char *file, unsigned int major, unsigned int minor, unsi
 	unsigned int fd;
 	msg_t smsg, rmsg;
 
-	l = plostd_strlen(file) + 1;
+	l = hal_strlen(file) + 1;
 
 	*(u32 *)smsg.data = flags;
 	hal_memcpy(&smsg.data[sizeof(u32)], file, l);

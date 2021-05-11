@@ -14,11 +14,10 @@
  */
 
 #include "hal.h"
+#include "lib.h"
 #include "phfs.h"
 #include "phoenixd.h"
-
-#include "../plostd.h"
-#include "../errors.h"
+#include "errors.h"
 
 
 #define SIZE_PHFS_HANDLERS    8
@@ -71,9 +70,9 @@ static const char *phfs_getProtName(unsigned int id)
 
 static int phfs_setProt(phfs_device_t *pd, const char *prot)
 {
-	if (prot == NULL || (plostd_strcmp(prot, "raw") == 0))
+	if (prot == NULL || (hal_strcmp(prot, "raw") == 0))
 		pd->prot = phfs_prot_raw;
-	else if (plostd_strcmp(prot, "phoenixd") == 0)
+	else if (hal_strcmp(prot, "phoenixd") == 0)
 		pd->prot = phfs_prot_phoenixd;
 	else
 		return ERR_ARG;
@@ -89,7 +88,7 @@ static int phfs_getHandlerId(const char *alias)
 
 	for (i = 0; i < phfs_common.dCnt; ++i) {
 		pd = &phfs_common.devices[i];
-		if ((plostd_strcmp(alias, pd->alias) == 0))
+		if ((hal_strcmp(alias, pd->alias) == 0))
 			return i;
 	}
 
@@ -106,29 +105,29 @@ int phfs_regDev(const char *alias, unsigned int major, unsigned int minor, const
 		return ERR_ARG;
 
 	if (phfs_common.dCnt >= SIZE_PHFS_HANDLERS) {
-		plostd_printf(ATTR_ERROR, "\nToo many devices");
+		lib_printf("\nToo many devices");
 		return ERR_ARG;
 	}
 
 	if (devs_check(major, minor) < 0) {
-		plostd_printf(ATTR_ERROR, "\n%d.%d - device does not exist", major, minor);
+		lib_printf("\n%d.%d - device does not exist", major, minor);
 		return ERR_ARG;
 	}
 
 	/* Check if alias is already in use */
 	if (phfs_getHandlerId(alias) >= 0) {
-		plostd_printf(ATTR_ERROR, "\n%s - alias is already in use", alias);
+		lib_printf("\n%s - alias is already in use", alias);
 		return ERR_ARG;
 	}
 
 	pd = &phfs_common.devices[phfs_common.dCnt];
 	if (phfs_setProt(pd, prot) < 0) {
-		plostd_printf(ATTR_ERROR, "\n%s - wrong protocol name\n\t use: \"%s\", \"%s\"", prot,
+		lib_printf("\n%s - wrong protocol name\n\t use: \"%s\", \"%s\"", prot,
 		              phfs_getProtName(phfs_prot_raw), phfs_getProtName(phfs_prot_phoenixd));
 		return ERR_ARG;
 	}
 
-	sz = plostd_strlen(alias);
+	sz = hal_strlen(alias);
 	sz = (sz < (sizeof(pd->alias) - 1)) ? (sz + 1) : (sizeof(pd->alias) - 1);
 	hal_memcpy(pd->alias, alias, sz);
 	pd->alias[sz] = '\0';
@@ -169,14 +168,14 @@ void phfs_showDevs(void)
 	phfs_device_t *pd;
 
 	if (phfs_common.dCnt == 0) {
-		plostd_printf(ATTR_ERROR, "\nNone of the devices have been registered\n");
+		lib_printf("\nNone of the devices have been registered\n");
 		return;
 	}
 
-	plostd_printf(ATTR_LOADER, "\nALIAS\tID\tPROTOCOL\n");
+	lib_printf("\nALIAS\tID\tPROTOCOL\n");
 	for (i = 0; i < phfs_common.dCnt; ++i) {
 		pd = &phfs_common.devices[i];
-		plostd_printf(ATTR_NONE, "%s\t%d.%d\t%s\n", pd->alias, pd->major, pd->minor, phfs_getProtName(pd->prot));
+		lib_printf("%s\t%d.%d\t%s\n", pd->alias, pd->major, pd->minor, phfs_getProtName(pd->prot));
 	}
 }
 
@@ -188,7 +187,7 @@ static int phfs_getFileId(const char *alias)
 
 	for (i = 0; i < phfs_common.fCnt; ++i) {
 		file = &phfs_common.files[i];
-		if (plostd_strcmp(alias, file->alias) == 0)
+		if (hal_strcmp(alias, file->alias) == 0)
 			return i;
 	}
 
@@ -205,19 +204,19 @@ int phfs_regFile(const char *alias, addr_t addr, size_t size)
 		return ERR_ARG;
 
 	if (phfs_common.fCnt >= SIZE_PHFS_FILES) {
-		plostd_printf(ATTR_ERROR, "\nExceeded max number of files");
+		lib_printf("\nExceeded max number of files");
 		return ERR_ARG;
 	}
 
 	/* Check if alias is already in use */
 	if (phfs_getFileId(alias) >= 0) {
-		plostd_printf(ATTR_ERROR, "\n%s - alias is already in use", alias);
+		lib_printf("\n%s - alias is already in use", alias);
 		return ERR_ARG;
 	}
 
 	file = &phfs_common.files[phfs_common.fCnt];
 
-	sz = plostd_strlen(alias);
+	sz = hal_strlen(alias);
 	sz = (sz < (sizeof(file->alias) - 1)) ? (sz + 1) : (sizeof(file->alias) - 1);
 	hal_memcpy(file->alias, alias, sz);
 	file->alias[sz] = '\0';

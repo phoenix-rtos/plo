@@ -13,12 +13,12 @@
  * %LICENSE%
  */
 
-#include "../types.h"
-#include "../errors.h"
 
 #include "gpio.h"
 #include "zynq.h"
 #include "peripherals.h"
+
+#include "errors.h"
 
 
 #define MAX_BANK_NB        4

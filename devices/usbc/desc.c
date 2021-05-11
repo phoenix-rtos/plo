@@ -13,10 +13,9 @@
  * %LICENSE%
  */
 
-#include "../errors.h"
-
 #include "hal.h"
 #include "client.h"
+#include "errors.h"
 
 
 struct {

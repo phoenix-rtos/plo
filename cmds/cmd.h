@@ -17,11 +17,14 @@
 #ifndef _CMD_H_
 #define _CMD_H_
 
-#include "../types.h"
-#include "../plostd.h"
+#include "types.h"
 
 #define DEFAULT_BLANKS    " \t"
 #define DEFAULT_CITES     "\""
+
+#define LINESZ       80
+#define HISTSZ       8
+
 
 /* Boot command size */
 #define CMD_SIZE                  64

@@ -20,9 +20,9 @@
 #include "cmd-board.h"
 #include "peripherals.h"
 
-#include "../../../errors.h"
-#include "../../../timer.h"
-#include "../../../syspage.h"
+#include "errors.h"
+#include "timer.h"
+#include "syspage.h"
 
 typedef struct {
 	void *data;
@@ -122,61 +122,6 @@ addr_t hal_vm2phym(addr_t addr)
 {
 	return addr;
 }
-
-
-void hal_memcpy(void *dst, const void *src, unsigned int l)
-{
-	__asm__ volatile(" \
-		orr r3, %0, %1; \
-		ands r3, #3; \
-		bne 2f; \
-	1: \
-		cmp %2, #4; \
-		ittt hs; \
-		ldrhs r3, [%1], #4; \
-		strhs r3, [%0], #4; \
-		subshs %2, #4; \
-		bhs 1b; \
-	2: \
-		cmp %2, #0; \
-		ittt ne; \
-		ldrbne r3, [%1], #1; \
-		strbne r3, [%0], #1; \
-		subsne %2, #1; \
-		bne 2b"
-	: "+l" (dst), "+l" (src), "+l" (l)
-	:
-	: "r3", "memory", "cc");
-}
-
-void hal_memset(void *dst, int v, unsigned int l)
-{
-	__asm__ volatile
-	(" \
-		mov r1, %2; \
-		mov r3, %1; \
-		orr r3, r3, r3, lsl #8; \
-		orr r3, r3, r3, lsl #16; \
-		mov r4, %0; \
-		ands r2, r4, #3; \
-		bne 2f; \
-	1: \
-		cmp r1, #4; \
-		itt hs; \
-		strhs r3, [r4], #4; \
-		subshs r1, #4; \
-		bhs 1b; \
-	2: \
-		cmp r1, #0; \
-		itt ne; \
-		strbne r3, [r4], #1; \
-		subsne r1, #1; \
-		bne 2b"
-	:
-	: "r" (dst), "r" (v & 0xff), "r" (l)
-	: "r1", "r2", "r3", "r4", "memory", "cc");
-}
-
 
 int hal_launch(void)
 {

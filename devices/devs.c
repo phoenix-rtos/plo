@@ -14,7 +14,7 @@
  */
 
 #include "devs.h"
-#include "../errors.h"
+#include "errors.h"
 
 #define SIZE_MAJOR   4
 #define SIZE_MINOR   16

@@ -17,7 +17,7 @@
 #ifndef _USB_DESCRIPTORS_H_
 #define _USB_DESCRIPTORS_H_
 
-#include "../types.h"
+#include "types.h"
 
 #define REQUEST_DIR_HOST2DEV  (0 << 7)
 #define REQUEST_DIR_DEV2HOST  (1 << 7)

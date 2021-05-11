@@ -21,19 +21,10 @@
 #include "cmd.h"
 #include "phfs.h"
 #include "config.h"
+#include "string.h"
 #include "../types.h"
 
 #define min(a, b)   ((a > b) ? b : a)
-
-
-typedef struct {
-	u32 addr_lo;
-	u32 addr_hi;
-	u32 len_lo;
-	u32 len_hi;
-	u32 attr;
-} low_mmitem_t;
-
 
 
 /* Initialization functions */
@@ -60,13 +51,6 @@ extern u32 hal_getLaunchTimeout(void);
 extern addr_t hal_vm2phym(addr_t addr);
 
 
-/* Functions make operations on memory */
-
-extern void hal_memcpy(void *dst, const void *src, unsigned int l);
-
-extern void hal_memset(void *dst, int v, unsigned int l);
-
-
 /* Function starts kernel loaded into memory */
 
 extern int hal_launch(void);
@@ -77,7 +61,6 @@ extern int hal_launch(void);
 extern void hal_invalDCacheAll(void);
 
 extern void hal_invalDCacheAddr(addr_t addr, size_t sz);
-
 
 
 /* Opeartions on interrupts */
