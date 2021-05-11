@@ -29,9 +29,7 @@ extern int _fcfb;
 struct {
 	flash_context_t ctx[FLASH_NO];
 	u8 buff[0x100];
-	dev_handler_t handler;
 } flashdrv_common;
-
 
 
 /* Flash config commands */
@@ -338,12 +336,14 @@ static int flashdrv_init(unsigned int minor)
 
 __attribute__((constructor)) static void flashdrv_reg(void)
 {
-	flashdrv_common.handler.init = flashdrv_init;
-	flashdrv_common.handler.done = flashdrv_done;
-	flashdrv_common.handler.read = flashdrv_read;
-	flashdrv_common.handler.write = flashdrv_write;
-	flashdrv_common.handler.sync = flashdrv_sync;
-	flashdrv_common.handler.map = flashdrv_map;
+	static const dev_handler_t h = {
+		.init = flashdrv_init,
+		.done = flashdrv_done,
+		.read = flashdrv_read,
+		.write = flashdrv_write,
+		.sync = flashdrv_sync,
+		.map = flashdrv_map
+	};
 
-	devs_register(DEV_FLASH, FLASH_NO, &flashdrv_common.handler);
+	devs_register(DEV_FLASH, FLASH_NO, &h);
 }

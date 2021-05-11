@@ -54,7 +54,6 @@ enum {
 struct {
 	uart_t uarts[UARTS_MAX_CNT];
 	int clkInit;
-	dev_handler_t handler;
 } uart_common;
 
 
@@ -420,12 +419,14 @@ static int uart_init(unsigned int minor)
 
 __attribute__((constructor)) static void uart_reg(void)
 {
-	uart_common.handler.init = uart_init;
-	uart_common.handler.done = uart_done;
-	uart_common.handler.read = uart_read;
-	uart_common.handler.write = uart_safeWrite;
-	uart_common.handler.sync = uart_sync;
-	uart_common.handler.map = uart_map;
+	static const dev_handler_t h = {
+		.init = uart_init,
+		.done = uart_done,
+		.read = uart_read,
+		.write = uart_safeWrite,
+		.sync = uart_sync,
+		.map = uart_map,
+	};
 
-	devs_register(DEV_UART, UARTS_MAX_CNT, &uart_common.handler);
+	devs_register(DEV_UART, UARTS_MAX_CNT, &h);
 }

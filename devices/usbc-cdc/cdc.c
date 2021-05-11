@@ -53,7 +53,6 @@ struct {
 	usb_desc_list_t strprod;
 
 	u32 init;
-	dev_handler_t handler;
 } cdc_common;
 
 
@@ -475,12 +474,14 @@ static int cdc_init(unsigned int minor)
 
 __attribute__((constructor)) static void cdc_reg(void)
 {
-	cdc_common.handler.init = cdc_init;
-	cdc_common.handler.done = cdc_done;
-	cdc_common.handler.read = cdc_recv;
-	cdc_common.handler.write = cdc_send;
-	cdc_common.handler.sync = cdc_sync;
-	cdc_common.handler.map = cdc_map;
+	static const dev_handler_t h = {
+		.init = cdc_init,
+		.done = cdc_done,
+		.read = cdc_recv,
+		.write = cdc_send,
+		.sync = cdc_sync,
+		.map = cdc_map,
+	};
 
-	devs_register(DEV_USB, SIZE_USB_ENDPTS, &cdc_common.handler);
+	devs_register(DEV_USB, SIZE_USB_ENDPTS, &h);
 }
