@@ -151,17 +151,6 @@ int phfs_getFileAddr(handler_t h, addr_t *addr)
 }
 
 
-int phfs_getFileSize(handler_t h, size_t *size)
-{
-	if (h.id >= SIZE_PHFS_FILES)
-		return ERR_ARG;
-
-	*size = phfs_common.files[h.id].size;
-
-	return ERR_NONE;
-}
-
-
 void phfs_showDevs(void)
 {
 	int i;

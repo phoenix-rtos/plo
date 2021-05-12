@@ -46,10 +46,6 @@ extern int phfs_regFile(const char *alias, addr_t addr, size_t size);
 extern int phfs_getFileAddr(handler_t h, addr_t *addr);
 
 
-/* Get file's size based on the given handler */
-extern int phfs_getFileSize(handler_t h, size_t *size);
-
-
 /* Show devices registered in phfs */
 extern void phfs_showDevs(void);
 
