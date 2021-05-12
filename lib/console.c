@@ -49,12 +49,12 @@ void console_putc(char c)
 }
 
 
-int console_getc(char *c)
+int console_getc(char *c, unsigned int timeout)
 {
 	if (consol_common.major == -1 || consol_common.minor == -1)
 		return ERR_ARG;
 
-	return devs_read(consol_common.major, consol_common.minor, 0, (u8 *)c, 1, CONSOLE_TIMEOUT_MS);
+	return devs_read(consol_common.major, consol_common.minor, 0, (u8 *)c, 1, timeout);
 }
 
 

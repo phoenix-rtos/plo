@@ -17,8 +17,6 @@
 #define _CONSOLE_H_
 
 
-#define CONSOLE_TIMEOUT_MS   100
-
 
 extern void console_init(void);
 
@@ -32,7 +30,7 @@ extern void console_puts(const char *s);
 extern void console_putc(char c);
 
 
-extern int console_getc(char *c);
+extern int console_getc(char *c, unsigned int timeout);
 
 
 #endif
