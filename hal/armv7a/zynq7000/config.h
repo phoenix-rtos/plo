@@ -17,21 +17,14 @@
 #ifndef _CONFIG_H_
 #define _CONFIG_H_
 
-#include "../types.h"
+#include "zynq.h"
+#include "types.h"
 
 
 /* User interface */
-#define VERSION                  "1.0.1"
-#define PLO_WELCOME              "\n-\\- Phoenix-RTOS loader for Zynq-7000, version: " VERSION
-#define PLO_DEFAULT_CMD          "syspage"
 #define KERNEL_PATH              "phoenix-armv7a9-zynq7000.elf"
 
-
 /* Addresses descriptions */
-#define DISK_IMAGE_BEGIN         0             /* TBD */
-#define DISK_IMAGE_SIZE          0             /* TBD */
-
-#define DISK_KERNEL_OFFS         0             /* TBD */
 #define SYSPAGE_ADDRESS          0xffff8000    /* Begin of OCRAM's high address */
 #define BISTREAM_ADDR            0x00100000
 
@@ -41,11 +34,6 @@
 /* Linker symbols */
 extern void _end(void);
 extern void _plo_bss(void);
-
-
-/* PHFS sources  */
-#define PHFS_ACM_PORTS_NB        1    /* Number of ports define by CDC driver; min = 1, max = 2               */
-#define PHFS_SERIAL_LOADER_ID    0    /* UART ID on which data exchange is established with phoenixd host app */
 
 
 /* Types extensions */

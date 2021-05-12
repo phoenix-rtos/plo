@@ -18,13 +18,10 @@
 #ifndef _HAL_H_
 #define _HAL_H_
 
-#include "cmd.h"
-#include "phfs.h"
 #include "config.h"
 #include "string.h"
-#include "../types.h"
-
-#define min(a, b)   ((a > b) ? b : a)
+#include "types.h"
+#include "peripherals.h"
 
 
 /* Initialization functions */
@@ -33,8 +30,6 @@ extern void hal_init(void);
 
 extern void hal_done(void);
 
-extern void hal_appendcmds(cmd_t *cmds);
-
 
 /* Setters and getters for common data */
 
@@ -42,11 +37,7 @@ extern void hal_setDefaultIMAP(char *imap);
 
 extern void hal_setDefaultDMAP(char *dmap);
 
-extern void hal_setKernelEntry(u32 addr);
-
-extern void hal_setLaunchTimeout(u32 timeout);
-
-extern u32 hal_getLaunchTimeout(void);
+extern void hal_setKernelEntry(addr_t addr);
 
 extern addr_t hal_vm2phym(addr_t addr);
 
@@ -68,8 +59,6 @@ extern void hal_invalDCacheAddr(addr_t addr, size_t sz);
 extern void hal_cli(void);
 
 extern void hal_sti(void);
-
-extern void hal_maskirq(u16 n, u8 v);
 
 extern int hal_irqinst(u16 irq, int (*isr)(u16, void *), void *data);
 

@@ -14,9 +14,8 @@
  */
 
 
+#include "hal.h"
 #include "gpio.h"
-#include "zynq.h"
-#include "peripherals.h"
 
 #include "errors.h"
 

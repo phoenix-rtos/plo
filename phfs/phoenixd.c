@@ -16,6 +16,7 @@
 #include "phoenixd.h"
 #include "msg.h"
 #include "hal.h"
+#include "lib.h"
 #include "errors.h"
 
 

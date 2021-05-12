@@ -13,8 +13,8 @@
  * %LICENSE%
  */
 
-#include "peripherals.h"
 #include "hal.h"
+#include "lib.h"
 #include "zynq.h"
 #include "devs.h"
 
@@ -23,7 +23,6 @@
 
 #define MAX_TXRX_FIFO_SIZE  0x40
 #define BUFFER_SIZE         0x200
-
 
 typedef struct {
 	volatile u32 *base;

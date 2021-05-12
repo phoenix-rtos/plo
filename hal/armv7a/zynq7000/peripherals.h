@@ -65,6 +65,8 @@
 #define USB0_IRQ         53
 #define USB1_IRQ         76
 
+#define PHFS_ACM_PORTS_NB        1    /* Number of ports define by CDC driver; min = 1, max = 2 */
+
 
 /* GPIO */
 #define GPIO_BASE_ADDR  ((void *)0xe000a000)

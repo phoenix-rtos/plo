@@ -14,9 +14,8 @@
  */
 
 #include "hal.h"
+#include "lib.h"
 #include "devs.h"
-#include "imxrt.h"
-#include "peripherals.h"
 
 #include "errors.h"
 #include "timer.h"

@@ -13,8 +13,8 @@
  * %LICENSE%
  */
 
-#include "peripherals.h"
 #include "hal.h"
+#include "lib.h"
 #include "imxrt.h"
 #include "devs.h"
 
@@ -28,7 +28,6 @@
 #define UART_MAX_CNT 12
 
 #define BUFFER_SIZE 0x200
-
 
 typedef struct {
 	volatile u32 *base;

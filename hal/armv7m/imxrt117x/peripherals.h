@@ -247,4 +247,10 @@
 #define FLASH_FLEXSPI2_INSTANCE    0x2
 #define FLASH_FLEXSPI2_QSPI_FREQ   0xc0000007
 
+
+/* USB */
+
+#define PHFS_ACM_PORTS_NB        1    /* Number of ports define by CDC driver; min = 1, max = 2 */
+
+
 #endif

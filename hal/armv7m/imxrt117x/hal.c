@@ -17,7 +17,6 @@
 #include "imxrt.h"
 #include "config.h"
 #include "peripherals.h"
-#include "cmd-board.h"
 
 #include "errors.h"
 #include "syspage.h"
@@ -30,16 +29,8 @@ typedef struct {
 } intr_handler_t;
 
 
-/* Board command definitions */
-const cmd_t board_cmds[] = {
-	{ cmd_flexram,    "flexram", " - define flexram value, usage: flexram <value>" },
-	{ NULL, NULL, NULL }
-};
-
-
 struct{
-	u16 timeout;
-	u32 kernel_entry;
+	addr_t kernel_entry;
 	intr_handler_t irqs[SIZE_INTERRUPTS];
 } hal_common;
 
@@ -52,10 +43,8 @@ void hal_init(void)
 	timer_init();
 
 	hal_consoleInit();
-	hal_setLaunchTimeout(3);
 
 	syspage_init();
-
 	syspage_setAddress((void *)SYSPAGE_ADDRESS);
 
 	/* Add entries related to plo image */
@@ -67,21 +56,6 @@ void hal_done(void)
 {
 	//TODO
 }
-
-
-void hal_appendcmds(cmd_t *cmds)
-{
-	int i = 0;
-
-	/* Find the last declared cmd */
-	while (cmds[i++].cmd != NULL);
-
-	if ((MAX_COMMANDS_NB - --i) < (sizeof(board_cmds) / sizeof(cmd_t)))
-		return;
-
-	hal_memcpy(&cmds[i], board_cmds, sizeof(board_cmds));
-}
-
 
 
 /* Setters and getters for common data */
@@ -98,21 +72,9 @@ void hal_setDefaultDMAP(char *dmap)
 }
 
 
-void hal_setKernelEntry(u32 addr)
+void hal_setKernelEntry(addr_t addr)
 {
 	hal_common.kernel_entry = addr;
-}
-
-
-void hal_setLaunchTimeout(u32 timeout)
-{
-	hal_common.timeout = timeout;
-}
-
-
-u32 hal_getLaunchTimeout(void)
-{
-	return hal_common.timeout;
 }
 
 
@@ -181,12 +143,6 @@ int hal_irqdispatch(u16 irq)
 	hal_common.irqs[irq].isr(irq, hal_common.irqs[irq].data);
 
 	return 0;
-}
-
-
-void hal_maskirq(u16 n, u8 v)
-{
-	//TODO
 }
 
 

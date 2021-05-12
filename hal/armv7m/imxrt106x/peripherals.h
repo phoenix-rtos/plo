@@ -243,6 +243,8 @@
 
 #define USB0_IRQ             usb_otg1_irq
 
+#define PHFS_ACM_PORTS_NB        1    /* Number of ports define by CDC driver; min = 1, max = 2 */
+
 
 /* FLASH */
 

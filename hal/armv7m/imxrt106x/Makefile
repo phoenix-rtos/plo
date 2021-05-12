@@ -20,8 +20,10 @@ CFLAGS+= -mfloat-abi=soft
 
 GCCLIB := $(shell $(CC) $(CFLAGS) -print-libgcc-file-name)
 
+PLO_COMMANDS = alias app console copy devs dump go help kernel map phfs syspage timeout
+
 include devices/usbc-cdc/Makefile
 include devices/uart-imxrt106x/Makefile
 include devices/flash-imxrt/Makefile
 
-OBJS += $(addprefix $(PREFIX_O)hal/$(TARGET_SUFF)/$(TARGET_SUBFAMILY)/, _startup.o hal.o imxrt.o cmd.o timer.o console.o)
+OBJS += $(addprefix $(PREFIX_O)hal/$(TARGET_SUFF)/$(TARGET_SUBFAMILY)/, _startup.o hal.o imxrt.o timer.o console.o)

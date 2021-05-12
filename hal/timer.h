@@ -3,9 +3,9 @@
  *
  * plo - operating system loader
  *
- * System timer driver
+ * Timer driver
  *
- * Copyright 2012, 2020 Phoenix Systems
+ * Copyright 2012, 2020-2021 Phoenix Systems
  * Copyright 2001, 2005 Pawel Pisarczyk
  * Author: Pawel Pisarczyk, Lukasz Kosinski, Hubert Buczynski
  *
@@ -20,7 +20,6 @@
 #include "types.h"
 
 #define TIMER_EXPIRE   0
-#define TIMER_KEYB     2
 #define TIMER_VALCHG   4
 
 
