@@ -1,0 +1,57 @@
+/*
+ * Phoenix-RTOS
+ *
+ * plo - perating system loader
+ *
+ * Console command
+ *
+ * Copyright 2021 Phoenix Systems
+ * Author: Hubert Buczynski
+ *
+ * This file is part of Phoenix-RTOS.
+ *
+ * %LICENSE%
+ */
+
+#include "cmd.h"
+#include "console.h"
+
+
+static void cmd_consoleInfo(void)
+{
+	lib_printf("sets console to device, usage: console <major.minor>");
+}
+
+
+static int cmd_console(char *s)
+{
+	u16 argsc;
+	unsigned int major, minor, pos = 0;
+	char args[3][SIZE_CMD_ARG_LINE + 1];
+
+	for (argsc = 0; argsc < 3; ++argsc) {
+		if (cmd_getnext(s, &pos, ". \t", NULL, args[argsc], sizeof(args[argsc])) == NULL || *args[argsc] == 0)
+			break;
+	}
+
+	if (argsc != 2) {
+		lib_printf("\nWrong number of arguments!!\n");
+		return ERR_ARG;
+	}
+
+	/* Get major/minor */
+	major = lib_strtoul(args[0], NULL, 16);
+	minor = lib_strtoul(args[1], NULL, 16);
+	console_set(major, minor);
+
+	lib_printf("\nconsole: Setting console to %d.%d", major, minor);
+
+	return ERR_NONE;
+}
+
+
+__attribute__((constructor)) static void cmd_consoleReg(void)
+{
+	const static cmd_t app_cmd = { .name = "console", .run = cmd_console, .info = cmd_consoleInfo };
+	cmd_reg(&app_cmd);
+}
