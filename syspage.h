@@ -20,6 +20,10 @@
 #include "types.h"
 
 
+#define SIZE_APP_NAME       15
+#define SIZE_MAP_NAME       7
+
+
 /* TODO: Make it compatible with Phoenix-RTOS kernel;
  *       take into account map's attributes while data is written to them */
 enum { mAttrRead = 0x01, mAttrWrite = 0x02, mAttrExec = 0x04, mAttrShareable = 0x08,

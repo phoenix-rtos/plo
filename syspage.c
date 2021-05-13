@@ -16,6 +16,7 @@
 
 #include "hal.h"
 #include "lib.h"
+#include "console.h"
 #include "syspage.h"
 #include "errors.h"
 
@@ -25,7 +26,6 @@
 #define MAX_MAP_NAME_SIZE       8
 #define MAX_ARGS_SIZE           256
 #define MAX_ENTRIES_NB          6     /* 3 of kernel's sections, 2 of plo's sections and syspage */
-#define MAX_CMDLINE_SIZE        16
 
 #define MAX_SYSPAGE_SIZE        (sizeof(syspage_t) + MAX_ARGS_SIZE + MAX_PROGRAMS_NB * sizeof(syspage_program_t) \
                                  + MAX_MAPS_NB * sizeof(syspage_map_t))
@@ -39,7 +39,7 @@ typedef struct {
 	u32 attr;
 
 	u8 id;
-	char name[MAX_MAP_NAME_SIZE];
+	char name[SIZE_MAP_NAME + 1];
 } syspage_map_t;
 
 
@@ -50,7 +50,7 @@ typedef struct {
 	u8 dmap;
 	u8 imap;
 
-	char cmdline[MAX_CMDLINE_SIZE];
+	char name[SIZE_APP_NAME + 1];
 } syspage_program_t;
 
 
@@ -303,31 +303,38 @@ void syspage_show(void)
 	plo_map_t *pmap;
 	syspage_program_t *prog;
 
-	lib_printf("\nSyspage addres: 0x%p\n", syspage_getAddress());
+	lib_printf(CONSOLE_BOLD);
+	lib_printf("\nSyspage addres: 0x%x\n", syspage_getAddress());
+	lib_printf(CONSOLE_NORMAL);
 	lib_printf("--------------------------\n");
 
+	lib_printf(CONSOLE_BOLD);
 	lib_printf("Kernel sections: \n");
-	lib_printf(".text: %p \tsize: %p\n", syspage_common.syspage->kernel.text, syspage_common.syspage->kernel.textsz);
-	lib_printf(".data: %p \tsize: %p\n", syspage_common.syspage->kernel.data, syspage_common.syspage->kernel.datasz);
-	lib_printf(".bss:  %p \tsize: %p\n", syspage_common.syspage->kernel.bss, syspage_common.syspage->kernel.bsssz);
+	lib_printf(CONSOLE_NORMAL);
+	lib_printf("%-8s 0x%08x \tsize: 0x%08x\n", ".text:", syspage_common.syspage->kernel.text, syspage_common.syspage->kernel.textsz);
+	lib_printf("%-8s 0x%08x \tsize: 0x%08x\n", ".data:", syspage_common.syspage->kernel.data, syspage_common.syspage->kernel.datasz);
+	lib_printf("%-8s 0x%08x \tsize: 0x%08x\n", ".bss:", syspage_common.syspage->kernel.bss, syspage_common.syspage->kernel.bsssz);
 
+	lib_printf(CONSOLE_BOLD);
 	lib_printf("\nPrograms number: %d\n", syspage_common.progsCnt);
 	if (syspage_common.progsCnt) {
-		lib_printf("NAME\t\tSTART\t\tEND\t\tIMAP\tDMAP\n");
+		lib_printf("%-16s %-14s %-14s %-14s %-14s\n", "NAME", "START", "END", "IMAP ID", "DMAP ID");
+		lib_printf(CONSOLE_NORMAL);
 		for (i = 0; i < syspage_common.progsCnt; ++i) {
 			prog = &syspage_common.progs[i];
-			lib_printf("%s\t%p\t%p\t%d\t%d\n", prog->cmdline, prog->start, prog->end, prog->imap, prog->dmap);
+			lib_printf("%-16s 0x%08x%4s 0x%08x%4s %d%13s %d\n", prog->name, prog->start, "", prog->end, "", prog->imap, "", prog->dmap);
 		}
 	}
 
-	lib_printf("\n");
-	lib_printf("Mulimaps number: %d\n", syspage_common.mapsCnt);
+	lib_printf(CONSOLE_BOLD);
+	lib_printf("\nMulimaps number: %d\n", syspage_common.mapsCnt);
 	if (syspage_common.mapsCnt) {
-		lib_printf("ID\tNAME\tSTART\t\tEND\tTOP\t\tFREESZ\tATTR\n");
+		lib_printf("%-4s %-8s %-14s %-14s %-14s %-14s %s\n", "ID", "NAME", "START", "END", "STOP", "FREESZ", "ATTR");
+		lib_printf(CONSOLE_NORMAL);
 		for (i = 0; i < syspage_common.mapsCnt; ++i) {
 			pmap = &syspage_common.maps[i];
-			lib_printf("%d\t%s\t%p\t%p\t%p\t%p\t%d\n",  pmap->map.id,  pmap->map.name, pmap->map.start, pmap->map.end,
-			              pmap->top, pmap->map.end - pmap->top, pmap->map.attr);
+			lib_printf("%d%-3s %-8s 0x%08x%4s 0x%08x%4s 0x%08x%4s 0x%08x%4s %d\n",  pmap->map.id, "", pmap->map.name,
+			            pmap->map.start, "", pmap->map.end, "", pmap->top, "", pmap->map.end - pmap->top, "", pmap->map.attr);
 		}
 	}
 }
@@ -362,7 +369,7 @@ int syspage_addmap(const char *name, void *start, void *end, u32 attr)
 	map->id = mapID;
 
 	len =  hal_strlen(name) ;
-	size = min(len, MAX_MAP_NAME_SIZE - 1);
+	size = min(len, SIZE_MAP_NAME - 1);
 
 	hal_memcpy(map->name, name, size);
 	map->name[size] = '\0';
@@ -505,7 +512,7 @@ int syspage_getMapAttr(const char *map, unsigned int *attr)
 
 /* Program's functions */
 
-int syspage_addProg(void *start, void *end, const char *imap, const char *dmap, const char *name, u32 flags)
+int syspage_addProg(void *start, void *end, const char *imap, const char *dmap, const char *cmdline, u32 flags)
 {
 	u8 imapID, dmapID;
 	unsigned int pos, len;
@@ -514,24 +521,24 @@ int syspage_addProg(void *start, void *end, const char *imap, const char *dmap, 
 	const u32 isExec = (flags & flagSyspageExec) != 0;
 
 	if ((syspage_getMapID(imap, &imapID) < 0) || (syspage_getMapID(dmap, &dmapID) < 0)) {
-		lib_printf("\nMAPS for %s does not exist!\n", name);
+		lib_printf("\nMAPS for %s does not exist!\n", cmdline);
 		return ERR_ARG;
 	}
 
-	len = hal_strlen(name);
+	len = hal_strlen(cmdline);
 
 	if (syspage_common.argCnt + isExec + len + 1 + 1 > MAX_ARGS_SIZE) {
-		lib_printf("\nMAX_ARGS_SIZE for %s exceeded!\n", name);
+		lib_printf("\nMAX_ARGS_SIZE for %s exceeded!\n", cmdline);
 		return ERR_ARG;
 	}
 
 	for (pos = 0; pos < len; pos++) {
-		if (name[pos] == ';')
+		if (cmdline[pos] == ';')
 			break;
 	}
 
-	if (pos >= MAX_CMDLINE_SIZE) {
-		lib_printf("\nSyspage program %s, name is too long!\n", name);
+	if (pos > SIZE_APP_NAME) {
+		lib_printf("\nSyspage program %s, name is too long!\n", cmdline);
 		return ERR_ARG;
 	}
 
@@ -544,17 +551,17 @@ int syspage_addProg(void *start, void *end, const char *imap, const char *dmap, 
 	if (isExec)
 		syspage_common.args[syspage_common.argCnt++] = 'X';
 
-	hal_memcpy((void *)&syspage_common.args[syspage_common.argCnt], name, len);
+	hal_memcpy((void *)&syspage_common.args[syspage_common.argCnt], cmdline, len);
 
 	syspage_common.argCnt += len;
 	syspage_common.args[syspage_common.argCnt++] = ' ';
 	syspage_common.args[syspage_common.argCnt] = '\0';
 
 	/* copy only program name, without (;) args) */
-	hal_memcpy(prog->cmdline, name, pos);
+	hal_memcpy(prog->name, cmdline, pos);
 
-	while (pos < MAX_CMDLINE_SIZE)
-		prog->cmdline[pos++] = '\0';
+	while (pos <= SIZE_APP_NAME)
+		prog->name[pos++] = '\0';
 
 	syspage_common.progsCnt++;
 
