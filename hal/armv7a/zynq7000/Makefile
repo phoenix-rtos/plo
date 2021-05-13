@@ -20,7 +20,7 @@ CFLAGS += -DVADDR_KERNEL_INIT=$(VADDR_KERNEL_INIT)
 
 GCCLIB := $(shell $(CC) $(CFLAGS) -print-libgcc-file-name)
 
-PLO_COMMANDS = alias app bitstream console copy devs dump go help kernel map phfs syspage timeout
+PLO_COMMANDS = alias app bitstream console copy devs dump go help kernel map phfs script syspage timeout
 
 include devices/gpio-zynq7000/Makefile
 include devices/usbc-cdc/Makefile

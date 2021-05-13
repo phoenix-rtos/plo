@@ -20,7 +20,7 @@ CFLAGS+= -mfloat-abi=soft
 
 GCCLIB := $(shell $(CC) $(CFLAGS) -print-libgcc-file-name)
 
-PLO_COMMANDS = alias app console copy devs dump go help kernel map phfs syspage timeout
+PLO_COMMANDS = alias app console copy devs dump go help kernel map phfs script syspage timeout
 
 include devices/usbc-cdc/Makefile
 include devices/uart-imxrt106x/Makefile
