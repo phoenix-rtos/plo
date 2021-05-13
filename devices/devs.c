@@ -32,7 +32,7 @@ void devs_register(unsigned int major, unsigned int nb, const dev_handler_t *h)
 	if (major >= SIZE_MAJOR || nb >= SIZE_MINOR)
 		return;
 
-	while (minor < SIZE_MAJOR && i < nb) {
+	while (minor < SIZE_MINOR && i < nb) {
 		if (devs_common.devs[major][minor] == NULL) {
 			devs_common.devs[major][minor] = h;
 			++i;
