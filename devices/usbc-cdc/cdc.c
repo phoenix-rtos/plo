@@ -17,6 +17,7 @@
 #include "usbclient.h"
 #include "cdc.h"
 #include "devs.h"
+#include "lib.h"
 
 #include "list.h"
 #include "config.h"
@@ -467,6 +468,8 @@ static int cdc_init(unsigned int minor)
 
 	if ((res = cdc_initUsbClient()) < 0)
 		return res;
+
+	lib_printf("\ndev/usbcdc: Initializing usb(%d.%d)", DEV_USB, minor);
 
 	return res;
 }

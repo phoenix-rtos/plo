@@ -14,6 +14,7 @@
  */
 
 #include "hal.h"
+#include "lib.h"
 #include "devs.h"
 #include "timer.h"
 #include "errors.h"
@@ -329,6 +330,8 @@ static int flashdrv_init(unsigned int minor)
 
 	if (flashcfg_getCfg(ctx) != 0)
 		return ERR_ARG;
+
+	lib_printf("\ndev/flash: Initializing flash(%d.%d)", DEV_FLASH, minor);
 
 	return res;
 }
