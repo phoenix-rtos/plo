@@ -478,33 +478,37 @@ static int uart_init(unsigned int minor)
 	uart->base = info[id].base;
 
 	_imxrt_ccmControlGate(info[id].dev, clk_state_run_wait);
-	/* Disable TX and RX */
-	*(uart->base + ctrlr) &= ~((1 << 19) | (1 << 18));
 
-	/* Reset all internal logic and registers, except the Global Register */
-	*(uart->base + globalr) |= 1 << 1;
-	imxrt_dataBarrier();
-	*(uart->base + globalr) &= ~(1 << 1);
-	imxrt_dataBarrier();
+	/* Skip controller initialization if it has been already done by hal */
+	if (!(*(uart->base + ctrlr) & (1 << 19 | 1 << 18))) {
+		/* Disable TX and RX */
+		*(uart->base + ctrlr) &= ~((1 << 19) | (1 << 18));
 
-	/* Disable input trigger */
-	*(uart->base + pincfgr) &= ~3;
+		/* Reset all internal logic and registers, except the Global Register */
+		*(uart->base + globalr) |= 1 << 1;
+		imxrt_dataBarrier();
+		*(uart->base + globalr) &= ~(1 << 1);
+		imxrt_dataBarrier();
 
-	/* Set 115200 default baudrate */
-	t = *(uart->base + baudr) & ~((0x1f << 24) | (1 << 17) | 0x1fff);
-	*(uart->base + baudr) = t | calculate_baudrate(UART_BAUDRATE);
+		/* Disable input trigger */
+		*(uart->base + pincfgr) &= ~3;
 
-	/* Set 8 bit and no parity mode */
-	*(uart->base + ctrlr) &= ~0x117;
+		/* Set 115200 default baudrate */
+		t = *(uart->base + baudr) & ~((0x1f << 24) | (1 << 17) | 0x1fff);
+		*(uart->base + baudr) = t | calculate_baudrate(UART_BAUDRATE);
 
-	/* One stop bit */
-	*(uart->base + baudr) &= ~(1 << 13);
+		/* Set 8 bit and no parity mode */
+		*(uart->base + ctrlr) &= ~0x117;
 
-	*(uart->base + waterr) = 0;
+		/* One stop bit */
+		*(uart->base + baudr) &= ~(1 << 13);
 
-	/* Enable FIFO */
-	*(uart->base + fifor) |= (1 << 7) | (1 << 3);
-	*(uart->base + fifor) |= 0x3 << 14;
+		*(uart->base + waterr) = 0;
+
+		/* Enable FIFO */
+		*(uart->base + fifor) |= (1 << 7) | (1 << 3);
+		*(uart->base + fifor) |= 0x3 << 14;
+	}
 
 	/* Clear all status flags */
 	*(uart->base + statr) |= 0xc01fc000;
@@ -519,8 +523,9 @@ static int uart_init(unsigned int minor)
 	*(uart->base + ctrlr) |= (1 << 19) | (1 << 18);
 
 	_imxrt_setDevClock(info[id].dev, clk_state_run);
-
 	hal_irqinst(info[id].irq, uart_handleIntr, (void *)uart);
+
+	lib_printf("\ndev/uart: Initializing uart(%d.%d)", DEV_UART, minor);
 
 	return ERR_NONE;
 }

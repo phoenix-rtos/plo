@@ -376,6 +376,7 @@ static int uart_init(unsigned int minor)
 		uart_common.clkInit = 1;
 	}
 
+
 	if (_zynq_setAmbaClk(info[minor].clk, clk_enable) < 0)
 		return ERR_ARG;
 
@@ -388,29 +389,33 @@ static int uart_init(unsigned int minor)
 	uart->clk = info[minor].clk;
 	uart->base = info[minor].base;
 
-	/* Reset RX & TX */
-	*(uart->base + cr) = 0x3;
+	/* Skip controller initialization if it has been already done by hal */
+	if (!(*(uart->base + cr) & (1 << 4 | 1 << 2))) {
+		/* Reset RX & TX */
+		*(uart->base + cr) = 0x3;
 
-	/* Uart Mode Register
-		* normal mode, 1 stop bit, no parity, 8 bits, uart_ref_clk as source clock
-		* PAR = 0x4 */
-	*(uart->base + mr) = (*(uart->base + mr) & ~0x000003ff) | 0x00000020;
+		/* Uart Mode Register
+			* normal mode, 1 stop bit, no parity, 8 bits, uart_ref_clk as source clock
+			* PAR = 0x4 */
+		*(uart->base + mr) = (*(uart->base + mr) & ~0x000003ff) | 0x00000020;
 
-	/* Disable TX and RX */
-	*(uart->base + cr) = (*(uart->base + cr) & ~0x000001ff) | 0x00000028;
+		/* Disable TX and RX */
+		*(uart->base + cr) = (*(uart->base + cr) & ~0x000001ff) | 0x00000028;
 
-	uart_calcBaudarate(uart, UART_BAUDRATE);
+		uart_calcBaudarate(uart, UART_BAUDRATE);
 
-	/* Uart Control Register
-		* TXEN = 0x1; RXEN = 0x1; TXRES = 0x1; RXRES = 0x1 */
-	*(uart->base + cr) = (*(uart->base + cr) & ~0x000001ff) | 0x00000017;
-
-	hal_irqinst(info[minor].irq, uart_irqHandler, (void *)uart);
+		/* Uart Control Register
+			* TXEN = 0x1; RXEN = 0x1; TXRES = 0x1; RXRES = 0x1 */
+		*(uart->base + cr) = (*(uart->base + cr) & ~0x000001ff) | 0x00000017;
+	}
 
 	/* Enable RX FIFO trigger */
 	*(uart->base + ier) |= 0x1;
 	/* Set trigger level, range: 1-63 */
 	*(uart->base + rxwm) = 1;
+
+	lib_printf("\ndev/uart: Initializing uart(%d.%d)", DEV_UART, minor);
+	hal_irqinst(info[minor].irq, uart_irqHandler, (void *)uart);
 
 	return ERR_NONE;
 }

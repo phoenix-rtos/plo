@@ -527,6 +527,7 @@ static int uart_map(unsigned int minor, addr_t addr, size_t sz, int mode, addr_t
 }
 
 
+/* TODO: Skip controller initialization if it has been already done by hal */
 static int uart_init(unsigned int minor)
 {
 	u32 t, id;
