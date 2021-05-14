@@ -23,6 +23,7 @@ static void cmd_dumpInfo(void)
 }
 
 
+/* TODO: old code needs to be cleaned up; address has to be checked with maps */
 static int cmd_dump(char *s)
 {
 	char word[SIZE_CMD_ARG_LINE + 1];

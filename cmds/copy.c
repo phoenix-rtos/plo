@@ -21,7 +21,7 @@
 static void cmd_copyInfo(void)
 {
 	lib_printf("copies data between devices, usage:\n");
-	lib_printf("%17s%s", "", "copy <src device> <src file/LBA> <dst device> <dst file/LBA> [<len>]");
+	lib_printf("%17s%s", "", "copy <src dev> <file/offs size> <dst dev> <file/offs size>");
 }
 
 

@@ -176,16 +176,23 @@ static int cmd_app(char *s)
 	appName[pos] = '\0';
 
 	/* ARG_3: Get map for instruction section */
-	hal_setDefaultIMAP(cmap);
 	if ((argID + 1) < cmdArgsc) {
 		hal_memcpy(cmap, cmdArgs[++argID], 8);
 		cmap[sizeof(cmap) - 1] = '\0';
 	}
+	else {
+		lib_printf("\nMap for instructions is not defined");
+		return ERR_ARG;
+	}
+
 	/* ARG_4: Get map for data section */
-	hal_setDefaultDMAP(dmap);
 	if ((argID + 1) < cmdArgsc) {
 		hal_memcpy(dmap, cmdArgs[++argID], 8);
 		dmap[sizeof(dmap) - 1] = '\0';
+	}
+	else {
+		lib_printf("\nMap for data is not defined");
+		return ERR_ARG;
 	}
 
 	/* Open file */

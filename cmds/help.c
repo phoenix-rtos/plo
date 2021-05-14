@@ -27,11 +27,9 @@ static int cmd_help(char *s)
 	const cmd_t *cmd;
 	unsigned int i = 0;
 
-	lib_printf("\n");
 	while ((cmd = cmd_getCmd(i++)) != NULL) {
-		lib_printf("  %-12s - ", cmd->name);
+		lib_printf("\n  %-12s - ", cmd->name);
 		cmd->info();
-		lib_printf("\n");
 	}
 
 	return ERR_NONE;

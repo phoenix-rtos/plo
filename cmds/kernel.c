@@ -108,6 +108,7 @@ static int cmd_kernel(char *s)
 		}
 	}
 
+	/* TODO: find sections based on name */
 	for (k = 0; k < hdr.e_shnum; k++) {
 		offs = hdr.e_shoff + k * sizeof(Elf32_Shdr);
 

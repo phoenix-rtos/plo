@@ -31,6 +31,7 @@ void plo_init(void)
 	lib_printf("Phoenix-RTOS loader v. 1.21");
 
 	lib_printf(CONSOLE_MAGENTA);
+	lib_printf("\nhal: %s", hal_cpuInfo());
 	devs_init();
 	cmd_run();
 
