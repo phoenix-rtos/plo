@@ -39,13 +39,6 @@ struct {
 } cmd_common;
 
 
-void cmd_run(void)
-{
-	lib_printf("\ncmd: Executing pre-init script");
-	cmd_parse((char *)script, 0);
-}
-
-
 void cmd_reg(const cmd_t *cmd)
 {
 	unsigned int i;
@@ -61,6 +54,13 @@ void cmd_reg(const cmd_t *cmd)
 		cmd_common.cmds[i] = cmd;
 		break;
 	}
+}
+
+
+void cmd_run(void)
+{
+	lib_printf("\ncmd: Executing pre-init script");
+	cmd_parse((char *)script, 0);
 }
 
 

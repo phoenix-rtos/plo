@@ -23,10 +23,15 @@
 #define TIMER_VALCHG   4
 
 
-extern int timer_wait(u32 ms, int flags, u16 *p, u16 v);
-
+/* Function initializes timer controller */
 extern void timer_init(void);
 
+
+/* Function waits for specific period of time or event */
+extern int timer_wait(u32 ms, int flags, u16 *p, u16 v);
+
+
+/* Function resets timer controller */
 extern void timer_done(void);
 
 

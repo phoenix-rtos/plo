@@ -37,16 +37,19 @@ typedef struct {
 } cmd_t;
 
 
-/* Initialize commands */
-extern void cmd_run(void);
-
-
-extern void cmd_prompt(void);
-
-
+/* Function registers new command */
 extern void cmd_reg(const cmd_t *cmd);
 
 
+/* Function runs pre-init script */
+extern void cmd_run(void);
+
+
+/* Function shows prompt and start interaction with user */
+extern void cmd_prompt(void);
+
+
+/* Function returns command specified by id */
 extern const cmd_t *cmd_getCmd(unsigned int id);
 
 
@@ -54,6 +57,7 @@ extern const cmd_t *cmd_getCmd(unsigned int id);
 extern void cmd_parse(char *line, int show);
 
 
+/* Function skips blanks */
 extern void cmd_skipblanks(char *line, unsigned int *pos, char *blanks);
 
 
@@ -61,6 +65,7 @@ extern void cmd_skipblanks(char *line, unsigned int *pos, char *blanks);
 extern char *cmd_getnext(char *line, unsigned int *pos, char *blanks, char *cites, char *word, unsigned int len);
 
 
+/* Function parses arguments */
 extern int cmd_parseArgs(char *s, char (*args)[SIZE_CMD_ARG_LINE + 1], u16 *argsc, u16 maxArgNb);
 
 
