@@ -15,12 +15,11 @@
 
 #include "hal.h"
 #include "zynq.h"
-#include "interrupts.h"
-#include "peripherals.h"
 #include "gpio.h"
+#include "interrupts.h"
 
-#include "../timer.h"
-#include "../syspage.h"
+#include "timer.h"
+#include "syspage.h"
 
 
 struct{
@@ -50,17 +49,9 @@ void hal_done(void)
 }
 
 
-/* Setters and getters for common data */
-
-void hal_setDefaultIMAP(char *imap)
+const char *hal_cpuInfo(void)
 {
-	hal_memcpy(imap, "ddr", 4);
-}
-
-
-void hal_setDefaultDMAP(char *dmap)
-{
-	hal_memcpy(dmap, "ddr", 4);
+	return "Cortex-A9 Zynq 7000";
 }
 
 
@@ -100,7 +91,7 @@ int hal_launch(void)
 	hal_done();
 
 	hal_cli();
-	asm("mov r9, %1; \
+	__asm__ volatile("mov r9, %1; \
 		 blx %0"
 		 :
 		 : "r"(hal_common.kernel_entry), "r"(syspage_getAddress()));
@@ -123,17 +114,15 @@ void hal_invalDCacheAddr(addr_t addr, size_t sz)
 }
 
 
-/* Opeartions on interrupts */
-
 void hal_cli(void)
 {
-	asm("cpsid if");
+	__asm__ volatile("cpsid if");
 }
 
 
 void hal_sti(void)
 {
-	asm("cpsie if");
+	__asm__ volatile("cpsie if");
 }
 
 

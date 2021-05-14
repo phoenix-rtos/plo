@@ -24,51 +24,59 @@
 #include "peripherals.h"
 
 
-/* Initialization functions */
-
+/* Function initializes clocks, peripherals and basic controllers */
 extern void hal_init(void);
 
+
+/* Function resets basic controllers */
 extern void hal_done(void);
 
 
-/* Setters and getters for common data */
+/* Function returns information about CPU */
+extern const char *hal_cpuInfo(void);
 
-extern void hal_setDefaultIMAP(char *imap);
 
-extern void hal_setDefaultDMAP(char *dmap);
-
+/* Function sets kernel's entry address */
 extern void hal_setKernelEntry(addr_t addr);
 
+
+/* Function translates virtual address into physical */
 extern addr_t hal_vm2phym(addr_t addr);
 
 
 /* Function starts kernel loaded into memory */
-
 extern int hal_launch(void);
 
 
-/* Cache */
-
+/* Function invalidates all data cache */
 extern void hal_invalDCacheAll(void);
 
+
+/* Function invalidates data cache region */
 extern void hal_invalDCacheAddr(addr_t addr, size_t sz);
 
 
-/* Opeartions on interrupts */
-
+/* Function disbales interrupts */
 extern void hal_cli(void);
 
+
+/* Function enables interrupts */
 extern void hal_sti(void);
 
+
+/* Function registers interrupts in controller */
 extern int hal_irqinst(u16 irq, int (*isr)(u16, void *), void *data);
 
+
+/* Function removes interrupts from controller */
 extern int hal_irquninst(u16 irq);
 
 
-/* Console functions */
-
+/* Function initializes console which uses polling methods to transmit data */
 extern void hal_consoleInit(void);
 
+
+/* Function writes data to uart controller */
 extern void hal_consolePrint(const char *s);
 
 

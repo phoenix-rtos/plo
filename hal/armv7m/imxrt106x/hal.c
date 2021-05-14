@@ -16,8 +16,6 @@
 
 #include "hal.h"
 #include "imxrt.h"
-#include "config.h"
-#include "peripherals.h"
 
 #include "errors.h"
 #include "timer.h"
@@ -34,8 +32,6 @@ struct{
 	intr_handler_t irqs[SIZE_INTERRUPTS];
 } hal_common;
 
-
-/* Initialization functions */
 
 void hal_init(void)
 {
@@ -60,17 +56,9 @@ void hal_done(void)
 }
 
 
-/* Setters and getters for common data */
-
-void hal_setDefaultIMAP(char *imap)
+const char *hal_cpuInfo(void)
 {
-	hal_memcpy(imap, "ocram2", 7);
-}
-
-
-void hal_setDefaultDMAP(char *dmap)
-{
-	hal_memcpy(dmap, "ocram2", 7);
+	return "Cortex-M i.MX RT106x";
 }
 
 
@@ -118,8 +106,6 @@ void hal_invalDCacheAddr(addr_t addr, size_t sz)
 	_imxrt_invalDCacheAddr((void *)addr, sz);
 }
 
-
-/* Opeartions on interrupts */
 
 void hal_cli(void)
 {

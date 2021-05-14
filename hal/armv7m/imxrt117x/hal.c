@@ -54,21 +54,15 @@ void hal_init(void)
 
 void hal_done(void)
 {
-	//TODO
+	timer_done();
+
+	_imxrt_cleanDCache();
 }
 
 
-/* Setters and getters for common data */
-
-void hal_setDefaultIMAP(char *imap)
+const char *hal_cpuInfo(void)
 {
-	hal_memcpy(imap, "ocram2", 7);
-}
-
-
-void hal_setDefaultDMAP(char *dmap)
-{
-	hal_memcpy(dmap, "ocram2", 7);
+	return "Cortex-M i.MX RT117x";
 }
 
 
@@ -92,14 +86,10 @@ int hal_launch(void)
 	timer_wait(100, TIMER_EXPIRE, NULL, 0);
 
 	/* Tidy up */
-	timer_done();
-
 	hal_done();
 
-	_imxrt_cleanDCache();
-
 	hal_cli();
-	asm("mov r9, %1; \
+	__asm__ volatile("mov r9, %1; \
 		 blx %0"
 		 :
 		 : "r"(hal_common.kernel_entry), "r"(syspage_getAddress()));
@@ -121,17 +111,15 @@ void hal_invalDCacheAddr(addr_t addr, size_t sz)
 }
 
 
-/* Opeartions on interrupts */
-
 void hal_cli(void)
 {
-	asm("cpsid if");
+	__asm__ volatile("cpsid if");
 }
 
 
 void hal_sti(void)
 {
-	asm("cpsie if");
+	__asm__ volatile("cpsie if");
 }
 
 
