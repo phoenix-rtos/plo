@@ -25,18 +25,19 @@
 #define CONSOLE_NORMAL   "\033[0m\033[37m"
 
 
-extern void console_init(void);
-
-
+/* Function sets device's major and minor number on which console should has output */
 extern void console_set(unsigned major, unsigned minor);
 
 
+/* Function prints string */
 extern void console_puts(const char *s);
 
 
+/* Function prints char */
 extern void console_putc(char c);
 
 
+/* Function gets char */
 extern int console_getc(char *c, unsigned int timeout);
 
 

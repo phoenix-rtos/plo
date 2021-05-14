@@ -20,19 +20,20 @@
 
 
 struct {
+	int init;
 	unsigned int major;
 	unsigned int minor;
-} consol_common;
+} console_common;
 
 
 void console_puts(const char *s)
 {
-	if (consol_common.major == -1 || consol_common.minor == -1) {
+	if (!console_common.init) {
 		hal_consolePrint(s);
 		return;
 	}
 
-	devs_write(consol_common.major, consol_common.minor, 0, (const u8 *)s, hal_strlen(s));
+	devs_write(console_common.major, console_common.minor, 0, (const u8 *)s, hal_strlen(s));
 }
 
 
@@ -40,33 +41,27 @@ void console_putc(char c)
 {
 	const char data[] = {c, '\0'};
 
-	if (consol_common.major == -1 || consol_common.minor == -1) {
+	if (!console_common.init) {
 		hal_consolePrint(data);
 		return;
 	}
 
-	devs_write(consol_common.major, consol_common.minor, 0, (const u8 *)&data, 1);
+	devs_write(console_common.major, console_common.minor, 0, (const u8 *)&data, 1);
 }
 
 
 int console_getc(char *c, unsigned int timeout)
 {
-	if (consol_common.major == -1 || consol_common.minor == -1)
+	if (!console_common.init)
 		return ERR_ARG;
 
-	return devs_read(consol_common.major, consol_common.minor, 0, (u8 *)c, 1, timeout);
+	return devs_read(console_common.major, console_common.minor, 0, (u8 *)c, 1, timeout);
 }
 
 
 void console_set(unsigned major, unsigned minor)
 {
-	consol_common.major = major;
-	consol_common.minor = minor;
-}
-
-
-void console_init(void)
-{
-	consol_common.major = -1;
-	consol_common.minor = -1;
+	console_common.major = major;
+	console_common.minor = minor;
+	console_common.init = 1;
 }

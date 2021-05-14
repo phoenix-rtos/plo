@@ -24,7 +24,6 @@
 void plo_init(void)
 {
 	hal_init();
-	console_init();
 
 	lib_printf(CONSOLE_CLEAR);
 	lib_printf(CONSOLE_BOLD);
