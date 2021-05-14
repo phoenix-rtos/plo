@@ -527,7 +527,6 @@ static int uart_map(unsigned int minor, addr_t addr, size_t sz, int mode, addr_t
 }
 
 
-/* TODO: Skip controller initialization if it has been already done by hal */
 static int uart_init(unsigned int minor)
 {
 	u32 t, id;
@@ -546,33 +545,36 @@ static int uart_init(unsigned int minor)
 
 	_imxrt_setDevClock(infoUarts[id].dev, 0, 0, 0, 0, 1);
 
-	/* Disable TX and RX */
-	*(uart->base + ctrlr) &= ~((1 << 19) | (1 << 18));
+	/* Skip controller initialization if it has been already done by hal */
+	if (!(*(uart->base + ctrlr) & (1 << 19 | 1 << 18))) {
+		/* Disable TX and RX */
+		*(uart->base + ctrlr) &= ~((1 << 19) | (1 << 18));
 
-	/* Reset all internal logic and registers, except the Global Register */
-	*(uart->base + globalr) |= 1 << 1;
-	imxrt_dataBarrier();
-	*(uart->base + globalr) &= ~(1 << 1);
-	imxrt_dataBarrier();
+		/* Reset all internal logic and registers, except the Global Register */
+		*(uart->base + globalr) |= 1 << 1;
+		imxrt_dataBarrier();
+		*(uart->base + globalr) &= ~(1 << 1);
+		imxrt_dataBarrier();
 
-	/* Disable input trigger */
-	*(uart->base + pincfgr) &= ~3;
+		/* Disable input trigger */
+		*(uart->base + pincfgr) &= ~3;
 
-	/* Set 115200 default baudrate */
-	t = *(uart->base + baudr) & ~((0x1f << 24) | (1 << 17) | 0xfff);
-	*(uart->base + baudr) = t | calculate_baudrate(UART_BAUDRATE);
+		/* Set 115200 default baudrate */
+		t = *(uart->base + baudr) & ~((0x1f << 24) | (1 << 17) | 0xfff);
+		*(uart->base + baudr) = t | calculate_baudrate(UART_BAUDRATE);
 
-	/* Set 8 bit and no parity mode */
-	*(uart->base + ctrlr) &= ~0x117;
+		/* Set 8 bit and no parity mode */
+		*(uart->base + ctrlr) &= ~0x117;
 
-	/* One stop bit */
-	*(uart->base + baudr) &= ~(1 << 13);
+		/* One stop bit */
+		*(uart->base + baudr) &= ~(1 << 13);
 
-	*(uart->base + waterr) = 0;
+		*(uart->base + waterr) = 0;
 
-	/* Enable FIFO */
-	*(uart->base + fifor) |= (1 << 7) | (1 << 3);
-	*(uart->base + fifor) |= 0x3 << 14;
+		/* Enable FIFO */
+		*(uart->base + fifor) |= (1 << 7) | (1 << 3);
+		*(uart->base + fifor) |= 0x3 << 14;
+	}
 
 	/* Clear all status flags */
 	*(uart->base + statr) |= 0xc01fc000;
