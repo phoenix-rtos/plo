@@ -469,7 +469,7 @@ static int cdc_init(unsigned int minor)
 	if ((res = cdc_initUsbClient()) < 0)
 		return res;
 
-	lib_printf("\ndev/usbcdc: Initializing usb(%d.%d)", DEV_USB, minor);
+	lib_printf("\ndev/usb: Initializing usb-cdc(%d.%d)", DEV_USB, minor);
 
 	return res;
 }

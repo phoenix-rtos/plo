@@ -98,6 +98,8 @@ int usbclient_receive(int endpt, void *data, unsigned int len)
 
 int usbclient_intr(u16 irq, void *buff)
 {
+	int i;
+
 	ctrl_hfIrq();
 
 	/* Low frequency interrupts, handle for OUT control endpoint */
@@ -106,6 +108,15 @@ int usbclient_intr(u16 irq, void *buff)
 
 	ctrl_lfIrq();
 
+	/* Initialize endpoints */
+	if (imx_common.dc.op == DC_OP_INIT) {
+		for (i = 1; i < ENDPOINTS_NUMBER; ++i) {
+			if (ctrl_endptInit(i, &imx_common.data.endpts[i]) < 0)
+				break;
+		}
+		imx_common.dc.op = DC_OP_NONE;
+	}
+
 	return 0;
 }
 
@@ -113,8 +124,6 @@ int usbclient_intr(u16 irq, void *buff)
 int usbclient_init(usb_desc_list_t *desList)
 {
 	int i;
-	int res = 0;
-
 	imx_common.dc.dev_addr = 0;
 	imx_common.dc.base = (void *)phy_getBase();
 
@@ -139,19 +148,6 @@ int usbclient_init(usb_desc_list_t *desList)
 	}
 
 	hal_irqinst(phy_getIrq(), usbclient_intr, (void *)NULL);
-
-	while (imx_common.dc.op != DC_OP_EXIT) {
-		if (imx_common.dc.op == DC_OP_INIT) {
-			for (i = 1; i < ENDPOINTS_NUMBER; ++i) {
-				if ((res = ctrl_endptInit(i, &imx_common.data.endpts[i])) != ERR_NONE) {
-					usbclient_destroy();
-					return res;
-				}
-			}
-			return res;
-		}
-	}
-
 	return ERR_NONE;
 }
 
