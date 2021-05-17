@@ -52,13 +52,21 @@ extern void *syspage_getAddress(void);
 extern int syspage_save(void);
 
 
-extern void syspage_show(void);
+extern void syspage_showAddr(void);
 
+
+extern void syspage_showMaps(void);
+
+
+extern void syspage_showApps(void);
+
+
+extern void syspage_showKernel(void);
 
 
 /* Map's functions */
 
-extern int syspage_addmap(const char *name, void *start, void *end, u32 attr);
+extern int syspage_addmap(const char *name, void *start, void *end, const char *attr);
 
 
 extern int syspage_getMapTop(const char *map, void **addr);
