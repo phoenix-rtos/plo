@@ -16,6 +16,7 @@
 #include "hal.h"
 #include "lib.h"
 #include "phfs.h"
+#include "console.h"
 #include "phoenixd.h"
 #include "errors.h"
 
@@ -161,7 +162,7 @@ void phfs_showDevs(void)
 		return;
 	}
 
-	lib_printf("\nALIAS\tID\tPROTOCOL\n");
+	lib_printf(CONSOLE_BOLD "\nALIAS\tID\tPROTOCOL\n" CONSOLE_NORMAL);
 	for (i = 0; i < phfs_common.dCnt; ++i) {
 		pd = &phfs_common.devices[i];
 		lib_printf("%s\t%d.%d\t%s\n", pd->alias, pd->major, pd->minor, phfs_getProtName(pd->prot));
