@@ -463,7 +463,7 @@ static int cdc_init(unsigned int minor)
 {
 	int res = ERR_NONE;
 
-	if (PHFS_ACM_PORTS_NB < 1 || PHFS_ACM_PORTS_NB > 2)
+	if (PHFS_ACM_PORTS_NB < 1 || PHFS_ACM_PORTS_NB > 2 || minor != endpt_bulk_acm0)
 		return ERR_ARG;
 
 	if ((res = cdc_initUsbClient()) < 0)
