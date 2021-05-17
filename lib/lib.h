@@ -28,9 +28,6 @@ extern int lib_printf(const char *fmt, ...);
 extern void lib_putch(char c);
 
 
-extern int lib_ishex(const char *s);
-
-
 extern unsigned int lib_strtoul(char *nptr, char **endptr, int base);
 
 

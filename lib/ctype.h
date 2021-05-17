@@ -13,28 +13,22 @@
  * %LICENSE%
  */
 
-#include "lib.h"
+#ifndef _CTYPE_H_
+#define _CTYPE_H_
+
+#include "types.h"
 
 
-int islower(int c)
-{
-	return (c >= 'a' && c <= 'z');
-}
+extern int islower(int c);
 
 
-int isupper(int c)
-{
-	return (c >= 'A' && c <= 'Z');
-}
+extern int isupper(int c);
 
 
-int isalpha(int c)
-{
-	return (islower(c) || isupper(c));
-}
+extern int isalpha(int c);
 
 
-int isdigit(int c)
-{
-	return (c >= '0' && c <= '9');
-}
+extern int isdigit(int c);
+
+
+#endif
