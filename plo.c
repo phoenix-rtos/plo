@@ -25,16 +25,12 @@ void plo_init(void)
 {
 	hal_init();
 
-	lib_printf(CONSOLE_CLEAR);
-	lib_printf(CONSOLE_BOLD);
-	lib_printf("Phoenix-RTOS loader v. 1.21");
-
-	lib_printf(CONSOLE_MAGENTA);
-	lib_printf("\nhal: %s", hal_cpuInfo());
+	lib_printf(CONSOLE_CLEAR CONSOLE_BOLD "Phoenix-RTOS loader v. " VERSION);
+	lib_printf(CONSOLE_CURSOR_HIDE CONSOLE_MAGENTA "\nhal: %s", hal_cpuInfo());
 	devs_init();
 	cmd_run();
 
-	lib_printf(CONSOLE_NORMAL);
+	lib_printf(CONSOLE_CURSOR_SHOW CONSOLE_NORMAL);
 	cmd_prompt();
 
 	devs_done();

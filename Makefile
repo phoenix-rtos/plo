@@ -8,6 +8,7 @@
 
 SIL ?= @
 MAKEFLAGS += --no-print-directory
+VERSION="1.21 rev: "`git rev-parse --short HEAD`
 
 KERNEL=1
 
@@ -20,7 +21,7 @@ include devices/Makefile
 include phfs/Makefile
 include cmds/Makefile
 
-CFLAGS += $(BOARD_CONFIG)
+CFLAGS += $(BOARD_CONFIG) -DVERSION=\"$(VERSION)\"
 CFLAGS += -I../plo -I../plo/hal -I../plo/hal/$(TARGET_SUFF) -I../plo/hal/$(TARGET_SUFF)/$(TARGET_SUBFAMILY)
 
 OBJS += $(addprefix $(PREFIX_O), _startc.o plo.o syspage.o)
