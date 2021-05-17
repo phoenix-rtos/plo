@@ -13,6 +13,7 @@
  * %LICENSE%
  */
 
+#include "hal.h"
 #include "cmd.h"
 #include "syspage.h"
 
@@ -25,18 +26,33 @@ static void cmd_syspageInfo(void)
 
 static int cmd_syspage(char *s)
 {
-	unsigned int pos = 0;
+	char *end;
+	addr_t addr;
+	unsigned int pos = 0, argsc;
+	char args[2][SIZE_CMD_ARG_LINE + 1];
 
-	cmd_skipblanks(s, &pos, DEFAULT_BLANKS);
-	s += pos;
+	for (argsc = 0; argsc < 2; ++argsc) {
+		if (cmd_getnext(s, &pos, DEFAULT_BLANKS, NULL, args[argsc], sizeof(args[argsc])) == NULL || *args[argsc] == 0)
+			break;
+	}
 
-	if (*s) {
-		lib_printf("\nCommand syspage does not take any arguments\n");
+	if (argsc > 1) {
+		lib_printf("\nWrong args");
 		return ERR_ARG;
 	}
 
-	syspage_show();
+	if (argsc == 0) {
+		syspage_showAddr();
+		return ERR_NONE;
+	}
 
+	addr = lib_strtoul(args[0], &end, 0);
+	if (hal_strlen(end) != 0) {
+		lib_printf("\nWrong address %s", args[0]);
+		return ERR_ARG;
+	}
+
+	syspage_setAddress((void *)addr);
 	return ERR_NONE;
 }
 

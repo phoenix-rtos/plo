@@ -43,6 +43,11 @@ static int cmd_kernel(char *s)
 
 	/* Parse arguments */
 	cmd_skipblanks(s, &pos, DEFAULT_BLANKS);
+	if (*(s + pos) == '\0') {
+		syspage_showKernel();
+		return ERR_NONE;
+	}
+
 	if (cmd_getnext(s, &pos, DEFAULT_BLANKS, NULL, dev, sizeof(dev)) == NULL || dev[0] == 0) {
 		lib_printf("Wrong args!\n");
 		return ERR_ARG;

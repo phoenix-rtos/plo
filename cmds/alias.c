@@ -26,6 +26,7 @@ static void cmd_aliasInfo(void)
 
 static int cmd_alias(char *s)
 {
+	char *end;
 	size_t sz = 0;
 	addr_t addr = 0;
 	unsigned int i, pos = 0;
@@ -38,13 +39,15 @@ static int cmd_alias(char *s)
 		if (i == 0)
 			continue;
 
-		if (lib_ishex(alias[i]) < 0)
-			return ERR_ARG;
-
 		if (i == 1)
-			addr = lib_strtoul(alias[i], NULL, 16);
+			addr = lib_strtoul(alias[i], &end, 0);
 		else if (i == 2)
-			sz = lib_strtoul(alias[i], NULL, 16);
+			sz = lib_strtoul(alias[i], &end, 0);
+
+		if (hal_strlen(end) != 0) {
+			lib_printf("\nWrong arg: %s", alias[i]);
+			return ERR_ARG;
+		}
 	}
 
 	if (phfs_regFile(alias[0], addr, sz) < 0)

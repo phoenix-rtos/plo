@@ -14,6 +14,7 @@
  */
 
 #include "cmd.h"
+#include "hal.h"
 #include "lib.h"
 
 
@@ -26,6 +27,7 @@ static void cmd_dumpInfo(void)
 /* TODO: old code needs to be cleaned up; address has to be checked with maps */
 static int cmd_dump(char *s)
 {
+	char *endptr;
 	char word[SIZE_CMD_ARG_LINE + 1];
 	unsigned int p = 0;
 	int xsize = 16;
@@ -44,14 +46,17 @@ static int cmd_dump(char *s)
 		return ERR_ARG;
 	}
 
-	offs = lib_strtoul(word, NULL, 16);
+	offs = lib_strtoul(word, &endptr, 16);
+	if (hal_strlen(endptr) != 0) {
+		lib_printf("\nWrong address value: %s", word);
+		return ERR_ARG;
+	}
 
-	lib_printf("\n");
-	lib_printf("Memory dump from %p:\n", offs);
+	lib_printf("\nMemory dump from 0x%x:\n", offs);
 	lib_printf("--------------------------\n");
 
 	for (y = 0; y < ysize; y++) {
-		lib_printf("%p   ", offs);
+		lib_printf("0x%x   ", offs);
 
 		/* Print byte values */
 		for (x = 0; x < xsize; x++) {
@@ -73,11 +78,8 @@ static int cmd_dump(char *s)
 		}
 
 		lib_printf("\n");
-
 		offs += xsize;
 	}
-
-	lib_printf("");
 
 	return ERR_NONE;
 }

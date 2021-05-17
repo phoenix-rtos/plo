@@ -26,7 +26,7 @@ static void cmd_mapInfo(void)
 
 static int cmd_map(char *s)
 {
-	u32 attr = 0;
+	char *endptr;
 	addr_t start, end;
 	u16 argID = 0, argsc = 0;
 
@@ -41,6 +41,11 @@ static int cmd_map(char *s)
 			break;
 	}
 
+	if (argsc == 0) {
+		syspage_showMaps();
+		return ERR_NONE;
+	}
+
 	if (argsc < 4) {
 		lib_printf("\nWrong arguments!!\n");
 		return ERR_ARG;
@@ -51,43 +56,20 @@ static int cmd_map(char *s)
 	mapname[namesz] = '\0';
 
 	++argID;
-	start = lib_strtoul(args[argID], NULL, 16);
-	++argID;
-	end = lib_strtoul(args[argID], NULL, 16);
-
-	while (++argID < argsc) {
-		switch (args[argID][0]) {
-			case 'R':
-				attr |= mAttrRead;
-				break;
-
-			case 'W':
-				attr |= mAttrWrite;
-				break;
-
-			case 'E':
-				attr |= mAttrExec;
-				break;
-
-			case 'S':
-				attr |= mAttrShareable;
-				break;
-
-			case 'C':
-				attr |= mAttrCacheable;
-				break;
-
-			case 'B':
-				attr |= mAttrBufferable;
-				break;
-
-			default:
-				lib_printf("Wrong attribute - '%c'. Map cannot be created.\n", args[argID][0]);
-				return ERR_ARG;
-		}
+	start = lib_strtoul(args[argID], &endptr, 0);
+	if (hal_strlen(endptr) != 0) {
+		lib_printf("\nWrong arg: %s", args[argID]);
+		return ERR_ARG;
 	}
 
-	if (syspage_addmap(mapname, (void *)start, (void *)end, attr) < 0) {
+	++argID;
+	end = lib_strtoul(args[argID], &endptr, 0);
+	if (hal_strlen(endptr) != 0) {
+		lib_printf("\nWrong arg: %s", args[argID]);
+		return ERR_ARG;
+	}
+
+	if (syspage_addmap(mapname, (void *)start, (void *)end, args[++argID]) < 0) {
 		lib_printf("\nMap cannot be created. Check map range and parameters!!\n");
 		return ERR_ARG;
 	}

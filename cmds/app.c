@@ -135,6 +135,11 @@ static int cmd_app(char *s)
 
 	/* Parse command arguments */
 	if (cmd_parseArgs(s, cmdArgs, &cmdArgsc, 10) < 0 || cmdArgsc < 2 || cmdArgsc > 6) {
+		if (cmdArgsc == 0) {
+			syspage_showApps();
+			return ERR_NONE;
+		}
+
 		lib_printf("\nWrong arguments!!\n");
 		return ERR_ARG;
 	}

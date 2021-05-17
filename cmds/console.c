@@ -14,6 +14,7 @@
  */
 
 #include "cmd.h"
+#include "hal.h"
 #include "console.h"
 
 
@@ -26,6 +27,7 @@ static void cmd_consoleInfo(void)
 static int cmd_console(char *s)
 {
 	u16 argsc;
+	char *endptr;
 	unsigned int major, minor, pos = 0;
 	char args[3][SIZE_CMD_ARG_LINE + 1];
 
@@ -40,10 +42,19 @@ static int cmd_console(char *s)
 	}
 
 	/* Get major/minor */
-	major = lib_strtoul(args[0], NULL, 16);
-	minor = lib_strtoul(args[1], NULL, 16);
-	console_set(major, minor);
+	major = lib_strtoul(args[0], &endptr, 0);
+	if (hal_strlen(endptr) != 0) {
+		lib_printf("\nWrong major value: %s", args[0]);
+		return ERR_ARG;
+	}
 
+	minor = lib_strtoul(args[1], &endptr, 0);
+	if (hal_strlen(endptr) != 0) {
+		lib_printf("\nWrong minor value: %s", args[1]);
+		return ERR_ARG;
+	}
+
+	console_set(major, minor);
 	lib_printf("\nconsole: Setting console to %d.%d", major, minor);
 
 	return ERR_NONE;

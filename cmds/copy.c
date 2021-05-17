@@ -14,6 +14,7 @@
  */
 
 #include "cmd.h"
+#include "hal.h"
 #include "lib.h"
 #include "phfs.h"
 
@@ -55,7 +56,7 @@ static int cmd_cpphfs2phfs(handler_t srcHandler, addr_t srcAddr, size_t srcSz, h
 		size -= res;
 
 		if ((res = phfs_write(dstHandler, dstAddr, buff, res)) < 0) {
-			lib_printf("\nCan't write data!\n");
+			lib_printf("\nCan't write data to address: 0x%x\n", dstAddr);
 			return ERR_PHFS_FILE;
 		}
 		dstAddr += res;
@@ -68,6 +69,7 @@ static int cmd_cpphfs2phfs(handler_t srcHandler, addr_t srcAddr, size_t srcSz, h
 static int cmd_parseDev(handler_t *h, addr_t *offs, size_t *sz, char (*args)[SIZE_CMD_ARG_LINE + 1], u16 *argsID, u16 argsc)
 {
 	char *alias;
+	char *endptr;
 
 	if (h == NULL || offs == NULL || sz == NULL || args == NULL || argsID == NULL)
 		return ERR_ARG;
@@ -79,28 +81,27 @@ static int cmd_parseDev(handler_t *h, addr_t *offs, size_t *sz, char (*args)[SIZ
 		return ERR_ARG;
 	}
 
+	*offs = lib_strtoul(args[(*argsID)], &endptr, 0);
+
 	/* Open device using alias to file */
-	if (lib_ishex(args[(*argsID)]) < 0) {
+	if (hal_strlen(endptr) != 0) {
 		*offs = 0;
 		*sz = 0;
 		if (phfs_open(alias, args[(*argsID)++], 0, h) < 0) {
-			lib_printf("\nCannot initialize source: %s\n", alias);
+			lib_printf("\nCannot initialize source: %s", alias);
 			return ERR_PHFS_IO;
 		}
 	}
 	/* Open device using direct access to memory */
 	else {
-		/* check whether size is provided */
-		if (((*argsID) + 1) >= argsc || lib_ishex(args[(*argsID) + 1]) < 0) {
-			lib_printf("\nWrong number of arguments\n");
+		*sz = lib_strtoul(args[++(*argsID)], &endptr, 0);
+		if (hal_strlen(endptr) != 0) {
+			lib_printf("\nWrong size value: %s", args[(*argsID)]);
 			return ERR_ARG;
 		}
 
-		*offs = lib_strtoul(args[(*argsID)], NULL, 16);
-		*sz = lib_strtoul(args[++(*argsID)], NULL, 16);
-
 		if (phfs_open(alias, NULL, 0, h) < 0) {
-			lib_printf("\nCannot initialize source: %s\n", alias);
+			lib_printf("\nCannot initialize source: %s", alias);
 			return ERR_PHFS_IO;
 		}
 	}

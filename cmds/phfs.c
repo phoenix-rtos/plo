@@ -14,6 +14,7 @@
  */
 
 #include "cmd.h"
+#include "hal.h"
 #include "phfs.h"
 
 
@@ -26,6 +27,7 @@ static void cmd_phfsInfo(void)
 static int cmd_phfs(char *s)
 {
 	u16 argsc;
+	char *endptr;
 	unsigned int major, minor, pos = 0;
 	char args[5][SIZE_CMD_ARG_LINE + 1];
 
@@ -34,14 +36,28 @@ static int cmd_phfs(char *s)
 			break;
 	}
 
+	if (argsc == 0) {
+		phfs_showDevs();
+		return ERR_NONE;
+	}
+
 	if (argsc < 3 || argsc > 4) {
 		lib_printf("\nWrong arguments!!\n");
 		return ERR_ARG;
 	}
 
 	/* Get major/minor */
-	major = lib_strtoul(args[1], NULL, 16);
-	minor = lib_strtoul(args[2], NULL, 16);
+	major = lib_strtoul(args[1], &endptr, 0);
+	if (hal_strlen(endptr) != 0) {
+		lib_printf("\nWrong major value: %s", args[1]);
+		return ERR_ARG;
+	}
+
+	minor = lib_strtoul(args[2], &endptr, 0);
+	if (hal_strlen(endptr) != 0) {
+		lib_printf("\nWrong minor value: %s", args[2]);
+		return ERR_ARG;
+	}
 
 	if (phfs_regDev(args[0], major, minor, (argsc == 3) ? NULL : args[3]) < 0) {
 		lib_printf("\n%s is not registered!\n", args[0]);

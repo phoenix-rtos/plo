@@ -8,7 +8,7 @@
 
 CFLAGS += -I../plo/cmds
 
-PLO_ALLCOMMANDS = alias app bitstream console copy devs dump go help kernel map phfs syspage script timeout
+PLO_ALLCOMMANDS = alias app bitstream console copy dump go help kernel map phfs syspage script wait
 PLO_COMMANDS ?= $(PLO_ALLCOMMANDS)
 PLO_APPLETS = $(filter $(PLO_ALLCOMMANDS), $(PLO_COMMANDS))
 
