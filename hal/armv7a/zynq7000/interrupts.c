@@ -14,11 +14,9 @@
  */
 
 #include "hal.h"
+#include "errors.h"
 #include "interrupts.h"
-#include "cpu.h"
 
-#include "../types.h"
-#include "../errors.h"
 
 #define MPCORE_BASE_ADDRESS  0xf8f00000
 #define SIZE_INTERRUPTS		 95

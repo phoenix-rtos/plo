@@ -14,7 +14,7 @@
  */
 
 
-#include "../timer.h"
+#include "timer.h"
 
 #include "hal.h"
 #include "peripherals.h"

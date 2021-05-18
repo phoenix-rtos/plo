@@ -16,7 +16,7 @@
 #ifndef _INTERRUPTS_H_
 #define _INTERRUPTS_H_
 
-#include "../types.h"
+#include "types.h"
 #include "cpu.h"
 
 

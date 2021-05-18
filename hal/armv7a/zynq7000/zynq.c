@@ -18,7 +18,7 @@
 #include "zynq.h"
 #include "peripherals.h"
 
-#include "../errors.h"
+#include "errors.h"
 
 #define MAX_WAITING_COUNTER 10000000
 

@@ -19,7 +19,7 @@
 
 /* iMXRT peripherals */
 
-#include "../types.h"
+#include "types.h"
 
 
 /* CCM - Clock gating */

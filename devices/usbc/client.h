@@ -16,7 +16,7 @@
 #ifndef _CLIENT_H_
 #define _CLIENT_H_
 
-#include "../types.h"
+#include "types.h"
 
 #include "usbclient.h"
 

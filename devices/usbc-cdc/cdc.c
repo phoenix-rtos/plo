@@ -20,9 +20,8 @@
 #include "lib.h"
 
 #include "list.h"
-#include "config.h"
 #include "hal.h"
-#include "../errors.h"
+#include "errors.h"
 
 
 #define SIZE_USB_ENDPTS        2 * PHFS_ACM_PORTS_NB + 1 /* Add control endpoint */

@@ -17,7 +17,7 @@
 #ifndef _IMXRT_FLASHDRV_H_
 #define _IMXRT_FLASHDRV_H_
 
-#include "../../types.h"
+#include "types.h"
 #include "romapi.h"
 
 #include "peripherals.h"
