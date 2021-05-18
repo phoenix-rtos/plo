@@ -27,28 +27,24 @@ static void cmd_dumpInfo(void)
 /* TODO: old code needs to be cleaned up; address has to be checked with maps */
 static int cmd_dump(char *s)
 {
+	u8 byte;
+	addr_t offs;
 	char *endptr;
-	char word[SIZE_CMD_ARG_LINE + 1];
-	unsigned int p = 0;
-	int xsize = 16;
-	int ysize = 16;
 	unsigned int x, y;
-	u32 offs;
-	u8 b;
+	static const int xsize = 16, ysize = 16;
 
-	/* Get address */
-	if (cmd_getnext(s, &p, DEFAULT_BLANKS, NULL, word, sizeof(word)) == NULL) {
-		log_error("\nSize error!\n");
-		return ERR_ARG;
-	}
-	if (*word == 0) {
-		log_error("\nBad segment!\n");
-		return ERR_ARG;
+	unsigned int argsc;
+	char (*args)[SIZE_CMD_ARG_LINE];
+
+	argsc = cmd_getArgs(s, DEFAULT_BLANKS, &args);
+	if (argsc == 0) {
+		log_error("\nWrong args %s", s);
+		return ERR_NONE;
 	}
 
-	offs = lib_strtoul(word, &endptr, 16);
+	offs = lib_strtoul(args[0], &endptr, 16);
 	if (hal_strlen(endptr) != 0) {
-		log_error("\nWrong address value: %s", word);
+		log_error("\nWrong address value: %s", args[0]);
 		return ERR_ARG;
 	}
 
@@ -60,21 +56,21 @@ static int cmd_dump(char *s)
 
 		/* Print byte values */
 		for (x = 0; x < xsize; x++) {
-			b = *(u8 *)(offs + x);
-			if (b & 0xf0)
-				lib_printf("%x ", b);
+			byte = *(u8 *)(offs + x);
+			if (byte & 0xf0)
+				lib_printf("%x ", byte);
 			else
-				lib_printf("0%x ", b);
+				lib_printf("0%x ", byte);
 		}
 		lib_printf("  ");
 
 		/* Print ASCII representation */
 		for (x = 0; x < xsize; x++) {
-			b = *(u8 *)(offs + x);
-			if ((b <= 32) || (b > 127))
-				lib_printf(".", b);
+			byte = *(u8 *)(offs + x);
+			if ((byte <= 32) || (byte > 127))
+				lib_printf(".", byte);
 			else
-				lib_printf("%c", b);
+				lib_printf("%c", byte);
 		}
 
 		lib_printf("\n");

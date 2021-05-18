@@ -26,23 +26,18 @@ static void cmd_phfsInfo(void)
 
 static int cmd_phfs(char *s)
 {
-	u16 argsc;
 	char *endptr;
-	unsigned int major, minor, pos = 0;
-	char args[5][SIZE_CMD_ARG_LINE + 1];
+	char (*args)[SIZE_CMD_ARG_LINE];
+	unsigned int major, minor, argsc;
 
-	for (argsc = 0; argsc < 5; ++argsc) {
-		if (cmd_getnext(s, &pos, ". \t", NULL, args[argsc], sizeof(args[argsc])) == NULL || *args[argsc] == 0)
-			break;
-	}
-
+	argsc = cmd_getArgs(s, ". \t", &args);
 	if (argsc == 0) {
 		phfs_showDevs();
 		return ERR_NONE;
 	}
 
 	if (argsc < 3 || argsc > 4) {
-		log_error("\nWrong args: %s", s);
+		log_error("\nWrong args: %s %d", s, argsc);
 		return ERR_ARG;
 	}
 

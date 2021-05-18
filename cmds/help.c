@@ -25,7 +25,13 @@ static void cmd_helpInfo(void)
 static int cmd_help(char *s)
 {
 	const cmd_t *cmd;
-	unsigned int i = 0;
+	unsigned int i = 0, argsc;
+	char (*args)[SIZE_CMD_ARG_LINE];
+
+	if ((argsc = cmd_getArgs(s, DEFAULT_BLANKS, &args)) != 0) {
+		log_error("\nWrong args: %s", s);
+		return ERR_ARG;
+	}
 
 	while ((cmd = cmd_getCmd(i++)) != NULL) {
 		lib_printf("\n  %-12s - ", cmd->name);

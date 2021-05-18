@@ -26,15 +26,10 @@ static void cmd_echoInfo(void)
 
 static int cmd_echo(char *s)
 {
-	u16 argsc;
-	unsigned int pos = 0;
-	char args[2][SIZE_CMD_ARG_LINE + 1];
+	unsigned int argsc;
+	char (*args)[SIZE_CMD_ARG_LINE];
 
-	for (argsc = 0; argsc < 2; ++argsc) {
-		if (cmd_getnext(s, &pos, DEFAULT_BLANKS, NULL, args[argsc], sizeof(args[argsc])) == NULL || *args[argsc] == 0)
-			break;
-	}
-
+	argsc = cmd_getArgs(s, DEFAULT_BLANKS, &args);
 	/* Show echo status */
 	if (argsc == 0) {
 		if (log_getEcho()) {
@@ -57,7 +52,7 @@ static int cmd_echo(char *s)
 		log_setEcho(1);
 	}
 	else if (hal_strcmp(args[1], "OFF") || hal_strcmp(args[1], "off")) {
-		log_info("\nOFF");
+		log_setEcho(0);
 	}
 	else {
 		log_error("\nWrong args: %s", s);

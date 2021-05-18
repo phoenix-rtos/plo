@@ -29,20 +29,22 @@ static int cmd_alias(char *s)
 	char *end;
 	size_t sz = 0;
 	addr_t addr = 0;
-	unsigned int i, pos = 0;
-	char alias[3][SIZE_CMD_ARG_LINE + 1];
+	unsigned int i, argsc;
+	char (*args)[SIZE_CMD_ARG_LINE];
+
+	if ((argsc = cmd_getArgs(s, DEFAULT_BLANKS, &args)) != 3) {
+		log_error("\nWrong args: %s", s);
+		return ERR_ARG;
+	}
 
 	for (i = 0; i < 3; ++i) {
-		if (cmd_getnext(s, &pos, DEFAULT_BLANKS, NULL, alias[i], sizeof(alias[i])) == NULL || *alias[i] == 0)
-			break;
-
 		if (i == 0)
 			continue;
 
 		if (i == 1)
-			addr = lib_strtoul(alias[i], &end, 0);
+			addr = lib_strtoul(args[i], &end, 0);
 		else if (i == 2)
-			sz = lib_strtoul(alias[i], &end, 0);
+			sz = lib_strtoul(args[i], &end, 0);
 
 		if (hal_strlen(end) != 0) {
 			log_error("\nWrong args: %s", s);
@@ -50,12 +52,12 @@ static int cmd_alias(char *s)
 		}
 	}
 
-	if (phfs_regFile(alias[0], addr, sz) < 0) {
-		log_error("\nCan't register file %s", alias[0]);
+	if (phfs_regFile(args[0], addr, sz) < 0) {
+		log_error("\nCan't register file %s", args[0]);
 		return ERR_ARG;
 	}
 
-	log_info("\nRegistering file %s ", alias[0]);
+	log_info("\nRegistering file %s ", args[0]);
 
 	return ERR_NONE;
 }

@@ -27,16 +27,11 @@ static void cmd_consoleInfo(void)
 
 static int cmd_console(char *s)
 {
-	u16 argsc;
 	char *endptr;
-	unsigned int major, minor, pos = 0;
-	char args[3][SIZE_CMD_ARG_LINE + 1];
+	unsigned int major, minor, argsc = 0;
+	char (*args)[SIZE_CMD_ARG_LINE];
 
-	for (argsc = 0; argsc < 3; ++argsc) {
-		if (cmd_getnext(s, &pos, ". \t", NULL, args[argsc], sizeof(args[argsc])) == NULL || *args[argsc] == 0)
-			break;
-	}
-
+	argsc = cmd_getArgs(s, ". \t", &args);
 	if (argsc != 2) {
 		log_error("\nWrong args: %s", s);
 		return ERR_ARG;

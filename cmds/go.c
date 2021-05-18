@@ -26,6 +26,14 @@ static void cmd_goInfo(void)
 
 static int cmd_go(char *s)
 {
+	unsigned int argsc;
+	char (*args)[SIZE_CMD_ARG_LINE];
+
+	if ((argsc = cmd_getArgs(s, DEFAULT_BLANKS, &args)) != 0) {
+		log_error("\nWrong args: %s", s);
+		return ERR_ARG;
+	}
+
 	lib_printf(CONSOLE_CLEAR);
 	hal_launch();
 

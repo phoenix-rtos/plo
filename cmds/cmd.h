@@ -26,7 +26,7 @@
 #define DEFAULT_BLANKS    " \t"
 #define DEFAULT_CITES     "\""
 
-#define SIZE_CMD_ARG_LINE   80
+#define SIZE_CMD_ARG_LINE   81
 #define MAX_CMD_ARGS_NB     10
 #define SIZE_MSG_BUFF       0x100
 
@@ -58,16 +58,8 @@ extern const cmd_t *cmd_getCmd(unsigned int id);
 extern void cmd_parse(char *line);
 
 
-/* Function skips blanks */
-extern void cmd_skipblanks(char *line, unsigned int *pos, char *blanks);
-
-
-/* Function retrieves next symbol from line */
-extern char *cmd_getnext(char *line, unsigned int *pos, char *blanks, char *cites, char *word, unsigned int len);
-
-
-/* Function parses arguments */
-extern int cmd_parseArgs(char *s, char (*args)[SIZE_CMD_ARG_LINE + 1], u16 *argsc, u16 maxArgNb);
+/* Function prase arguments from command */
+extern int cmd_getArgs(const char *cmd, const char *blank, char (**args)[SIZE_CMD_ARG_LINE]);
 
 
 #endif

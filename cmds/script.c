@@ -25,19 +25,9 @@ static void cmd_scriptInfo(void)
 }
 
 
-/* TODO: print other scripts */
+/* TODO: print other scripts than pre-init and parse args */
 static int cmd_script(char *s)
 {
-	unsigned int pos = 0;
-
-	cmd_skipblanks(s, &pos, DEFAULT_BLANKS);
-	s += pos;
-
-	if (*s) {
-		log_error("\nCommand script does not take any arguments\n");
-		return ERR_ARG;
-	}
-
 	lib_printf("\n%s", (char *)script);
 
 	return ERR_NONE;

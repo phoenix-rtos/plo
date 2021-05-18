@@ -28,19 +28,14 @@ static int cmd_call(char *s)
 {
 	char c;
 	int res, i;
-	u16 argsc;
 	handler_t h;
 	addr_t offs = 0;
 	phfs_stat_t stat;
 	char *endptr, *buff;
-	unsigned int magic, pos = 0;
-	char args[4][SIZE_CMD_ARG_LINE + 1];
+	unsigned int magic, argsc;
+	char (*args)[SIZE_CMD_ARG_LINE];
 
-	for (argsc = 0; argsc < 4; ++argsc) {
-		if (cmd_getnext(s, &pos, DEFAULT_BLANKS, NULL, args[argsc], sizeof(args[argsc])) == NULL || *args[argsc] == 0)
-			break;
-	}
-
+	argsc = cmd_getArgs(s, DEFAULT_BLANKS, &args);
 	if (argsc != 3) {
 		log_error("\nWrong args: %s", s);
 		return ERR_ARG;
@@ -51,7 +46,6 @@ static int cmd_call(char *s)
 	if (phfs_open(args[0], args[1], 0, &h) < 0) {
 		log_error("\nCan't open %s, on %s", args[1], args[0]);
 		return ERR_ARG;
-
 	}
 
 	/* ARG_2: magic number in hex */
@@ -66,9 +60,9 @@ static int cmd_call(char *s)
 		return ERR_ARG;
 	}
 
-	/* Use allocated memory for args[2] which are not used anymore */
+	/* Reuse memory from args[2] which are not used anymore */
 	buff = args[2];
-	hal_memset(buff, 0, SIZE_CMD_ARG_LINE + 1);
+	hal_memset(buff, 0, SIZE_CMD_ARG_LINE);
 
 	/* Check magic number */
 	// if ((res = phfs_read(h, offs, (u8 *)&c, 1)) < 0) {
@@ -85,10 +79,10 @@ static int cmd_call(char *s)
 		}
 
 		stat.size -= res;
-		if (c == '\n' || i > SIZE_CMD_ARG_LINE) {
+		if (c == '\n' || i >= SIZE_CMD_ARG_LINE) {
 			i = 0;
 			cmd_parse(buff);
-			hal_memset(buff, 0, SIZE_CMD_ARG_LINE + 1);
+			hal_memset(buff, 0, SIZE_CMD_ARG_LINE);
 			continue;
 		}
 

@@ -28,17 +28,12 @@ static int cmd_wait(char *s)
 {
 	int i;
 	char c;
-	u16 argsc;
 	char *endptr;
-	unsigned int time, step, pos = 0;
-	char args[2][SIZE_CMD_ARG_LINE + 1];
+	unsigned int time, step, argsc;
+	char (*args)[SIZE_CMD_ARG_LINE];
 	static const char prompt[] = "Waiting for input";
 
-	for (argsc = 0; argsc < 2; ++argsc) {
-		if (cmd_getnext(s, &pos, ". \t", NULL, args[argsc], sizeof(args[argsc])) == NULL || *args[argsc] == 0)
-			break;
-	}
-
+	argsc = cmd_getArgs(s, DEFAULT_BLANKS, &args);
 	lib_printf("\n%s %s", CONSOLE_NORMAL);
 	/* User doesn't provide time, waiting in infinite loop */
 	if (argsc != 1) {

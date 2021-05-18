@@ -30,20 +30,20 @@ static void cmd_bistreamInfo(void)
 static int cmd_bitstream(char *s)
 {
 	int res;
+	handler_t handler;
 	u8 buff[SIZE_MSG_BUFF];
 	addr_t offs = 0, addr = BISTREAM_ADDR;
-	handler_t handler;
 
-	u16 argsc = 0;
-	char args[2][SIZE_CMD_ARG_LINE + 1];
+	unsigned int argsc;
+	char (*args)[SIZE_CMD_ARG_LINE];
 
-	if ((cmd_parseArgs(s, args, &argsc, 2) < 0) || argsc > 2) {
+	if ((argsc = cmd_getArgs(s, DEFAULT_BLANKS, &args)) != 2) {
 		log_error("\nWrong args: %s", s);
 		return ERR_ARG;
 	}
 
 	if (phfs_open(args[0], args[1], 0, &handler) < 0) {
-		log_error("\nCannot open %s, on %s", args[1], args[0]);
+		log_error("\nCan't open %s, on %s", args[1], args[0]);
 		return ERR_ARG;
 	}
 

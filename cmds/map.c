@@ -28,19 +28,14 @@ static int cmd_map(char *s)
 {
 	char *endptr;
 	addr_t start, end;
-	u16 argID = 0, argsc = 0;
 
 	u8 namesz;
-	char mapname[8];
+	char mapname[SIZE_MAP_NAME + 1];
 
-	unsigned int pos = 0;
-	char args[MAX_CMD_ARGS_NB][SIZE_CMD_ARG_LINE + 1];
+	unsigned int argID = 0, argsc = 0;
+	char (*args)[SIZE_CMD_ARG_LINE];
 
-	for (argsc = 0; argsc < MAX_CMD_ARGS_NB; ++argsc) {
-		if (cmd_getnext(s, &pos, DEFAULT_BLANKS, NULL, args[argsc], sizeof(args[argsc])) == NULL || *args[argsc] == 0)
-			break;
-	}
-
+	argsc = cmd_getArgs(s, DEFAULT_BLANKS, &args);
 	if (argsc == 0) {
 		syspage_showMaps();
 		return ERR_NONE;
@@ -51,7 +46,7 @@ static int cmd_map(char *s)
 		return ERR_ARG;
 	}
 
-	namesz = (hal_strlen(args[argID]) < 7) ? (hal_strlen(args[argID]) + 1) : 7;
+	namesz = (hal_strlen(args[argID]) < SIZE_MAP_NAME) ? (hal_strlen(args[argID]) + 1) : SIZE_MAP_NAME;
 	hal_memcpy(mapname, args[argID], namesz);
 	mapname[namesz] = '\0';
 

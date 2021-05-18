@@ -122,24 +122,24 @@ static int cmd_loadApp(handler_t handler, size_t size, const char *imap, const c
 static int cmd_app(char *s)
 {
 	int argID = 0;
-	u16 cmdArgsc = 0;
-	char cmdArgs[10][SIZE_CMD_ARG_LINE + 1];
+	unsigned int argsc, pos;
+	char (*args)[SIZE_CMD_ARG_LINE];
 
 	char *cmdline;
-	unsigned int pos = 0, flags = 0;
+	unsigned int flags = 0;
 	char imap[8], dmap[8], appName[SIZE_APP_NAME];
 
-	size_t sz = 0;
 	handler_t handler;
 	phfs_stat_t stat;
 
 	/* Parse command arguments */
-	if (cmd_parseArgs(s, cmdArgs, &cmdArgsc, 10) < 0 || cmdArgsc < 2 || cmdArgsc > 6) {
-		if (cmdArgsc == 0) {
-			syspage_showApps();
-			return ERR_NONE;
-		}
+	argsc = cmd_getArgs(s, DEFAULT_BLANKS, &args);
+	if (argsc == 0) {
+		syspage_showApps();
+		return ERR_NONE;
+	}
 
+	if (argsc < 4 || argsc > 6) {
 		log_error("\nWrong args: %s", s);
 		return ERR_ARG;
 	}
@@ -148,8 +148,8 @@ static int cmd_app(char *s)
 
 	/* ARG_1: optional flags */
 	argID = 1;
-	if (cmdArgs[argID][0] == '-') {
-		if ((cmdArgs[argID][1] | 0x20) == 'x' && cmdArgs[argID][2] == '\0') {
+	if (args[argID][0] == '-') {
+		if ((args[argID][1] | 0x20) == 'x' && args[argID][2] == '\0') {
 			flags |= flagSyspageExec;
 			argID++;
 		}
@@ -160,13 +160,13 @@ static int cmd_app(char *s)
 	}
 
 	/* ARG_2: cmdline */
-	if (argID >= cmdArgsc) {
+	if (argID >= argsc) {
 		log_error("\nWrong args: %s", s);
 		return ERR_ARG;
 	}
 
 	/* Get app name from cmdline */
-	cmdline = cmdArgs[argID];
+	cmdline = args[argID];
 	for (pos = 0; cmdline[pos]; pos++) {
 		if (cmdline[pos] == ';')
 			break;
@@ -177,12 +177,12 @@ static int cmd_app(char *s)
 		return ERR_ARG;
 	}
 
-	hal_memcpy(appName, cmdArgs[argID], pos);
+	hal_memcpy(appName, args[argID], pos);
 	appName[pos] = '\0';
 
 	/* ARG_3: Get map for instruction section */
-	if ((argID + 1) < cmdArgsc) {
-		hal_memcpy(imap, cmdArgs[++argID], 8);
+	if ((argID + 1) < argsc) {
+		hal_memcpy(imap, args[++argID], 8);
 		imap[sizeof(imap) - 1] = '\0';
 	}
 	else {
@@ -191,8 +191,8 @@ static int cmd_app(char *s)
 	}
 
 	/* ARG_4: Get map for data section */
-	if ((argID + 1) < cmdArgsc) {
-		hal_memcpy(dmap, cmdArgs[++argID], 8);
+	if ((argID + 1) < argsc) {
+		hal_memcpy(dmap, args[++argID], 8);
 		dmap[sizeof(dmap) - 1] = '\0';
 	}
 	else {
@@ -201,20 +201,19 @@ static int cmd_app(char *s)
 	}
 
 	/* Open file */
-	if (phfs_open(cmdArgs[0], appName, 0, &handler) < 0) {
-		log_error("\nCan't open %s on %s", appName, cmdArgs[0]);
+	if (phfs_open(args[0], appName, 0, &handler) < 0) {
+		log_error("\nCan't open %s on %s", appName, args[0]);
 		return ERR_ARG;
 	}
 
 	/* Get file's properties */
 	if (phfs_stat(handler, &stat) < 0) {
-		log_error("\nCan't get stat from %s", cmdArgs[0]);
+		log_error("\nCan't get stat from %s", args[0]);
 		return ERR_ARG;
 	}
-	sz = stat.size;
 
-	if (cmd_loadApp(handler, sz, imap, dmap, cmdline, flags) < 0) {
-		log_error("\nCan't load %s to %s via %s", appName, imap, cmdArgs[0]);
+	if (cmd_loadApp(handler, stat.size, imap, dmap, cmdline, flags) < 0) {
+		log_error("\nCan't load %s to %s via %s", appName, imap, args[0]);
 		return ERR_PHFS_IO;
 	}
 

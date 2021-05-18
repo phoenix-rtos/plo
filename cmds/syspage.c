@@ -28,22 +28,18 @@ static int cmd_syspage(char *s)
 {
 	char *end;
 	addr_t addr;
-	unsigned int pos = 0, argsc;
-	char args[2][SIZE_CMD_ARG_LINE + 1];
+	unsigned int argsc;
+	char (*args)[SIZE_CMD_ARG_LINE];
 
-	for (argsc = 0; argsc < 2; ++argsc) {
-		if (cmd_getnext(s, &pos, DEFAULT_BLANKS, NULL, args[argsc], sizeof(args[argsc])) == NULL || *args[argsc] == 0)
-			break;
+	argsc = cmd_getArgs(s, DEFAULT_BLANKS, &args);
+	if (argsc == 0) {
+		syspage_showAddr();
+		return ERR_NONE;
 	}
 
 	if (argsc > 1) {
 		log_error("\nWrong args %s", s);
 		return ERR_ARG;
-	}
-
-	if (argsc == 0) {
-		syspage_showAddr();
-		return ERR_NONE;
 	}
 
 	addr = lib_strtoul(args[0], &end, 0);

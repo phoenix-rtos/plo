@@ -32,86 +32,18 @@ extern char script[];
 
 struct {
 	const cmd_t *cmds[SIZE_CMDS];
+	char args[MAX_CMD_ARGS_NB][SIZE_CMD_ARG_LINE];
 
 	int ll;
 	int cl;
-	char lines[SIZE_HIST][SIZE_CMD_ARG_LINE + 1];
+	char lines[SIZE_HIST][SIZE_CMD_ARG_LINE];
 } cmd_common;
 
 
-void cmd_reg(const cmd_t *cmd)
+
+static void cmd_skipblanks(const char *line, unsigned int *pos, const char *blanks)
 {
-	unsigned int i;
-
-	for (i = 0; i < SIZE_CMDS; ++i) {
-		if (cmd_common.cmds[i] != NULL) {
-			if (hal_strcmp(cmd_common.cmds[i]->name, cmd->name) == 0)
-				return;
-
-			continue;
-		}
-
-		cmd_common.cmds[i] = cmd;
-		break;
-	}
-}
-
-
-void cmd_run(void)
-{
-	lib_printf("\ncmd: Executing pre-init script");
-	cmd_parse((char *)script);
-}
-
-
-const cmd_t *cmd_getCmd(unsigned int id)
-{
-	if (id >= SIZE_CMDS)
-		return NULL;
-
-	return cmd_common.cmds[id];
-}
-
-
-/* TODO: old code needs to be cleaned up */
-void cmd_parse(char *line)
-{
-	unsigned int p = 0, wp, i;
-	char word[SIZE_CMD_ARG_LINE + 1], cmd[SIZE_CMD_ARG_LINE + 1];
-
-	for (;;) {
-		if (cmd_getnext(line, &p, "\n", DEFAULT_CITES, word, sizeof(word)) == NULL) {
-			log_error("\nSyntax error");
-			return;
-		}
-		if (*word == 0)
-			 break;
-
-		wp = 0;
-		if (cmd_getnext(word, &wp, DEFAULT_BLANKS, DEFAULT_CITES, cmd, sizeof(cmd)) == NULL) {
-			log_error("\nSyntax error");
-			return;
-		}
-
-		/* Find command and launch associated function */
-		for (i = 0; i < SIZE_CMDS; i++) {
-			if (hal_strcmp(cmd, cmd_common.cmds[i]->name) != 0)
-				continue;
-
-			if (cmd_common.cmds[i]->run(word + wp) < 0)
-				return;
-
-			break;
-		}
-		if (i >= SIZE_CMDS)
-			log_error("\n'%s' - unknown command!", cmd);
-	}
-}
-
-
-void cmd_skipblanks(char *line, unsigned int *pos, char *blanks)
-{
-	char *p;
+	const char *p;
 
 	while (line[*pos]) {
 		for (p = blanks; *p && line[*pos] != *p; p++);
@@ -123,7 +55,7 @@ void cmd_skipblanks(char *line, unsigned int *pos, char *blanks)
 
 
 /* TODO: old code needs to be cleaned up */
-char *cmd_getnext(char *line, unsigned int *pos, char *blanks, char *cites, char *word, unsigned int len)
+static char *cmd_getnext(const char *line, unsigned int *pos, const char *blanks, const char *cites, char *word, unsigned int len)
 {
 	char citefl = 0, c;
 	unsigned int i, wp = 0;
@@ -174,24 +106,91 @@ char *cmd_getnext(char *line, unsigned int *pos, char *blanks, char *cites, char
 }
 
 
-/* TODO: old code needs to be cleaned up */
-int cmd_parseArgs(char *s, char (*args)[SIZE_CMD_ARG_LINE + 1], u16 *argsc, u16 maxArgNb)
+void cmd_reg(const cmd_t *cmd)
 {
-	int i;
-	unsigned int pos = 0;
+	unsigned int i;
 
-	for (i = 0; *argsc < maxArgNb; ++i) {
-		cmd_skipblanks(s, &pos, DEFAULT_BLANKS);
-		if (cmd_getnext(s, &pos, DEFAULT_BLANKS, NULL, args[i], sizeof(args[i])) == NULL || *args[i] == 0)
+	for (i = 0; i < SIZE_CMDS; ++i) {
+		if (cmd_common.cmds[i] != NULL) {
+			if (hal_strcmp(cmd_common.cmds[i]->name, cmd->name) == 0)
+				return;
+
+			continue;
+		}
+
+		cmd_common.cmds[i] = cmd;
+		break;
+	}
+}
+
+
+void cmd_run(void)
+{
+	lib_printf("\ncmd: Executing pre-init script");
+	cmd_parse((char *)script);
+}
+
+
+const cmd_t *cmd_getCmd(unsigned int id)
+{
+	if (id >= SIZE_CMDS)
+		return NULL;
+
+	return cmd_common.cmds[id];
+}
+
+
+/* TODO: old code needs to be cleaned up */
+void cmd_parse(char *line)
+{
+	unsigned int p = 0, wp, i;
+	char word[SIZE_CMD_ARG_LINE], cmd[SIZE_CMD_ARG_LINE];
+
+	for (;;) {
+		if (cmd_getnext(line, &p, "\n", DEFAULT_CITES, word, sizeof(word)) == NULL) {
+			log_error("\nSyntax error");
+			return;
+		}
+		if (*word == 0)
+			 break;
+
+		wp = 0;
+		if (cmd_getnext(word, &wp, DEFAULT_BLANKS, DEFAULT_CITES, cmd, sizeof(cmd)) == NULL) {
+			log_error("\nSyntax error");
+			return;
+		}
+
+		/* Find command and launch associated function */
+		for (i = 0; i < SIZE_CMDS; i++) {
+			if (hal_strcmp(cmd, cmd_common.cmds[i]->name) != 0)
+				continue;
+
+			if (cmd_common.cmds[i]->run(word + wp) < 0)
+				return;
+
 			break;
-		(*argsc)++;
+		}
+		if (i >= SIZE_CMDS)
+			log_error("\n'%s' - unknown command!", cmd);
+	}
+}
+
+
+int cmd_getArgs(const char *cmd, const char *blank, char (**args)[SIZE_CMD_ARG_LINE])
+{
+	unsigned int i, pos = 0;
+
+	for (i = 0; i < MAX_CMD_ARGS_NB; ++i) {
+		hal_memset(cmd_common.args[i], 0, SIZE_CMD_ARG_LINE);
+		if (cmd_getnext(cmd, &pos, blank, NULL, cmd_common.args[i], SIZE_CMD_ARG_LINE) == NULL || *cmd_common.args[i] == 0)
+			break;
 	}
 
-	if (!*argsc)
-		return ERR_ARG;
+	*args = (void *)&cmd_common.args;
 
-	return 0;
+	return i;
 }
+
 
 
 /* TODO: old code needs to be cleaned up */
