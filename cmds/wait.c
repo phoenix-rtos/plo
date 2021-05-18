@@ -32,7 +32,7 @@ static int cmd_wait(char *s)
 	char *endptr;
 	unsigned int time, step, pos = 0;
 	char args[2][SIZE_CMD_ARG_LINE + 1];
-	static const char prompt[] = "cmd/wait: Waiting for input";
+	static const char prompt[] = "Waiting for input";
 
 	for (argsc = 0; argsc < 2; ++argsc) {
 		if (cmd_getnext(s, &pos, ". \t", NULL, args[argsc], sizeof(args[argsc])) == NULL || *args[argsc] == 0)
@@ -55,7 +55,7 @@ static int cmd_wait(char *s)
 	/* Wait for the time specified by the user */
 	time = lib_strtoul(args[0], &endptr, 0);
 	if (hal_strlen(endptr) != 0) {
-		log_error("\ncmd/wait: Wrong arg: %s", args[0]);
+		log_error("\nWrong args: %s", s);
 		return ERR_ARG;
 	}
 

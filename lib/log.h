@@ -18,10 +18,10 @@
 
 #include "log.h"
 #include "lib.h"
-
+#include "console.h"
 
 #define log_info(fmt, ...)  if (log_getEcho()) lib_printf(fmt, ##__VA_ARGS__)
-#define log_error(fmt, ...) lib_printf(fmt, ##__VA_ARGS__)
+#define log_error(fmt, ...) lib_printf(CONSOLE_RED fmt CONSOLE_NORMAL, ##__VA_ARGS__)
 
 
 extern int log_getEcho(void);

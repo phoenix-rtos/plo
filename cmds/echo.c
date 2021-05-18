@@ -38,31 +38,29 @@ static int cmd_echo(char *s)
 	/* Show echo status */
 	if (argsc == 0) {
 		if (log_getEcho()) {
-			log_info("\ncmd/echo: Echo is ON");
+			log_info("\nEcho is ON");
 		}
 		else {
-			log_info("\ncmd/echo: Echo is OFF");
+			log_info("\nEcho is OFF");
 		}
 
 		return ERR_NONE;
 	}
 
 	if (argsc != 1) {
-		log_error("\ncmd/echo: Wrong number of arguments\n");
+		log_error("\nWrong args: %s", s);
 		return ERR_ARG;
 	}
 
 	/* Set echo */
 	if (hal_strcmp(args[1], "ON") || hal_strcmp(args[1], "on")) {
 		log_setEcho(1);
-		log_info("\ncmd/echo: ON");
 	}
 	else if (hal_strcmp(args[1], "OFF") || hal_strcmp(args[1], "off")) {
-		log_info("\ncmd/echo: OFF");
-		log_setEcho(0);
+		log_info("\nOFF");
 	}
 	else {
-		log_error("\ncmd/echo: Wrong argument %s", args[1]);
+		log_error("\nWrong args: %s", s);
 		return ERR_ARG;
 	}
 

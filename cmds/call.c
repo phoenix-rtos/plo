@@ -42,14 +42,14 @@ static int cmd_call(char *s)
 	}
 
 	if (argsc != 3) {
-		log_error("\ncmd/call: Wrong args: %s", s);
+		log_error("\nWrong args: %s", s);
 		return ERR_ARG;
 	}
 
 	/* ARG_0: device name - args[0]
 	 * ARG_1: script name   - args[1] */
 	if (phfs_open(args[0], args[1], 0, &h) < 0) {
-		log_error("\ncmd/call: Cannot open file: %s, on device: %s", args[0], args[1]);
+		log_error("\nCan't open %s, on %s", args[1], args[0]);
 		return ERR_ARG;
 
 	}
@@ -57,12 +57,12 @@ static int cmd_call(char *s)
 	/* ARG_2: magic number in hex */
 	magic = lib_strtoul(args[2], &endptr, 16);
 	if (hal_strlen(endptr) != 0) {
-		log_error("\ncmd/call: Wrong magic number: %s", args[2]);
+		log_error("\nWrong magic number: %s for %s", args[2], args[1]);
 		return ERR_ARG;
 	}
 
 	if (phfs_stat(h, &stat) < 0) {
-		log_error("\ncmd/call: Cannot get stat from file: %s", args[1]);
+		log_error("\nCan't get stat from %s on %s", args[1], args[0]);
 		return ERR_ARG;
 	}
 
@@ -72,7 +72,7 @@ static int cmd_call(char *s)
 
 	/* Check magic number */
 	// if ((res = phfs_read(h, offs, (u8 *)&c, 1)) < 0) {
-	// 	lib_printf("\nCan't read segment data\n");
+	// 	log_error("\nCan't read %s from %s", args[1], args[0]);
 	// 	return ERR_PHFS_FILE;
 	// }
 
@@ -80,7 +80,7 @@ static int cmd_call(char *s)
 	i = 0;
 	do {
 		if ((res = phfs_read(h, offs, (u8 *)&c, 1)) < 0) {
-			log_error("\ncmd/call: Can't read segment data");
+			log_error("\nCan't read %s from %s", args[1], args[0]);
 			return ERR_PHFS_FILE;
 		}
 

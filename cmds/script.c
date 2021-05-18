@@ -21,7 +21,7 @@ extern char script[];
 
 static void cmd_scriptInfo(void)
 {
-	lib_printf("shows script, usage: script <number>");
+	lib_printf("shows script, usage: script <pre-init/name>");
 }
 
 
@@ -34,7 +34,7 @@ static int cmd_script(char *s)
 	s += pos;
 
 	if (*s) {
-		log_error("\ncmd/script: Command script does not take any arguments\n");
+		log_error("\nCommand script does not take any arguments\n");
 		return ERR_ARG;
 	}
 

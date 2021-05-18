@@ -14,6 +14,7 @@
  */
 
 #include "hal.h"
+#include "lib.h"
 #include "devs.h"
 #include "console.h"
 #include "errors.h"
@@ -64,4 +65,5 @@ void console_set(unsigned major, unsigned minor)
 	console_common.major = major;
 	console_common.minor = minor;
 	console_common.init = 1;
+	lib_printf("\nconsole: Setting console to %d.%d", major, minor);
 }

@@ -49,24 +49,23 @@ static int cmd_kernel(char *s)
 	}
 
 	if (cmd_getnext(s, &pos, DEFAULT_BLANKS, NULL, dev, sizeof(dev)) == NULL || dev[0] == 0) {
-		log_error("\ncmd/kernel: Wrong args");
+		log_error("\nWrong args: %s", s);
 		return ERR_ARG;
 	}
 
 	if (phfs_open(dev, KERNEL_PATH, 0, &handler) < 0) {
-		log_error("\ncmd/kernel: Cannot initialize device %s, error: %d\nLook at the device list:", dev);
-		phfs_showDevs();
+		log_error("\nCannot open %s, on %s", KERNEL_PATH, dev);
 		return ERR_ARG;
 	}
 
 	/* Read ELF header */
 	if (phfs_read(handler, offs, (u8 *)&hdr, (u32)sizeof(Elf32_Ehdr)) < 0) {
-		log_error("\ncmd/kernel: Can't read ELF header");
+		log_error("\nCan't read %s, on %s", KERNEL_PATH, dev);
 		return ERR_ARG;
 	}
 
 	if ((hdr.e_ident[0] != 0x7f) || (hdr.e_ident[1] != 'E') || (hdr.e_ident[2] != 'L') || (hdr.e_ident[3] != 'F')) {
-		log_error("\ncmd/kernel: File isn't ELF object");
+		log_error("\n%s isn't an ELF object", KERNEL_PATH);
 		return ERR_ARG;
 	}
 
@@ -74,7 +73,7 @@ static int cmd_kernel(char *s)
 	for (k = 0; k < hdr.e_phnum; k++) {
 		offs = hdr.e_phoff + k * sizeof(Elf32_Phdr);
 		if (phfs_read(handler, offs, (u8 *)&phdr, (u32)sizeof(Elf32_Phdr)) < 0) {
-			log_error("\ncmd/kernel: Can't read Elf32_Phdr, k=%d", k);
+			log_error("\nCan't read %s, on %s", KERNEL_PATH, dev);
 			return ERR_ARG;
 		}
 
@@ -92,7 +91,7 @@ static int cmd_kernel(char *s)
 			for (i = 0; i < phdr.p_filesz / sizeof(buff); i++) {
 				offs = phdr.p_offset + i * sizeof(buff);
 				if (phfs_read(handler, offs, buff, (u32)sizeof(buff)) < 0) {
-					log_error("\ncmd/kernel: Can't read segment data, k=%d", k);
+					log_error("\nCan't read %s, on %s", KERNEL_PATH, dev);
 					return ERR_ARG;
 				}
 				hal_memcpy(loffs, buff, sizeof(buff));
@@ -104,7 +103,7 @@ static int cmd_kernel(char *s)
 			if (size != 0) {
 				offs = phdr.p_offset + i * sizeof(buff);
 				if (phfs_read(handler, offs, buff, size) < 0) {
-					log_error("\ncmd/kernel: Can't read last segment data, k=%d", k);
+					log_error("\nCan't read %s, on %s", KERNEL_PATH, dev);
 					return ERR_ARG;
 				}
 
@@ -118,7 +117,7 @@ static int cmd_kernel(char *s)
 		offs = hdr.e_shoff + k * sizeof(Elf32_Shdr);
 
 		if (phfs_read(handler, offs, (u8 *)&shdr, (u32)sizeof(Elf32_Shdr)) < 0) {
-			log_error("\ncmd/kernel: Can't read Elf32_Shdr, k=%d", k);
+			log_error("\nCan't read %s, on %s", KERNEL_PATH, dev);
 			return ERR_ARG;
 		}
 
@@ -134,11 +133,11 @@ static int cmd_kernel(char *s)
 	hal_setKernelEntry(hdr.e_entry);
 
 	if (phfs_close(handler) < 0) {
-		log_error("\ncmd/kernel: Cannot close file");
+		log_error("\nCan't close %s, on %s", KERNEL_PATH, dev);
 		return ERR_ARG;
 	}
 
-	log_info("\ncmd/kernel: %s initialized", KERNEL_PATH);
+	log_info("\nLoading %s", KERNEL_PATH);
 
 	return ERR_NONE;
 }

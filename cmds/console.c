@@ -38,26 +38,24 @@ static int cmd_console(char *s)
 	}
 
 	if (argsc != 2) {
-		log_error("\ncmd/console: Wrong number of arguments");
+		log_error("\nWrong args: %s", s);
 		return ERR_ARG;
 	}
 
 	/* Get major/minor */
 	major = lib_strtoul(args[0], &endptr, 0);
 	if (hal_strlen(endptr) != 0) {
-		log_error("\ncmd/console: Wrong major value: %s", args[0]);
+		log_error("\nWrong major value: %s", args[0]);
 		return ERR_ARG;
 	}
 
 	minor = lib_strtoul(args[1], &endptr, 0);
 	if (hal_strlen(endptr) != 0) {
-		log_error("\ncmd/console: Wrong minor value: %s", args[1]);
+		log_error("\nWrong minor value: %s", args[1]);
 		return ERR_ARG;
 	}
 
 	console_set(major, minor);
-	lib_printf("\nconsole: Setting console to %d.%d", major, minor);
-
 	return ERR_NONE;
 }
 

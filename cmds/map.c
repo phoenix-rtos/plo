@@ -47,7 +47,7 @@ static int cmd_map(char *s)
 	}
 
 	if (argsc < 4) {
-		log_error("\ncmd/map: Wrong arguments");
+		log_error("\nWrong args: %s", s);
 		return ERR_ARG;
 	}
 
@@ -58,23 +58,23 @@ static int cmd_map(char *s)
 	++argID;
 	start = lib_strtoul(args[argID], &endptr, 0);
 	if (hal_strlen(endptr) != 0) {
-		log_error("\ncmd/map: Wrong arg: %s", args[argID]);
+		log_error("\nWrong args: %s", s);
 		return ERR_ARG;
 	}
 
 	++argID;
 	end = lib_strtoul(args[argID], &endptr, 0);
 	if (hal_strlen(endptr) != 0) {
-		log_error("\ncmd/map: Wrong arg: %s", args[argID]);
+		log_error("\nWrong args: %s", s);
 		return ERR_ARG;
 	}
 
 	if (syspage_addmap(mapname, (void *)start, (void *)end, args[++argID]) < 0) {
-		log_error("\ncmd/map: Map cannot be created. Check map range and parameters");
+		log_error("\nCan't create map %s", mapname);
 		return ERR_ARG;
 	}
 
-	log_info("\ncmd/map: registered %s", mapname);
+	log_info("\nCreating map %s", mapname);
 
 	return ERR_NONE;
 }

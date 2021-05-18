@@ -45,18 +45,17 @@ static int cmd_alias(char *s)
 			sz = lib_strtoul(alias[i], &end, 0);
 
 		if (hal_strlen(end) != 0) {
-			log_error("\ncmd/alias: Wrong arg: %s", alias[i]);
+			log_error("\nWrong args: %s", s);
 			return ERR_ARG;
 		}
 	}
 
 	if (phfs_regFile(alias[0], addr, sz) < 0) {
-		log_error("\ncmd/alias: %s is not registered", alias[0]);
+		log_error("\nCan't register file %s", alias[0]);
 		return ERR_ARG;
 	}
 
-	log_info("\ncmd/alias: %s is registered ", alias[0]);
-
+	log_info("\nRegistering file %s ", alias[0]);
 
 	return ERR_NONE;
 }

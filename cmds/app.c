@@ -40,7 +40,7 @@ static int cmd_cpphfs2map(handler_t handler, size_t size, const char *imap)
 			chunkSz = size;
 
 		if ((res = phfs_read(handler, offs, buff, chunkSz)) < 0) {
-			log_error("\ncmd/app: Can't read segment data");
+			log_error("\nCan't read data");
 			return ERR_PHFS_FILE;
 		}
 
@@ -65,12 +65,12 @@ static int cmd_loadApp(handler_t handler, size_t size, const char *imap, const c
 
 	/* Check ELF header */
 	if ((res = phfs_read(handler, offs, (u8 *)&hdr, (u32)sizeof(Elf32_Ehdr))) < 0) {
-		log_error("\ncmd/app: Can't read ELF header %d", res);
+		log_error("\nCan't read data");
 		return ERR_PHFS_FILE;
 	}
 
 	if ((hdr.e_ident[0] != 0x7f) || (hdr.e_ident[1] != 'E') || (hdr.e_ident[2] != 'L') || (hdr.e_ident[3] != 'F')) {
-		log_error("\ncmd/app: File isn't ELF object");
+		log_error("\nFile isn't an ELF object");
 		return ERR_PHFS_FILE;
 	}
 
@@ -80,12 +80,12 @@ static int cmd_loadApp(handler_t handler, size_t size, const char *imap, const c
 
 	/* Get top address of map and its attributes */
 	if (syspage_getMapTop(imap, &start) < 0 || syspage_getMapAttr(imap, &attr) < 0) {
-		log_error("\ncmd/app: %s does not exist", imap);
+		log_error("\n%s does not exist", imap);
 		return ERR_ARG;
 	}
 
 	if ((res = phfs_map(handler, offs, size, mAttrRead | mAttrWrite, (addr_t)start, size, attr, &addr)) < 0) {
-		log_error("\ncmd/app: Device is not mappable in %s", imap);
+		log_error("\nDevice is not mappable in %s", imap);
 		return ERR_ARG;
 	}
 
@@ -105,12 +105,12 @@ static int cmd_loadApp(handler_t handler, size_t size, const char *imap, const c
 		end = start + size;
 	}
 	else {
-		log_error("\ncmd/app: Device returns wrong mapping result.");
+		log_error("\nDevice returns wrong mapping result.");
 		return ERR_PHFS_FILE;
 	}
 
 	if (syspage_addProg(start, end, imap, dmap, cmdline, flags) < 0) {
-		log_error("\ncmd/app: Cannot add program to syspage");
+		log_error("\nCan't add program to syspage");
 		return ERR_ARG;
 	}
 
@@ -140,7 +140,7 @@ static int cmd_app(char *s)
 			return ERR_NONE;
 		}
 
-		log_error("\ncmd/app: Wrong arguments");
+		log_error("\nWrong args: %s", s);
 		return ERR_ARG;
 	}
 
@@ -154,14 +154,14 @@ static int cmd_app(char *s)
 			argID++;
 		}
 		else {
-			log_error("\ncmd/app: Wrong arguments");
+			log_error("\nWrong args: %s", s);
 			return ERR_ARG;
 		}
 	}
 
 	/* ARG_2: cmdline */
 	if (argID >= cmdArgsc) {
-		log_error("\ncmd/app: Wrong arguments");
+		log_error("\nWrong args: %s", s);
 		return ERR_ARG;
 	}
 
@@ -173,7 +173,7 @@ static int cmd_app(char *s)
 	}
 
 	if (pos > SIZE_APP_NAME) {
-		log_error("\ncmd/app: App %s name is too long", cmdline);
+		log_error("\nApp %s name is too long", cmdline);
 		return ERR_ARG;
 	}
 
@@ -186,7 +186,7 @@ static int cmd_app(char *s)
 		imap[sizeof(imap) - 1] = '\0';
 	}
 	else {
-		log_error("\ncmd/app: Map for instructions is not defined");
+		log_error("\nInstruction's map for %s is not defined", appName);
 		return ERR_ARG;
 	}
 
@@ -196,31 +196,34 @@ static int cmd_app(char *s)
 		dmap[sizeof(dmap) - 1] = '\0';
 	}
 	else {
-		log_error("\ncmd/app: Map for data is not defined");
+		log_error("\nData's map for %s is not defined", appName);
 		return ERR_ARG;
 	}
 
 	/* Open file */
 	if (phfs_open(cmdArgs[0], appName, 0, &handler) < 0) {
-		log_error("\ncmd/app: Wrong arguments");
+		log_error("\nCan't open %s on %s", appName, cmdArgs[0]);
 		return ERR_ARG;
 	}
 
 	/* Get file's properties */
 	if (phfs_stat(handler, &stat) < 0) {
-		log_error("\ncmd/app: Cannot get stat from file %s", cmdArgs[0]);
+		log_error("\nCan't get stat from %s", cmdArgs[0]);
 		return ERR_ARG;
 	}
 	sz = stat.size;
 
-	cmd_loadApp(handler, sz, imap, dmap, cmdline, flags);
+	if (cmd_loadApp(handler, sz, imap, dmap, cmdline, flags) < 0) {
+		log_error("\nCan't load %s to %s via %s", appName, imap, cmdArgs[0]);
+		return ERR_PHFS_IO;
+	}
 
 	if (phfs_close(handler) < 0) {
-		log_error("\ncmd/app: Cannot close file");
+		log_error("\nCan't  close %s", appName);
 		return ERR_ARG;
 	}
 
-	log_info("\ncmd/app: %s initialized", appName);
+	log_info("\nLoading %s", appName);
 
 	return ERR_NONE;
 }
