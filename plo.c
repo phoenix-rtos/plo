@@ -21,7 +21,7 @@
 #include "console.h"
 
 
-void plo_init(void)
+int main(void)
 {
 	hal_init();
 
@@ -35,4 +35,6 @@ void plo_init(void)
 
 	devs_done();
 	hal_done();
+
+	return 0;
 }

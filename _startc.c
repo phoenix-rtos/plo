@@ -23,7 +23,7 @@ extern void (*__fini_array_start [])(void);
 extern void (*__fini_array_end [])(void);
 
 
-extern void plo_init(void);
+extern int main(void);
 
 
 void _startc(int argc, char **argv, char **env)
@@ -37,9 +37,9 @@ void _startc(int argc, char **argv, char **env)
 	for (i = 0; i < size; i++)
 		(*__init_array_start[i])();
 
-	plo_init();
+	main();
 
 	size = __fini_array_end - __fini_array_start;
-	for (i = 0; i < size; i++)
-		(*__fini_array_start[i])();
+	for (i = size; i > 0; i--)
+		(*__fini_array_start[i - 1])();
 }
