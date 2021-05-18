@@ -15,7 +15,7 @@
 
 
 #include "hal.h"
-#include "lib.h"
+#include "log.h"
 #include "console.h"
 #include "syspage.h"
 #include "errors.h"
@@ -225,7 +225,7 @@ static int syspage_strAttr2ui(const char *str, unsigned int *attr)
 				break;
 
 			default:
-				lib_printf("\nWrong attribute - '%c'", str[i]);
+				log_error("\nsyspage: Wrong attribute - '%c'", str[i]);
 				return ERR_ARG;
 		}
 	}
@@ -482,7 +482,7 @@ int syspage_getMapTop(const char *map, void **addr)
 	u8 id;
 
 	if (syspage_getMapID(map, &id) < 0) {
-		lib_printf("\nMAPS for %s does not exist!\n", map);
+		log_error("\nsyspage: %s does not exist", map);
 		return ERR_ARG;
 	}
 
@@ -499,7 +499,7 @@ int syspage_alignMapTop(const char *map)
 	plo_map_t *ploMap;
 
 	if (syspage_getMapID(map, &id) < 0) {
-		lib_printf("\nMAPS for %s does not exist!\n", map);
+		log_error("\nsyspage: %s does not exist", map);
 		return ERR_ARG;
 	}
 
@@ -507,7 +507,7 @@ int syspage_alignMapTop(const char *map)
 	newTop = (ploMap->top + PAGE_SIZE - 1) & ~(PAGE_SIZE - 1);
 
 	if (newTop > ploMap->map.end) {
-		lib_printf("\nMap %s is full!\n", map);
+		log_error("\nsyspage:  %s is full!\n", map);
 		return ERR_MEM;
 	}
 
@@ -522,7 +522,7 @@ int syspage_getFreeSize(const char *map, size_t *sz)
 	u8 id;
 
 	if (syspage_getMapID(map, &id) < 0) {
-		lib_printf("\nMAPS for %s does not exist!\n", map);
+		log_error("\nsyspage: %s does not exist", map);
 		return ERR_ARG;
 	}
 
@@ -539,7 +539,7 @@ int syspage_write2Map(const char *map, const u8 *buff, size_t len)
 	plo_map_t *ploMap;
 
 	if (syspage_getMapID(map, &id) < 0) {
-		lib_printf("\nMAPS for %s does not exist!\n", map);
+		log_error("\nsyspage: %s does not exist", map);
 		return ERR_ARG;
 	}
 
@@ -547,12 +547,12 @@ int syspage_write2Map(const char *map, const u8 *buff, size_t len)
 	freesz = ploMap->map.end - ploMap->top;
 
 	if (freesz < len) {
-		lib_printf("\nThere isn't any free space in %s !\n", map);
+		log_error("\nsyspage: There isn't any free space in %s", map);
 		return ERR_ARG;
 	}
 
 	if (syspage_isMapFree(id, len) < 0) {
-		lib_printf("\nUps!! You encountered on some data. Top has been moved. Please try again!!\n");
+		log_error("\nsyspage: You encountered on some data. Top has been moved. Please try again!");
 		return ERR_MEM;
 	}
 
@@ -589,7 +589,7 @@ int syspage_getMapAttr(const char *map, unsigned int *attr)
 	u8 id;
 
 	if (syspage_getMapID(map, &id) < 0) {
-		lib_printf("\nMAPS for %s does not exist!\n", map);
+		log_error("\nsyspage: %s does not exist", map);
 		return ERR_ARG;
 	}
 
@@ -610,14 +610,14 @@ int syspage_addProg(void *start, void *end, const char *imap, const char *dmap, 
 	const u32 isExec = (flags & flagSyspageExec) != 0;
 
 	if ((syspage_getMapID(imap, &imapID) < 0) || (syspage_getMapID(dmap, &dmapID) < 0)) {
-		lib_printf("\nMAPS for %s does not exist!\n", cmdline);
+		log_error("\nsyspage: %s or %s does not exist!\n", imap, dmap);
 		return ERR_ARG;
 	}
 
 	len = hal_strlen(cmdline);
 
 	if (syspage_common.argCnt + isExec + len + 1 + 1 > MAX_ARGS_SIZE) {
-		lib_printf("\nMAX_ARGS_SIZE for %s exceeded!\n", cmdline);
+		log_error("\nsyspage: MAX_ARGS_SIZE for %s exceeded!\n", cmdline);
 		return ERR_ARG;
 	}
 
@@ -627,7 +627,7 @@ int syspage_addProg(void *start, void *end, const char *imap, const char *dmap, 
 	}
 
 	if (pos > SIZE_APP_NAME) {
-		lib_printf("\nSyspage program %s, name is too long!\n", cmdline);
+		log_error("\nsyspage: %s, name is too long!\n", cmdline);
 		return ERR_ARG;
 	}
 

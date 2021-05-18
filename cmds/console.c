@@ -15,6 +15,7 @@
 
 #include "cmd.h"
 #include "hal.h"
+#include "log.h"
 #include "console.h"
 
 
@@ -37,20 +38,20 @@ static int cmd_console(char *s)
 	}
 
 	if (argsc != 2) {
-		lib_printf("\nWrong number of arguments!!\n");
+		log_error("\ncmd/console: Wrong number of arguments");
 		return ERR_ARG;
 	}
 
 	/* Get major/minor */
 	major = lib_strtoul(args[0], &endptr, 0);
 	if (hal_strlen(endptr) != 0) {
-		lib_printf("\nWrong major value: %s", args[0]);
+		log_error("\ncmd/console: Wrong major value: %s", args[0]);
 		return ERR_ARG;
 	}
 
 	minor = lib_strtoul(args[1], &endptr, 0);
 	if (hal_strlen(endptr) != 0) {
-		lib_printf("\nWrong minor value: %s", args[1]);
+		log_error("\ncmd/console: Wrong minor value: %s", args[1]);
 		return ERR_ARG;
 	}
 

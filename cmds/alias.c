@@ -33,7 +33,7 @@ static int cmd_alias(char *s)
 	char alias[3][SIZE_CMD_ARG_LINE + 1];
 
 	for (i = 0; i < 3; ++i) {
-		if (cmd_getnext(s, &pos, " \t", NULL, alias[i], sizeof(alias[i])) == NULL || *alias[i] == 0)
+		if (cmd_getnext(s, &pos, DEFAULT_BLANKS, NULL, alias[i], sizeof(alias[i])) == NULL || *alias[i] == 0)
 			break;
 
 		if (i == 0)
@@ -45,13 +45,18 @@ static int cmd_alias(char *s)
 			sz = lib_strtoul(alias[i], &end, 0);
 
 		if (hal_strlen(end) != 0) {
-			lib_printf("\nWrong arg: %s", alias[i]);
+			log_error("\ncmd/alias: Wrong arg: %s", alias[i]);
 			return ERR_ARG;
 		}
 	}
 
-	if (phfs_regFile(alias[0], addr, sz) < 0)
+	if (phfs_regFile(alias[0], addr, sz) < 0) {
+		log_error("\ncmd/alias: %s is not registered", alias[0]);
 		return ERR_ARG;
+	}
+
+	log_info("\ncmd/alias: %s is registered ", alias[0]);
+
 
 	return ERR_NONE;
 }

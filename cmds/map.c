@@ -37,7 +37,7 @@ static int cmd_map(char *s)
 	char args[MAX_CMD_ARGS_NB][SIZE_CMD_ARG_LINE + 1];
 
 	for (argsc = 0; argsc < MAX_CMD_ARGS_NB; ++argsc) {
-		if (cmd_getnext(s, &pos, "+ \t", NULL, args[argsc], sizeof(args[argsc])) == NULL || *args[argsc] == 0)
+		if (cmd_getnext(s, &pos, DEFAULT_BLANKS, NULL, args[argsc], sizeof(args[argsc])) == NULL || *args[argsc] == 0)
 			break;
 	}
 
@@ -47,7 +47,7 @@ static int cmd_map(char *s)
 	}
 
 	if (argsc < 4) {
-		lib_printf("\nWrong arguments!!\n");
+		log_error("\ncmd/map: Wrong arguments");
 		return ERR_ARG;
 	}
 
@@ -58,21 +58,23 @@ static int cmd_map(char *s)
 	++argID;
 	start = lib_strtoul(args[argID], &endptr, 0);
 	if (hal_strlen(endptr) != 0) {
-		lib_printf("\nWrong arg: %s", args[argID]);
+		log_error("\ncmd/map: Wrong arg: %s", args[argID]);
 		return ERR_ARG;
 	}
 
 	++argID;
 	end = lib_strtoul(args[argID], &endptr, 0);
 	if (hal_strlen(endptr) != 0) {
-		lib_printf("\nWrong arg: %s", args[argID]);
+		log_error("\ncmd/map: Wrong arg: %s", args[argID]);
 		return ERR_ARG;
 	}
 
 	if (syspage_addmap(mapname, (void *)start, (void *)end, args[++argID]) < 0) {
-		lib_printf("\nMap cannot be created. Check map range and parameters!!\n");
+		log_error("\ncmd/map: Map cannot be created. Check map range and parameters");
 		return ERR_ARG;
 	}
+
+	log_info("\ncmd/map: registered %s", mapname);
 
 	return ERR_NONE;
 }

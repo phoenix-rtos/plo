@@ -42,25 +42,25 @@ static int cmd_phfs(char *s)
 	}
 
 	if (argsc < 3 || argsc > 4) {
-		lib_printf("\nWrong arguments!!\n");
+		log_error("\ncmd/phfs: Wrong arguments");
 		return ERR_ARG;
 	}
 
 	/* Get major/minor */
 	major = lib_strtoul(args[1], &endptr, 0);
 	if (hal_strlen(endptr) != 0) {
-		lib_printf("\nWrong major value: %s", args[1]);
+		log_error("\ncmd/phfs: Wrong major value: %s", args[1]);
 		return ERR_ARG;
 	}
 
 	minor = lib_strtoul(args[2], &endptr, 0);
 	if (hal_strlen(endptr) != 0) {
-		lib_printf("\nWrong minor value: %s", args[2]);
+		log_error("\ncmd/phfs: Wrong minor value: %s", args[2]);
 		return ERR_ARG;
 	}
 
 	if (phfs_regDev(args[0], major, minor, (argsc == 3) ? NULL : args[3]) < 0) {
-		lib_printf("\n%s is not registered!\n", args[0]);
+		log_error("\ncmd/phfs: %s is not registered", args[0]);
 		return ERR_ARG;
 	}
 

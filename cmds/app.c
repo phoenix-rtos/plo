@@ -40,7 +40,7 @@ static int cmd_cpphfs2map(handler_t handler, size_t size, const char *imap)
 			chunkSz = size;
 
 		if ((res = phfs_read(handler, offs, buff, chunkSz)) < 0) {
-			lib_printf("\nCan't read segment data\n");
+			log_error("\ncmd/app: Can't read segment data");
 			return ERR_PHFS_FILE;
 		}
 
@@ -65,12 +65,12 @@ static int cmd_loadApp(handler_t handler, size_t size, const char *imap, const c
 
 	/* Check ELF header */
 	if ((res = phfs_read(handler, offs, (u8 *)&hdr, (u32)sizeof(Elf32_Ehdr))) < 0) {
-		lib_printf("\nCan't read ELF header %d\n", res);
+		log_error("\ncmd/app: Can't read ELF header %d", res);
 		return ERR_PHFS_FILE;
 	}
 
 	if ((hdr.e_ident[0] != 0x7f) || (hdr.e_ident[1] != 'E') || (hdr.e_ident[2] != 'L') || (hdr.e_ident[3] != 'F')) {
-		lib_printf("\nFile isn't ELF object\n");
+		log_error("\ncmd/app: File isn't ELF object");
 		return ERR_PHFS_FILE;
 	}
 
@@ -80,12 +80,12 @@ static int cmd_loadApp(handler_t handler, size_t size, const char *imap, const c
 
 	/* Get top address of map and its attributes */
 	if (syspage_getMapTop(imap, &start) < 0 || syspage_getMapAttr(imap, &attr) < 0) {
-		lib_printf("\n%s does not exist!\n", imap);
+		log_error("\ncmd/app: %s does not exist", imap);
 		return ERR_ARG;
 	}
 
 	if ((res = phfs_map(handler, offs, size, mAttrRead | mAttrWrite, (addr_t)start, size, attr, &addr)) < 0) {
-		lib_printf("\nDevice is not mappable in %s\n", imap);
+		log_error("\ncmd/app: Device is not mappable in %s", imap);
 		return ERR_ARG;
 	}
 
@@ -105,12 +105,12 @@ static int cmd_loadApp(handler_t handler, size_t size, const char *imap, const c
 		end = start + size;
 	}
 	else {
-		lib_printf("\nDevice returns wrong mapping result.");
+		log_error("\ncmd/app: Device returns wrong mapping result.");
 		return ERR_PHFS_FILE;
 	}
 
 	if (syspage_addProg(start, end, imap, dmap, cmdline, flags) < 0) {
-		lib_printf("\nCannot add program to syspage\n");
+		log_error("\ncmd/app: Cannot add program to syspage");
 		return ERR_ARG;
 	}
 
@@ -127,7 +127,7 @@ static int cmd_app(char *s)
 
 	char *cmdline;
 	unsigned int pos = 0, flags = 0;
-	char cmap[8], dmap[8], appName[SIZE_APP_NAME];
+	char imap[8], dmap[8], appName[SIZE_APP_NAME];
 
 	size_t sz = 0;
 	handler_t handler;
@@ -140,7 +140,7 @@ static int cmd_app(char *s)
 			return ERR_NONE;
 		}
 
-		lib_printf("\nWrong arguments!!\n");
+		log_error("\ncmd/app: Wrong arguments");
 		return ERR_ARG;
 	}
 
@@ -154,14 +154,14 @@ static int cmd_app(char *s)
 			argID++;
 		}
 		else {
-			lib_printf("\nWrong arguments!!\n");
+			log_error("\ncmd/app: Wrong arguments");
 			return ERR_ARG;
 		}
 	}
 
 	/* ARG_2: cmdline */
 	if (argID >= cmdArgsc) {
-		lib_printf("\nWrong arguments!!\n");
+		log_error("\ncmd/app: Wrong arguments");
 		return ERR_ARG;
 	}
 
@@ -173,7 +173,7 @@ static int cmd_app(char *s)
 	}
 
 	if (pos > SIZE_APP_NAME) {
-		lib_printf("\nApp %s name is too long!\n", cmdline);
+		log_error("\ncmd/app: App %s name is too long", cmdline);
 		return ERR_ARG;
 	}
 
@@ -182,11 +182,11 @@ static int cmd_app(char *s)
 
 	/* ARG_3: Get map for instruction section */
 	if ((argID + 1) < cmdArgsc) {
-		hal_memcpy(cmap, cmdArgs[++argID], 8);
-		cmap[sizeof(cmap) - 1] = '\0';
+		hal_memcpy(imap, cmdArgs[++argID], 8);
+		imap[sizeof(imap) - 1] = '\0';
 	}
 	else {
-		lib_printf("\nMap for instructions is not defined");
+		log_error("\ncmd/app: Map for instructions is not defined");
 		return ERR_ARG;
 	}
 
@@ -196,29 +196,31 @@ static int cmd_app(char *s)
 		dmap[sizeof(dmap) - 1] = '\0';
 	}
 	else {
-		lib_printf("\nMap for data is not defined");
+		log_error("\ncmd/app: Map for data is not defined");
 		return ERR_ARG;
 	}
 
 	/* Open file */
 	if (phfs_open(cmdArgs[0], appName, 0, &handler) < 0) {
-		lib_printf("\nWrong arguments!!\n");
+		log_error("\ncmd/app: Wrong arguments");
 		return ERR_ARG;
 	}
 
 	/* Get file's properties */
 	if (phfs_stat(handler, &stat) < 0) {
-		lib_printf("\nCannot get stat from file %s\n", cmdArgs[0]);
+		log_error("\ncmd/app: Cannot get stat from file %s", cmdArgs[0]);
 		return ERR_ARG;
 	}
 	sz = stat.size;
 
-	cmd_loadApp(handler, sz, cmap, dmap, cmdline, flags);
+	cmd_loadApp(handler, sz, imap, dmap, cmdline, flags);
 
 	if (phfs_close(handler) < 0) {
-		lib_printf("\nCannot close file\n");
+		log_error("\ncmd/app: Cannot close file");
 		return ERR_ARG;
 	}
+
+	log_info("\ncmd/app: %s initialized", appName);
 
 	return ERR_NONE;
 }

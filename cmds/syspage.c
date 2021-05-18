@@ -37,7 +37,7 @@ static int cmd_syspage(char *s)
 	}
 
 	if (argsc > 1) {
-		lib_printf("\nWrong args");
+		log_error("\ncmd/syspage: Wrong args");
 		return ERR_ARG;
 	}
 
@@ -48,11 +48,13 @@ static int cmd_syspage(char *s)
 
 	addr = lib_strtoul(args[0], &end, 0);
 	if (hal_strlen(end) != 0) {
-		lib_printf("\nWrong address %s", args[0]);
+		log_error("\ncmd/syspage: Wrong address %s", args[0]);
 		return ERR_ARG;
 	}
 
 	syspage_setAddress((void *)addr);
+	log_info("\ncmd/syspage: set address: 0x%x", addr);
+
 	return ERR_NONE;
 }
 

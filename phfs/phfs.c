@@ -15,6 +15,7 @@
 
 #include "hal.h"
 #include "lib.h"
+#include "log.h"
 #include "phfs.h"
 #include "console.h"
 #include "phoenixd.h"
@@ -106,24 +107,24 @@ int phfs_regDev(const char *alias, unsigned int major, unsigned int minor, const
 		return ERR_ARG;
 
 	if (phfs_common.dCnt >= SIZE_PHFS_HANDLERS) {
-		lib_printf("\nToo many devices");
+		log_error("\nphfs: Too many devices");
 		return ERR_ARG;
 	}
 
 	if (devs_check(major, minor) < 0) {
-		lib_printf("\n%d.%d - device does not exist", major, minor);
+		log_error("\nphfs: %d.%d - device does not exist", major, minor);
 		return ERR_ARG;
 	}
 
 	/* Check if alias is already in use */
 	if (phfs_getHandlerId(alias) >= 0) {
-		lib_printf("\n%s - alias is already in use", alias);
+		log_error("\nphfs: %s - alias is already in use", alias);
 		return ERR_ARG;
 	}
 
 	pd = &phfs_common.devices[phfs_common.dCnt];
 	if (phfs_setProt(pd, prot) < 0) {
-		lib_printf("\n%s - wrong protocol name\n\t use: \"%s\", \"%s\"", prot,
+		log_error("\nphfs: %s - wrong protocol name\n\t use: \"%s\", \"%s\"", prot,
 		              phfs_getProtName(phfs_prot_raw), phfs_getProtName(phfs_prot_phoenixd));
 		return ERR_ARG;
 	}
@@ -158,7 +159,7 @@ void phfs_showDevs(void)
 	phfs_device_t *pd;
 
 	if (phfs_common.dCnt == 0) {
-		lib_printf("\nNone of the devices have been registered\n");
+		log_error("\nphfs: None of the devices have been registered\n");
 		return;
 	}
 
@@ -194,13 +195,13 @@ int phfs_regFile(const char *alias, addr_t addr, size_t size)
 		return ERR_ARG;
 
 	if (phfs_common.fCnt >= SIZE_PHFS_FILES) {
-		lib_printf("\nExceeded max number of files");
+		log_error("\nphfs: Exceeded max number of files");
 		return ERR_ARG;
 	}
 
 	/* Check if alias is already in use */
 	if (phfs_getFileId(alias) >= 0) {
-		lib_printf("\n%s - alias is already in use", alias);
+		log_error("\nphfs: %s - alias is already in use", alias);
 		return ERR_ARG;
 	}
 

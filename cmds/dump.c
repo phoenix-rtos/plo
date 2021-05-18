@@ -38,17 +38,17 @@ static int cmd_dump(char *s)
 
 	/* Get address */
 	if (cmd_getnext(s, &p, DEFAULT_BLANKS, NULL, word, sizeof(word)) == NULL) {
-		lib_printf("\nSize error!\n");
+		log_error("\ncmd/dump: Size error!\n");
 		return ERR_ARG;
 	}
 	if (*word == 0) {
-		lib_printf("\nBad segment!\n");
+		log_error("\ncmd/dump: Bad segment!\n");
 		return ERR_ARG;
 	}
 
 	offs = lib_strtoul(word, &endptr, 16);
 	if (hal_strlen(endptr) != 0) {
-		lib_printf("\nWrong address value: %s", word);
+		log_error("\ncmd/dump: Wrong address value: %s", word);
 		return ERR_ARG;
 	}
 

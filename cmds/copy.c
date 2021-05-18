@@ -49,14 +49,14 @@ static int cmd_cpphfs2phfs(handler_t srcHandler, addr_t srcAddr, size_t srcSz, h
 			chunk = size;
 
 		if ((res = phfs_read(srcHandler, srcAddr, buff, chunk)) < 0) {
-			lib_printf("\nCan't read data\n");
+			log_error("\ncmd/copy: Can't read data\n");
 			return ERR_PHFS_FILE;
 		}
 		srcAddr += res;
 		size -= res;
 
 		if ((res = phfs_write(dstHandler, dstAddr, buff, res)) < 0) {
-			lib_printf("\nCan't write data to address: 0x%x\n", dstAddr);
+			log_error("\ncmd/copy: Can't write data to address: 0x%x\n", dstAddr);
 			return ERR_PHFS_FILE;
 		}
 		dstAddr += res;
@@ -77,7 +77,7 @@ static int cmd_parseDev(handler_t *h, addr_t *offs, size_t *sz, char (*args)[SIZ
 	alias = args[(*argsID)++];
 
 	if ((*argsID) >= argsc) {
-		lib_printf("\nWrong number of arguments\n");
+		log_error("\ncmd/copy: Wrong number of arguments\n");
 		return ERR_ARG;
 	}
 
@@ -88,7 +88,7 @@ static int cmd_parseDev(handler_t *h, addr_t *offs, size_t *sz, char (*args)[SIZ
 		*offs = 0;
 		*sz = 0;
 		if (phfs_open(alias, args[(*argsID)++], 0, h) < 0) {
-			lib_printf("\nCannot initialize source: %s", alias);
+			log_error("\ncmd/copy: Cannot initialize source: %s", alias);
 			return ERR_PHFS_IO;
 		}
 	}
@@ -96,12 +96,12 @@ static int cmd_parseDev(handler_t *h, addr_t *offs, size_t *sz, char (*args)[SIZ
 	else {
 		*sz = lib_strtoul(args[++(*argsID)], &endptr, 0);
 		if (hal_strlen(endptr) != 0) {
-			lib_printf("\nWrong size value: %s", args[(*argsID)]);
+			log_error("\ncmd/copy: Wrong size value: %s", args[(*argsID)]);
 			return ERR_ARG;
 		}
 
 		if (phfs_open(alias, NULL, 0, h) < 0) {
-			lib_printf("\nCannot initialize source: %s", alias);
+			log_error("\ncmd/copy: Cannot initialize source: %s", alias);
 			return ERR_PHFS_IO;
 		}
 	}
@@ -121,29 +121,29 @@ static int cmd_copy(char *s)
 
 	/* Parse all comand's arguments */
 	if (cmd_parseArgs(s, args, &argsc, 6) < 0 || argsc < 4) {
-		lib_printf("\nWrong arguments!!\n");
+		log_error("\ncmd/copy: Wrong arguments");
 		return ERR_ARG;
 	}
 
 	if (cmd_parseDev(&h[0], &offs[0], &sz[0], args, &argsID, argsc) < 0) {
-		lib_printf("\nCannot open file\n");
+		log_error("\ncmd/copy: Cannot open file");
 		return ERR_ARG;
 	}
 
 	if (cmd_parseDev(&h[1], &offs[1], &sz[1], args, &argsID, argsc) < 0) {
-		lib_printf("\nCannot open file\n");
+		log_error("\ncmd/copy: Cannot open file");
 		return ERR_ARG;
 	}
 
 	/* Copy data between devices */
 	if (cmd_cpphfs2phfs(h[0], offs[0], sz[0], h[1], offs[1], sz[1]) < 0) {
-		lib_printf("\nOperation failed\n");
+		log_error("\ncmd/copy: Operation failed");
 		phfs_close(h[0]);
 		phfs_close(h[1]);
 		return ERR_ARG;
 	}
 
-	lib_printf("\nFinished copying\n");
+	log_info("\ncmd/copy: Finished copying");
 
 	phfs_close(h[0]);
 	phfs_close(h[1]);

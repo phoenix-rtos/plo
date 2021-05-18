@@ -25,6 +25,7 @@ static void cmd_scriptInfo(void)
 }
 
 
+/* TODO: print other scripts */
 static int cmd_script(char *s)
 {
 	unsigned int pos = 0;
@@ -33,7 +34,7 @@ static int cmd_script(char *s)
 	s += pos;
 
 	if (*s) {
-		lib_printf("\nCommand script does not take any arguments\n");
+		log_error("\ncmd/script: Command script does not take any arguments\n");
 		return ERR_ARG;
 	}
 

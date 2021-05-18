@@ -60,7 +60,7 @@ void cmd_reg(const cmd_t *cmd)
 void cmd_run(void)
 {
 	lib_printf("\ncmd: Executing pre-init script");
-	cmd_parse((char *)script, 0);
+	cmd_parse((char *)script);
 }
 
 
@@ -74,23 +74,22 @@ const cmd_t *cmd_getCmd(unsigned int id)
 
 
 /* TODO: old code needs to be cleaned up */
-void cmd_parse(char *line, int show)
+void cmd_parse(char *line)
 {
 	unsigned int p = 0, wp, i;
 	char word[SIZE_CMD_ARG_LINE + 1], cmd[SIZE_CMD_ARG_LINE + 1];
 
 	for (;;) {
 		if (cmd_getnext(line, &p, "\n", DEFAULT_CITES, word, sizeof(word)) == NULL) {
-			lib_printf("\nSyntax error!\n");
+			log_error("\nSyntax error");
 			return;
 		}
 		if (*word == 0)
 			 break;
-		if (show)
-			lib_printf("\n%s", word);
+
 		wp = 0;
 		if (cmd_getnext(word, &wp, DEFAULT_BLANKS, DEFAULT_CITES, cmd, sizeof(cmd)) == NULL) {
-			lib_printf("\nSyntax error!\n");
+			log_error("\nSyntax error");
 			return;
 		}
 
@@ -105,7 +104,7 @@ void cmd_parse(char *line, int show)
 			break;
 		}
 		if (i >= SIZE_CMDS)
-			lib_printf("\n'%s' - unknown command!\n", cmd);
+			log_error("\n'%s' - unknown command!", cmd);
 	}
 }
 
@@ -247,7 +246,7 @@ void cmd_prompt(void)
 				if (pos) {
 					cmd_common.lines[cmd_common.ll][pos] = 0;
 
-					cmd_parse(cmd_common.lines[cmd_common.ll], 0);
+					cmd_parse(cmd_common.lines[cmd_common.ll]);
 
 					cmd_common.ll = (cmd_common.ll + 1) % SIZE_HIST;
 					cmd_common.cl = cmd_common.ll;
