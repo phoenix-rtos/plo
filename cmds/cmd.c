@@ -22,7 +22,7 @@
 
 #define SIZE_HIST            8
 #define SIZE_CMDS            24
-#define CONSOLE_TIMEOUT_MS   200
+#define TIMEOUT_CONSOLE_MS   200
 
 #define PROMPT              "(plo)% "
 
@@ -210,7 +210,7 @@ void cmd_prompt(void)
 
 	lib_printf("\n%s", PROMPT);
 	while (c != '#') {
-		while (console_getc(&c, CONSOLE_TIMEOUT_MS) <= 0)
+		while (console_getc(&c, TIMEOUT_CONSOLE_MS) <= 0)
 			;
 
 		sc = 0;
@@ -220,12 +220,12 @@ void cmd_prompt(void)
 		}
 		/* Simple parser for VT100 commands */
 		else if (c == 27) {
-			while (console_getc(&c, CONSOLE_TIMEOUT_MS) <= 0)
+			while (console_getc(&c, TIMEOUT_CONSOLE_MS) <= 0)
 				;
 
 			switch (c) {
 				case 91:
-					while (console_getc(&c, CONSOLE_TIMEOUT_MS) <= 0)
+					while (console_getc(&c, TIMEOUT_CONSOLE_MS) <= 0)
 						;
 
 					switch (c) {
