@@ -53,8 +53,12 @@ void console_putc(char c)
 
 int console_getc(char *c, unsigned int timeout)
 {
-	if (!console_common.init)
-		return ERR_ARG;
+	if (!console_common.init) {
+		console_puts(CONSOLE_RED);
+		console_puts("\rCan't get data from console.");
+		console_puts("\nPlease reset plo and set console to device.");
+		for (;;);
+	}
 
 	return devs_read(console_common.major, console_common.minor, 0, (u8 *)c, 1, timeout);
 }
