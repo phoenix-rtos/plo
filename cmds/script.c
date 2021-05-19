@@ -14,6 +14,7 @@
  */
 
 #include "cmd.h"
+#include "hal.h"
 
 /* Linker symbol points to the beginning of .data section */
 extern char script[];
@@ -28,7 +29,23 @@ static void cmd_scriptInfo(void)
 /* TODO: print other scripts than pre-init and parse args */
 static int cmd_script(char *s)
 {
-	lib_printf("\n%s", (char *)script);
+	unsigned int argsc;
+	char (*args)[SIZE_CMD_ARG_LINE];
+
+	argsc = cmd_getArgs(s, DEFAULT_BLANKS, &args);
+
+	if (argsc != 1) {
+		log_error("\nWrong args: %s", s);
+		return ERR_NONE;
+	}
+
+	if (hal_strcmp(args[0], "pre-init") == 0) {
+		lib_printf("\n%s", (char *)script);
+	}
+	else {
+		log_error("\nScript %s does not exist", args[0]);
+		return ERR_NONE;
+	}
 
 	return ERR_NONE;
 }

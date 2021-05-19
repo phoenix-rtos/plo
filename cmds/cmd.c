@@ -170,8 +170,10 @@ void cmd_parse(char *line)
 
 			break;
 		}
-		if (i >= SIZE_CMDS)
+		if (i >= SIZE_CMDS) {
 			log_error("\n'%s' - unknown command!", cmd);
+			return;
+		}
 	}
 }
 

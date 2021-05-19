@@ -48,10 +48,10 @@ static int cmd_echo(char *s)
 	}
 
 	/* Set echo */
-	if (hal_strcmp(args[1], "ON") || hal_strcmp(args[1], "on")) {
+	if (hal_strcmp(args[0], "ON") == 0 || hal_strcmp(args[0], "on") == 0) {
 		log_setEcho(1);
 	}
-	else if (hal_strcmp(args[1], "OFF") || hal_strcmp(args[1], "off")) {
+	else if (hal_strcmp(args[0], "OFF") == 0 || hal_strcmp(args[0], "off") == 0) {
 		log_setEcho(0);
 	}
 	else {

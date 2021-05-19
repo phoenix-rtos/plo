@@ -37,7 +37,7 @@ static int cmd_phfs(char *s)
 	}
 
 	if (argsc < 3 || argsc > 4) {
-		log_error("\nWrong args: %s %d", s, argsc);
+		log_error("\nWrong args: %s", s);
 		return ERR_ARG;
 	}
 
