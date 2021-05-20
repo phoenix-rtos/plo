@@ -68,6 +68,8 @@ static int cmd_call(char *s)
 
 	/* Execute script */
 	i = 0;
+	lib_printf(CONSOLE_NORMAL);
+	hal_memset(buff, 0, SIZE_CMD_ARG_LINE);
 	do {
 		if ((res = phfs_read(h, offs, (u8 *)&c, 1)) < 0) {
 			log_error("\nCan't read %s from %s", args[1], args[0]);

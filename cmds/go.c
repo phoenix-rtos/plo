@@ -15,6 +15,7 @@
 
 #include "cmd.h"
 #include "hal.h"
+#include "log.h"
 #include "console.h"
 
 
@@ -34,6 +35,7 @@ static int cmd_go(char *s)
 		return ERR_ARG;
 	}
 
+	log_info("\nRunning Phoenix-RTOS");
 	lib_printf(CONSOLE_CLEAR);
 	hal_launch();
 
