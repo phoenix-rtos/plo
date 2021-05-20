@@ -30,45 +30,41 @@ static int cmd_call(char *s)
 	int res, i;
 	handler_t h;
 	addr_t offs = 0;
-	phfs_stat_t stat;
-	char *endptr, *buff;
-	unsigned int magic, argsc;
+	unsigned int argsc;
+	char buff[SIZE_CMD_ARG_LINE];
 	char (*args)[SIZE_CMD_ARG_LINE];
 
 	argsc = cmd_getArgs(s, DEFAULT_BLANKS, &args);
-	if (argsc != 3) {
+	if (argsc == 0) {
+		log_error("\nArguments have to be defined");
+		return ERR_ARG;
+	}
+	else if (argsc != 3) {
 		log_error("\nWrong args: %s", s);
 		return ERR_ARG;
 	}
 
 	/* ARG_0: device name - args[0]
-	 * ARG_1: script name   - args[1] */
+	 * ARG_1: script name - args[1] */
 	if (phfs_open(args[0], args[1], 0, &h) < 0) {
 		log_error("\nCan't open %s, on %s", args[1], args[0]);
 		return ERR_ARG;
 	}
 
-	/* ARG_2: magic number in hex */
-	magic = lib_strtoul(args[2], &endptr, 16);
-	if (hal_strlen(endptr) != 0) {
-		log_error("\nWrong magic number: %s for %s", args[2], args[1]);
-		return ERR_ARG;
-	}
-
-	if (phfs_stat(h, &stat) < 0) {
-		log_error("\nCan't get stat from %s on %s", args[1], args[0]);
-		return ERR_ARG;
-	}
-
-	/* Reuse memory from args[2] which are not used anymore */
-	buff = args[2];
+	/* ARG_2: magic number*/
 	hal_memset(buff, 0, SIZE_CMD_ARG_LINE);
+	if ((res = phfs_read(h, offs, (u8 *)buff, SIZE_MAGIC_NB)) < 0) {
+		log_error("\nCan't read %s from %s", args[1], args[0]);
+		return ERR_PHFS_FILE;
+	}
+	offs += res;
+	buff[res] = '\0';
 
 	/* Check magic number */
-	// if ((res = phfs_read(h, offs, (u8 *)&c, 1)) < 0) {
-	// 	log_error("\nCan't read %s from %s", args[1], args[0]);
-	// 	return ERR_PHFS_FILE;
-	// }
+	if (hal_strcmp(buff, args[2]) != 0) {
+		log_error("\nMagic number for %s is wrong.", args[1]);
+		return ERR_ARG;
+	}
 
 	/* Execute script */
 	i = 0;
@@ -78,8 +74,8 @@ static int cmd_call(char *s)
 			return ERR_PHFS_FILE;
 		}
 
-		stat.size -= res;
-		if (c == '\n' || i >= SIZE_CMD_ARG_LINE) {
+		offs += res;
+		if (c == '\n' || i > SIZE_CMD_ARG_LINE) {
 			i = 0;
 			cmd_parse(buff);
 			hal_memset(buff, 0, SIZE_CMD_ARG_LINE);
@@ -87,7 +83,7 @@ static int cmd_call(char *s)
 		}
 
 		buff[i++] = c;
-	} while (stat.size > 0 && res > 0);
+	} while (res > 0);
 
 	return ERR_NONE;
 }
