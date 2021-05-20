@@ -15,17 +15,18 @@
 
 #include "log.h"
 
-
-static int echo = 0;
+struct {
+	int mode;
+} echo_common;
 
 
 int log_getEcho(void)
 {
-	return echo;
+	return echo_common.mode;
 }
 
 
 void log_setEcho(int val)
 {
-	echo = !!val;
+	echo_common.mode = !!val;
 }
