@@ -17,7 +17,7 @@
 #include "lib.h"
 #include "devs.h"
 #include "console.h"
-#include "errors.h"
+#include "errno.h"
 
 
 struct {

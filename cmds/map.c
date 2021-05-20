@@ -38,11 +38,11 @@ static int cmd_map(char *s)
 	argsc = cmd_getArgs(s, DEFAULT_BLANKS, &args);
 	if (argsc == 0) {
 		syspage_showMaps();
-		return ERR_NONE;
+		return EOK;
 	}
 	else if (argsc < 4) {
 		log_error("\nWrong args: %s", s);
-		return ERR_ARG;
+		return -EINVAL;
 	}
 
 	namesz = (hal_strlen(args[argID]) < SIZE_MAP_NAME) ? (hal_strlen(args[argID]) + 1) : SIZE_MAP_NAME;
@@ -53,24 +53,24 @@ static int cmd_map(char *s)
 	start = lib_strtoul(args[argID], &endptr, 0);
 	if (hal_strlen(endptr) != 0) {
 		log_error("\nWrong args: %s", s);
-		return ERR_ARG;
+		return -EINVAL;
 	}
 
 	++argID;
 	end = lib_strtoul(args[argID], &endptr, 0);
 	if (hal_strlen(endptr) != 0) {
 		log_error("\nWrong args: %s", s);
-		return ERR_ARG;
+		return -EINVAL;
 	}
 
 	if (syspage_addmap(mapname, (void *)start, (void *)end, args[++argID]) < 0) {
 		log_error("\nCan't create map %s", mapname);
-		return ERR_ARG;
+		return -EINVAL;
 	}
 
 	log_info("\nCreating map %s", mapname);
 
-	return ERR_NONE;
+	return EOK;
 }
 
 

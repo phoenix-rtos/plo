@@ -39,13 +39,13 @@ static int cmd_dump(char *s)
 	argsc = cmd_getArgs(s, DEFAULT_BLANKS, &args);
 	if (argsc == 0) {
 		log_error("\nArguments have to be defined");
-		return ERR_ARG;
+		return -EINVAL;
 	}
 
 	offs = lib_strtoul(args[0], &endptr, 16);
 	if (hal_strlen(endptr) != 0) {
 		log_error("\nWrong address value: %s", args[0]);
-		return ERR_ARG;
+		return -EINVAL;
 	}
 
 	lib_printf("\nMemory dump from 0x%x:\n", offs);
@@ -77,7 +77,7 @@ static int cmd_dump(char *s)
 		offs += xsize;
 	}
 
-	return ERR_NONE;
+	return EOK;
 }
 
 

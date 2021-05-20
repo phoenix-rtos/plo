@@ -18,7 +18,7 @@
 #include "imxrt.h"
 #include "devs.h"
 
-#include "errors.h"
+#include "errno.h"
 #include "timer.h"
 
 #define CONCATENATE(x, y) x##y
@@ -401,10 +401,10 @@ static ssize_t uart_read(unsigned int minor, addr_t offs, u8 *buff, unsigned int
 	u16 l, cnt;
 
 	if ((uart = uart_getInstance(minor)) == NULL)
-		return ERR_ARG;
+		return -EINVAL;
 
 	if (!timer_wait(timeout, TIMER_VALCHG, &uart->rxHead, uart->rxTail))
-		return ERR_UART_TIMEOUT;
+		return -ETIME;
 
 	hal_cli();
 
@@ -433,7 +433,7 @@ static ssize_t uart_write(unsigned int minor, const u8 *buff, unsigned int len)
 	unsigned int l, cnt = 0;
 
 	if ((uart = uart_getInstance(minor)) == NULL)
-		return ERR_ARG;
+		return -EINVAL;
 
 	while (uart->txHead == uart->txTail && uart->tFull)
 		;
@@ -474,7 +474,7 @@ static ssize_t uart_safeWrite(unsigned int minor, addr_t offs, const u8 *buff, u
 
 	for (l = 0; len;) {
 		if ((l = uart_write(minor, buff, len)) < 0)
-			return ERR_MSG_IO;
+			return -ENXIO;
 		buff += l;
 		len -= l;
 	}
@@ -488,11 +488,11 @@ static int uart_sync(unsigned int minor)
 	uart_t *uart;
 
 	if ((uart = uart_getInstance(minor)) == NULL)
-		return ERR_ARG;
+		return -EINVAL;
 
 	/* TBD */
 
-	return ERR_NONE;
+	return EOK;
 }
 
 
@@ -501,7 +501,7 @@ static int uart_done(unsigned int minor)
 	uart_t *uart;
 
 	if ((uart = uart_getInstance(minor)) == NULL)
-		return ERR_ARG;
+		return -EINVAL;
 
 	/* disable TX and RX */
 	*(uart->base + ctrlr) &= ~((1 << 19) | (1 << 18));
@@ -509,18 +509,18 @@ static int uart_done(unsigned int minor)
 
 	hal_irquninst(uart->irq);
 
-	return ERR_NONE;
+	return EOK;
 }
 
 
 static int uart_map(unsigned int minor, addr_t addr, size_t sz, int mode, addr_t memaddr, size_t memsz, int memmode, addr_t *a)
 {
 	if (minor >= UART_MAX_CNT)
-		return ERR_ARG;
+		return -EINVAL;
 
 	/* Device mode cannot be higher than map mode to copy data */
 	if ((mode & memmode) != mode)
-		return ERR_ARG;
+		return -EINVAL;
 
 	/* uart is not mappable to any region */
 	return dev_isNotMappable;
@@ -533,7 +533,7 @@ static int uart_init(unsigned int minor)
 	uart_t *uart;
 
 	if ((uart = uart_getInstance(minor)) == NULL)
-		return ERR_ARG;
+		return -EINVAL;
 
 	if (uart_common.init == 0) {
 		uart_initPins();
@@ -590,7 +590,7 @@ static int uart_init(unsigned int minor)
 
 	hal_irqinst(infoUarts[id].irq, uart_handleIntr, (void *)uart);
 
-	return ERR_NONE;
+	return EOK;
 }
 
 

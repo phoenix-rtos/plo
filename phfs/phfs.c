@@ -19,7 +19,7 @@
 #include "phfs.h"
 #include "console.h"
 #include "phoenixd.h"
-#include "errors.h"
+#include "errno.h"
 
 
 #define SIZE_PHFS_HANDLERS    8
@@ -77,9 +77,9 @@ static int phfs_setProt(phfs_device_t *pd, const char *prot)
 	else if (hal_strcmp(prot, "phoenixd") == 0)
 		pd->prot = phfs_prot_phoenixd;
 	else
-		return ERR_ARG;
+		return -EINVAL;
 
-	return ERR_NONE;
+	return EOK;
 }
 
 
@@ -94,7 +94,7 @@ static int phfs_getHandlerId(const char *alias)
 			return i;
 	}
 
-	return ERR_ARG;
+	return -EINVAL;
 }
 
 
@@ -104,29 +104,29 @@ int phfs_regDev(const char *alias, unsigned int major, unsigned int minor, const
 	phfs_device_t *pd;
 
 	if (alias == NULL)
-		return ERR_ARG;
+		return -EINVAL;
 
 	if (phfs_common.dCnt >= SIZE_PHFS_HANDLERS) {
 		log_error("\nphfs: Too many devices");
-		return ERR_ARG;
+		return -EINVAL;
 	}
 
 	if (devs_check(major, minor) < 0) {
 		log_error("\nphfs: %d.%d - device does not exist", major, minor);
-		return ERR_ARG;
+		return -EINVAL;
 	}
 
 	/* Check if alias is already in use */
 	if (phfs_getHandlerId(alias) >= 0) {
 		log_error("\nphfs: %s - alias is already in use", alias);
-		return ERR_ARG;
+		return -EINVAL;
 	}
 
 	pd = &phfs_common.devices[phfs_common.dCnt];
 	if (phfs_setProt(pd, prot) < 0) {
 		log_error("\nphfs: %s - wrong protocol name\n\t use: \"%s\", \"%s\"", prot,
 		              phfs_getProtName(phfs_prot_raw), phfs_getProtName(phfs_prot_phoenixd));
-		return ERR_ARG;
+		return -EINVAL;
 	}
 
 	sz = hal_strlen(alias);
@@ -138,18 +138,18 @@ int phfs_regDev(const char *alias, unsigned int major, unsigned int minor, const
 	pd->minor = minor;
 	phfs_common.dCnt++;
 
-	return ERR_NONE;
+	return EOK;
 }
 
 
 int phfs_getFileAddr(handler_t h, addr_t *addr)
 {
 	if (h.id >= SIZE_PHFS_FILES)
-		return ERR_ARG;
+		return -EINVAL;
 
 	*addr = phfs_common.files[h.id].addr;
 
-	return ERR_NONE;
+	return EOK;
 }
 
 
@@ -200,7 +200,7 @@ static int phfs_getFileId(const char *alias)
 			return i;
 	}
 
-	return ERR_ARG;
+	return -EINVAL;
 }
 
 
@@ -210,17 +210,17 @@ int phfs_regFile(const char *alias, addr_t addr, size_t size)
 	phfs_file_t *file;
 
 	if (alias == NULL)
-		return ERR_ARG;
+		return -EINVAL;
 
 	if (phfs_common.fCnt >= SIZE_PHFS_FILES) {
 		log_error("\nphfs: Exceeded max number of files");
-		return ERR_ARG;
+		return -EINVAL;
 	}
 
 	/* Check if alias is already in use */
 	if (phfs_getFileId(alias) >= 0) {
 		log_error("\nphfs: %s - alias is already in use", alias);
-		return ERR_ARG;
+		return -EINVAL;
 	}
 
 	file = &phfs_common.files[phfs_common.fCnt];
@@ -235,7 +235,7 @@ int phfs_regFile(const char *alias, addr_t addr, size_t size)
 
 	++phfs_common.fCnt;
 
-	return ERR_NONE;
+	return EOK;
 }
 
 
@@ -245,7 +245,7 @@ int phfs_open(const char *alias, const char *file, unsigned int flags, handler_t
 	phfs_device_t *pd;
 
 	if ((res = phfs_getHandlerId(alias)) < 0)
-		return ERR_ARG;
+		return -EINVAL;
 
 	handler->pd = res;
 	pd = &phfs_common.devices[handler->pd];
@@ -273,7 +273,7 @@ int phfs_open(const char *alias, const char *file, unsigned int flags, handler_t
 		break;
 	}
 
-	return ERR_NONE;
+	return EOK;
 }
 
 
@@ -283,7 +283,7 @@ ssize_t phfs_read(handler_t handler, addr_t offs, u8 *buff, unsigned int len)
 	phfs_device_t *pd;
 
 	if (handler.pd >= SIZE_PHFS_HANDLERS)
-		return ERR_ARG;
+		return -EINVAL;
 
 	pd = &phfs_common.devices[handler.pd];
 
@@ -298,7 +298,7 @@ ssize_t phfs_read(handler_t handler, addr_t offs, u8 *buff, unsigned int len)
 
 		/* Reading file defined by alias */
 		if (handler.id >= SIZE_PHFS_FILES)
-			return ERR_ARG;
+			return -EINVAL;
 
 		file = &phfs_common.files[handler.id];
 		if (offs + len < file->size)
@@ -310,7 +310,7 @@ ssize_t phfs_read(handler_t handler, addr_t offs, u8 *buff, unsigned int len)
 		break;
 	}
 
-	return ERR_PHFS_PROTO;
+	return -EIO;
 }
 
 
@@ -320,7 +320,7 @@ ssize_t phfs_write(handler_t handler, addr_t offs, const u8 *buff, unsigned int 
 	phfs_file_t *file;
 
 	if (handler.pd >= SIZE_PHFS_HANDLERS)
-		return ERR_ARG;
+		return -EINVAL;
 
 	pd = &phfs_common.devices[handler.pd];
 
@@ -335,7 +335,7 @@ ssize_t phfs_write(handler_t handler, addr_t offs, const u8 *buff, unsigned int 
 
 		/* Writing data to file defined by alias */
 		if (handler.id >= SIZE_PHFS_FILES)
-			return ERR_ARG;
+			return -EINVAL;
 
 		file = &phfs_common.files[handler.id];
 		if (offs + len < file->size)
@@ -347,7 +347,7 @@ ssize_t phfs_write(handler_t handler, addr_t offs, const u8 *buff, unsigned int 
 		break;
 	}
 
-	return ERR_PHFS_PROTO;
+	return -EIO;
 }
 
 
@@ -357,7 +357,7 @@ int phfs_close(handler_t handler)
 	phfs_device_t *pd;
 
 	if (handler.pd >= SIZE_PHFS_HANDLERS)
-		return ERR_ARG;
+		return -EINVAL;
 
 	pd = &phfs_common.devices[handler.pd];
 
@@ -373,9 +373,9 @@ int phfs_close(handler_t handler)
 	}
 
 	if (devs_sync(pd->major, pd->minor) < 0)
-		return ERR_ARG;
+		return -EINVAL;
 
-	return ERR_NONE;
+	return EOK;
 }
 
 
@@ -384,7 +384,7 @@ int phfs_map(handler_t handler, addr_t addr, size_t sz, int mode, addr_t memaddr
 	phfs_device_t *pd;
 
 	if (handler.pd >= SIZE_PHFS_HANDLERS)
-		return ERR_ARG;
+		return -EINVAL;
 
 	pd = &phfs_common.devices[handler.pd];
 
@@ -399,7 +399,7 @@ int phfs_stat(handler_t handler, phfs_stat_t *stat)
 	phfs_file_t *file;
 
 	if (handler.pd >= SIZE_PHFS_HANDLERS)
-		return ERR_ARG;
+		return -EINVAL;
 
 	pd = &phfs_common.devices[handler.pd];
 
@@ -411,7 +411,7 @@ int phfs_stat(handler_t handler, phfs_stat_t *stat)
 
 	case phfs_prot_raw:
 		if (handler.id == -1 || handler.id >= SIZE_PHFS_FILES)
-			return ERR_ARG;
+			return -EINVAL;
 
 		file = &phfs_common.files[handler.id];
 		stat->size = file->size;
@@ -419,5 +419,5 @@ int phfs_stat(handler_t handler, phfs_stat_t *stat)
 		break;
 	}
 
-	return ERR_NONE;
+	return EOK;
 }

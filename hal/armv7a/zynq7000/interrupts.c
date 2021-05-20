@@ -14,7 +14,7 @@
  */
 
 #include "hal.h"
-#include "errors.h"
+#include "errno.h"
 #include "interrupts.h"
 
 
@@ -134,7 +134,7 @@ void interrupts_dispatch(void)
 int interrupts_setHandler(u16 n, int (*f)(u16, void *), void *data)
 {
 	if (f == NULL || n >= SIZE_INTERRUPTS)
-		return ERR_ARG;
+		return -EINVAL;
 
 	interrupts_common.handlers[n].n = n;
 	interrupts_common.handlers[n].data = data;
@@ -144,14 +144,14 @@ int interrupts_setHandler(u16 n, int (*f)(u16, void *), void *data)
 	interrupts_setCPU(n, 0x1);        /* CPU 0 handle all irqs                  */
 	interrupts_enableIRQ(n);
 
-	return ERR_NONE;
+	return EOK;
 }
 
 
 int interrupts_deleteHandler(u16 n)
 {
 	if (n >= SIZE_INTERRUPTS || interrupts_common.handlers[n].data == NULL || interrupts_common.handlers[n].f == NULL)
-		return ERR_ARG;
+		return -EINVAL;
 
 	hal_cli();
 
@@ -162,7 +162,7 @@ int interrupts_deleteHandler(u16 n)
 
 	hal_sti();
 
-	return ERR_NONE;
+	return EOK;
 }
 
 

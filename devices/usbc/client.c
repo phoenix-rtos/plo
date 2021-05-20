@@ -16,7 +16,7 @@
 #include "hal.h"
 #include "usbphy.h"
 #include "client.h"
-#include "errors.h"
+#include "errno.h"
 
 
 struct {
@@ -148,7 +148,7 @@ int usbclient_init(usb_desc_list_t *desList)
 	}
 
 	hal_irqinst(phy_getIrq(), usbclient_intr, (void *)NULL);
-	return ERR_NONE;
+	return EOK;
 }
 
 

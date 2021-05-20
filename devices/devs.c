@@ -14,7 +14,7 @@
  */
 
 #include "devs.h"
-#include "errors.h"
+#include "errno.h"
 
 #define SIZE_MAJOR   4
 #define SIZE_MINOR   16
@@ -65,14 +65,14 @@ int devs_check(unsigned int major, unsigned int minor)
 	const dev_handler_t *h;
 
 	if (major >= SIZE_MAJOR || minor >= SIZE_MINOR)
-		return ERR_ARG;
+		return -EINVAL;
 
 	h = devs_common.devs[major][minor];
 	if (h == NULL || h->init == NULL || h->done == NULL ||
 	    h->sync == NULL || h->read == NULL || h->write == NULL)
-		return ERR_ARG;
+		return -EINVAL;
 
-	return ERR_NONE;
+	return EOK;
 }
 
 
@@ -81,11 +81,11 @@ ssize_t devs_read(unsigned int major, unsigned int minor, addr_t offs, u8 *buff,
 	const dev_handler_t *h;
 
 	if (major >= SIZE_MAJOR || minor >= SIZE_MINOR)
-		return ERR_ARG;
+		return -EINVAL;
 
 	h = devs_common.devs[major][minor];
 	if (h == NULL || h->read == NULL)
-		return ERR_ARG;
+		return -EINVAL;
 
 	return h->read(minor, offs, buff, len, timeout);
 }
@@ -96,11 +96,11 @@ ssize_t devs_write(unsigned int major, unsigned int minor, addr_t offs, const u8
 	const dev_handler_t *h;
 
 	if (major >= SIZE_MAJOR || minor >= SIZE_MINOR)
-		return ERR_ARG;
+		return -EINVAL;
 
 	h = devs_common.devs[major][minor];
 	if (h == NULL || h->write == NULL)
-		return ERR_ARG;
+		return -EINVAL;
 
 	return h->write(minor, offs, buff, len);
 }
@@ -111,11 +111,11 @@ int devs_sync(unsigned int major, unsigned int minor)
 	const dev_handler_t *h;
 
 	if (major >= SIZE_MAJOR || minor >= SIZE_MINOR)
-		return ERR_ARG;
+		return -EINVAL;
 
 	h = devs_common.devs[major][minor];
 	if (h == NULL || h->sync == NULL)
-		return ERR_ARG;
+		return -EINVAL;
 
 	return h->sync(minor);
 }
@@ -126,11 +126,11 @@ int devs_map(unsigned int major, unsigned int minor, addr_t addr, size_t sz, int
 	const dev_handler_t *h;
 
 	if (major >= SIZE_MAJOR || minor >= SIZE_MINOR)
-		return ERR_ARG;
+		return -EINVAL;
 
 	h = devs_common.devs[major][minor];
 	if (h == NULL || h->map == NULL)
-		return ERR_ARG;
+		return -EINVAL;
 
 	return h->map(minor, addr, sz, mode, memaddr, memsz, memmode, a);
 }

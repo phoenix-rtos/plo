@@ -18,7 +18,7 @@
 #include "zynq.h"
 #include "peripherals.h"
 
-#include "errors.h"
+#include "errno.h"
 
 #define MAX_WAITING_COUNTER 10000000
 
@@ -133,7 +133,7 @@ int _zynq_setAmbaClk(u32 dev, u32 state)
 {
 	/* Check max dev position in amba register */
 	if (dev > 24)
-		return ERR_ARG;
+		return -EINVAL;
 
 	_zynq_slcrUnlock();
 	*(zynq_common.slcr + slcr_aper_clk_ctrl) = (*(zynq_common.slcr + slcr_aper_clk_ctrl) & ~(1 << dev)) | (!!state << dev);
@@ -147,7 +147,7 @@ int _zynq_getAmbaClk(u32 dev, u32 *state)
 {
 	/* Check max dev position in amba register */
 	if (dev > 24)
-		return ERR_ARG;
+		return -EINVAL;
 
 	_zynq_slcrUnlock();
 	*state = (*(zynq_common.slcr + slcr_aper_clk_ctrl) >> dev) & 0x1;
@@ -221,7 +221,7 @@ int _zynq_setCtlClock(const ctl_clock_t *clk)
 
 		default:
 			_zynq_slcrLock();
-			return ERR_ARG;
+			return -EINVAL;
 	}
 
 	_zynq_slcrLock();
@@ -326,7 +326,7 @@ int _zynq_getCtlClock(ctl_clock_t *clk)
 			break;
 
 		default:
-			return ERR_ARG;
+			return -EINVAL;
 	}
 
 	return 0;
@@ -338,7 +338,7 @@ int _zynq_setMIO(const ctl_mio_t *mio)
 	u32 val = 0;
 
 	if (mio->pin > 53)
-		return ERR_ARG;
+		return -EINVAL;
 
 	val = (!!mio->triEnable) | (!!mio->l0 << 1) | (!!mio->l1 << 2) | ((mio->l2 & 0x3) << 3) |
 		((mio->l3 & 0x7) << 5) | (!!mio->speed << 8) | ((mio->ioType & 0x7) << 9) | (!!mio->pullup << 12) |
@@ -357,7 +357,7 @@ int _zynq_getMIO(ctl_mio_t *mio)
 	u32 val;
 
 	if (mio->pin > 53)
-		return ERR_ARG;
+		return -EINVAL;
 
 	val = *(zynq_common.slcr + slcr_mio_pin_00 + mio->pin);
 
@@ -381,7 +381,7 @@ int _zynq_loadPL(u32 srcAddr, u32 srcLen)
 	u32 wordsCnt;
 
 	if (srcAddr < ADDR_DDR || (srcAddr + srcLen) > (ADDR_DDR + SIZE_DDR))
-		return ERR_ARG;
+		return -EINVAL;
 
 	*(zynq_common.dcfg + dcfg_unlock) = 0x757bdf0d;
 
@@ -406,7 +406,7 @@ int _zynq_loadPL(u32 srcAddr, u32 srcLen)
 	cnt = MAX_WAITING_COUNTER;
 	while ((*(zynq_common.dcfg + dcfg_status) & (1 << 31))) {
 		if (!--cnt)
-			return ERR_LOW_CFG;
+			return -EINVAL;
 	}
 
 	/* Disable PCAP loopback */
@@ -428,22 +428,22 @@ int _zynq_loadPL(u32 srcAddr, u32 srcLen)
 	cnt = MAX_WAITING_COUNTER;
 	while (!(*(zynq_common.dcfg + dcfg_int_sts) & (1 << 13))) {
 		if (!--cnt)
-			return ERR_LOW_CFG;
+			return -EINVAL;
 	}
 
 	/* Check the following errors:
 	 * AXI_WERR_INT, AXI_RTO_INT, AXI_RERR_INT, RX_FIFO_OV_INT, DMA_CMD_ERR_INT, DMA_Q_OV_INT, P2D_LEN_ERR_INT, PCFG_HMAC_ERR_INT */
 	if (*(zynq_common.dcfg + dcfg_int_sts) & 0x74c840)
-		return ERR_LOW_CFG;
+		return -EINVAL;
 
 	/* Wait for FPGA to be done */
 	cnt = MAX_WAITING_COUNTER;
 	while (!(*(zynq_common.dcfg + dcfg_int_sts) & (1 << 2))) {
 		if (!--cnt)
-			return ERR_LOW_CFG;
+			return -EINVAL;
 	}
 
-	return ERR_NONE;
+	return EOK;
 }
 
 

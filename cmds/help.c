@@ -30,7 +30,7 @@ static int cmd_help(char *s)
 
 	if ((argsc = cmd_getArgs(s, DEFAULT_BLANKS, &args)) != 0) {
 		log_error("\nWrong args: %s", s);
-		return ERR_ARG;
+		return -EINVAL;
 	}
 
 	while ((cmd = cmd_getCmd(i++)) != NULL) {
@@ -38,7 +38,7 @@ static int cmd_help(char *s)
 		cmd->info();
 	}
 
-	return ERR_NONE;
+	return EOK;
 }
 
 

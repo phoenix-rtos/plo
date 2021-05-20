@@ -17,7 +17,7 @@
 #include "hal.h"
 #include "imxrt.h"
 
-#include "errors.h"
+#include "errno.h"
 #include "timer.h"
 #include "syspage.h"
 
@@ -133,7 +133,7 @@ int hal_irqdispatch(u16 irq)
 int hal_irqinst(u16 irq, int (*isr)(u16, void *), void *data)
 {
 	if (irq >= SIZE_INTERRUPTS)
-		return ERR_ARG;
+		return -EINVAL;
 
 	hal_cli();
 	hal_common.irqs[irq].isr = isr;

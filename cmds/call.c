@@ -37,25 +37,25 @@ static int cmd_call(char *s)
 	argsc = cmd_getArgs(s, DEFAULT_BLANKS, &args);
 	if (argsc == 0) {
 		log_error("\nArguments have to be defined");
-		return ERR_ARG;
+		return -EINVAL;
 	}
 	else if (argsc != 3) {
 		log_error("\nWrong args: %s", s);
-		return ERR_ARG;
+		return -EINVAL;
 	}
 
 	/* ARG_0: device name - args[0]
 	 * ARG_1: script name - args[1] */
 	if (phfs_open(args[0], args[1], 0, &h) < 0) {
 		log_error("\nCan't open %s, on %s", args[1], args[0]);
-		return ERR_ARG;
+		return -EINVAL;
 	}
 
 	/* ARG_2: magic number*/
 	hal_memset(buff, 0, SIZE_CMD_ARG_LINE);
 	if ((res = phfs_read(h, offs, (u8 *)buff, SIZE_MAGIC_NB)) < 0) {
 		log_error("\nCan't read %s from %s", args[1], args[0]);
-		return ERR_PHFS_FILE;
+		return -EIO;
 	}
 	offs += res;
 	buff[res] = '\0';
@@ -63,7 +63,7 @@ static int cmd_call(char *s)
 	/* Check magic number */
 	if (hal_strcmp(buff, args[2]) != 0) {
 		log_error("\nMagic number for %s is wrong.", args[1]);
-		return ERR_ARG;
+		return -EINVAL;
 	}
 
 	/* Execute script */
@@ -73,7 +73,7 @@ static int cmd_call(char *s)
 	do {
 		if ((res = phfs_read(h, offs, (u8 *)&c, 1)) < 0) {
 			log_error("\nCan't read %s from %s", args[1], args[0]);
-			return ERR_PHFS_FILE;
+			return -EIO;
 		}
 
 		offs += res;
@@ -87,7 +87,7 @@ static int cmd_call(char *s)
 		buff[i++] = c;
 	} while (res > 0);
 
-	return ERR_NONE;
+	return EOK;
 }
 
 

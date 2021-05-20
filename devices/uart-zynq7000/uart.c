@@ -18,7 +18,7 @@
 #include "zynq.h"
 #include "devs.h"
 
-#include "errors.h"
+#include "errno.h"
 #include "timer.h"
 
 #define MAX_TXRX_FIFO_SIZE  0x40
@@ -162,7 +162,7 @@ static int uart_calcBaudarate(uart_t *uart, int baudrate)
 	*(uart->base + baudgen) = bestBgen;
 	*(uart->base + baud_rate_divider_reg0) = bestBdiv;
 
-	return ERR_NONE;
+	return EOK;
 }
 
 
@@ -194,7 +194,7 @@ static int uart_setPin(u32 pin)
 			break;
 
 		default:
-			return ERR_ARG;
+			return -EINVAL;
 	}
 
 	return _zynq_setMIO(&ctl);
@@ -225,12 +225,12 @@ static ssize_t uart_read(unsigned int minor, addr_t offs, u8 *buff, unsigned int
 	uart_t *uart;
 
 	if (minor >= UARTS_MAX_CNT)
-		return ERR_ARG;
+		return -EINVAL;
 
 	uart = &uart_common.uarts[minor];
 
 	if (!timer_wait(timeout, TIMER_VALCHG, &uart->rxHead, uart->rxTail))
-		return ERR_UART_TIMEOUT;
+		return -ETIME;
 
 	hal_cli();
 
@@ -259,7 +259,7 @@ static ssize_t uart_write(unsigned int minor, const u8 *buff, unsigned int len)
 	uart_t *uart;
 
 	if (minor >= UARTS_MAX_CNT)
-		return ERR_ARG;
+		return -EINVAL;
 
 	uart = &uart_common.uarts[minor];
 
@@ -302,7 +302,7 @@ static ssize_t uart_safeWrite(unsigned int minor, addr_t offs, const u8 *buff, u
 
 	for (l = 0; len;) {
 		if ((l = uart_write(minor, buff, len)) < 0)
-			return ERR_MSG_IO;
+			return -ENXIO;
 		buff += l;
 		len -= l;
 	}
@@ -314,11 +314,11 @@ static ssize_t uart_safeWrite(unsigned int minor, addr_t offs, const u8 *buff, u
 static int uart_sync(unsigned int minor)
 {
 	if (minor >= UARTS_MAX_CNT)
-		return ERR_ARG;
+		return -EINVAL;
 
 	/* TBD */
 
-	return ERR_NONE;
+	return EOK;
 }
 
 
@@ -327,7 +327,7 @@ static int uart_done(unsigned int minor)
 	uart_t *uart;
 
 	if (minor >= UARTS_MAX_CNT)
-		return ERR_ARG;
+		return -EINVAL;
 
 	uart = &uart_common.uarts[minor];
 
@@ -345,18 +345,18 @@ static int uart_done(unsigned int minor)
 	hal_irquninst(uart->irq);
 	_zynq_setAmbaClk(uart->clk, clk_disable);
 
-	return ERR_NONE;
+	return EOK;
 }
 
 
 static int uart_map(unsigned int minor, addr_t addr, size_t sz, int mode, addr_t memaddr, size_t memsz, int memmode, addr_t *a)
 {
 	if (minor >= UARTS_MAX_CNT)
-		return ERR_ARG;
+		return -EINVAL;
 
 	/* Device mode cannot be higher than map mode to copy data */
 	if ((mode & memmode) != mode)
-		return ERR_ARG;
+		return -EINVAL;
 
 	/* uart is not mappable to any region */
 	return dev_isNotMappable;
@@ -368,7 +368,7 @@ static int uart_init(unsigned int minor)
 	uart_t *uart;
 
 	if (minor >= UARTS_MAX_CNT)
-		return ERR_ARG;
+		return -EINVAL;
 
 	/* UART Clock Controller configuration */
 	if (uart_common.clkInit == 0) {
@@ -378,10 +378,10 @@ static int uart_init(unsigned int minor)
 
 
 	if (_zynq_setAmbaClk(info[minor].clk, clk_enable) < 0)
-		return ERR_ARG;
+		return -EINVAL;
 
 	if (uart_setPin(info[minor].rxPin) < 0 || uart_setPin(info[minor].txPin) < 0)
-		return ERR_ARG;
+		return -EINVAL;
 
 	uart = &uart_common.uarts[minor];
 
@@ -417,7 +417,7 @@ static int uart_init(unsigned int minor)
 	lib_printf("\ndev/uart: Initializing uart(%d.%d)", DEV_UART, minor);
 	hal_irqinst(info[minor].irq, uart_irqHandler, (void *)uart);
 
-	return ERR_NONE;
+	return EOK;
 }
 
 

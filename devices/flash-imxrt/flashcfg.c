@@ -16,7 +16,7 @@
 #include "lut.h"
 #include "flashcfg.h"
 #include "peripherals.h"
-#include "errors.h"
+#include "errno.h"
 
 
 static int flashcfg_getWindbondConfig(flash_context_t *ctx)
@@ -29,10 +29,10 @@ static int flashcfg_getWindbondConfig(flash_context_t *ctx)
 			break;
 
 		default :
-			return ERR_ARG;
+			return -EINVAL;
 	}
 
-	return ERR_NONE;
+	return EOK;
 }
 
 
@@ -103,10 +103,10 @@ static int flashcfg_getIssiConfig(flash_context_t *ctx)
 			break;
 
 		default :
-			return ERR_ARG;
+			return -EINVAL;
 	}
 
-	return ERR_NONE;
+	return EOK;
 }
 
 
@@ -133,10 +133,10 @@ static int flashcfg_getMicronConfig(flash_context_t *ctx)
 
 
 		default :
-			return ERR_ARG;
+			return -EINVAL;
 	}
 
-	return ERR_NONE;
+	return EOK;
 }
 
 
@@ -202,27 +202,27 @@ int flashcfg_getCfg(flash_context_t *ctx)
 	switch (GET_MANUFACTURE_ID(ctx->flashID)) {
 		case flash_windbond:
 			if (flashcfg_getWindbondConfig(ctx) < 0)
-				return ERR_ARG;
+				return -EINVAL;
 			flashcfg_setWindbondLUT(ctx);
 			break;
 
 		case flash_issi:
 			if (flashcfg_getIssiConfig(ctx) < 0)
-				return ERR_ARG;
+				return -EINVAL;
 			flashcfg_setIssiLut(ctx);
 			break;
 
 		case flash_micron:
 			if (flashcfg_getMicronConfig(ctx) < 0)
-				return ERR_ARG;
+				return -EINVAL;
 
 			/* TODO: provide support for chip erase on MT25QL01GBBB in LUT */
 			flashcfg_setMicronLUT(ctx);
 			break;
 
 		default:
-			return ERR_ARG;
+			return -EINVAL;
 	}
 
-	return ERR_NONE;
+	return EOK;
 }

@@ -15,7 +15,7 @@
 
 #include "hal.h"
 #include "client.h"
-#include "errors.h"
+#include "errno.h"
 
 
 struct {
@@ -150,7 +150,7 @@ int desc_init(usb_desc_list_t *desList, usb_common_data_t *usb_data_in, usb_dc_t
 		}
 	}
 
-	return ERR_NONE;
+	return EOK;
 }
 
 
@@ -185,7 +185,7 @@ static void desc_ReqSetConfig(void)
 static int desc_ReqGetConfig(const usb_setup_packet_t *setup)
 {
 	if (setup->wValue != 0 || setup->wIndex != 0 || setup->wLength != 1)
-		return ERR_NONE;
+		return EOK;
 
 	if (desc_common.dc->status != DC_CONFIGURED)
 		desc_common.data->endpts[0].buf[USB_ENDPT_DIR_OUT].buffer[0] = 0;
@@ -194,7 +194,7 @@ static int desc_ReqGetConfig(const usb_setup_packet_t *setup)
 
 	ctrl_execTransfer(0, (u32)desc_common.data->endpts[0].buf[USB_ENDPT_DIR_OUT].buffer, setup->wLength, USB_ENDPT_DIR_OUT);
 
-	return ERR_NONE;
+	return EOK;
 }
 
 
@@ -253,11 +253,11 @@ static void desc_defaultSetup(const usb_setup_packet_t *setup)
 
 int desc_setup(const usb_setup_packet_t *setup)
 {
-	int res = ERR_NONE;
+	int res = EOK;
 
 
 	if (EXTRACT_REQ_TYPE(setup->bmRequestType) != REQUEST_TYPE_STANDARD)
-		return ERR_NONE;
+		return EOK;
 
 	switch (setup->bRequest) {
 		case REQ_SET_ADDRESS:
@@ -311,10 +311,10 @@ static void desc_ClassReqSetReport(const usb_setup_packet_t *setup)
 
 int desc_classSetup(const usb_setup_packet_t *setup)
 {
-	int res = ERR_NONE;
+	int res = EOK;
 
 	if (EXTRACT_REQ_TYPE(setup->bmRequestType) != REQUEST_TYPE_CLASS)
-		return ERR_NONE;
+		return EOK;
 
 	switch (setup->bRequest) {
 		case CLASS_REQ_SET_IDLE:

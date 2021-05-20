@@ -39,12 +39,12 @@ static int cmd_echo(char *s)
 			log_info("\nEcho is OFF");
 		}
 
-		return ERR_NONE;
+		return EOK;
 	}
 
 	if (argsc != 1) {
 		log_error("\nWrong args: %s", s);
-		return ERR_ARG;
+		return -EINVAL;
 	}
 
 	/* Set echo */
@@ -56,10 +56,10 @@ static int cmd_echo(char *s)
 	}
 	else {
 		log_error("\nWrong args: %s", s);
-		return ERR_ARG;
+		return -EINVAL;
 	}
 
-	return ERR_NONE;
+	return EOK;
 }
 
 

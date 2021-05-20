@@ -20,7 +20,7 @@
 #include "lib.h"
 #include "log.h"
 #include "types.h"
-#include "errors.h"
+#include "errno.h"
 
 
 #define DEFAULT_BLANKS    " \t"

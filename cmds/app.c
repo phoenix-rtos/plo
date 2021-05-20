@@ -35,16 +35,16 @@ static int cmd_cpphfs2map(handler_t handler, const char *imap)
 	do {
 		if ((res = phfs_read(handler, offs, buff, SIZE_MSG_BUFF)) < 0) {
 			log_error("\nCan't read data");
-			return ERR_PHFS_FILE;
+			return -EIO;
 		}
 
 		if (syspage_write2Map(imap, buff, res) < 0)
-			return ERR_ARG;
+			return -EINVAL;
 
 		offs += res;
 	} while (res > 0);
 
-	return ERR_NONE;
+	return EOK;
 }
 
 
@@ -59,27 +59,27 @@ static int cmd_loadApp(handler_t handler, size_t size, const char *imap, const c
 	/* Check ELF header */
 	if ((res = phfs_read(handler, offs, (u8 *)&hdr, (u32)sizeof(Elf32_Ehdr))) < 0) {
 		log_error("\nCan't read data");
-		return ERR_PHFS_FILE;
+		return -EIO;
 	}
 
 	if ((hdr.e_ident[0] != 0x7f) || (hdr.e_ident[1] != 'E') || (hdr.e_ident[2] != 'L') || (hdr.e_ident[3] != 'F')) {
 		log_error("\nFile isn't an ELF object");
-		return ERR_PHFS_FILE;
+		return -EIO;
 	}
 
 	/* Align map top, so the app begin is aligned */
 	if (syspage_alignMapTop(imap) < 0)
-		return ERR_ARG;
+		return -EINVAL;
 
 	/* Get top address of map and its attributes */
 	if (syspage_getMapTop(imap, &start) < 0 || syspage_getMapAttr(imap, &attr) < 0) {
 		log_error("\n%s does not exist", imap);
-		return ERR_ARG;
+		return -EINVAL;
 	}
 
 	if ((res = phfs_map(handler, offs, size, mAttrRead | mAttrWrite, (addr_t)start, size, attr, &addr)) < 0) {
 		log_error("\nDevice is not mappable in %s", imap);
-		return ERR_ARG;
+		return -EINVAL;
 	}
 
 	/* Copy program's elf to imap */
@@ -92,22 +92,22 @@ static int cmd_loadApp(handler_t handler, size_t size, const char *imap, const c
 	}
 	else if (res == dev_isMappable) {
 		if (phfs_getFileAddr(handler, &offs) < 0)
-			return ERR_ARG;
+			return -EINVAL;
 
 		start = (void *)(offs + addr);
 		end = start + size;
 	}
 	else {
 		log_error("\nDevice returns wrong mapping result.");
-		return ERR_PHFS_FILE;
+		return -EIO;
 	}
 
 	if (syspage_addProg(start, end, imap, dmap, cmdline, flags) < 0) {
 		log_error("\nCan't add program to syspage");
-		return ERR_ARG;
+		return -EINVAL;
 	}
 
-	return ERR_NONE;
+	return EOK;
 }
 
 
@@ -129,11 +129,11 @@ static int cmd_app(char *s)
 	argsc = cmd_getArgs(s, DEFAULT_BLANKS, &args);
 	if (argsc == 0) {
 		syspage_showApps();
-		return ERR_NONE;
+		return EOK;
 	}
 	else if (argsc < 4 || argsc > 6) {
 		log_error("\nWrong args: %s", s);
-		return ERR_ARG;
+		return -EINVAL;
 	}
 
 	/* ARG_0: alias to device - it will be check in phfs_open */
@@ -147,14 +147,14 @@ static int cmd_app(char *s)
 		}
 		else {
 			log_error("\nWrong args: %s", s);
-			return ERR_ARG;
+			return -EINVAL;
 		}
 	}
 
 	/* ARG_2: cmdline */
 	if (argID >= argsc) {
 		log_error("\nWrong args: %s", s);
-		return ERR_ARG;
+		return -EINVAL;
 	}
 
 	/* Get app name from cmdline */
@@ -166,7 +166,7 @@ static int cmd_app(char *s)
 
 	if (pos > SIZE_APP_NAME) {
 		log_error("\nApp %s name is too long", cmdline);
-		return ERR_ARG;
+		return -EINVAL;
 	}
 
 	hal_memcpy(appName, args[argID], pos);
@@ -179,7 +179,7 @@ static int cmd_app(char *s)
 	}
 	else {
 		log_error("\nInstruction's map for %s is not defined", appName);
-		return ERR_ARG;
+		return -EINVAL;
 	}
 
 	/* ARG_4: Get map for data section */
@@ -189,34 +189,34 @@ static int cmd_app(char *s)
 	}
 	else {
 		log_error("\nData's map for %s is not defined", appName);
-		return ERR_ARG;
+		return -EINVAL;
 	}
 
 	/* Open file */
 	if (phfs_open(args[0], appName, 0, &handler) < 0) {
 		log_error("\nCan't open %s on %s", appName, args[0]);
-		return ERR_ARG;
+		return -EINVAL;
 	}
 
 	/* Get file's properties */
 	if (phfs_stat(handler, &stat) < 0) {
 		log_error("\nCan't get stat from %s", args[0]);
-		return ERR_ARG;
+		return -EINVAL;
 	}
 
 	if (cmd_loadApp(handler, stat.size, imap, dmap, cmdline, flags) < 0) {
 		log_error("\nCan't load %s to %s via %s", appName, imap, args[0]);
-		return ERR_PHFS_IO;
+		return -EIO;
 	}
 
 	if (phfs_close(handler) < 0) {
 		log_error("\nCan't  close %s", appName);
-		return ERR_ARG;
+		return -EINVAL;
 	}
 
 	log_info("\nLoading %s", appName);
 
-	return ERR_NONE;
+	return EOK;
 }
 
 

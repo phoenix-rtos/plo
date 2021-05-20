@@ -17,7 +17,7 @@
 #include "lib.h"
 #include "devs.h"
 #include "timer.h"
-#include "errors.h"
+#include "errno.h"
 
 #include "lut.h"
 #include "romapi.h"
@@ -99,10 +99,10 @@ static void flashdrv_syncCtx(flash_context_t *ctx)
 static s32 flashdrv_readData(flash_context_t *ctx, u32 offset, char *buff, u32 size)
 {
 	if (flashdrv_isValidAddress(ctx, offset, size))
-		return ERR_ARG;
+		return -EINVAL;
 
 	if (flexspi_norFlashRead(ctx->instance, &ctx->config, buff, offset, size) < 0)
-		return ERR_ARG;
+		return -EINVAL;
 
 	return size;
 }
@@ -115,10 +115,10 @@ static s32 flashdrv_bufferedPagesWrite(flash_context_t *ctx, u32 offset, const c
 	u32 savedBytes = 0;
 
 	if (size % ctx->properties.page_size)
-		return ERR_ARG;
+		return -EINVAL;
 
 	if (flashdrv_isValidAddress(ctx, offset, size))
-		return ERR_ARG;
+		return -EINVAL;
 
 	while (savedBytes < size) {
 		pageAddr = offset + savedBytes;
@@ -172,10 +172,10 @@ static int flashdrv_defineFlexSPI(flash_context_t *ctx)
 			break;
 
 		default:
-			return ERR_ARG;
+			return -EINVAL;
 	}
 
-	return ERR_NONE;
+	return EOK;
 }
 
 
@@ -185,7 +185,7 @@ static int flashdrv_defineFlexSPI(flash_context_t *ctx)
 static ssize_t flashdrv_read(unsigned int minor, addr_t offs, u8 *buff, unsigned int len, unsigned int timeout)
 {
 	if (minor >= FLASH_NO)
-		return ERR_ARG;
+		return -EINVAL;
 
 	hal_memcpy(buff, (void *)(flashdrv_common.ctx[minor].address + offs), len);
 	return len;
@@ -200,10 +200,10 @@ static ssize_t flashdrv_write(unsigned int minor, addr_t offs, const u8 *buff, u
 
 	size = len;
 	if (!len)
-		return ERR_NONE;
+		return EOK;
 
 	if (minor >= FLASH_NO || offs % buffSz)
-		return ERR_ARG;
+		return -EINVAL;
 
 	ctx = &flashdrv_common.ctx[minor];
 
@@ -212,13 +212,13 @@ static ssize_t flashdrv_write(unsigned int minor, addr_t offs, const u8 *buff, u
 			hal_memcpy(flashdrv_common.buff, buff + bOffs, size);
 			hal_memset(flashdrv_common.buff + size, 0xff, buffSz - size);
 			if (flashdrv_bufferedPagesWrite(ctx, offs + bOffs, (const char *)flashdrv_common.buff, buffSz) < 0)
-				return ERR_ARG;
+				return -EINVAL;
 			size = 0;
 			break;
 		}
 
 		if (flashdrv_bufferedPagesWrite(ctx, offs + bOffs, (const char *)(buff + bOffs), buffSz) < 0)
-			return ERR_ARG;
+			return -EINVAL;
 
 		bOffs += buffSz;
 		size -= buffSz;
@@ -231,22 +231,22 @@ static ssize_t flashdrv_write(unsigned int minor, addr_t offs, const u8 *buff, u
 static int flashdrv_done(unsigned int minor)
 {
 	if (minor >= FLASH_NO)
-		return ERR_ARG;
+		return -EINVAL;
 
 	/* TBD */
 
-	return ERR_NONE;
+	return EOK;
 }
 
 
 static int flashdrv_sync(unsigned int minor)
 {
 	if (minor >= FLASH_NO)
-		return ERR_ARG;
+		return -EINVAL;
 
 	flashdrv_syncCtx(&flashdrv_common.ctx[minor]);
 
-	return ERR_NONE;
+	return EOK;
 }
 
 
@@ -256,14 +256,14 @@ static int flashdrv_map(unsigned int minor, addr_t addr, size_t sz, int mode, ad
 	addr_t fStart;
 
 	if (minor >= FLASH_NO)
-		return ERR_ARG;
+		return -EINVAL;
 
 	fStart = flashdrv_common.ctx[minor].address;
 	fSz = flashdrv_common.ctx[minor].properties.size;
 
 	/* Check if region is located on flash */
 	if ((addr + sz) > fSz)
-		return ERR_ARG;
+		return -EINVAL;
 
 	/* Check if flash is mappable to map region */
 	if (fStart <= memaddr && (fStart + fSz) >= (memaddr + memsz)) {
@@ -273,7 +273,7 @@ static int flashdrv_map(unsigned int minor, addr_t addr, size_t sz, int mode, ad
 
 	/* Device mode cannot be higher than map mode to copy data */
 	if ((mode & memmode) != mode)
-		return ERR_ARG;
+		return -EINVAL;
 
 	/* Data can be copied from device to map */
 	return dev_isNotMappable;
@@ -283,11 +283,11 @@ static int flashdrv_map(unsigned int minor, addr_t addr, size_t sz, int mode, ad
 static int flashdrv_init(unsigned int minor)
 {
 	u32 pc;
-	int res = ERR_NONE;
+	int res = EOK;
 	flash_context_t *ctx;
 
 	if (minor >= FLASH_NO)
-		return ERR_ARG;
+		return -EINVAL;
 
 	/* TODO: move information about dn to device tree module */
 	if (minor == 0 && FLASH_FLEXSPI1_MOUNTED) {
@@ -299,7 +299,7 @@ static int flashdrv_init(unsigned int minor)
 		ctx->address = FLASH_FLEXSPI2;
 	}
 	else {
-		return ERR_ARG;
+		return -EINVAL;
 	}
 
 	ctx->sectorID = -1;
@@ -316,20 +316,20 @@ static int flashdrv_init(unsigned int minor)
 	__asm__ volatile ("mov %0, pc" :"=r"(pc));
 	if (!(pc >= ctx->address && pc < ctx->address + ctx->maxSize)) {
 		if (flexspi_norGetConfig(ctx->instance, &ctx->config, &ctx->option) != 0)
-			return ERR_ARG;
+			return -EINVAL;
 
 		if (flexspi_norFlashInit(ctx->instance, &ctx->config) != 0)
-			return ERR_ARG;
+			return -EINVAL;
 	}
 	else {
 		hal_memcpy((void *)&ctx->config.mem, &_fcfb, sizeof(ctx->config.mem));
 	}
 
 	if (flashdrv_getVendorID(ctx, &ctx->flashID) != 0)
-		return ERR_ARG;
+		return -EINVAL;
 
 	if (flashcfg_getCfg(ctx) != 0)
-		return ERR_ARG;
+		return -EINVAL;
 
 	lib_printf("\ndev/flash: Initializing flash(%d.%d)", DEV_FLASH, minor);
 

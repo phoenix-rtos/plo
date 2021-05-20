@@ -16,7 +16,7 @@
 #include "hal.h"
 #include "msg.h"
 #include "devs.h"
-#include "errors.h"
+#include "errno.h"
 
 
 #define MSGREAD_DESYN   0
@@ -84,12 +84,12 @@ static int msg_read(unsigned int major, unsigned int minor, msg_t *msg, u16 time
 				/* Return error if frame is to long */
 				if (l == MSG_HDRSZ + MSG_MAXLEN) {
 					*state = MSGREAD_DESYN;
-					return ERR_MSG_IO;
+					return -ENXIO;
 				}
 
 				/* Return error if terminator discovered */
 				if (c == MSG_MARK)
-					return ERR_MSG_IO;
+					return -ENXIO;
 
 				if (!escfl && (c == MSG_ESC)) {
 					escfl = 1;
@@ -110,7 +110,7 @@ static int msg_read(unsigned int major, unsigned int minor, msg_t *msg, u16 time
 
 					/* Verify received message */
 					if (msg_getcsum(msg) != msg_csum(msg))
-						return ERR_MSG_IO;
+						return -ENXIO;
 
 					return l;
 				}
@@ -125,7 +125,7 @@ static int msg_read(unsigned int major, unsigned int minor, msg_t *msg, u16 time
 
 	*state = MSGREAD_DESYN;
 
-	return ERR_MSG_IO;
+	return -ENXIO;
 }
 
 
@@ -140,9 +140,9 @@ int msg_send(unsigned int major, unsigned int minor, msg_t *smsg, msg_t *rmsg)
 			continue;
 
 		if ((msg_read(major, minor, rmsg, MSGRECV_TIMEOUT, &state)) > 0) {
-			return ERR_NONE;
+			return EOK;
 		}
 	}
 
-	return ERR_MSG_IO;
+	return -ENXIO;
 }

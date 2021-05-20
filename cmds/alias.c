@@ -35,11 +35,11 @@ static int cmd_alias(char *s)
 	argsc = cmd_getArgs(s, DEFAULT_BLANKS, &args);
 	if (argsc == 0) {
 		phfs_showFiles();
-		return ERR_NONE;
+		return EOK;
 	}
 	else if (argsc != 3) {
 		log_error("\nWrong args: %s", s);
-		return ERR_ARG;
+		return -EINVAL;
 	}
 
 
@@ -54,18 +54,18 @@ static int cmd_alias(char *s)
 
 		if (hal_strlen(end) != 0) {
 			log_error("\nWrong args: %s", s);
-			return ERR_ARG;
+			return -EINVAL;
 		}
 	}
 
 	if (phfs_regFile(args[0], addr, sz) < 0) {
 		log_error("\nCan't register file %s", args[0]);
-		return ERR_ARG;
+		return -EINVAL;
 	}
 
 	log_info("\nRegistering file %s ", args[0]);
 
-	return ERR_NONE;
+	return EOK;
 }
 
 

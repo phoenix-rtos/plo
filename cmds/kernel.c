@@ -44,27 +44,27 @@ static int cmd_kernel(char *s)
 	/* Parse arguments */
 	if ((argsc = cmd_getArgs(s, DEFAULT_BLANKS, &args)) == 0) {
 		syspage_showKernel();
-		return ERR_NONE;
+		return EOK;
 	}
 	else if (argsc != 1) {
 		log_error("\nWrong args: %s", s);
-		return ERR_ARG;
+		return -EINVAL;
 	}
 
 	if (phfs_open(args[0], KERNEL_PATH, 0, &handler) < 0) {
 		log_error("\nCannot open %s, on %s", KERNEL_PATH, args[0]);
-		return ERR_ARG;
+		return -EINVAL;
 	}
 
 	/* Read ELF header */
 	if (phfs_read(handler, offs, (u8 *)&hdr, (u32)sizeof(Elf32_Ehdr)) < 0) {
 		log_error("\nCan't read %s, on %s", KERNEL_PATH, args[0]);
-		return ERR_ARG;
+		return -EINVAL;
 	}
 
 	if ((hdr.e_ident[0] != 0x7f) || (hdr.e_ident[1] != 'E') || (hdr.e_ident[2] != 'L') || (hdr.e_ident[3] != 'F')) {
 		log_error("\n%s isn't an ELF object", KERNEL_PATH);
-		return ERR_ARG;
+		return -EINVAL;
 	}
 
 	/* Read program segments */
@@ -72,7 +72,7 @@ static int cmd_kernel(char *s)
 		offs = hdr.e_phoff + k * sizeof(Elf32_Phdr);
 		if (phfs_read(handler, offs, (u8 *)&phdr, (u32)sizeof(Elf32_Phdr)) < 0) {
 			log_error("\nCan't read %s, on %s", KERNEL_PATH, args[0]);
-			return ERR_ARG;
+			return -EINVAL;
 		}
 
 		if ((phdr.p_type == PHT_LOAD)) {
@@ -90,7 +90,7 @@ static int cmd_kernel(char *s)
 				offs = phdr.p_offset + i * sizeof(buff);
 				if (phfs_read(handler, offs, buff, (u32)sizeof(buff)) < 0) {
 					log_error("\nCan't read %s, on %s", KERNEL_PATH, args[0]);
-					return ERR_ARG;
+					return -EINVAL;
 				}
 				hal_memcpy(loffs, buff, sizeof(buff));
 				loffs += sizeof(buff);
@@ -102,7 +102,7 @@ static int cmd_kernel(char *s)
 				offs = phdr.p_offset + i * sizeof(buff);
 				if (phfs_read(handler, offs, buff, size) < 0) {
 					log_error("\nCan't read %s, on %s", KERNEL_PATH, args[0]);
-					return ERR_ARG;
+					return -EINVAL;
 				}
 
 				hal_memcpy((void *)loffs, buff, size);
@@ -116,7 +116,7 @@ static int cmd_kernel(char *s)
 
 		if (phfs_read(handler, offs, (u8 *)&shdr, (u32)sizeof(Elf32_Shdr)) < 0) {
 			log_error("\nCan't read %s, on %s", KERNEL_PATH, args[0]);
-			return ERR_ARG;
+			return -EINVAL;
 		}
 
 		/* Find .bss section header */
@@ -132,12 +132,12 @@ static int cmd_kernel(char *s)
 
 	if (phfs_close(handler) < 0) {
 		log_error("\nCan't close %s, on %s", KERNEL_PATH, args[0]);
-		return ERR_ARG;
+		return -EINVAL;
 	}
 
 	log_info("\nLoading %s", KERNEL_PATH);
 
-	return ERR_NONE;
+	return EOK;
 }
 
 

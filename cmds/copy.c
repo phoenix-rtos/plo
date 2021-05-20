@@ -50,14 +50,14 @@ static int cmd_cpphfs2phfs(handler_t srcHandler, addr_t srcAddr, size_t srcSz, h
 
 		if ((res = phfs_read(srcHandler, srcAddr, buff, chunk)) < 0) {
 			log_error("\nCan't read data\n");
-			return ERR_PHFS_FILE;
+			return -EIO;
 		}
 		srcAddr += res;
 		size -= res;
 
 		if ((res = phfs_write(dstHandler, dstAddr, buff, res)) < 0) {
 			log_error("\nCan't write data to address: 0x%x\n", dstAddr);
-			return ERR_PHFS_FILE;
+			return -EIO;
 		}
 		dstAddr += res;
 	} while (size > 0 && res > 0);
@@ -72,13 +72,13 @@ static int cmd_parseDev(handler_t *h, addr_t *offs, size_t *sz, char (*args)[SIZ
 	char *endptr;
 
 	if (h == NULL || offs == NULL || sz == NULL || args == NULL || argsID == NULL)
-		return ERR_ARG;
+		return -EINVAL;
 
 	alias = args[(*argsID)++];
 
 	if (*argsID >= argsc) {
 		log_error("\nWrong args for %s", alias);
-		return ERR_ARG;
+		return -EINVAL;
 	}
 
 	*offs = lib_strtoul(args[*argsID], &endptr, 0);
@@ -89,7 +89,7 @@ static int cmd_parseDev(handler_t *h, addr_t *offs, size_t *sz, char (*args)[SIZ
 		*sz = 0;
 		if (phfs_open(alias, args[(*argsID)], 0, h) < 0) {
 			log_error("\nCan't open %s on %s", args[*argsID], alias);
-			return ERR_PHFS_IO;
+			return -EIO;
 		}
 		(*argsID)++;
 	}
@@ -98,16 +98,16 @@ static int cmd_parseDev(handler_t *h, addr_t *offs, size_t *sz, char (*args)[SIZ
 		*sz = lib_strtoul(args[++(*argsID)], &endptr, 0);
 		if (hal_strlen(endptr) != 0) {
 			log_error("\nWrong size value: %s, for %s with offs 0x%x", args[(*argsID)], alias, *offs);
-			return ERR_ARG;
+			return -EINVAL;
 		}
 
 		if (phfs_open(alias, NULL, 0, h) < 0) {
 			log_error("\nCan't open %s with offset 0x%x", alias, *offs);
-			return ERR_PHFS_IO;
+			return -EIO;
 		}
 	}
 
-	return ERR_NONE;
+	return EOK;
 }
 
 
@@ -123,14 +123,14 @@ static int cmd_copy(char *s)
 	/* Parse all comand's arguments */
 	if ((argsc = cmd_getArgs(s, DEFAULT_BLANKS, &args)) < 4) {
 		log_error("\nWrong args: %s", s);
-		return ERR_ARG;
+		return -EINVAL;
 	}
 
 	if (cmd_parseDev(&h[0], &offs[0], &sz[0], args, &argsID, argsc) < 0)
-		return ERR_ARG;
+		return -EINVAL;
 
 	if (cmd_parseDev(&h[1], &offs[1], &sz[1], args, &argsID, argsc) < 0)
-		return ERR_ARG;
+		return -EINVAL;
 
 	/* Copy data between devices */
 	log_info("\nCopying data, please wait...");
@@ -138,7 +138,7 @@ static int cmd_copy(char *s)
 		log_error("\nCopying failed");
 		phfs_close(h[0]);
 		phfs_close(h[1]);
-		return ERR_ARG;
+		return -EINVAL;
 	}
 
 	log_info("\nFinished copying");
@@ -146,7 +146,7 @@ static int cmd_copy(char *s)
 	phfs_close(h[0]);
 	phfs_close(h[1]);
 
-	return ERR_NONE;
+	return EOK;
 }
 
 

@@ -17,7 +17,7 @@
 #include "msg.h"
 #include "hal.h"
 #include "lib.h"
-#include "errors.h"
+#include "errno.h"
 
 
 /* Message types */
@@ -70,13 +70,13 @@ int phoenixd_open(const char *file, unsigned int major, unsigned int minor, unsi
 	msg_setlen(&smsg, l);
 
 	if (msg_send(major, minor, &smsg, &rmsg) < 0)
-		return ERR_PHFS_IO;
+		return -EIO;
 	else if (msg_gettype(&rmsg) != MSG_OPEN)
-		return ERR_PHFS_PROTO;
+		return -EIO;
 	else if (msg_getlen(&rmsg) != sizeof(u32))
-		return ERR_PHFS_PROTO;
+		return -EIO;
 	else if (!(fd = *(u32 *)rmsg.data))
-		return ERR_PHFS_FILE;
+		return -EIO;
 
 	return fd;
 }
@@ -93,7 +93,7 @@ ssize_t phoenixd_read(unsigned int fd, unsigned int major, unsigned int minor, a
 	hdrsz = (u16)((u32)io->data - (u32)io);
 
 	if (len > MSG_MAXLEN - hdrsz)
-		return ERR_ARG;
+		return -EINVAL;
 
 	io->handle = fd;
 	io->pos = offs;
@@ -103,15 +103,15 @@ ssize_t phoenixd_read(unsigned int fd, unsigned int major, unsigned int minor, a
 	msg_setlen(&smsg, hdrsz);
 
 	if (msg_send(major, minor, &smsg, &rmsg) < 0)
-		return ERR_PHFS_IO;
+		return -EIO;
 
 	if (msg_gettype(&rmsg) != MSG_READ)
-		return ERR_PHFS_PROTO;
+		return -EIO;
 
 	io = (msg_phoenixd_t *)rmsg.data;
 
 	if ((long)io->len < 0)
-		return ERR_PHFS_FILE;
+		return -EIO;
 
 	/* TODO: check io->pos */
 	// *pos = io->pos;
@@ -125,7 +125,7 @@ ssize_t phoenixd_read(unsigned int fd, unsigned int major, unsigned int minor, a
 ssize_t phoenixd_write(unsigned int fd, unsigned int major, unsigned int minor, addr_t offs, const u8 *buff, unsigned int len)
 {
 	/* TODO */
-	return ERR_NONE;
+	return EOK;
 }
 
 
@@ -148,24 +148,24 @@ int phoenixd_stat(unsigned int fd, unsigned int major, unsigned int minor, phfs_
 	msg_setlen(&smsg, hdrsz);
 
 	if (msg_send(major, minor, &smsg, &rmsg) < 0)
-		return ERR_PHFS_IO;
+		return -EIO;
 
 	if (msg_gettype(&rmsg) != MSG_FSTAT)
-		return ERR_PHFS_PROTO;
+		return -EIO;
 
 	io = (msg_phoenixd_t *)rmsg.data;
 	if (io->len != sizeof(phoenixd_stat_t))
-		return ERR_PHFS_FILE;
+		return -EIO;
 
 	pstat = (phoenixd_stat_t *)io->data;
 	stat->size = pstat->st_size;
 
-	return ERR_NONE;
+	return EOK;
 }
 
 
 int phoenixd_close(unsigned int fd, unsigned int major, unsigned int minor)
 {
 	/* TODO */
-	return ERR_NONE;
+	return EOK;
 }

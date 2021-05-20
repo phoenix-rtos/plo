@@ -21,7 +21,7 @@
 
 #include "list.h"
 #include "hal.h"
-#include "errors.h"
+#include "errno.h"
 
 
 #define SIZE_USB_ENDPTS        2 * PHFS_ACM_PORTS_NB + 1 /* Add control endpoint */
@@ -346,7 +346,7 @@ const usb_string_desc_t dStrprod = {
 static ssize_t cdc_recv(unsigned int minor, addr_t offs, u8 *buff, unsigned int len, unsigned int timeout)
 {
 	if (minor > SIZE_USB_ENDPTS)
-		return ERR_ARG;
+		return -EINVAL;
 
 	return usbclient_receive(minor, buff, len);
 }
@@ -355,7 +355,7 @@ static ssize_t cdc_recv(unsigned int minor, addr_t offs, u8 *buff, unsigned int 
 static ssize_t cdc_send(unsigned int minor, addr_t offs, const u8 *buff, unsigned int len)
 {
 	if (minor > SIZE_USB_ENDPTS)
-		return ERR_ARG;
+		return -EINVAL;
 
 	return usbclient_send(minor, buff, len);
 }
@@ -364,7 +364,7 @@ static ssize_t cdc_send(unsigned int minor, addr_t offs, const u8 *buff, unsigne
 static int cdc_initUsbClient(void)
 {
 	int i = 0;
-	int res = ERR_NONE;
+	int res = EOK;
 
 	if (cdc_common.init == 0) {
 		cdc_common.descList = NULL;
@@ -417,7 +417,7 @@ static int cdc_initUsbClient(void)
 
 		cdc_common.strprod.next = NULL;
 
-		if ((res = usbclient_init(cdc_common.descList)) != ERR_NONE)
+		if ((res = usbclient_init(cdc_common.descList)) != EOK)
 			return res;
 
 		cdc_common.init = 1;
@@ -436,22 +436,22 @@ static int cdc_done(unsigned int minor)
 static int cdc_sync(unsigned int minor)
 {
 	if (minor > SIZE_USB_ENDPTS)
-		return ERR_ARG;
+		return -EINVAL;
 
 	/* TBD */
 
-	return ERR_NONE;
+	return EOK;
 }
 
 
 static int cdc_map(unsigned int minor, addr_t addr, size_t sz, int mode, addr_t memaddr, size_t memsz, int memmode, addr_t *a)
 {
 	if (minor > PHFS_ACM_PORTS_NB * 2)
-		return ERR_ARG;
+		return -EINVAL;
 
 	/* Device mode cannot be higher than map mode to copy data */
 	if ((mode & memmode) != mode)
-		return ERR_ARG;
+		return -EINVAL;
 
 	/* Cdc is not mappable to any region */
 	return dev_isNotMappable;
@@ -460,10 +460,10 @@ static int cdc_map(unsigned int minor, addr_t addr, size_t sz, int mode, addr_t 
 
 static int cdc_init(unsigned int minor)
 {
-	int res = ERR_NONE;
+	int res = EOK;
 
 	if (PHFS_ACM_PORTS_NB < 1 || PHFS_ACM_PORTS_NB > 2 || minor != endpt_bulk_acm0)
-		return ERR_ARG;
+		return -EINVAL;
 
 	if ((res = cdc_initUsbClient()) < 0)
 		return res;

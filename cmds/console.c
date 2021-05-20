@@ -34,28 +34,28 @@ static int cmd_console(char *s)
 	argsc = cmd_getArgs(s, ". \t", &args);
 	if (argsc == 0) {
 		log_error("\nArguments have to be defined");
-		return ERR_ARG;
+		return -EINVAL;
 	}
 	else if (argsc != 2) {
 		log_error("\nWrong args: %s", s);
-		return ERR_ARG;
+		return -EINVAL;
 	}
 
 	/* Get major/minor */
 	major = lib_strtoul(args[0], &endptr, 0);
 	if (hal_strlen(endptr) != 0) {
 		log_error("\nWrong major value: %s", args[0]);
-		return ERR_ARG;
+		return -EINVAL;
 	}
 
 	minor = lib_strtoul(args[1], &endptr, 0);
 	if (hal_strlen(endptr) != 0) {
 		log_error("\nWrong minor value: %s", args[1]);
-		return ERR_ARG;
+		return -EINVAL;
 	}
 
 	console_set(major, minor);
-	return ERR_NONE;
+	return EOK;
 }
 
 

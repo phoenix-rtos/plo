@@ -40,24 +40,24 @@ static int cmd_bitstream(char *s)
 	argsc = cmd_getArgs(s, DEFAULT_BLANKS, &args);
 	if (argsc == 0) {
 		log_error("\nArguments have to be defined");
-		return ERR_ARG;
+		return -EINVAL;
 	}
 	else if (argsc != 2) {
 		log_error("\nWrong args: %s", s);
-		return ERR_ARG;
+		return -EINVAL;
 	}
 
 
 	if (phfs_open(args[0], args[1], 0, &handler) < 0) {
 		log_error("\nCan't open %s, on %s", args[1], args[0]);
-		return ERR_ARG;
+		return -EINVAL;
 	}
 
 	log_info("\nLoading bitstream into DDR, please wait...");
 	do {
 		if ((res = phfs_read(handler, offs, buff, sizeof(buff))) < 0) {
 			log_error("\nCan't read %s from %s", args[1], args[0]);
-			return ERR_ARG;
+			return -EINVAL;
 		}
 
 		hal_memcpy((void *)addr, buff, res);
@@ -68,12 +68,12 @@ static int cmd_bitstream(char *s)
 	log_info("\nLoading bitstream into PL");
 	if (_zynq_loadPL(BISTREAM_ADDR, addr - BISTREAM_ADDR) < 0) {
 		log_error("\nPL was not initialized, bitstream is incorrect");
-		return ERR_ARG;
+		return -EINVAL;
 	}
 
 	log_info("\nPL was successfully initialized");
 
-	return ERR_NONE;
+	return EOK;
 }
 
 

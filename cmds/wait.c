@@ -51,7 +51,7 @@ static int cmd_wait(char *s)
 	time = lib_strtoul(args[0], &endptr, 0);
 	if (hal_strlen(endptr) != 0) {
 		log_error("\nWrong args: %s", s);
-		return ERR_ARG;
+		return -EINVAL;
 	}
 
 	while (time > 0) {
@@ -63,7 +63,7 @@ static int cmd_wait(char *s)
 	}
 	lib_printf("\r%*s \r%s, %5d [ms]", sizeof(prompt) + 14, "", prompt, 0);
 
-	return ERR_NONE;
+	return EOK;
 }
 
 

@@ -32,14 +32,14 @@ static int cmd_go(char *s)
 
 	if ((argsc = cmd_getArgs(s, DEFAULT_BLANKS, &args)) != 0) {
 		log_error("\nWrong args: %s", s);
-		return ERR_ARG;
+		return -EINVAL;
 	}
 
 	log_info("\nRunning Phoenix-RTOS");
 	lib_printf(CONSOLE_CLEAR);
 	hal_launch();
 
-	return ERR_NONE;
+	return EOK;
 }
 
 

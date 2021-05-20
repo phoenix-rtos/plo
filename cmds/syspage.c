@@ -34,23 +34,23 @@ static int cmd_syspage(char *s)
 	argsc = cmd_getArgs(s, DEFAULT_BLANKS, &args);
 	if (argsc == 0) {
 		syspage_showAddr();
-		return ERR_NONE;
+		return EOK;
 	}
 	else if (argsc > 1) {
 		log_error("\nWrong args %s", s);
-		return ERR_ARG;
+		return -EINVAL;
 	}
 
 	addr = lib_strtoul(args[0], &end, 0);
 	if (hal_strlen(end) != 0) {
 		log_error("\nWrong args %s", s);
-		return ERR_ARG;
+		return -EINVAL;
 	}
 
 	syspage_setAddress((void *)addr);
 	log_info("\nSetting address: 0x%x", addr);
 
-	return ERR_NONE;
+	return EOK;
 }
 
 
