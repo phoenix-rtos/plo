@@ -20,7 +20,7 @@
 
 static void cmd_dumpInfo(void)
 {
-	lib_printf("dumps memory, usage: dump <segment>:<offset>");
+	lib_printf("dumps memory, usage: dump <addr>");
 }
 
 
