@@ -23,7 +23,7 @@
 static void cmd_bistreamInfo(void)
 {
 	lib_printf("loads bitstream into PL, usage:\n");
-	lib_printf("%17s%s", "", "bitstream [<boot device>] [<name>]");
+	lib_printf("%17s%s", "", "bitstream <dev> <name>");
 }
 
 
@@ -53,7 +53,7 @@ static int cmd_bitstream(char *s)
 		return ERR_ARG;
 	}
 
-	log_info("\nLoading bitstream into DDR, please wait...\n");
+	log_info("\nLoading bitstream into DDR, please wait...");
 	do {
 		if ((res = phfs_read(handler, offs, buff, sizeof(buff))) < 0) {
 			log_error("\nCan't read %s from %s", args[1], args[0]);
@@ -65,13 +65,13 @@ static int cmd_bitstream(char *s)
 		offs += res;
 	} while (res != 0);
 
-	log_info("\nLoading bitstream into PL\n");
+	log_info("\nLoading bitstream into PL");
 	if (_zynq_loadPL(BISTREAM_ADDR, addr - BISTREAM_ADDR) < 0) {
-		log_error("\nPL was not initialized, bitstream is incorrect\n");
+		log_error("\nPL was not initialized, bitstream is incorrect");
 		return ERR_ARG;
 	}
 
-	log_info("\nPL was successfully initialized\n");
+	log_info("\nPL was successfully initialized");
 
 	return ERR_NONE;
 }
@@ -79,7 +79,7 @@ static int cmd_bitstream(char *s)
 
 __attribute__((constructor)) static void cmd_appreg(void)
 {
-	const static cmd_t app_cmd = { .name = "bistream", .run = cmd_bitstream, .info = cmd_bistreamInfo };
+	const static cmd_t app_cmd = { .name = "bitstream", .run = cmd_bitstream, .info = cmd_bistreamInfo };
 
 	cmd_reg(&app_cmd);
 }
