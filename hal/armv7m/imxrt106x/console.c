@@ -41,7 +41,7 @@ void hal_consoleInit(void)
 	u32 t;
 
 #if UART_CONSOLE == 3
-	console_common.uart = (void *)0x4018c000;
+	halconsole_common.uart = (void *)0x4018c000;
 
 	_imxrt_ccmControlGate(pctl_clk_lpuart3, clk_state_run_wait);
 
