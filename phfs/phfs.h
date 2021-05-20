@@ -49,6 +49,9 @@ extern int phfs_getFileAddr(handler_t h, addr_t *addr);
 /* Show devices registered in phfs */
 extern void phfs_showDevs(void);
 
+/* Show files registered in phfs */
+extern void phfs_showFiles(void);
+
 
 
 /* Operations on files */

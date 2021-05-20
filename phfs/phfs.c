@@ -171,6 +171,24 @@ void phfs_showDevs(void)
 }
 
 
+void phfs_showFiles(void)
+{
+	int i;
+	phfs_file_t *f;
+
+	if (phfs_common.fCnt == 0) {
+		log_error("\nphfs: None of the files have been registered\n");
+		return;
+	}
+
+	lib_printf(CONSOLE_BOLD "\n%-32s %-10s %-10s\n" CONSOLE_NORMAL, "ALIAS", "OFFSET", "SIZE");
+	for (i = 0; i < phfs_common.fCnt; ++i) {
+		f = &phfs_common.files[i];
+		lib_printf("%-32s 0x%08x 0x%08x\n", f->alias, f->addr, f->size);
+	}
+}
+
+
 static int phfs_getFileId(const char *alias)
 {
 	int i;
