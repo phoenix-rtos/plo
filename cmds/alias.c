@@ -32,10 +32,16 @@ static int cmd_alias(char *s)
 	unsigned int i, argsc;
 	char (*args)[SIZE_CMD_ARG_LINE];
 
-	if ((argsc = cmd_getArgs(s, DEFAULT_BLANKS, &args)) != 3) {
+	argsc = cmd_getArgs(s, DEFAULT_BLANKS, &args);
+	if (argsc == 0) {
+		phfs_showFiles();
+		return ERR_NONE;
+	}
+	else if (argsc != 3) {
 		log_error("\nWrong args: %s", s);
 		return ERR_ARG;
 	}
+
 
 	for (i = 0; i < 3; ++i) {
 		if (i == 0)

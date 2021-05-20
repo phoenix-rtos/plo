@@ -27,8 +27,10 @@
 #define DEFAULT_CITES     "\""
 
 #define SIZE_CMD_ARG_LINE   81
-#define MAX_CMD_ARGS_NB     10
 #define SIZE_MSG_BUFF       0x100
+#define SIZE_MAGIC_NB       8
+
+#define MAX_CMD_ARGS_NB     10
 
 
 typedef struct {

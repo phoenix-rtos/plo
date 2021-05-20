@@ -38,8 +38,8 @@ static int cmd_dump(char *s)
 
 	argsc = cmd_getArgs(s, DEFAULT_BLANKS, &args);
 	if (argsc == 0) {
-		log_error("\nWrong args %s", s);
-		return ERR_NONE;
+		log_error("\nArguments have to be defined");
+		return ERR_ARG;
 	}
 
 	offs = lib_strtoul(args[0], &endptr, 16);

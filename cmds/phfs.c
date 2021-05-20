@@ -35,8 +35,7 @@ static int cmd_phfs(char *s)
 		phfs_showDevs();
 		return ERR_NONE;
 	}
-
-	if (argsc < 3 || argsc > 4) {
+	else if (argsc < 3 || argsc > 4) {
 		log_error("\nWrong args: %s", s);
 		return ERR_ARG;
 	}

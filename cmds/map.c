@@ -40,8 +40,7 @@ static int cmd_map(char *s)
 		syspage_showMaps();
 		return ERR_NONE;
 	}
-
-	if (argsc < 4) {
+	else if (argsc < 4) {
 		log_error("\nWrong args: %s", s);
 		return ERR_ARG;
 	}

@@ -32,7 +32,11 @@ static int cmd_console(char *s)
 	char (*args)[SIZE_CMD_ARG_LINE];
 
 	argsc = cmd_getArgs(s, ". \t", &args);
-	if (argsc != 2) {
+	if (argsc == 0) {
+		log_error("\nArguments have to be defined");
+		return ERR_ARG;
+	}
+	else if (argsc != 2) {
 		log_error("\nWrong args: %s", s);
 		return ERR_ARG;
 	}

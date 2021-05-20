@@ -22,24 +22,18 @@
 
 static void cmd_appInfo(void)
 {
-	lib_printf("loads app, usage: app [<boot device>] [-x] <name> [imap] [dmap]");
+	lib_printf("loads app, usage: app <dev> [-x] <name> <imap> <dmap>");
 }
 
 
-static int cmd_cpphfs2map(handler_t handler, size_t size, const char *imap)
+static int cmd_cpphfs2map(handler_t handler, const char *imap)
 {
 	int res;
 	addr_t offs = 0;
-	size_t chunkSz;
 	u8 buff[SIZE_MSG_BUFF];
 
 	do {
-		if (size > sizeof(buff))
-			chunkSz = sizeof(buff);
-		else
-			chunkSz = size;
-
-		if ((res = phfs_read(handler, offs, buff, chunkSz)) < 0) {
+		if ((res = phfs_read(handler, offs, buff, SIZE_MSG_BUFF)) < 0) {
 			log_error("\nCan't read data");
 			return ERR_PHFS_FILE;
 		}
@@ -48,8 +42,7 @@ static int cmd_cpphfs2map(handler_t handler, size_t size, const char *imap)
 			return ERR_ARG;
 
 		offs += res;
-		size -= res;
-	} while (size > 0 && res > 0);
+	} while (res > 0);
 
 	return ERR_NONE;
 }
@@ -91,7 +84,7 @@ static int cmd_loadApp(handler_t handler, size_t size, const char *imap, const c
 
 	/* Copy program's elf to imap */
 	if (res == dev_isNotMappable) {
-		if ((res = cmd_cpphfs2map(handler, size, imap)) < 0)
+		if ((res = cmd_cpphfs2map(handler, imap)) < 0)
 			return res;
 
 		/* Get map top address after copying */
@@ -138,8 +131,7 @@ static int cmd_app(char *s)
 		syspage_showApps();
 		return ERR_NONE;
 	}
-
-	if (argsc < 4 || argsc > 6) {
+	else if (argsc < 4 || argsc > 6) {
 		log_error("\nWrong args: %s", s);
 		return ERR_ARG;
 	}

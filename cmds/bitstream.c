@@ -37,10 +37,16 @@ static int cmd_bitstream(char *s)
 	unsigned int argsc;
 	char (*args)[SIZE_CMD_ARG_LINE];
 
-	if ((argsc = cmd_getArgs(s, DEFAULT_BLANKS, &args)) != 2) {
+	argsc = cmd_getArgs(s, DEFAULT_BLANKS, &args);
+	if (argsc == 0) {
+		log_error("\nArguments have to be defined");
+		return ERR_ARG;
+	}
+	else if (argsc != 2) {
 		log_error("\nWrong args: %s", s);
 		return ERR_ARG;
 	}
+
 
 	if (phfs_open(args[0], args[1], 0, &handler) < 0) {
 		log_error("\nCan't open %s, on %s", args[1], args[0]);

@@ -22,7 +22,7 @@
 
 static void cmd_kernelInfo(void)
 {
-	lib_printf("loads Phoenix - RTOS, usage: kernel [<boot args[0]ice>]");
+	lib_printf("loads Phoenix - RTOS, usage: kernel <dev>]");
 }
 
 
@@ -45,6 +45,10 @@ static int cmd_kernel(char *s)
 	if ((argsc = cmd_getArgs(s, DEFAULT_BLANKS, &args)) == 0) {
 		syspage_showKernel();
 		return ERR_NONE;
+	}
+	else if (argsc != 1) {
+		log_error("\nWrong args: %s", s);
+		return ERR_ARG;
 	}
 
 	if (phfs_open(args[0], KERNEL_PATH, 0, &handler) < 0) {

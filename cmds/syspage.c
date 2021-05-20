@@ -20,7 +20,7 @@
 
 static void cmd_syspageInfo(void)
 {
-	lib_printf("shows syspage contents, usage: syspage");
+	lib_printf("sets syspage address or shows it, usage: syspage <address>");
 }
 
 
@@ -36,8 +36,7 @@ static int cmd_syspage(char *s)
 		syspage_showAddr();
 		return ERR_NONE;
 	}
-
-	if (argsc > 1) {
+	else if (argsc > 1) {
 		log_error("\nWrong args %s", s);
 		return ERR_ARG;
 	}
