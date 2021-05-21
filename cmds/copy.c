@@ -89,7 +89,7 @@ static int cmd_parseDev(handler_t *h, addr_t *offs, size_t *sz, char (*args)[SIZ
 		*offs = 0;
 		*sz = 0;
 		if (phfs_open(alias, args[(*argsID)], 0, h) < 0) {
-			log_error("\nCan't open %s on %s", args[*argsID], alias);
+			log_error("\nCan't open file '%s' on %s", args[*argsID], alias);
 			return -EIO;
 		}
 		(*argsID)++;
@@ -103,7 +103,7 @@ static int cmd_parseDev(handler_t *h, addr_t *offs, size_t *sz, char (*args)[SIZ
 		}
 
 		if (phfs_open(alias, NULL, 0, h) < 0) {
-			log_error("\nCan't open %s with offset 0x%x", alias, *offs);
+			log_error("\nCan't open file '%s' with offset 0x%x", alias, *offs);
 			return -EIO;
 		}
 	}

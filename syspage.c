@@ -416,6 +416,10 @@ void syspage_showApps(void)
 
 void syspage_showKernel(void)
 {
+	if (syspage_common.syspage->kernel.textsz == 0) {
+		lib_printf("\nKernel is not loaded");
+		return;
+	}
 	lib_printf(CONSOLE_BOLD "\nKernel sections: \n" CONSOLE_NORMAL);
 	lib_printf("%-8s 0x%08x \tsize: 0x%08x\n", ".text:", syspage_common.syspage->kernel.text, syspage_common.syspage->kernel.textsz);
 	lib_printf("%-8s 0x%08x \tsize: 0x%08x\n", ".data:", syspage_common.syspage->kernel.data, syspage_common.syspage->kernel.datasz);
