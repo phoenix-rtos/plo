@@ -13,13 +13,12 @@
  * %LICENSE%
  */
 
-#include "hal.h"
-#include "lib.h"
-#include "zynq.h"
-#include "devs.h"
+#include <hal/hal.h>
+#include <hal/timer.h>
+#include <lib/errno.h>
+#include <lib/lib.h>
+#include <devices/devs.h>
 
-#include "errno.h"
-#include "timer.h"
 
 #define MAX_TXRX_FIFO_SIZE  0x40
 #define BUFFER_SIZE         0x200

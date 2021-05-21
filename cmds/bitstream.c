@@ -14,10 +14,9 @@
  */
 
 #include "cmd.h"
-#include "hal.h"
-#include "zynq.h"
-#include "elf.h"
-#include "phfs.h"
+
+#include <hal/hal.h>
+#include <phfs/phfs.h>
 
 
 static void cmd_bistreamInfo(void)

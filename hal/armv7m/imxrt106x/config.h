@@ -18,7 +18,8 @@
 #define _CONFIG_H_
 
 #include "imxrt.h"
-#include "types.h"
+#include "peripherals.h"
+#include "../string.h"
 
 
 /* User interface */
@@ -28,23 +29,6 @@
 #define SYSPAGE_ADDRESS          0x20200000
 #define STACK_SIZE               5 * 1024
 #define PAGE_SIZE                0x200
-
-
-/* Linker symbols */
-extern void _end(void);
-extern void _plo_bss(void);
-
-
-/* Types extensions */
-
-typedef u32 addr_t;
-typedef unsigned int size_t;
-typedef int ssize_t;
-
-
-typedef struct {
-	/* Empty hal data */
-} syspage_hal_t;
 
 
 #endif

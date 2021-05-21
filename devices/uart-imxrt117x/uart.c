@@ -13,13 +13,12 @@
  * %LICENSE%
  */
 
-#include "hal.h"
-#include "lib.h"
-#include "imxrt.h"
-#include "devs.h"
+#include <hal/hal.h>
+#include <hal/timer.h>
+#include <lib/errno.h>
+#include <lib/lib.h>
+#include <devices/devs.h>
 
-#include "errno.h"
-#include "timer.h"
 
 #define CONCATENATE(x, y) x##y
 #define PIN2MUX(x) CONCATENATE(pctl_mux_gpio_, x)

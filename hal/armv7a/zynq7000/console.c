@@ -13,9 +13,7 @@
  * %LICENSE%
  */
 
-#include "hal.h"
-#include "zynq.h"
-#include "peripherals.h"
+#include <hal/hal.h>
 
 
 struct {

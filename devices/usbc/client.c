@@ -13,10 +13,11 @@
  * %LICENSE%
  */
 
-#include "hal.h"
 #include "usbphy.h"
 #include "client.h"
-#include "errno.h"
+
+#include <hal/hal.h>
+#include <lib/errno.h>
 
 
 struct {

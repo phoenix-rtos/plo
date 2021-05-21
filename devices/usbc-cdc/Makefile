@@ -9,6 +9,4 @@
 include devices/usbc/Makefile
 include devices/usbphy-$(TARGET_SUBFAMILY)/Makefile
 
-CFLAGS += -I../plo/devices/usbc-cdc
-
 OBJS += $(addprefix $(PREFIX_O)devices/usbc-cdc/, cdc.o)

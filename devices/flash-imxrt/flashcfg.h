@@ -16,8 +16,8 @@
 #ifndef _IMXRT_FLASH_CONFIG_H_
 #define _IMXRT_FLASH_CONFIG_H_
 
-
 #include "flashdrv.h"
+
 
 #define GET_MANUFACTURE_ID(flashID)      (flashID & 0xff)
 #define GET_DEVICE_ID(flashID)           (((flashID >> 16) & 0xff) | (flashID & (0xff << 8)))

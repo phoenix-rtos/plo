@@ -18,10 +18,10 @@
 #ifndef _HAL_H_
 #define _HAL_H_
 
-#include "config.h"
-#include "string.h"
-#include "types.h"
-#include "peripherals.h"
+#include PLO_CONFIG
+
+#include <lib/types.h>
+
 
 
 /* Function initializes clocks, peripherals and basic controllers */

@@ -15,9 +15,9 @@
 
 #include "phoenixd.h"
 #include "msg.h"
-#include "hal.h"
-#include "lib.h"
-#include "errno.h"
+#include <hal/hal.h>
+#include <lib/lib.h>
+#include <lib/errno.h>
 
 
 /* Message types */

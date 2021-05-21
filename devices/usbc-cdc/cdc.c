@@ -13,15 +13,14 @@
  * %LICENSE%
  */
 
-
-#include "usbclient.h"
 #include "cdc.h"
-#include "devs.h"
-#include "lib.h"
 
-#include "list.h"
-#include "hal.h"
-#include "errno.h"
+#include <devices/devs.h>
+#include <devices/usbc/usbclient.h>
+#include <hal/hal.h>
+#include <lib/list.h>
+#include <lib/lib.h>
+#include <lib/errno.h>
 
 
 #define SIZE_USB_ENDPTS        2 * PHFS_ACM_PORTS_NB + 1 /* Add control endpoint */

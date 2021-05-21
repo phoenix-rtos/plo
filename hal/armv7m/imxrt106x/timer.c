@@ -13,11 +13,8 @@
  * %LICENSE%
  */
 
-#include "timer.h"
-
-#include "hal.h"
-#include "imxrt.h"
-#include "peripherals.h"
+#include <hal/hal.h>
+#include <hal/timer.h>
 
 
 enum { gpt_cr, gpt_pr, gpt_sr, gpt_ir, gpt_ocr1, gpt_ocr2, gpt_ocr3, gpt_icr1, gpt_icr2, gpt_cnt };

@@ -13,11 +13,10 @@
  * %LICENSE%
  */
 
-
-#include "hal.h"
 #include "gpio.h"
 
-#include "errno.h"
+#include <hal/hal.h>
+#include <lib/errno.h>
 
 
 #define MAX_BANK_NB        4

@@ -14,8 +14,9 @@
  */
 
 #include "cmd.h"
-#include "hal.h"
-#include "phfs.h"
+
+#include <hal/hal.h>
+#include <phfs/phfs.h>
 
 
 static void cmd_aliasInfo(void)

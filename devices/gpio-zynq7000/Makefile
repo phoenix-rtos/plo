@@ -6,6 +6,4 @@
 # %LICENSE%
 #
 
-CFLAGS += -I../plo/devices/gpio-zynq7000
-
 OBJS += $(addprefix $(PREFIX_O)devices/gpio-zynq7000/, gpio.o)

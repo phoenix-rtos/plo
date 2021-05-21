@@ -17,10 +17,10 @@
 #ifndef _CMD_H_
 #define _CMD_H_
 
-#include "lib.h"
-#include "log.h"
-#include "types.h"
-#include "errno.h"
+#include <lib/lib.h>
+#include <lib/log.h>
+#include <lib/types.h>
+#include <lib/errno.h>
 
 
 #define DEFAULT_BLANKS    " \t"

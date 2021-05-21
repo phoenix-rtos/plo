@@ -14,11 +14,11 @@
  * %LICENSE%
  */
 
-#include "hal.h"
-#include "lib.h"
-#include "cmd.h"
-#include "devs.h"
-#include "console.h"
+#include <hal/hal.h>
+#include <lib/lib.h>
+#include <cmds/cmd.h>
+#include <devices/devs.h>
+#include <lib/console.h>
 
 
 int main(void)

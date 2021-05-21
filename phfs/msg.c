@@ -13,10 +13,10 @@
  * %LICENSE%
  */
 
-#include "hal.h"
+#include <hal/hal.h>
 #include "msg.h"
-#include "devs.h"
-#include "errno.h"
+#include <devices/devs.h>
+#include <lib/errno.h>
 
 
 #define MSGREAD_DESYN   0

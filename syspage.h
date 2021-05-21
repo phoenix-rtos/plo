@@ -16,8 +16,8 @@
 #ifndef SYSPAGE_H_
 #define SYSPAGE_H_
 
-#include "config.h"
-#include "types.h"
+#include <hal/hal.h>
+#include <lib/types.h>
 
 
 #define SIZE_APP_NAME       15

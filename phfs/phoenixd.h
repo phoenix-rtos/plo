@@ -18,7 +18,7 @@
 
 
 #include "phfs.h"
-#include "config.h"
+#include <hal/hal.h>
 
 
 extern int phoenixd_open(const char *file, unsigned int major, unsigned int minor, unsigned int flags);

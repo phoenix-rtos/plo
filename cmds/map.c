@@ -14,8 +14,9 @@
  */
 
 #include "cmd.h"
-#include "hal.h"
-#include "syspage.h"
+
+#include <hal/hal.h>
+#include <syspage.h>
 
 
 static void cmd_mapInfo(void)

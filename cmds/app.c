@@ -14,10 +14,11 @@
  */
 
 #include "cmd.h"
-#include "hal.h"
 #include "elf.h"
-#include "phfs.h"
-#include "syspage.h"
+
+#include <hal/hal.h>
+#include <phfs/phfs.h>
+#include <syspage.h>
 
 
 static void cmd_appInfo(void)

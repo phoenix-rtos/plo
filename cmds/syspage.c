@@ -13,9 +13,10 @@
  * %LICENSE%
  */
 
-#include "hal.h"
 #include "cmd.h"
-#include "syspage.h"
+
+#include <hal/hal.h>
+#include <syspage.h>
 
 
 static void cmd_syspageInfo(void)

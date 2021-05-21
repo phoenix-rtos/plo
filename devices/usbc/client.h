@@ -16,9 +16,9 @@
 #ifndef _CLIENT_H_
 #define _CLIENT_H_
 
-#include "types.h"
-
 #include "usbclient.h"
+
+#include <lib/types.h>
 
 
 #define USB_BUFFER_SIZE 0x1000

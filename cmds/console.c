@@ -14,9 +14,10 @@
  */
 
 #include "cmd.h"
-#include "hal.h"
-#include "log.h"
-#include "console.h"
+
+#include <hal/hal.h>
+#include <lib/log.h>
+#include <lib/console.h>
 
 
 static void cmd_consoleInfo(void)

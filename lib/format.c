@@ -13,10 +13,11 @@
  * %LICENSE%
  */
 
-#include "hal.h"
 #include "lib.h"
 #include "types.h"
 #include "format.h"
+
+#include <hal/hal.h>
 
 
 #define FLAG_SIGNED        0x1

@@ -14,8 +14,9 @@
  */
 
 #include "cmd.h"
-#include "hal.h"
-#include "lib.h"
+
+#include <hal/hal.h>
+#include <lib/lib.h>
 
 
 static void cmd_dumpInfo(void)

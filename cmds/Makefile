@@ -6,8 +6,6 @@
 # %LICENSE%
 #
 
-CFLAGS += -I../plo/cmds
-
 PLO_ALLCOMMANDS = alias app bitstream call console copy dump echo go help kernel map phfs syspage script wait
 PLO_COMMANDS ?= $(PLO_ALLCOMMANDS)
 PLO_APPLETS = $(filter $(PLO_ALLCOMMANDS), $(PLO_COMMANDS))

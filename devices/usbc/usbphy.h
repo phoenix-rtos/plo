@@ -13,11 +13,10 @@
  * %LICENSE%
  */
 
-
 #ifndef _PHY_H_
 #define _PHY_H_
 
-#include "types.h"
+#include <lib/types.h>
 
 
 /* Function returns buffer which is a multiple of USB_BUFFER_SIZE.

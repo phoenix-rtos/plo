@@ -15,8 +15,9 @@
 
 #include "lut.h"
 #include "flashcfg.h"
-#include "peripherals.h"
-#include "errno.h"
+
+#include <hal/hal.h>
+#include <lib/errno.h>
 
 
 static int flashcfg_getWindbondConfig(flash_context_t *ctx)

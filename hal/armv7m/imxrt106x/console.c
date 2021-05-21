@@ -13,9 +13,7 @@
  * %LICENSE%
  */
 
-#include "hal.h"
-#include "imxrt.h"
-
+#include <hal/hal.h>
 
 struct {
 	volatile u32 *uart;

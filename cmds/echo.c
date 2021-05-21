@@ -14,8 +14,9 @@
  */
 
 #include "cmd.h"
-#include "log.h"
-#include "hal.h"
+
+#include <lib/log.h>
+#include <hal/hal.h>
 
 
 static void cmd_echoInfo(void)

@@ -14,8 +14,9 @@
  */
 
 #include "cmd.h"
-#include "hal.h"
-#include "phfs.h"
+
+#include <hal/hal.h>
+#include <phfs/phfs.h>
 
 /* Linker symbol points to the beginning of .data section */
 extern char script[];

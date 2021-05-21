@@ -14,8 +14,9 @@
  */
 
 #include "cmd.h"
-#include "hal.h"
-#include "console.h"
+
+#include <hal/hal.h>
+#include <lib/console.h>
 
 
 static void cmd_waitInfo(void)

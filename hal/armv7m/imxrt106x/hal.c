@@ -13,13 +13,11 @@
  * %LICENSE%
  */
 
+#include <syspage.h>
+#include <hal/hal.h>
+#include <lib/errno.h>
+#include <hal/timer.h>
 
-#include "hal.h"
-#include "imxrt.h"
-
-#include "errno.h"
-#include "timer.h"
-#include "syspage.h"
 
 typedef struct {
 	void *data;
@@ -31,6 +29,10 @@ struct{
 	addr_t kernel_entry;
 	intr_handler_t irqs[SIZE_INTERRUPTS];
 } hal_common;
+
+
+extern void _end(void);
+extern void _plo_bss(void);
 
 
 void hal_init(void)

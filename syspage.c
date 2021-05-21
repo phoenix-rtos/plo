@@ -14,11 +14,12 @@
  */
 
 
-#include "hal.h"
-#include "log.h"
-#include "console.h"
 #include "syspage.h"
-#include "errno.h"
+
+#include <hal/hal.h>
+#include <lib/log.h>
+#include <lib/console.h>
+#include <lib/errno.h>
 
 
 #define MAX_PROGRAMS_NB         32

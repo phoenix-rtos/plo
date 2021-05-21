@@ -13,13 +13,13 @@
  * %LICENSE%
  */
 
-#include "hal.h"
-#include "lib.h"
-#include "log.h"
+#include <hal/hal.h>
+#include <lib/lib.h>
+#include <lib/log.h>
 #include "phfs.h"
-#include "console.h"
+#include <lib/console.h>
 #include "phoenixd.h"
-#include "errno.h"
+#include <lib/errno.h>
 
 
 #define SIZE_PHFS_HANDLERS    8

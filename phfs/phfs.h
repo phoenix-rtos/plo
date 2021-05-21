@@ -18,8 +18,8 @@
 #ifndef _PHFS_H_
 #define _PHFS_H_
 
-#include "devs.h"
-#include "config.h"
+#include <devices/devs.h>
+#include <hal/hal.h>
 
 typedef struct {
 	unsigned int pd; /* phfs device descriptor */

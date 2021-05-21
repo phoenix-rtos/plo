@@ -14,9 +14,10 @@
  */
 
 #include "cmd.h"
-#include "hal.h"
-#include "lib.h"
-#include "phfs.h"
+
+#include <hal/hal.h>
+#include <lib/lib.h>
+#include <phfs/phfs.h>
 
 
 static void cmd_copyInfo(void)

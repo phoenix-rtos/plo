@@ -15,9 +15,10 @@
 
 #include "cmd.h"
 #include "elf.h"
-#include "hal.h"
-#include "phfs.h"
-#include "syspage.h"
+
+#include <hal/hal.h>
+#include <phfs/phfs.h>
+#include <syspage.h>
 
 
 static void cmd_kernelInfo(void)

@@ -13,7 +13,6 @@
  * %LICENSE%
  */
 
-#include "hal.h"
 #include "lib.h"
 #include "format.h"
 #include "console.h"

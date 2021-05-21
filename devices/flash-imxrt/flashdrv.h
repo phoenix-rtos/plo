@@ -17,11 +17,10 @@
 #ifndef _IMXRT_FLASHDRV_H_
 #define _IMXRT_FLASHDRV_H_
 
-#include "types.h"
 #include "romapi.h"
 
-#include "peripherals.h"
-
+#include <hal/hal.h>
+#include <lib/types.h>
 
 typedef struct {
 	u32 size;

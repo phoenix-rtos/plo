@@ -13,19 +13,18 @@
  * %LICENSE%
  */
 
-#include "hal.h"
-#include "lib.h"
-#include "devs.h"
-#include "timer.h"
-#include "errno.h"
-
 #include "lut.h"
 #include "romapi.h"
 #include "flashdrv.h"
 #include "flashcfg.h"
 
-extern int _fcfb;
+#include <hal/hal.h>
+#include <lib/lib.h>
+#include <lib/errno.h>
+#include <devices/devs.h>
 
+
+extern int _fcfb;
 
 struct {
 	flash_context_t ctx[FLASH_NO];

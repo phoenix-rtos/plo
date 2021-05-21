@@ -13,11 +13,8 @@
  * %LICENSE%
  */
 
-
-#include "timer.h"
-
-#include "hal.h"
-#include "peripherals.h"
+#include <hal/hal.h>
+#include <hal/timer.h>
 
 
 /* TODO: this value should be calculated and provide by zynq API */

@@ -14,7 +14,8 @@
  */
 
 #include "devs.h"
-#include "errno.h"
+
+#include <lib/errno.h>
 
 #define SIZE_MAJOR   4
 #define SIZE_MINOR   16

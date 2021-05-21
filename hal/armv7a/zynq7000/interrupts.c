@@ -13,9 +13,10 @@
  * %LICENSE%
  */
 
-#include "hal.h"
-#include "errno.h"
 #include "interrupts.h"
+
+#include <hal/hal.h>
+#include <lib/errno.h>
 
 
 #define MPCORE_BASE_ADDRESS  0xf8f00000

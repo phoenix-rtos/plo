@@ -13,11 +13,12 @@
  * %LICENSE%
  */
 
-#include "hal.h"
 #include "lib.h"
-#include "devs.h"
-#include "console.h"
 #include "errno.h"
+#include "console.h"
+
+#include <hal/hal.h>
+#include <devices/devs.h>
 
 
 struct {

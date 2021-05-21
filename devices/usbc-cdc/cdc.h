@@ -13,11 +13,10 @@
  * %LICENSE%
  */
 
-
 #ifndef _USB_CDC_H_
 #define _USB_CDC_H_
 
-#include "types.h"
+#include <lib/types.h>
 
 
 /* endpoints descriptions */

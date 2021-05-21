@@ -18,7 +18,8 @@
 #define _CONFIG_H_
 
 #include "zynq.h"
-#include "types.h"
+#include "peripherals.h"
+#include "../string.h"
 
 
 /* User interface */
@@ -29,22 +30,5 @@
 #define BISTREAM_ADDR            0x00100000
 
 #define PAGE_SIZE                0x1000
-
-
-/* Linker symbols */
-extern void _end(void);
-extern void _plo_bss(void);
-
-
-/* Types extensions */
-typedef u32 addr_t;
-
-typedef unsigned int size_t;
-typedef int ssize_t;
-
-typedef struct {
-	/* Empty hal data */
-} syspage_hal_t;
-
 
 #endif

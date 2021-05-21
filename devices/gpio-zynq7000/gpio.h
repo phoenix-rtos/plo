@@ -16,7 +16,7 @@
 #ifndef _GPIO_H_
 #define _GPIO_H_
 
-#include "types.h"
+#include <lib/types.h>
 
 enum { gpio_dir_in = 0, gpio_dir_out = 1 };
 

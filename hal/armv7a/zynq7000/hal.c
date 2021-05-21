@@ -13,18 +13,23 @@
  * %LICENSE%
  */
 
-#include "hal.h"
-#include "zynq.h"
-#include "gpio.h"
 #include "interrupts.h"
 
-#include "timer.h"
-#include "syspage.h"
+#include <syspage.h>
+#include <hal/hal.h>
+#include <lib/errno.h>
+#include <hal/timer.h>
+#include <devices/gpio-zynq7000/gpio.h>
 
 
 struct{
 	addr_t kernel_entry;
 } hal_common;
+
+
+/* Linker symbols */
+extern void _end(void);
+extern void _plo_bss(void);
 
 
 /* Initialization functions */

@@ -15,9 +15,9 @@
  */
 
 #include "cmd.h"
-#include "hal.h"
-#include "lib.h"
-#include "console.h"
+
+#include <hal/hal.h>
+#include <lib/console.h>
 
 
 #define SIZE_HIST            8

@@ -16,8 +16,8 @@
 #ifndef _MSG_H_
 #define _MSG_H_
 
-#include "types.h"
-#include "config.h"
+#include <lib/types.h>
+#include <hal/hal.h>
 
 /* Special characters */
 #define MSG_MARK      0x7e

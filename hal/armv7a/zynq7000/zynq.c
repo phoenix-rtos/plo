@@ -14,11 +14,8 @@
  * %LICENSE%
  */
 
-
-#include "zynq.h"
-#include "peripherals.h"
-
-#include "errno.h"
+#include <hal/hal.h>
+#include <lib/errno.h>
 
 #define MAX_WAITING_COUNTER 10000000
 

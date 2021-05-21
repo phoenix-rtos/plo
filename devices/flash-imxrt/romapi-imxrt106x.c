@@ -13,7 +13,6 @@
  * %LICENSE%
  */
 
-
 #include "romapi.h"
 
 

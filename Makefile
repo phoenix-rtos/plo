@@ -15,14 +15,16 @@ KERNEL=1
 include ../phoenix-rtos-build/Makefile.common
 include ../phoenix-rtos-build/Makefile.$(TARGET_SUFF)
 
+CFLAGS += $(BOARD_CONFIG) -DVERSION=\"$(VERSION)\"
+CFLAGS += -I../plo
+CFLAGS += -DPLO_CONFIG=\"hal/$(TARGET_SUFF)/$(TARGET_SUBFAMILY)/config.h\" -DARCH_TYPES=\"hal/$(TARGET_SUFF)/$(TARGET_SUBFAMILY)/types.h\"
+
 include hal/$(TARGET_SUFF)/$(TARGET_SUBFAMILY)/Makefile
 include lib/Makefile
 include devices/Makefile
 include phfs/Makefile
 include cmds/Makefile
 
-CFLAGS += $(BOARD_CONFIG) -DVERSION=\"$(VERSION)\"
-CFLAGS += -I../plo -I../plo/hal -I../plo/hal/$(TARGET_SUFF) -I../plo/hal/$(TARGET_SUFF)/$(TARGET_SUBFAMILY)
 
 OBJS += $(addprefix $(PREFIX_O), _startc.o plo.o syspage.o)
 

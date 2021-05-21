@@ -17,6 +17,7 @@
 #ifndef _HAL_BASE_H_
 #define _HAL_BASE_H_
 
+#include <lib/types.h>
 
 static inline void hal_memcpy(void *dst, const void *src, unsigned int l)
 {

@@ -6,7 +6,4 @@
 # %LICENSE%
 #
 
-
-CFLAGS += -I../plo/devices
-
 OBJS += $(addprefix $(PREFIX_O)devices/, devs.o)
