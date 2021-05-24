@@ -53,7 +53,6 @@ extern void phfs_showDevs(void);
 extern void phfs_showFiles(void);
 
 
-
 /* Operations on files */
 
 /* Open files based on alias to device and file name.

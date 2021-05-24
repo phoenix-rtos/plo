@@ -23,12 +23,12 @@
 
 
 /* User interface */
-#define KERNEL_PATH              "phoenix-armv7a9-zynq7000.elf"
+#define KERNEL_PATH "phoenix-armv7a9-zynq7000.elf"
 
 /* Addresses descriptions */
-#define SYSPAGE_ADDRESS          0xffff8000    /* Begin of OCRAM's high address */
-#define BISTREAM_ADDR            0x00100000
+#define SYSPAGE_ADDRESS 0xffff8000 /* Begin of OCRAM's high address */
+#define BITSREAM_ADDR   0x00100000
 
-#define PAGE_SIZE                0x1000
+#define PAGE_SIZE 0x1000
 
 #endif

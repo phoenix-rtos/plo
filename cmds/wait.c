@@ -38,7 +38,7 @@ static int cmd_wait(char *s)
 	lib_printf("\n%s %s", CONSOLE_NORMAL);
 	/* User doesn't provide time, waiting in infinite loop */
 	if (argsc != 1) {
-		while(1) {
+		while (1) {
 			lib_printf("\r%*s \r%s ", sizeof(prompt) + 4, "", prompt);
 			for (i = 0; i < 3; ++i) {
 				lib_printf(".");

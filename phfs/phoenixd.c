@@ -21,11 +21,11 @@
 
 
 /* Message types */
-#define MSG_OPEN    1
-#define MSG_READ    2
-#define MSG_WRITE   3
-#define MSG_COPY    4
-#define MSG_FSTAT   6
+#define MSG_OPEN  1
+#define MSG_READ  2
+#define MSG_WRITE 3
+#define MSG_COPY  4
+#define MSG_FSTAT 6
 
 
 typedef struct {
@@ -50,7 +50,7 @@ typedef struct {
 	u32 handle;
 	u32 pos;
 	u32 len;
-	u8  data[MSG_MAXLEN - 3 * sizeof(u32)];
+	u8 data[MSG_MAXLEN - 3 * sizeof(u32)];
 } msg_phoenixd_t;
 
 

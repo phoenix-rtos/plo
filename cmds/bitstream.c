@@ -1,9 +1,9 @@
 /*
  * Phoenix-RTOS
  *
- * plo - perating system loader
+ * plo - operating system loader
  *
- * Load bistream to fpga
+ * Load bitsream to fpga
  *
  * Copyright 2021 Phoenix Systems
  * Author: Hubert Buczynski
@@ -31,7 +31,7 @@ static int cmd_bitstream(char *s)
 	int res;
 	handler_t handler;
 	u8 buff[SIZE_MSG_BUFF];
-	addr_t offs = 0, addr = BISTREAM_ADDR;
+	addr_t offs = 0, addr = BITSREAM_ADDR;
 
 	unsigned int argsc;
 	char (*args)[SIZE_CMD_ARG_LINE];
@@ -65,7 +65,7 @@ static int cmd_bitstream(char *s)
 	} while (res != 0);
 
 	log_info("\nLoading bitstream into PL");
-	if (_zynq_loadPL(BISTREAM_ADDR, addr - BISTREAM_ADDR) < 0) {
+	if (_zynq_loadPL(BITSREAM_ADDR, addr - BITSREAM_ADDR) < 0) {
 		log_error("\nPL was not initialized, bitstream is incorrect");
 		return -EINVAL;
 	}

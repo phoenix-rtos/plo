@@ -25,10 +25,13 @@ unsigned int lib_strtoul(char *nptr, char **endptr, int base)
 	if ((base == 16 || base == 0) && nptr[0] == '0' && (nptr[1] | 0x20) == 'x') {
 		base = 16;
 		nptr += 2;
-	} else if (base == 0 && nptr[0] == '0')
+	}
+	else if (base == 0 && nptr[0] == '0') {
 		base = 8;
-	else if (base == 0)
+	}
+	else if (base == 0) {
 		base = 10;
+	}
 
 	for (; isdigit(*nptr) || isalpha(*nptr); ++nptr) {
 		t = *nptr - '0';

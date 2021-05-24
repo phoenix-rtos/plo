@@ -390,8 +390,8 @@ void syspage_showMaps(void)
 	for (i = 0; i < syspage_common.mapsCnt; ++i) {
 		pmap = &syspage_common.maps[i];
 		syspage_uiAttr2str(pmap->map.attr, attr);
-		lib_printf("%d%-3s %-8s 0x%08x%4s 0x%08x%4s 0x%08x%4s 0x%08x%4s %s\n",  pmap->map.id, "", pmap->map.name,
-					pmap->map.start, "", pmap->map.end, "", pmap->top, "", pmap->map.end - pmap->top, "", attr);
+		lib_printf("%d%-3s %-8s 0x%08x%4s 0x%08x%4s 0x%08x%4s 0x%08x%4s %s\n", pmap->map.id, "", pmap->map.name,
+			pmap->map.start, "", pmap->map.end, "", pmap->top, "", pmap->map.end - pmap->top, "", attr);
 	}
 }
 
@@ -429,7 +429,7 @@ void syspage_showKernel(void)
 
 void syspage_showAddr(void)
 {
-	lib_printf("\nSyspage addres: 0x%x\n", syspage_getAddress());
+	lib_printf("\nSyspage address: 0x%x\n", syspage_getAddress());
 }
 
 
@@ -462,7 +462,7 @@ int syspage_addmap(const char *name, void *start, void *end, const char *attr)
 	if (syspage_strAttr2ui(attr, &map->attr) < 0)
 		return -EINVAL;
 
-	len =  hal_strlen(name) ;
+	len = hal_strlen(name);
 	size = min(len, SIZE_MAP_NAME - 1);
 
 	hal_memcpy(map->name, name, size);

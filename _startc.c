@@ -17,11 +17,11 @@
 extern void _end(void);
 extern void _plo_bss(void);
 
-extern void (*__init_array_start [])(void);
-extern void (*__init_array_end [])(void);
+extern void (*__init_array_start[])(void);
+extern void (*__init_array_end[])(void);
 
-extern void (*__fini_array_start [])(void);
-extern void (*__fini_array_end [])(void);
+extern void (*__fini_array_start[])(void);
+extern void (*__fini_array_end[])(void);
 
 
 extern int main(void);

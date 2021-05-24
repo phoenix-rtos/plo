@@ -23,7 +23,7 @@
 #include <lib/errno.h>
 
 
-#define SIZE_USB_ENDPTS        2 * PHFS_ACM_PORTS_NB + 1 /* Add control endpoint */
+#define SIZE_USB_ENDPTS 2 * PHFS_ACM_PORTS_NB + 1 /* Add control endpoint */
 
 
 struct {

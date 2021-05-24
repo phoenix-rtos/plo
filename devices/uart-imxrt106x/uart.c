@@ -92,7 +92,7 @@ static inline int uart_getTXcount(uart_t *uart)
 static uart_t *uart_getInstance(unsigned int minor)
 {
 	if (minor < 1 || minor > UART_MAX_CNT)
- 		return NULL;
+		return NULL;
 
 	if (uartLut[minor - 1] == 0)
 		return NULL;
@@ -311,7 +311,7 @@ static void uart_initPins(void)
 }
 
 
-/* Device interafce */
+/* Device interface */
 
 static ssize_t uart_read(unsigned int minor, addr_t offs, u8 *buff, unsigned int len, unsigned int timeout)
 {
@@ -345,7 +345,7 @@ static ssize_t uart_read(unsigned int minor, addr_t offs, u8 *buff, unsigned int
 }
 
 
-static ssize_t uart_write(unsigned int minor, const u8 *buff,  unsigned int len)
+static ssize_t uart_write(unsigned int minor, const u8 *buff, unsigned int len)
 {
 	unsigned int l, cnt = 0;
 	uart_t *uart;

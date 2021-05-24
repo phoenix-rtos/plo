@@ -41,7 +41,7 @@ void console_puts(const char *s)
 
 void console_putc(char c)
 {
-	const char data[] = {c, '\0'};
+	const char data[] = { c, '\0' };
 
 	if (!console_common.init) {
 		hal_consolePrint(data);

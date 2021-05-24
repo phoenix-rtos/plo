@@ -83,7 +83,7 @@ static const struct {
 static uart_t *uart_getInstance(unsigned int minor)
 {
 	if (minor < 1 || minor > UART_MAX_CNT)
- 		return NULL;
+		return NULL;
 
 	if (uartLut[minor - 1] == 0)
 		return NULL;
@@ -392,7 +392,7 @@ static void uart_initPins(void)
 }
 
 
-/* Device interafce */
+/* Device interface */
 
 static ssize_t uart_read(unsigned int minor, addr_t offs, u8 *buff, unsigned int len, unsigned int timeout)
 {

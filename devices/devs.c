@@ -17,8 +17,8 @@
 
 #include <lib/errno.h>
 
-#define SIZE_MAJOR   4
-#define SIZE_MINOR   16
+#define SIZE_MAJOR 4
+#define SIZE_MINOR 16
 
 
 struct {
@@ -70,7 +70,7 @@ int devs_check(unsigned int major, unsigned int minor)
 
 	h = devs_common.devs[major][minor];
 	if (h == NULL || h->init == NULL || h->done == NULL ||
-	    h->sync == NULL || h->read == NULL || h->write == NULL)
+		h->sync == NULL || h->read == NULL || h->write == NULL)
 		return -EINVAL;
 
 	return EOK;

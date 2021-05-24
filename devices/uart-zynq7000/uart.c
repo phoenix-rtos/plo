@@ -69,7 +69,6 @@ const struct {
 };
 
 
-
 static inline void uart_rxData(uart_t *uart)
 {
 	/* Keep getting data until fifo is not empty */
@@ -178,8 +177,7 @@ static int uart_setPin(u32 pin)
 	ctl.pullup = 0;
 	ctl.disableRcvr = 0;
 
-	switch (pin)
-	{
+	switch (pin) {
 		/* Uart Rx */
 		case mio_pin_10:
 		case mio_pin_49:
@@ -216,7 +214,7 @@ static void uart_initCtrlClock(void)
 }
 
 
-/* Device interafce */
+/* Device interface */
 
 static ssize_t uart_read(unsigned int minor, addr_t offs, u8 *buff, unsigned int len, unsigned int timeout)
 {

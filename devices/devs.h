@@ -18,9 +18,9 @@
 
 #include <lib/types.h>
 
-#define DEV_UART    0
-#define DEV_USB     1
-#define DEV_FLASH   2
+#define DEV_UART  0
+#define DEV_USB   1
+#define DEV_FLASH 2
 
 
 enum { dev_isMappable = 0, dev_isNotMappable };

@@ -20,46 +20,46 @@
 #include <hal/hal.h>
 
 
-#define FLAG_SIGNED        0x1
-#define FLAG_64BIT         0x2
-#define FLAG_FLOAT         0x4
-#define FLAG_SPACE         0x10
-#define FLAG_ZERO          0x20
-#define FLAG_PLUS          0x40
-#define FLAG_HEX           0x80
-#define FLAG_OCT           0x100
-#define FLAG_LARGE_DIGITS  0x200
-#define FLAG_ALTERNATE     0x400
-#define FLAG_NULLMARK      0x800
-#define FLAG_MINUS         0x1000
-#define FLAG_FIELD_WIDTH_STAR 	0x2000
-#define FLAG_DOUBLE		   0x4000
+#define FLAG_SIGNED           0x1
+#define FLAG_64BIT            0x2
+#define FLAG_FLOAT            0x4
+#define FLAG_SPACE            0x10
+#define FLAG_ZERO             0x20
+#define FLAG_PLUS             0x40
+#define FLAG_HEX              0x80
+#define FLAG_OCT              0x100
+#define FLAG_LARGE_DIGITS     0x200
+#define FLAG_ALTERNATE        0x400
+#define FLAG_NULLMARK         0x800
+#define FLAG_MINUS            0x1000
+#define FLAG_FIELD_WIDTH_STAR 0x2000
+#define FLAG_DOUBLE           0x4000
 
 
-#define GET_UNSIGNED(number, flags, args) do {		\
-		if ((flags) & FLAG_64BIT)		\
-			(number) = va_arg((args), u64);	\
-		else					\
-			(number) = va_arg((args), u32);	\
+#define GET_UNSIGNED(number, flags, args) \
+	do { \
+		if ((flags)&FLAG_64BIT) \
+			(number) = va_arg((args), u64); \
+		else \
+			(number) = va_arg((args), u32); \
 	} while (0)
 
 
-#define GET_SIGNED(number, flags, args) do {		\
-		if ((flags) & FLAG_64BIT)		\
-			(number) = va_arg((args), s64);	\
-		else					\
-			(number) = va_arg((args), s32);	\
+#define GET_SIGNED(number, flags, args) \
+	do { \
+		if ((flags)&FLAG_64BIT) \
+			(number) = va_arg((args), s64); \
+		else \
+			(number) = va_arg((args), s32); \
 	} while (0)
 
 
-union float_u32
-{
+union float_u32 {
 	float f;
 	u32 u;
 };
 
-union double_u64
-{
+union double_u64 {
 	double d;
 	u64 u;
 };
@@ -157,7 +157,7 @@ static inline u32 format_fracToU32(float frac, int float_frac_len, float *overfl
 static void format_sprintf_num(void *ctx, feedfunc feed, u64 num64, u32 flags, int min_number_len, int float_frac_len)
 {
 	const char *digits = (flags & FLAG_LARGE_DIGITS) ? "0123456789ABCDEF" : "0123456789abcdef",
-			*prefix = (flags & FLAG_LARGE_DIGITS) ? "X0" : "x0";
+			   *prefix = (flags & FLAG_LARGE_DIGITS) ? "X0" : "x0";
 	char tmp_buf[32];
 	char sign = 0;
 	char *tmp = tmp_buf;
@@ -165,13 +165,13 @@ static void format_sprintf_num(void *ctx, feedfunc feed, u64 num64, u32 flags, i
 	if ((flags & FLAG_NULLMARK) && num64 == 0) {
 		const char *s = "(nil)";
 		int i;
-		for(i = 0; i < hal_strlen(s); i++)
+		for (i = 0; i < hal_strlen(s); i++)
 			feed(ctx, s[i]);
 	}
 
 	if (flags & FLAG_DOUBLE) {
 		double d = format_doubleFromU64(num64), exp_val;
-		/* exponent, exponent sign, trailing zeros, fraction lenght, integer lenght, temp */
+		/* exponent, exponent sign, trailing zeros, fraction length, integer length, temp */
 		int exp = 0, exps = 0, tz = 1, frac_len, int_len, temp, i;
 		/* fraction, temporary vars */
 		long long frac, temp1, temp2;
@@ -253,7 +253,7 @@ static void format_sprintf_num(void *ctx, feedfunc feed, u64 num64, u32 flags, i
 			}
 
 			num64 = format_u64FromDouble(d);
-			while((num64 >> 52) >= 0x3ff) {
+			while ((num64 >> 52) >= 0x3ff) {
 				exp++;
 				d /= 10;
 				num64 = format_u64FromDouble(d);
@@ -293,7 +293,7 @@ static void format_sprintf_num(void *ctx, feedfunc feed, u64 num64, u32 flags, i
 		frac_len = temp - 1;
 		temp = int_len - 1;
 
-		while(temp--) {
+		while (temp--) {
 			temp1 /= 10;
 			temp2 /= 10;
 		}
@@ -320,10 +320,10 @@ static void format_sprintf_num(void *ctx, feedfunc feed, u64 num64, u32 flags, i
 
 			/* check exp sign */
 			if (exps)
-				*tmp++ ='+';
+				*tmp++ = '+';
 			else
-				*tmp++ ='-';
-			*tmp++ ='e';
+				*tmp++ = '-';
+			*tmp++ = 'e';
 		}
 
 		while (frac_len--) {
@@ -476,11 +476,11 @@ static void format_sprintf_num(void *ctx, feedfunc feed, u64 num64, u32 flags, i
 			}
 		}
 		if (flags & FLAG_ALTERNATE) {
-			*tmp++  = '0';
+			*tmp++ = '0';
 		}
 	}
 	else {
-		if (flags & FLAG_64BIT) { // TODO: optimize
+		if (flags & FLAG_64BIT) { /* TODO: optimize */
 			while (num64 != 0) {
 				*tmp++ = digits[num64 % 10];
 				num64 /= 10;
@@ -537,9 +537,9 @@ void format_parse(void *ctx, feedfunc feed, const char *format, va_list args)
 			break;
 		}
 
-		/* precission, padding (set default to 6 digits) */
+		/* precision, padding (set default to 6 digits) */
 		u32 flags = 0, min_number_len = 0;
-		int	float_frac_len = -1;
+		int float_frac_len = -1;
 
 		for (;;) {
 			if (fmt == ' ')
@@ -579,7 +579,7 @@ void format_parse(void *ctx, feedfunc feed, const char *format, va_list args)
 			float_frac_len = 0;
 			fmt = *format++;
 			while (fmt >= '0' && fmt <= '9') {
-				float_frac_len  = float_frac_len * 10 + fmt - '0';
+				float_frac_len = float_frac_len * 10 + fmt - '0';
 				fmt = *format++;
 			}
 		}
@@ -615,8 +615,7 @@ void format_parse(void *ctx, feedfunc feed, const char *format, va_list args)
 
 		u64 number = 0;
 		switch (fmt) {
-			case 's':
-			{
+			case 's': {
 				const char *s = va_arg(args, char *);
 				if (s == NULL)
 					s = "(null)";
@@ -628,7 +627,8 @@ void format_parse(void *ctx, feedfunc feed, const char *format, va_list args)
 						l = p - s;
 					else
 						l = min_number_len;
-				} else {
+				}
+				else {
 					l = hal_strlen(s);
 				}
 
@@ -636,23 +636,22 @@ void format_parse(void *ctx, feedfunc feed, const char *format, va_list args)
 					l = min(l, float_frac_len);
 
 				if (l < min_number_len && !(flags & FLAG_MINUS)) {
-					for(i = 0; i < (min_number_len - l); i++)
+					for (i = 0; i < (min_number_len - l); i++)
 						feed(ctx, ' ');
 				}
 
-				for(i = 0; i < l; i++)
+				for (i = 0; i < l; i++)
 					feed(ctx, s[i]);
 
 				if (l < min_number_len && (flags & FLAG_MINUS)) {
-					for(i = 0; i < (min_number_len - l); i++)
+					for (i = 0; i < (min_number_len - l); i++)
 						feed(ctx, ' ');
 				}
 
 				break;
 			}
-			case 'c':
-			{
-				const char c = (char) va_arg(args,int);
+			case 'c': {
+				const char c = (char)va_arg(args, int);
 				feed(ctx, c);
 
 				break;

@@ -1819,11 +1819,11 @@ void _imxrt_invalDCacheAll(void)
 
 	sets = (ccsidr >> 13) & 0x7fff;
 	do {
-		ways =  (ccsidr >> 3) & 0x3ff;
+		ways = (ccsidr >> 3) & 0x3ff;
 		do {
 			*(imxrt_common.scb + scb_dcisw) = ((sets & 0x1ff) << 5) | ((ways & 0x3) << 30);
 		} while (ways-- != 0U);
-	} while(sets-- != 0U);
+	} while (sets-- != 0U);
 
 	imxrt_dataSyncBarrier();
 	imxrt_dataInstrBarrier();

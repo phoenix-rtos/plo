@@ -23,7 +23,6 @@
 #include <lib/types.h>
 
 
-
 /* Function initializes clocks, peripherals and basic controllers */
 extern void hal_init(void);
 
@@ -56,7 +55,7 @@ extern void hal_invalDCacheAll(void);
 extern void hal_invalDCacheAddr(addr_t addr, size_t sz);
 
 
-/* Function disbales interrupts */
+/* Function disables interrupts */
 extern void hal_cli(void);
 
 

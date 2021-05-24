@@ -22,10 +22,10 @@
 #include <lib/errno.h>
 
 
-#define SIZE_PHFS_HANDLERS    8
-#define SIZE_PHFS_FILES       10
+#define SIZE_PHFS_HANDLERS 8
+#define SIZE_PHFS_FILES    10
 
-#define PHFS_TIMEOUT_MS       500
+#define PHFS_TIMEOUT_MS 500
 
 
 enum { phfs_prot_raw = 0, phfs_prot_phoenixd };
@@ -58,14 +58,14 @@ struct {
 static const char *phfs_getProtName(unsigned int id)
 {
 	switch (id) {
-	case phfs_prot_raw:
-		return "raw";
+		case phfs_prot_raw:
+			return "raw";
 
-	case phfs_prot_phoenixd:
-		return "phoenixd";
+		case phfs_prot_phoenixd:
+			return "phoenixd";
 
-	default:
-		return "";
+		default:
+			return "";
 	}
 }
 
@@ -125,7 +125,7 @@ int phfs_regDev(const char *alias, unsigned int major, unsigned int minor, const
 	pd = &phfs_common.devices[phfs_common.dCnt];
 	if (phfs_setProt(pd, prot) < 0) {
 		log_error("\nphfs: %s - wrong protocol name\n\t use: \"%s\", \"%s\"", prot,
-		              phfs_getProtName(phfs_prot_raw), phfs_getProtName(phfs_prot_phoenixd));
+			phfs_getProtName(phfs_prot_raw), phfs_getProtName(phfs_prot_phoenixd));
 		return -EINVAL;
 	}
 
@@ -251,26 +251,26 @@ int phfs_open(const char *alias, const char *file, unsigned int flags, handler_t
 	pd = &phfs_common.devices[handler->pd];
 
 	switch (pd->prot) {
-	case phfs_prot_phoenixd:
-		if ((res = phoenixd_open(file, pd->major, pd->minor, flags)) < 0)
-			return res;
+		case phfs_prot_phoenixd:
+			if ((res = phoenixd_open(file, pd->major, pd->minor, flags)) < 0)
+				return res;
 
-		handler->id = res;
-		break;
-
-	case phfs_prot_raw:
-		/* NULL file means that phfs refers to raw device data */
-		handler->id = -1;
-		if (file == NULL)
+			handler->id = res;
 			break;
 
-		if ((res = phfs_getFileId(file)) < 0)
-			return res;
-		handler->id = res;
-		break;
+		case phfs_prot_raw:
+			/* NULL file means that phfs refers to raw device data */
+			handler->id = -1;
+			if (file == NULL)
+				break;
 
-	default:
-		break;
+			if ((res = phfs_getFileId(file)) < 0)
+				return res;
+			handler->id = res;
+			break;
+
+		default:
+			break;
 	}
 
 	return EOK;
@@ -288,26 +288,26 @@ ssize_t phfs_read(handler_t handler, addr_t offs, u8 *buff, unsigned int len)
 	pd = &phfs_common.devices[handler.pd];
 
 	switch (pd->prot) {
-	case phfs_prot_phoenixd:
-		return phoenixd_read(handler.id, pd->major, pd->minor, offs, buff, len);
+		case phfs_prot_phoenixd:
+			return phoenixd_read(handler.id, pd->major, pd->minor, offs, buff, len);
 
-	case phfs_prot_raw:
-		/* Reading raw data from device */
-		if (handler.id == -1)
-			return devs_read(pd->major, pd->minor, offs, buff, len, PHFS_TIMEOUT_MS);
+		case phfs_prot_raw:
+			/* Reading raw data from device */
+			if (handler.id == -1)
+				return devs_read(pd->major, pd->minor, offs, buff, len, PHFS_TIMEOUT_MS);
 
-		/* Reading file defined by alias */
-		if (handler.id >= SIZE_PHFS_FILES)
-			return -EINVAL;
+			/* Reading file defined by alias */
+			if (handler.id >= SIZE_PHFS_FILES)
+				return -EINVAL;
 
-		file = &phfs_common.files[handler.id];
-		if (offs + len < file->size)
-			return devs_read(pd->major, pd->minor, file->addr + offs, buff, len, PHFS_TIMEOUT_MS);
-		else
-			return devs_read(pd->major, pd->minor, file->addr + offs, buff, file->size - offs, PHFS_TIMEOUT_MS);
+			file = &phfs_common.files[handler.id];
+			if (offs + len < file->size)
+				return devs_read(pd->major, pd->minor, file->addr + offs, buff, len, PHFS_TIMEOUT_MS);
+			else
+				return devs_read(pd->major, pd->minor, file->addr + offs, buff, file->size - offs, PHFS_TIMEOUT_MS);
 
-	default:
-		break;
+		default:
+			break;
 	}
 
 	return -EIO;
@@ -325,26 +325,26 @@ ssize_t phfs_write(handler_t handler, addr_t offs, const u8 *buff, unsigned int 
 	pd = &phfs_common.devices[handler.pd];
 
 	switch (pd->prot) {
-	case phfs_prot_phoenixd:
-		return phoenixd_write(handler.id, pd->major, pd->minor, offs, buff, len);
+		case phfs_prot_phoenixd:
+			return phoenixd_write(handler.id, pd->major, pd->minor, offs, buff, len);
 
-	case phfs_prot_raw:
-		/* Writing raw data to device */
-		if (handler.id == -1)
-			return devs_write(pd->major, pd->minor, offs, buff, len);
+		case phfs_prot_raw:
+			/* Writing raw data to device */
+			if (handler.id == -1)
+				return devs_write(pd->major, pd->minor, offs, buff, len);
 
-		/* Writing data to file defined by alias */
-		if (handler.id >= SIZE_PHFS_FILES)
-			return -EINVAL;
+			/* Writing data to file defined by alias */
+			if (handler.id >= SIZE_PHFS_FILES)
+				return -EINVAL;
 
-		file = &phfs_common.files[handler.id];
-		if (offs + len < file->size)
-			return devs_write(pd->major, pd->minor, file->addr + offs, buff, len);
-		else
-			return devs_write(pd->major, pd->minor, file->addr + offs, buff, file->size - offs);
+			file = &phfs_common.files[handler.id];
+			if (offs + len < file->size)
+				return devs_write(pd->major, pd->minor, file->addr + offs, buff, len);
+			else
+				return devs_write(pd->major, pd->minor, file->addr + offs, buff, file->size - offs);
 
-	default:
-		break;
+		default:
+			break;
 	}
 
 	return -EIO;
@@ -362,14 +362,14 @@ int phfs_close(handler_t handler)
 	pd = &phfs_common.devices[handler.pd];
 
 	switch (pd->prot) {
-	case phfs_prot_phoenixd:
-		if ((res = phoenixd_close(handler.id, pd->major, pd->minor)) < 0)
-			return res;
-		break;
+		case phfs_prot_phoenixd:
+			if ((res = phoenixd_close(handler.id, pd->major, pd->minor)) < 0)
+				return res;
+			break;
 
-	case phfs_prot_raw:
-	default:
-		break;
+		case phfs_prot_raw:
+		default:
+			break;
 	}
 
 	if (devs_sync(pd->major, pd->minor) < 0)
@@ -404,19 +404,19 @@ int phfs_stat(handler_t handler, phfs_stat_t *stat)
 	pd = &phfs_common.devices[handler.pd];
 
 	switch (pd->prot) {
-	case phfs_prot_phoenixd:
-		if ((res = phoenixd_stat(handler.id, pd->major, pd->minor, stat)) < 0)
-			return res;
-		break;
+		case phfs_prot_phoenixd:
+			if ((res = phoenixd_stat(handler.id, pd->major, pd->minor, stat)) < 0)
+				return res;
+			break;
 
-	case phfs_prot_raw:
-		if (handler.id == -1 || handler.id >= SIZE_PHFS_FILES)
-			return -EINVAL;
+		case phfs_prot_raw:
+			if (handler.id == -1 || handler.id >= SIZE_PHFS_FILES)
+				return -EINVAL;
 
-		file = &phfs_common.files[handler.id];
-		stat->size = file->size;
-	default:
-		break;
+			file = &phfs_common.files[handler.id];
+			stat->size = file->size;
+		default:
+			break;
 	}
 
 	return EOK;

@@ -20,11 +20,11 @@
 #include <lib/console.h>
 
 
-#define SIZE_HIST            8
-#define SIZE_CMDS            24
-#define TIMEOUT_CONSOLE_MS   200
+#define SIZE_HIST          8
+#define SIZE_CMDS          24
+#define TIMEOUT_CONSOLE_MS 200
 
-#define PROMPT              "(plo)% "
+#define PROMPT "(plo)% "
 
 
 /* Linker symbol points to the beginning of .data section */
@@ -38,7 +38,6 @@ struct {
 	int cl;
 	char lines[SIZE_HIST][SIZE_CMD_ARG_LINE];
 } cmd_common;
-
 
 
 static void cmd_skipblanks(const char *line, unsigned int *pos, const char *blanks)
@@ -152,7 +151,7 @@ void cmd_parse(char *line)
 			return;
 		}
 		if (*word == 0)
-			 break;
+			break;
 
 		wp = 0;
 		if (cmd_getnext(word, &wp, DEFAULT_BLANKS, DEFAULT_CITES, cmd, sizeof(cmd)) == NULL) {
@@ -192,8 +191,6 @@ int cmd_getArgs(const char *cmd, const char *blank, char (**args)[SIZE_CMD_ARG_L
 
 	return i;
 }
-
-
 
 /* TODO: old code needs to be cleaned up */
 void cmd_prompt(void)

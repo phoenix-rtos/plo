@@ -20,8 +20,8 @@
 #include <lib/types.h>
 
 
-#define SIZE_APP_NAME       15
-#define SIZE_MAP_NAME       7
+#define SIZE_APP_NAME 15
+#define SIZE_MAP_NAME 7
 
 
 /* TODO: Make it compatible with Phoenix-RTOS kernel;

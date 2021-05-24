@@ -68,8 +68,7 @@ static void hal_setPin(u32 pin)
 	ctl.pullup = 0;
 	ctl.disableRcvr = 0;
 
-	switch (pin)
-	{
+	switch (pin) {
 		/* Uart Rx */
 		case mio_pin_10:
 		case mio_pin_49:

@@ -75,8 +75,8 @@
 #define UART_CONSOLE 11
 #endif
 
-#define UART_CLK         24000000
-#define UART_BAUDRATE    115200
+#define UART_CLK      24000000
+#define UART_BAUDRATE 115200
 
 #define UART1_BASE  ((void *)0x4007c000)
 #define UART2_BASE  ((void *)0x40080000)
@@ -221,36 +221,36 @@
 
 /* GPT - general purpose timer */
 
-#define GPT1_BASE           ((void *)0x400ec000)
-#define GPT1_CLK            pctl_clk_gpt1
-#define GPT1_IRQ            gpt1_irq
+#define GPT1_BASE ((void *)0x400ec000)
+#define GPT1_CLK  pctl_clk_gpt1
+#define GPT1_IRQ  gpt1_irq
 
-#define GPT2_BASE           ((void *)0x400f0000)
-#define GPT2_CLK            pctl_clk_gpt2
-#define GPT2_IRQ            gpt2_irq
+#define GPT2_BASE ((void *)0x400f0000)
+#define GPT2_CLK  pctl_clk_gpt2
+#define GPT2_IRQ  gpt2_irq
 
 
 /* FLASH */
 
-#define FLASH_NO                   FLASH_FLEXSPI1_MOUNTED + FLASH_FLEXSPI2_MOUNTED
-#define FLASH_DEFAULT_SECTOR_SIZE  0x1000
+#define FLASH_NO                  FLASH_FLEXSPI1_MOUNTED + FLASH_FLEXSPI2_MOUNTED
+#define FLASH_DEFAULT_SECTOR_SIZE 0x1000
 
-#define FLASH_FLEXSPI1_MOUNTED     1
-#define FLASH_FLEXSPI1             0x30000000
-#define FLASH_SIZE_FLEXSPI1        0x10000000
-#define FLASH_FLEXSPI1_INSTANCE    0x1
-#define FLASH_FLEXSPI1_QSPI_FREQ   0xc0000007
+#define FLASH_FLEXSPI1_MOUNTED   1
+#define FLASH_FLEXSPI1           0x30000000
+#define FLASH_SIZE_FLEXSPI1      0x10000000
+#define FLASH_FLEXSPI1_INSTANCE  0x1
+#define FLASH_FLEXSPI1_QSPI_FREQ 0xc0000007
 
-#define FLASH_FLEXSPI2_MOUNTED     0
-#define FLASH_FLEXSPI2             0x60000000
-#define FLASH_SIZE_FLEXSPI2        0x1f800000
-#define FLASH_FLEXSPI2_INSTANCE    0x2
-#define FLASH_FLEXSPI2_QSPI_FREQ   0xc0000007
+#define FLASH_FLEXSPI2_MOUNTED   0
+#define FLASH_FLEXSPI2           0x60000000
+#define FLASH_SIZE_FLEXSPI2      0x1f800000
+#define FLASH_FLEXSPI2_INSTANCE  0x2
+#define FLASH_FLEXSPI2_QSPI_FREQ 0xc0000007
 
 
 /* USB */
 
-#define PHFS_ACM_PORTS_NB        1    /* Number of ports define by CDC driver; min = 1, max = 2 */
+#define PHFS_ACM_PORTS_NB 1 /* Number of ports define by CDC driver; min = 1, max = 2 */
 
 
 #endif
