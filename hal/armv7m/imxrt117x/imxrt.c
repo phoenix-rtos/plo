@@ -498,6 +498,9 @@ int _imxrt_setDevClock(int clock, int div, int mux, int mfd, int mfn, int state)
 
 void _imxrt_init(void)
 {
+	int i;
+	volatile u32 *reg;
+
 	imxrt_common.aips[0] = (void *)0x40000000;
 	imxrt_common.aips[1] = (void *)0x40400000;
 	imxrt_common.aips[2] = (void *)0x40800000;
@@ -538,6 +541,21 @@ void _imxrt_init(void)
 	/* Configure cache */
 	_imxrt_enableDCache();
 	_imxrt_enableICache();
+
+	/* Reconfigure all IO pads as slow slew-rate and low drive strength */
+	for (i = pctl_pad_gpio_emc_b1_00; i <= pctl_pad_gpio_disp_b2_15; ++i) {
+		if ((reg = _imxrt_IOpadGetReg(i)) == NULL)
+			continue;
+
+		*reg |= 1 << 1;
+	}
+
+	for (; i <= pctl_pad_gpio_lpsr_15; ++i) {
+		if ((reg = _imxrt_IOpadGetReg(i)) == NULL)
+			continue;
+
+		*reg &= ~0x3;
+	}
 
 	/* Allow userspace applications to access hardware registers */
 /*
