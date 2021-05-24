@@ -25,7 +25,12 @@
 #define KERNEL_PATH              "phoenix-armv7m7-imxrt117x.elf"
 
 /* Addresses descriptions */
-#define SYSPAGE_ADDRESS          0x20200000
+#define DISK_IMAGE_BEGIN         0x70000000
+#define DISK_IMAGE_SIZE          0x0013f000
+
+#define DISK_KERNEL_OFFS         0x00011000
+#define SYSPAGE_ADDRESS          0x202c0000
+
 #define STACK_SIZE	             5 * 1024
 #define PAGE_SIZE                0x200
 
