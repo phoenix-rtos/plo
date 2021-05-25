@@ -50,7 +50,7 @@ static int cmd_wait(char *s)
 
 	/* Wait for the time specified by the user */
 	time = lib_strtoul(args[0], &endptr, 0);
-	if (hal_strlen(endptr) != 0) {
+	if (*endptr) {
 		log_error("\nWrong args: %s", s);
 		return -EINVAL;
 	}

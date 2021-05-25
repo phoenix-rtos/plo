@@ -43,13 +43,13 @@ static int cmd_phfs(char *s)
 
 	/* Get major/minor */
 	major = lib_strtoul(args[1], &endptr, 0);
-	if (hal_strlen(endptr) != 0) {
+	if (*endptr) {
 		log_error("\nWrong major value %s for %s", args[1], args[0]);
 		return -EINVAL;
 	}
 
 	minor = lib_strtoul(args[2], &endptr, 0);
-	if (hal_strlen(endptr) != 0) {
+	if (*endptr) {
 		log_error("\nWrong minor value %s for %s", args[2], args[0]);
 		return -EINVAL;
 	}

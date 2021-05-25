@@ -53,7 +53,7 @@ static int cmd_alias(char *s)
 		else if (i == 2)
 			sz = lib_strtoul(args[i], &end, 0);
 
-		if (hal_strlen(end) != 0) {
+		if (*end) {
 			log_error("\nWrong args: %s", s);
 			return -EINVAL;
 		}

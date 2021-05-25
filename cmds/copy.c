@@ -85,7 +85,7 @@ static int cmd_parseDev(handler_t *h, addr_t *offs, size_t *sz, cmdarg_t *args, 
 	*offs = lib_strtoul(args[*argsID], &endptr, 0);
 
 	/* Open device using alias to file */
-	if (hal_strlen(endptr) != 0) {
+	if (*endptr) {
 		*offs = 0;
 		*sz = 0;
 		if (phfs_open(alias, args[(*argsID)], 0, h) < 0) {
@@ -97,7 +97,7 @@ static int cmd_parseDev(handler_t *h, addr_t *offs, size_t *sz, cmdarg_t *args, 
 	/* Open device using direct access to memory */
 	else {
 		*sz = lib_strtoul(args[++(*argsID)], &endptr, 0);
-		if (hal_strlen(endptr) != 0) {
+		if (*endptr) {
 			log_error("\nWrong size value: %s, for %s with offs 0x%x", args[(*argsID)], alias, *offs);
 			return -EINVAL;
 		}

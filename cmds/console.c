@@ -44,13 +44,13 @@ static int cmd_console(char *s)
 
 	/* Get major/minor */
 	major = lib_strtoul(args[0], &endptr, 0);
-	if (hal_strlen(endptr) != 0) {
+	if (*endptr) {
 		log_error("\nWrong major value: %s", args[0]);
 		return -EINVAL;
 	}
 
 	minor = lib_strtoul(args[1], &endptr, 0);
-	if (hal_strlen(endptr) != 0) {
+	if (*endptr) {
 		log_error("\nWrong minor value: %s", args[1]);
 		return -EINVAL;
 	}
