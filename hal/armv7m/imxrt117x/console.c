@@ -40,9 +40,9 @@ void hal_consoleInit(void)
 {
 	u32 t;
 
-	halconsole_common.uart = UART10_BASE;
+	halconsole_common.uart = UART11_BASE;
 
-	_imxrt_setDevClock(UART10_CLK, 0, 0, 0, 0, 1);
+	_imxrt_setDevClock(UART11_CLK, 0, 0, 0, 0, 1);
 
 	/* tx */
 	_imxrt_setIOmux(pctl_mux_gpio_ad_24, 0, 0);
