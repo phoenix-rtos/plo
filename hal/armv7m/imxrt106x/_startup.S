@@ -208,8 +208,6 @@ _plo:
 .globl _interrupts_dispatch
 .type _interrupts_dispatch, %function
 _interrupts_dispatch:
-    cpsid if
-
     mrs r0, ipsr
     sub r1, sp, #44
     stmdb sp!, {r1-r2, r4-r11, lr}
@@ -220,7 +218,6 @@ _intd0:
 _intd1:
     ldmia sp!, {r0-r1, r4-r11, lr}
 
-    cpsie if
     bx lr
 .size _interrupts_dispatch, .-_interrupts_dispatch
 .ltorg

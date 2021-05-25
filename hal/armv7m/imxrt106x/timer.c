@@ -49,23 +49,25 @@ static int timer_isr(u16 irq, void *data)
 
 int timer_wait(u32 ms, int flags, u16 *p, u16 v)
 {
+	timer_common.done = 0;
+
 	/* Set value that determines when a compare event will be generated */
 	*(timer_common.base + gpt_ocr1) = timer_common.ticksPerMs * ms;
-
 	*(timer_common.base + gpt_ir) |= 0x1; /* Set OF1IE (Output Compare 1 Interrupt Enable) */
-
-	timer_common.done = 0;
 
 	/* Enable timer*/
 	*(timer_common.base + gpt_cr) |= 1;
 
 	while (!timer_common.done) {
-		if ((flags & TIMER_VALCHG) && *p != v)
+		if ((flags & TIMER_VALCHG) && *p != v) {
+			*(timer_common.base + gpt_ir) = 0;
+			*(timer_common.base + gpt_cr) &= ~0x1;
 			return 1;
+		}
 	}
 
-	/* Disable timer */
-	*(timer_common.base + gpt_cr) |= 0;
+	*(timer_common.base + gpt_ir) = 0;
+	*(timer_common.base + gpt_cr) &= ~0x1;
 
 	return 0;
 }
@@ -85,8 +87,7 @@ void timer_init(void)
 
 	*(timer_common.base + gpt_cr) |= 1 << 15;
 
-	while (((*(timer_common.base + gpt_cr) >> 15) & 0x1))
-	{ }
+	while (((*(timer_common.base + gpt_cr) >> 15) & 0x1));
 
 	/* Disable GPT and it's interrupts */
 	*(timer_common.base + gpt_cr) = 0;
