@@ -24,8 +24,6 @@
 #define PIN2MUX(x)        CONCATENATE(pctl_mux_gpio_, x)
 #define PIN2PAD(x)        CONCATENATE(pctl_pad_gpio_, x)
 
-#define UART_MAX_CNT 12
-
 #define BUFFER_SIZE 0x200
 
 typedef struct {

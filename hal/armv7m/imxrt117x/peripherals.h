@@ -20,7 +20,9 @@
 /* Periperals configuration */
 
 /* Interrupts */
-#define SIZE_INTERRUPTS 167
+#define SIZE_INTERRUPTS (217 + 16)
+
+#define UART_MAX_CNT (12 + 1)
 
 /* UART */
 #ifndef UART1
