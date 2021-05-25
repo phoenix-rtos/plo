@@ -67,7 +67,7 @@ static int cmd_cpphfs2phfs(handler_t srcHandler, addr_t srcAddr, size_t srcSz, h
 }
 
 
-static int cmd_parseDev(handler_t *h, addr_t *offs, size_t *sz, char (*args)[SIZE_CMD_ARG_LINE], unsigned int *argsID, unsigned int argsc)
+static int cmd_parseDev(handler_t *h, addr_t *offs, size_t *sz, cmdarg_t *args, unsigned int *argsID, unsigned int argsc)
 {
 	char *alias;
 	char *endptr;
@@ -119,7 +119,7 @@ static int cmd_copy(char *s)
 	handler_t h[2];
 
 	unsigned int argsc, argsID = 0;
-	char (*args)[SIZE_CMD_ARG_LINE];
+	cmdarg_t *args;
 
 	/* Parse all comand's arguments */
 	if ((argsc = cmd_getArgs(s, DEFAULT_BLANKS, &args)) < 4) {

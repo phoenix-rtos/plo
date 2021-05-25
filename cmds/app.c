@@ -117,7 +117,7 @@ static int cmd_app(char *s)
 {
 	int argID = 0;
 	unsigned int argsc, pos;
-	char (*args)[SIZE_CMD_ARG_LINE];
+	cmdarg_t *args;
 
 	char *cmdline;
 	unsigned int flags = 0;

@@ -34,7 +34,7 @@ static int cmd_bitstream(char *s)
 	addr_t offs = 0, addr = BITSREAM_ADDR;
 
 	unsigned int argsc;
-	char (*args)[SIZE_CMD_ARG_LINE];
+	cmdarg_t *args;
 
 	argsc = cmd_getArgs(s, DEFAULT_BLANKS, &args);
 	if (argsc == 0) {

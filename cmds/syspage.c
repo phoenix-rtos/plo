@@ -30,7 +30,7 @@ static int cmd_syspage(char *s)
 	char *end;
 	addr_t addr;
 	unsigned int argsc;
-	char (*args)[SIZE_CMD_ARG_LINE];
+	cmdarg_t *args;
 
 	argsc = cmd_getArgs(s, DEFAULT_BLANKS, &args);
 	if (argsc == 0) {

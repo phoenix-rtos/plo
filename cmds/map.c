@@ -34,7 +34,7 @@ static int cmd_map(char *s)
 	char mapname[SIZE_MAP_NAME + 1];
 
 	unsigned int argID = 0, argsc = 0;
-	char (*args)[SIZE_CMD_ARG_LINE];
+	cmdarg_t *args;
 
 	argsc = cmd_getArgs(s, DEFAULT_BLANKS, &args);
 	if (argsc == 0) {

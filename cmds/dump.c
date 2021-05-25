@@ -35,7 +35,7 @@ static int cmd_dump(char *s)
 	static const int xsize = 16, ysize = 16;
 
 	unsigned int argsc;
-	char (*args)[SIZE_CMD_ARG_LINE];
+	cmdarg_t *args;
 
 	argsc = cmd_getArgs(s, DEFAULT_BLANKS, &args);
 	if (argsc == 0) {

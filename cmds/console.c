@@ -30,7 +30,7 @@ static int cmd_console(char *s)
 {
 	char *endptr;
 	unsigned int major, minor, argsc = 0;
-	char (*args)[SIZE_CMD_ARG_LINE];
+	cmdarg_t *args;
 
 	argsc = cmd_getArgs(s, ". \t", &args);
 	if (argsc == 0) {

@@ -28,7 +28,7 @@ static void cmd_phfsInfo(void)
 static int cmd_phfs(char *s)
 {
 	char *endptr;
-	char (*args)[SIZE_CMD_ARG_LINE];
+	cmdarg_t *args;
 	unsigned int major, minor, argsc;
 
 	argsc = cmd_getArgs(s, ". \t", &args);

@@ -32,6 +32,7 @@
 
 #define MAX_CMD_ARGS_NB 10
 
+typedef char cmdarg_t[SIZE_CMD_ARG_LINE];
 
 typedef struct {
 	const char name[12];
@@ -61,7 +62,7 @@ extern void cmd_parse(char *line);
 
 
 /* Function prase arguments from command */
-extern int cmd_getArgs(const char *cmd, const char *blank, char (**args)[SIZE_CMD_ARG_LINE]);
+extern int cmd_getArgs(const char *cmd, const char *blank, cmdarg_t **args);
 
 
 #endif

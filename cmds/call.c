@@ -33,7 +33,7 @@ static int cmd_call(char *s)
 	addr_t offs = 0;
 	unsigned int argsc;
 	char buff[SIZE_CMD_ARG_LINE];
-	char (*args)[SIZE_CMD_ARG_LINE];
+	cmdarg_t *args;
 
 	argsc = cmd_getArgs(s, DEFAULT_BLANKS, &args);
 	if (argsc == 0) {

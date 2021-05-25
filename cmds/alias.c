@@ -31,7 +31,7 @@ static int cmd_alias(char *s)
 	size_t sz = 0;
 	addr_t addr = 0;
 	unsigned int i, argsc;
-	char (*args)[SIZE_CMD_ARG_LINE];
+	cmdarg_t *args;
 
 	argsc = cmd_getArgs(s, DEFAULT_BLANKS, &args);
 	if (argsc == 0) {

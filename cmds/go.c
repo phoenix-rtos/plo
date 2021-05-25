@@ -29,7 +29,7 @@ static void cmd_goInfo(void)
 static int cmd_go(char *s)
 {
 	unsigned int argsc;
-	char (*args)[SIZE_CMD_ARG_LINE];
+	cmdarg_t *args;
 
 	if ((argsc = cmd_getArgs(s, DEFAULT_BLANKS, &args)) != 0) {
 		log_error("\nWrong args: %s", s);

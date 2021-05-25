@@ -31,7 +31,7 @@ static int cmd_wait(char *s)
 	char c;
 	char *endptr;
 	unsigned int time, step, argsc;
-	char (*args)[SIZE_CMD_ARG_LINE];
+	cmdarg_t *args;
 	static const char prompt[] = "Waiting for input";
 
 	argsc = cmd_getArgs(s, DEFAULT_BLANKS, &args);

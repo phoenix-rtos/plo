@@ -177,7 +177,7 @@ void cmd_parse(char *line)
 }
 
 
-int cmd_getArgs(const char *cmd, const char *blank, char (**args)[SIZE_CMD_ARG_LINE])
+int cmd_getArgs(const char *cmd, const char *blank, cmdarg_t **args)
 {
 	unsigned int i, pos = 0;
 

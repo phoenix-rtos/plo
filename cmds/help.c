@@ -26,7 +26,7 @@ static int cmd_help(char *s)
 {
 	const cmd_t *cmd;
 	unsigned int i = 0, argsc;
-	char (*args)[SIZE_CMD_ARG_LINE];
+	cmdarg_t *args;
 
 	if ((argsc = cmd_getArgs(s, DEFAULT_BLANKS, &args)) != 0) {
 		log_error("\nWrong args: %s", s);

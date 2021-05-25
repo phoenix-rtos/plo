@@ -28,7 +28,7 @@ static void cmd_echoInfo(void)
 static int cmd_echo(char *s)
 {
 	unsigned int argsc;
-	char (*args)[SIZE_CMD_ARG_LINE];
+	cmdarg_t *args;
 
 	argsc = cmd_getArgs(s, DEFAULT_BLANKS, &args);
 	/* Show echo status */

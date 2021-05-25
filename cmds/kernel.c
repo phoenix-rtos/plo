@@ -40,7 +40,7 @@ static int cmd_kernel(char *s)
 	Elf32_Word i = 0, k = 0, size = 0;
 
 	unsigned int argsc;
-	char (*args)[SIZE_CMD_ARG_LINE];
+	cmdarg_t *args;
 
 	/* Parse arguments */
 	if ((argsc = cmd_getArgs(s, DEFAULT_BLANKS, &args)) == 0) {
