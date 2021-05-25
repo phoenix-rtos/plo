@@ -80,13 +80,13 @@ static const struct {
 /* TODO: temporary solution, it should be moved to device tree */
 static uart_t *uart_getInstance(unsigned int minor)
 {
-	if (minor < 1 || minor > UART_MAX_CNT)
+	if (minor >= UART_MAX_CNT)
 		return NULL;
 
-	if (uartLut[minor - 1] == 0)
+	if (uartLut[minor] == 0)
 		return NULL;
 
-	return &uart_common.uarts[minor - 1];
+	return &uart_common.uarts[minor];
 }
 
 
@@ -585,7 +585,7 @@ static int uart_map(unsigned int minor, addr_t addr, size_t sz, int mode, addr_t
 
 static int uart_init(unsigned int minor)
 {
-	u32 t, id;
+	u32 t;
 	uart_t *uart;
 
 	if ((uart = uart_getInstance(minor)) == NULL)
@@ -596,10 +596,9 @@ static int uart_init(unsigned int minor)
 		uart_common.init = 1;
 	}
 
-	id = minor - 1;
-	uart->base = infoUarts[id].base;
+	uart->base = infoUarts[minor].base;
 
-	_imxrt_setDevClock(infoUarts[id].dev, 0, 0, 0, 0, 1);
+	_imxrt_setDevClock(infoUarts[minor].dev, 0, 0, 0, 0, 1);
 
 	/* Skip controller initialization if it has been already done by hal */
 	if (!(*(uart->base + ctrlr) & (1 << 19 | 1 << 18))) {
@@ -644,7 +643,7 @@ static int uart_init(unsigned int minor)
 	/* Enable TX and RX */
 	*(uart->base + ctrlr) |= (1 << 19) | (1 << 18);
 
-	hal_irqinst(infoUarts[id].irq, uart_handleIntr, (void *)uart);
+	hal_irqinst(infoUarts[minor].irq, uart_handleIntr, (void *)uart);
 
 	return EOK;
 }

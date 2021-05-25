@@ -22,7 +22,7 @@
 /* Interrupts */
 #define SIZE_INTERRUPTS (217 + 16)
 
-#define UART_MAX_CNT (12 + 1)
+#define UART_MAX_CNT 12
 
 /* UART */
 #ifndef UART1

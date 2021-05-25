@@ -91,13 +91,13 @@ static inline int uart_getTXcount(uart_t *uart)
 /* TODO: temporary solution, it should be moved to device tree */
 static uart_t *uart_getInstance(unsigned int minor)
 {
-	if (minor < 1 || minor > UART_MAX_CNT)
+	if (minor >= UART_MAX_CNT)
 		return NULL;
 
-	if (uartLut[minor - 1] == 0)
+	if (uartLut[minor] == 0)
 		return NULL;
 
-	return &uart_common.uarts[minor - 1];
+	return &uart_common.uarts[minor];
 }
 
 
@@ -581,7 +581,7 @@ static int uart_map(unsigned int minor, addr_t addr, size_t sz, int mode, addr_t
 
 static int uart_init(unsigned int minor)
 {
-	u32 t, id;
+	u32 t;
 	uart_t *uart;
 
 	if ((uart = uart_getInstance(minor)) == NULL)
@@ -595,10 +595,9 @@ static int uart_init(unsigned int minor)
 		uart_common.clkInit = 1;
 	}
 
-	id = minor - 1;
-	uart->base = info[id].base;
+	uart->base = info[minor].base;
 
-	_imxrt_ccmControlGate(info[id].dev, clk_state_run_wait);
+	_imxrt_ccmControlGate(info[minor].dev, clk_state_run_wait);
 
 	/* Skip controller initialization if it has been already done by hal */
 	if (!(*(uart->base + ctrlr) & (1 << 19 | 1 << 18))) {
@@ -643,8 +642,8 @@ static int uart_init(unsigned int minor)
 	/* Enable TX and RX */
 	*(uart->base + ctrlr) |= (1 << 19) | (1 << 18);
 
-	_imxrt_setDevClock(info[id].dev, clk_state_run);
-	hal_irqinst(info[id].irq, uart_handleIntr, (void *)uart);
+	_imxrt_setDevClock(info[minor].dev, clk_state_run);
+	hal_irqinst(info[minor].irq, uart_handleIntr, (void *)uart);
 
 	lib_printf("\ndev/uart: Initializing uart(%d.%d)", DEV_UART, minor);
 
