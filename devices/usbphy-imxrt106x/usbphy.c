@@ -62,7 +62,7 @@ void *usbclient_allocBuff(u32 size)
 }
 
 
-void  usbclient_buffReset(void)
+void usbclient_buffReset(void)
 {
 	phyusb_common.buffCounter = 0;
 }

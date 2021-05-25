@@ -39,7 +39,7 @@ static int flashdrv_getVendorID(flash_context_t *ctx, u32 *manID)
 	flexspi_xfer_t xfer;
 
 	/* READ JEDEC ID*/
-	ctx->config.mem.lut[4 * READ_JEDEC_ID_SEQ_ID] = LUT_INSTR(LUT_CMD_CMD, LUT_PAD1, FLASH_SPANSION_CMD_RDID, LUT_CMD_READ, LUT_PAD1, FLASH_SPANSION_CMD_WRDI); // 0x2404049f
+	ctx->config.mem.lut[4 * READ_JEDEC_ID_SEQ_ID] = LUT_INSTR(LUT_CMD_CMD, LUT_PAD1, FLASH_SPANSION_CMD_RDID, LUT_CMD_READ, LUT_PAD1, FLASH_SPANSION_CMD_WRDI);  // 0x2404049f
 	ctx->config.mem.lut[4 * READ_JEDEC_ID_SEQ_ID + 1] = 0;
 	ctx->config.mem.lut[4 * READ_JEDEC_ID_SEQ_ID + 2] = 0;
 	ctx->config.mem.lut[4 * READ_JEDEC_ID_SEQ_ID + 3] = 0;

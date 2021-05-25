@@ -46,7 +46,6 @@ extern void syspage_setAddress(void *addr);
 extern void *syspage_getAddress(void);
 
 
-
 /* General functions */
 
 extern int syspage_save(void);
@@ -85,7 +84,6 @@ extern void syspage_addEntries(addr_t start, size_t sz);
 
 
 extern int syspage_getMapAttr(const char *map, unsigned int *attr);
-
 
 
 /* Program's functions */

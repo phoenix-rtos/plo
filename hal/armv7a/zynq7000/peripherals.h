@@ -44,7 +44,6 @@
 #define UART1_TX mio_pin_48
 
 
-
 /* TIMERs configuration */
 #define TTC0_BASE_ADDR ((void *)0xf8001000)
 #define TTC1_BASE_ADDR ((void *)0xf8002000)
@@ -69,6 +68,6 @@
 
 
 /* GPIO */
-#define GPIO_BASE_ADDR  ((void *)0xe000a000)
+#define GPIO_BASE_ADDR ((void *)0xe000a000)
 
 #endif

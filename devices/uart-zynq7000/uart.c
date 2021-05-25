@@ -20,8 +20,8 @@
 #include <devices/devs.h>
 
 
-#define MAX_TXRX_FIFO_SIZE  0x40
-#define BUFFER_SIZE         0x200
+#define MAX_TXRX_FIFO_SIZE 0x40
+#define BUFFER_SIZE        0x200
 
 typedef struct {
 	volatile u32 *base;
@@ -286,7 +286,7 @@ static ssize_t uart_write(unsigned int minor, const u8 *buff, unsigned int len)
 		uart->tFull = 1;
 
 	/* Enable TX FIFO empty irq */
-	 *(uart->base + ier) |= 1 << 3;
+	*(uart->base + ier) |= 1 << 3;
 	hal_sti();
 
 	return cnt;

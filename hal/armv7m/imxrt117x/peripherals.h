@@ -130,28 +130,28 @@
 #define UART1_RTS_PIN ad_27
 #define UART1_CTS_PIN ad_26
 
-#define UART2_TX_PIN disp_b2_10
-#define UART2_RX_PIN disp_b2_11
+#define UART2_TX_PIN  disp_b2_10
+#define UART2_RX_PIN  disp_b2_11
 #define UART2_RTS_PIN disp_b2_13
 #define UART2_CTS_PIN disp_b2_12
 
-#define UART3_TX_PIN ad_30
-#define UART3_RX_PIN ad_31
+#define UART3_TX_PIN  ad_30
+#define UART3_RX_PIN  ad_31
 #define UART3_RTS_PIN sd_b2_08
 #define UART3_CTS_PIN sd_b2_07
 
-#define UART4_TX_PIN disp_b1_06
-#define UART4_RX_PIN disp_b1_04
+#define UART4_TX_PIN  disp_b1_06
+#define UART4_RX_PIN  disp_b1_04
 #define UART4_RTS_PIN disp_b1_07
 #define UART4_CTS_PIN disp_b1_05
 
-#define UART5_TX_PIN ad_28
-#define UART5_RX_PIN ad_29
+#define UART5_TX_PIN  ad_28
+#define UART5_RX_PIN  ad_29
 #define UART5_RTS_PIN sd_b2_10
 #define UART5_CTS_PIN sd_b2_09
 
-#define UART6_TX_PIN emc_b1_40
-#define UART6_RX_PIN emc_b1_41
+#define UART6_TX_PIN  emc_b1_40
+#define UART6_RX_PIN  emc_b1_41
 #define UART6_RTS_PIN emc_b2_01
 #define UART6_CTS_PIN emc_b2_00
 
@@ -177,8 +177,8 @@
 #define UART8_RTS_PIN ad_05
 #define UART8_CTS_PIN ad_04
 
-#define UART9_TX_PIN sd_b2_00
-#define UART9_RX_PIN sd_b2_01
+#define UART9_TX_PIN  sd_b2_00
+#define UART9_RX_PIN  sd_b2_01
 #define UART9_RTS_PIN sd_b2_03
 #define UART9_CTS_PIN sd_b2_02
 
@@ -216,7 +216,6 @@
 #endif
 #define UART12_RTS_PIN lpsr_04
 #define UART12_CTS_PIN lpsr_05
-
 
 
 /* GPT - general purpose timer */

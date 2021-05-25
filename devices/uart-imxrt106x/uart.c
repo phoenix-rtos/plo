@@ -20,8 +20,8 @@
 #include <devices/devs.h>
 
 #define CONCATENATE(x, y) x##y
-#define PIN2MUX(x) CONCATENATE(pctl_mux_gpio_, x)
-#define PIN2PAD(x) CONCATENATE(pctl_pad_gpio_, x)
+#define PIN2MUX(x)        CONCATENATE(pctl_mux_gpio_, x)
+#define PIN2PAD(x)        CONCATENATE(pctl_pad_gpio_, x)
 
 
 #define BUFFER_SIZE 0x200
@@ -128,8 +128,7 @@ static int uart_handleIntr(u16 irq, void *buff)
 	}
 
 	/* Transmit */
-	while (uart_getTXcount(uart) < uart->txFifoSz && !((*(uart->base + statr) >> 22) & 0x1))
-	{
+	while (uart_getTXcount(uart) < uart->txFifoSz && !((*(uart->base + statr) >> 22) & 0x1)) {
 		uart->txHead = (uart->txHead + 1) % BUFFER_SIZE;
 		if (uart->txHead != uart->txTail) {
 			*(uart->base + datar) = uart->txBuff[uart->txHead];
@@ -159,7 +158,6 @@ static int uart_muxVal(int mux)
 		case pctl_mux_gpio_sd_b1_00:
 		case pctl_mux_gpio_sd_b1_01:
 			return 4;
-
 	}
 
 	return 2;
@@ -203,42 +201,150 @@ static u32 calculate_baudrate(int baud)
 static int uart_getIsel(int mux, int *isel, int *val)
 {
 	switch (mux) {
-		case pctl_mux_gpio_ad_b1_02: *isel = pctl_isel_lpuart2_tx; *val = 1; break;
-		case pctl_mux_gpio_sd_b1_11: *isel = pctl_isel_lpuart2_tx; *val = 0; break;
-		case pctl_mux_gpio_ad_b1_03: *isel = pctl_isel_lpuart2_rx; *val = 1; break;
-		case pctl_mux_gpio_sd_b1_10: *isel = pctl_isel_lpuart2_rx; *val = 0; break;
-		case pctl_mux_gpio_emc_13:   *isel = pctl_isel_lpuart3_tx; *val = 1; break;
-		case pctl_mux_gpio_ad_b1_06: *isel = pctl_isel_lpuart3_tx; *val = 0; break;
-		case pctl_mux_gpio_b0_08:    *isel = pctl_isel_lpuart3_tx; *val = 2; break;
-		case pctl_mux_gpio_emc_14:   *isel = pctl_isel_lpuart3_rx; *val = 1; break;
-		case pctl_mux_gpio_ad_b1_07: *isel = pctl_isel_lpuart3_rx; *val = 0; break;
-		case pctl_mux_gpio_b0_09:    *isel = pctl_isel_lpuart3_rx; *val = 2; break;
-		case pctl_mux_gpio_emc_15:   *isel = pctl_isel_lpuart3_cts_b; *val = 0; break;
-		case pctl_mux_gpio_ad_b1_04: *isel = pctl_isel_lpuart3_cts_b; *val = 1; break;
-		case pctl_mux_gpio_emc_19:   *isel = pctl_isel_lpuart4_tx; *val = 1; break;
-		case pctl_mux_gpio_b1_00:    *isel = pctl_isel_lpuart4_tx; *val = 2; break;
-		case pctl_mux_gpio_sd_b1_00: *isel = pctl_isel_lpuart4_tx; *val = 0; break;
-		case pctl_mux_gpio_emc_20:   *isel = pctl_isel_lpuart4_rx; *val = 1; break;
-		case pctl_mux_gpio_b1_01:    *isel = pctl_isel_lpuart4_rx; *val = 2; break;
-		case pctl_mux_gpio_sd_b1_01: *isel = pctl_isel_lpuart4_rx; *val = 0; break;
-		case pctl_mux_gpio_emc_23:   *isel = pctl_isel_lpuart5_tx; *val = 0; break;
-		case pctl_mux_gpio_b1_12:    *isel = pctl_isel_lpuart5_tx; *val = 1; break;
-		case pctl_mux_gpio_emc_24:   *isel = pctl_isel_lpuart5_rx; *val = 0; break;
-		case pctl_mux_gpio_b1_13:    *isel = pctl_isel_lpuart5_rx; *val = 1; break;
-		case pctl_mux_gpio_emc_25:   *isel = pctl_isel_lpuart6_tx; *val = 0; break;
-		case pctl_mux_gpio_ad_b0_12: *isel = pctl_isel_lpuart6_tx; *val = 1; break;
-		case pctl_mux_gpio_emc_26:   *isel = pctl_isel_lpuart6_rx; *val = 0; break;
-		case pctl_mux_gpio_ad_b0_03: *isel = pctl_isel_lpuart6_rx; *val = 1; break;
-		case pctl_mux_gpio_emc_31:   *isel = pctl_isel_lpuart7_tx; *val = 1; break;
-		case pctl_mux_gpio_sd_b1_08: *isel = pctl_isel_lpuart7_tx; *val = 0; break;
-		case pctl_mux_gpio_emc_32:   *isel = pctl_isel_lpuart7_rx; *val = 1; break;
-		case pctl_mux_gpio_sd_b1_09: *isel = pctl_isel_lpuart7_rx; *val = 0; break;
-		case pctl_mux_gpio_emc_38:   *isel = pctl_isel_lpuart8_tx; *val = 2; break;
-		case pctl_mux_gpio_ad_b1_10: *isel = pctl_isel_lpuart8_tx; *val = 1; break;
-		case pctl_mux_gpio_sd_b0_04: *isel = pctl_isel_lpuart8_tx; *val = 0; break;
-		case pctl_mux_gpio_emc_39:   *isel = pctl_isel_lpuart8_rx; *val = 2; break;
-		case pctl_mux_gpio_ad_b1_11: *isel = pctl_isel_lpuart8_rx; *val = 1; break;
-		case pctl_mux_gpio_sd_b0_05: *isel = pctl_isel_lpuart8_rx; *val = 0; break;
+		case pctl_mux_gpio_ad_b1_02:
+			*isel = pctl_isel_lpuart2_tx;
+			*val = 1;
+			break;
+		case pctl_mux_gpio_sd_b1_11:
+			*isel = pctl_isel_lpuart2_tx;
+			*val = 0;
+			break;
+		case pctl_mux_gpio_ad_b1_03:
+			*isel = pctl_isel_lpuart2_rx;
+			*val = 1;
+			break;
+		case pctl_mux_gpio_sd_b1_10:
+			*isel = pctl_isel_lpuart2_rx;
+			*val = 0;
+			break;
+		case pctl_mux_gpio_emc_13:
+			*isel = pctl_isel_lpuart3_tx;
+			*val = 1;
+			break;
+		case pctl_mux_gpio_ad_b1_06:
+			*isel = pctl_isel_lpuart3_tx;
+			*val = 0;
+			break;
+		case pctl_mux_gpio_b0_08:
+			*isel = pctl_isel_lpuart3_tx;
+			*val = 2;
+			break;
+		case pctl_mux_gpio_emc_14:
+			*isel = pctl_isel_lpuart3_rx;
+			*val = 1;
+			break;
+		case pctl_mux_gpio_ad_b1_07:
+			*isel = pctl_isel_lpuart3_rx;
+			*val = 0;
+			break;
+		case pctl_mux_gpio_b0_09:
+			*isel = pctl_isel_lpuart3_rx;
+			*val = 2;
+			break;
+		case pctl_mux_gpio_emc_15:
+			*isel = pctl_isel_lpuart3_cts_b;
+			*val = 0;
+			break;
+		case pctl_mux_gpio_ad_b1_04:
+			*isel = pctl_isel_lpuart3_cts_b;
+			*val = 1;
+			break;
+		case pctl_mux_gpio_emc_19:
+			*isel = pctl_isel_lpuart4_tx;
+			*val = 1;
+			break;
+		case pctl_mux_gpio_b1_00:
+			*isel = pctl_isel_lpuart4_tx;
+			*val = 2;
+			break;
+		case pctl_mux_gpio_sd_b1_00:
+			*isel = pctl_isel_lpuart4_tx;
+			*val = 0;
+			break;
+		case pctl_mux_gpio_emc_20:
+			*isel = pctl_isel_lpuart4_rx;
+			*val = 1;
+			break;
+		case pctl_mux_gpio_b1_01:
+			*isel = pctl_isel_lpuart4_rx;
+			*val = 2;
+			break;
+		case pctl_mux_gpio_sd_b1_01:
+			*isel = pctl_isel_lpuart4_rx;
+			*val = 0;
+			break;
+		case pctl_mux_gpio_emc_23:
+			*isel = pctl_isel_lpuart5_tx;
+			*val = 0;
+			break;
+		case pctl_mux_gpio_b1_12:
+			*isel = pctl_isel_lpuart5_tx;
+			*val = 1;
+			break;
+		case pctl_mux_gpio_emc_24:
+			*isel = pctl_isel_lpuart5_rx;
+			*val = 0;
+			break;
+		case pctl_mux_gpio_b1_13:
+			*isel = pctl_isel_lpuart5_rx;
+			*val = 1;
+			break;
+		case pctl_mux_gpio_emc_25:
+			*isel = pctl_isel_lpuart6_tx;
+			*val = 0;
+			break;
+		case pctl_mux_gpio_ad_b0_12:
+			*isel = pctl_isel_lpuart6_tx;
+			*val = 1;
+			break;
+		case pctl_mux_gpio_emc_26:
+			*isel = pctl_isel_lpuart6_rx;
+			*val = 0;
+			break;
+		case pctl_mux_gpio_ad_b0_03:
+			*isel = pctl_isel_lpuart6_rx;
+			*val = 1;
+			break;
+		case pctl_mux_gpio_emc_31:
+			*isel = pctl_isel_lpuart7_tx;
+			*val = 1;
+			break;
+		case pctl_mux_gpio_sd_b1_08:
+			*isel = pctl_isel_lpuart7_tx;
+			*val = 0;
+			break;
+		case pctl_mux_gpio_emc_32:
+			*isel = pctl_isel_lpuart7_rx;
+			*val = 1;
+			break;
+		case pctl_mux_gpio_sd_b1_09:
+			*isel = pctl_isel_lpuart7_rx;
+			*val = 0;
+			break;
+		case pctl_mux_gpio_emc_38:
+			*isel = pctl_isel_lpuart8_tx;
+			*val = 2;
+			break;
+		case pctl_mux_gpio_ad_b1_10:
+			*isel = pctl_isel_lpuart8_tx;
+			*val = 1;
+			break;
+		case pctl_mux_gpio_sd_b0_04:
+			*isel = pctl_isel_lpuart8_tx;
+			*val = 0;
+			break;
+		case pctl_mux_gpio_emc_39:
+			*isel = pctl_isel_lpuart8_rx;
+			*val = 2;
+			break;
+		case pctl_mux_gpio_ad_b1_11:
+			*isel = pctl_isel_lpuart8_rx;
+			*val = 1;
+			break;
+		case pctl_mux_gpio_sd_b0_05:
+			*isel = pctl_isel_lpuart8_rx;
+			*val = 0;
+			break;
 		default: return -1;
 	}
 
@@ -251,52 +357,68 @@ static void uart_initPins(void)
 	int i, isel, val;
 	static const int muxes[] = {
 #if UART1
-		PIN2MUX(UART1_TX_PIN), PIN2MUX(UART1_RX_PIN),
+		PIN2MUX(UART1_TX_PIN),
+		PIN2MUX(UART1_RX_PIN),
 #endif
 #if UART1_HW_FLOWCTRL
-		PIN2MUX(UART1_RTS_PIN), PIN2MUX(UART1_CTS_PIN),
+		PIN2MUX(UART1_RTS_PIN),
+		PIN2MUX(UART1_CTS_PIN),
 #endif
 #if UART2
-		PIN2MUX(UART2_TX_PIN), PIN2MUX(UART2_RX_PIN),
+		PIN2MUX(UART2_TX_PIN),
+		PIN2MUX(UART2_RX_PIN),
 #endif
 #if UART2_HW_FLOWCTRL
-		PIN2MUX(UART2_RTS_PIN), PIN2MUX(UART2_CTS_PIN),
+		PIN2MUX(UART2_RTS_PIN),
+		PIN2MUX(UART2_CTS_PIN),
 #endif
 #if UART3
-		PIN2MUX(UART3_TX_PIN), PIN2MUX(UART3_RX_PIN),
+		PIN2MUX(UART3_TX_PIN),
+		PIN2MUX(UART3_RX_PIN),
 #endif
 #if UART3_HW_FLOWCTRL
-		PIN2MUX(UART3_RTS_PIN), PIN2MUX(UART3_CTS_PIN),
+		PIN2MUX(UART3_RTS_PIN),
+		PIN2MUX(UART3_CTS_PIN),
 #endif
 #if UART4
-		PIN2MUX(UART4_TX_PIN), PIN2MUX(UART4_RX_PIN),
+		PIN2MUX(UART4_TX_PIN),
+		PIN2MUX(UART4_RX_PIN),
 #endif
 #if UART4_HW_FLOWCTRL
-		PIN2MUX(UART4_RTS_PIN), PIN2MUX(UART4_CTS_PIN),
+		PIN2MUX(UART4_RTS_PIN),
+		PIN2MUX(UART4_CTS_PIN),
 #endif
 #if UART5
-		PIN2MUX(UART5_TX_PIN), PIN2MUX(UART5_RX_PIN),
+		PIN2MUX(UART5_TX_PIN),
+		PIN2MUX(UART5_RX_PIN),
 #endif
 #if UART5_HW_FLOWCTRL
-		PIN2MUX(UART5_RTS_PIN), PIN2MUX(UART5_CTS_PIN),
+		PIN2MUX(UART5_RTS_PIN),
+		PIN2MUX(UART5_CTS_PIN),
 #endif
 #if UART6
-		PIN2MUX(UART6_TX_PIN), PIN2MUX(UART6_RX_PIN),
+		PIN2MUX(UART6_TX_PIN),
+		PIN2MUX(UART6_RX_PIN),
 #endif
 #if UART6_HW_FLOWCTRL
-		PIN2MUX(UART6_RTS_PIN), PIN2MUX(UART6_CTS_PIN),
+		PIN2MUX(UART6_RTS_PIN),
+		PIN2MUX(UART6_CTS_PIN),
 #endif
 #if UART7
-		PIN2MUX(UART7_TX_PIN), PIN2MUX(UART7_RX_PIN),
+		PIN2MUX(UART7_TX_PIN),
+		PIN2MUX(UART7_RX_PIN),
 #endif
 #if UART7_HW_FLOWCTRL
-		PIN2MUX(UART7_RTS_PIN), PIN2MUX(UART7_CTS_PIN),
+		PIN2MUX(UART7_RTS_PIN),
+		PIN2MUX(UART7_CTS_PIN),
 #endif
 #if UART8
-		PIN2MUX(UART8_TX_PIN), PIN2MUX(UART8_RX_PIN),
+		PIN2MUX(UART8_TX_PIN),
+		PIN2MUX(UART8_RX_PIN),
 #endif
 #if UART8_HW_FLOWCTRL
-		PIN2MUX(UART8_RTS_PIN), PIN2MUX(UART8_CTS_PIN),
+		PIN2MUX(UART8_RTS_PIN),
+		PIN2MUX(UART8_CTS_PIN),
 #endif
 	};
 

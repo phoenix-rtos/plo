@@ -77,10 +77,10 @@ void timer_init(void)
 {
 	u32 freq;
 
-	timer_common.base = (void *) GPT1_BASE;
+	timer_common.base = (void *)GPT1_BASE;
 	timer_common.irq = GPT1_IRQ;
 
-	freq = _imxrt_ccmGetFreq(clk_ipg) / 2;  /* 66000000 Hz */
+	freq = _imxrt_ccmGetFreq(clk_ipg) / 2; /* 66000000 Hz */
 	timer_common.ticksPerMs = freq / 1000;
 
 	_imxrt_setDevClock(GPT1_CLK, clk_state_run);

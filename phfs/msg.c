@@ -19,8 +19,8 @@
 #include <lib/errno.h>
 
 
-#define MSGREAD_DESYN   0
-#define MSGREAD_FRAME   1
+#define MSGREAD_DESYN 0
+#define MSGREAD_FRAME 1
 
 
 static u32 msg_csum(msg_t *msg)

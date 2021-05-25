@@ -19,8 +19,8 @@
 #include <lib/errno.h>
 
 
-#define MAX_BANK_NB        4
-#define BANK_REGS_OFFS     0x10
+#define MAX_BANK_NB    4
+#define BANK_REGS_OFFS 0x10
 
 
 enum {
@@ -137,7 +137,7 @@ int gpio_writeBank(u8 bank, u32 val)
 	if (bank >= MAX_BANK_NB)
 		return -EINVAL;
 
- 	*(gpio_common.base + data + (BANK_REGS_OFFS * bank)) = val;
+	*(gpio_common.base + data + (BANK_REGS_OFFS * bank)) = val;
 
 	return EOK;
 }

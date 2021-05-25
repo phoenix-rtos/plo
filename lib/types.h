@@ -30,7 +30,7 @@
 
 #include ARCH_TYPES
 
-#define  NULL 0
+#define NULL 0
 
 typedef unsigned char u8;
 typedef unsigned short u16;
@@ -43,11 +43,11 @@ typedef int s32;
 typedef int s32;
 typedef long long s64;
 
-typedef volatile unsigned char  vu8;
+typedef volatile unsigned char vu8;
 typedef volatile unsigned short vu16;
-typedef volatile unsigned int   vu32;
+typedef volatile unsigned int vu32;
 
-typedef vu8  *reg8;
+typedef vu8 *reg8;
 typedef vu16 *reg16;
 typedef vu32 *reg32;
 
@@ -56,7 +56,7 @@ typedef vu32 *reg32;
 typedef u8 *va_list;
 
 #define va_start(ap, parmN) ((void)((ap) = (va_list)((char *)(&parmN) + sizeof(parmN))))
-#define va_arg(ap, type) (*(type *)(((*(u8 **)&(ap)) += sizeof(type)) - (sizeof(type))))
-#define va_end(ap) ((void)0)
+#define va_arg(ap, type)    (*(type *)(((*(u8 **)&(ap)) += sizeof(type)) - (sizeof(type))))
+#define va_end(ap)          ((void)0)
 
 #endif

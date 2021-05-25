@@ -78,7 +78,7 @@ void timer_init(void)
 {
 	u32 freq;
 
-	timer_common.base = (void *) GPT1_BASE;
+	timer_common.base = (void *)GPT1_BASE;
 	timer_common.irq = GPT1_IRQ;
 
 	/* FIXME */

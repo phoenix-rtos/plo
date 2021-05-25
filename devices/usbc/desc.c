@@ -300,11 +300,11 @@ static void desc_ClassReqSetReport(const usb_setup_packet_t *setup)
 	dtd_t *dtd = ctrl_execTransfer(0, (u32)desc_common.data->endpts[0].buf[USB_ENDPT_DIR_OUT].buffer, 64 + setup->wLength, USB_ENDPT_DIR_OUT); /* read data to buffer with URB struct*/
 
 	if (!DTD_ERROR(dtd)) {
-		desc_common.dc->op = DC_OP_RCV_ENDP0;  /* mark that data is ready */
+		desc_common.dc->op = DC_OP_RCV_ENDP0; /* mark that data is ready */
 		desc_common.data->endpts[0].buf[USB_ENDPT_DIR_OUT].len = 64 + setup->wLength - DTD_SIZE(dtd);
 	}
 	else {
-		desc_common.dc->op = DC_OP_RCV_ERR;    /* mark that data is uncomplete */
+		desc_common.dc->op = DC_OP_RCV_ERR; /* mark that data is uncomplete */
 		desc_common.data->endpts[0].buf[USB_ENDPT_DIR_OUT].len = -1;
 	}
 }
@@ -334,7 +334,7 @@ int desc_classSetup(const usb_setup_packet_t *setup)
 
 		case CLASS_REQ_SET_LINE_CODING:
 			ctrl_execTransfer(0, (u32)desc_common.data->endpts[0].buf[USB_ENDPT_DIR_OUT].buffer, 64 + setup->wLength, USB_ENDPT_DIR_OUT); /* read data to buffer with URB struct*/
-			ctrl_execTransfer(0, (u32)desc_common.data->endpts[0].buf[USB_ENDPT_DIR_IN].buffer, 0, USB_ENDPT_DIR_IN); /* ACK */
+			ctrl_execTransfer(0, (u32)desc_common.data->endpts[0].buf[USB_ENDPT_DIR_IN].buffer, 0, USB_ENDPT_DIR_IN);                     /* ACK */
 			break;
 
 		case CLASS_REQ_SET_CONTROL_LINE_STATE:

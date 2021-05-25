@@ -25,7 +25,7 @@ extern void *usbclient_allocBuff(u32 size);
 
 
 /* Function cleans the whole memory assigned to endpoints and setup memory. */
-extern void  usbclient_buffReset(void);
+extern void usbclient_buffReset(void);
 
 
 /* Function returns ID of USB controller interrupt.                         */

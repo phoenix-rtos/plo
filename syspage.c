@@ -22,14 +22,13 @@
 #include <lib/errno.h>
 
 
-#define MAX_PROGRAMS_NB         32
-#define MAX_MAPS_NB             16
-#define MAX_MAP_NAME_SIZE       8
-#define MAX_ARGS_SIZE           256
-#define MAX_ENTRIES_NB          6     /* 3 of kernel's sections, 2 of plo's sections and syspage */
+#define MAX_PROGRAMS_NB   32
+#define MAX_MAPS_NB       16
+#define MAX_MAP_NAME_SIZE 8
+#define MAX_ARGS_SIZE     256
+#define MAX_ENTRIES_NB    6 /* 3 of kernel's sections, 2 of plo's sections and syspage */
 
-#define MAX_SYSPAGE_SIZE        (sizeof(syspage_t) + MAX_ARGS_SIZE + MAX_PROGRAMS_NB * sizeof(syspage_program_t) \
-                                 + MAX_MAPS_NB * sizeof(syspage_map_t))
+#define MAX_SYSPAGE_SIZE (sizeof(syspage_t) + MAX_ARGS_SIZE + MAX_PROGRAMS_NB * sizeof(syspage_program_t) + MAX_MAPS_NB * sizeof(syspage_map_t))
 
 
 #pragma pack(push, 1)
@@ -83,7 +82,6 @@ typedef struct {
 #pragma pack(pop)
 
 
-
 typedef struct {
 	addr_t start;
 	addr_t end;
@@ -118,7 +116,6 @@ struct {
 
 	syspage_hal_t hal;
 } syspage_common;
-
 
 
 /* Auxiliary functions */
@@ -297,7 +294,6 @@ void syspage_init(void)
 }
 
 
-
 /* Syspage's location functions */
 
 void syspage_setAddress(void *addr)
@@ -431,7 +427,6 @@ void syspage_showAddr(void)
 {
 	lib_printf("\nSyspage address: 0x%x\n", syspage_getAddress());
 }
-
 
 
 /* Map's functions */
@@ -663,7 +658,6 @@ int syspage_addProg(void *start, void *end, const char *imap, const char *dmap, 
 }
 
 
-
 /* Setting kernel's data */
 
 void syspage_setKernelText(void *addr, size_t size)
@@ -700,4 +694,3 @@ void syspage_setHalData(const syspage_hal_t *hal)
 	if (sizeof(syspage_hal_t) != 0)
 		hal_memcpy((void *)&syspage_common.hal, (void *)hal, sizeof(syspage_hal_t));
 }
-

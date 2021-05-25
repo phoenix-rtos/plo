@@ -129,8 +129,8 @@
 #define UART8_IRQ 27 + 16
 
 
-#define UART1_TX_PIN ad_b0_12
-#define UART1_RX_PIN ad_b0_13
+#define UART1_TX_PIN  ad_b0_12
+#define UART1_RX_PIN  ad_b0_13
 #define UART1_RTS_PIN ad_b0_15
 #define UART1_CTS_PIN ad_b0_14
 
@@ -222,7 +222,6 @@
 #endif
 #define UART8_RTS_PIN sd_b0_03
 #define UART8_CTS_PIN sd_b0_02
-
 
 
 /* GPT - general purpose timer */

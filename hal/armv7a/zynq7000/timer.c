@@ -18,8 +18,8 @@
 
 
 /* TODO: this value should be calculated and provide by zynq API */
-#define TTC_SRC_CLK_CPU_1x   111111115 /* Hz */
-#define TTC_DEFAULT_FREQ     1000      /* Hz */
+#define TTC_SRC_CLK_CPU_1x 111111115 /* Hz */
+#define TTC_DEFAULT_FREQ   1000      /* Hz */
 
 
 enum {

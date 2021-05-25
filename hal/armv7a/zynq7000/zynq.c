@@ -159,8 +159,7 @@ int _zynq_setCtlClock(const ctl_clock_t *clk)
 	u32 id = 0;
 
 	_zynq_slcrUnlock();
-	switch (clk->dev)
-	{
+	switch (clk->dev) {
 		case ctrl_usb0_clk:
 		case ctrl_usb1_clk:
 			id = clk->dev - ctrl_usb0_clk;
@@ -232,8 +231,7 @@ int _zynq_getCtlClock(ctl_clock_t *clk)
 	u32 id;
 	u32 val = 0;
 
-	switch (clk->dev)
-	{
+	switch (clk->dev) {
 		case ctrl_usb0_clk:
 		case ctrl_usb1_clk:
 			id = clk->dev - ctrl_usb0_clk;
@@ -717,7 +715,7 @@ static void _zynq_ddrInit(void)
 		;
 
 	/* Unlock DDR */
-	/* reg_ddrc_soft_rstb = 0x1;; reg_ddrc_powerdown_en = 0x0; reg_ddrc_data_bus_width = 0x0; reg_ddrc_burst8_refresh = 0x0; reg_ddrc_rdwr_idle_gap = 1;
+	/* reg_ddrc_soft_rstb = 0x1; reg_ddrc_powerdown_en = 0x0; reg_ddrc_data_bus_width = 0x0; reg_ddrc_burst8_refresh = 0x0; reg_ddrc_rdwr_idle_gap = 1;
 	 * reg_ddrc_dis_rd_bypass = 0x0; reg_ddrc_dis_act_bypass = 0x0; reg_ddrc_dis_auto_refresh = 0x0 */
 	*(zynq_common.ddr + ddrc_ctrl) = (*(zynq_common.ddr + ddrc_ctrl) & ~0x0001ffff) | 0x00000081;
 
@@ -785,7 +783,7 @@ static void _zynq_ioPllInit(u16 fdiv)
 	*(zynq_common.slcr + slcr_io_pll_cfg) = (*(zynq_common.slcr + slcr_io_pll_cfg) & ~0x003ffff0) | 0x001452c0;
 
 	/* Set the feedback divisor for the PLL */
-	*(zynq_common.slcr + slcr_io_pll_ctrl) = (*(zynq_common.slcr + slcr_io_pll_ctrl) & ~0x0007f000) | (fdiv << 12);;
+	*(zynq_common.slcr + slcr_io_pll_ctrl) = (*(zynq_common.slcr + slcr_io_pll_ctrl) & ~0x0007f000) | (fdiv << 12);
 
 	/* By pass pll
 	 * PLL_BYPASS_FORCE = 1 */
@@ -820,7 +818,7 @@ static void _zynq_ddrPllInit(u16 fdiv)
 	*(zynq_common.slcr + slcr_ddr_pll_cfg) = (*(zynq_common.slcr + slcr_ddr_pll_cfg) & ~0x003ffff0) | 0x0012c220;
 
 	/* Set the feedback divisor for the PLL */
-	*(zynq_common.slcr + slcr_ddr_pll_ctrl) = (*(zynq_common.slcr + slcr_ddr_pll_ctrl) & ~0x0007f000) | (fdiv << 12);;
+	*(zynq_common.slcr + slcr_ddr_pll_ctrl) = (*(zynq_common.slcr + slcr_ddr_pll_ctrl) & ~0x0007f000) | (fdiv << 12);
 
 	/* By pass pll
 	 * PLL_BYPASS_FORCE = 1 */

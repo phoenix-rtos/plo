@@ -77,7 +77,7 @@ static void *ctrl_allocQtdMem(void)
 			((char *)ctrl_common.dc->dtdMem)[i] = 0;
 	}
 
-	return  (void *)(ctrl_common.dc->dtdMem + 0x40 * (ctrl_common.qtdOffs++));
+	return (void *)(ctrl_common.dc->dtdMem + 0x40 * (ctrl_common.qtdOffs++));
 }
 
 
@@ -190,7 +190,7 @@ int ctrl_endpt0Init(void)
 
 	qh_addr = ((u32)((void *)ctrl_common.dc->endptqh)) & ~0xfff;
 
-	tmp =  0x40 << 16 /* max 64 bytes */ | 0x1 << 29 | 0x1 << 15 /* ios */;
+	tmp = 0x40 << 16 /* max 64 bytes */ | 0x1 << 29 | 0x1 << 15 /* ios */;
 	ctrl_common.dc->endptqh[0].caps = tmp;
 	ctrl_common.dc->endptqh[0].dtd_next = 0x1; /* invalid */
 	ctrl_common.dc->endptqh[1].caps = tmp;

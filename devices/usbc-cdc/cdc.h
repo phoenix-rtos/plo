@@ -20,8 +20,8 @@
 
 
 /* endpoints descriptions */
-#define ENDPOINT_ACM0  0x2
-#define ENDPOINT_ACM1  0x4
+#define ENDPOINT_ACM0 0x2
+#define ENDPOINT_ACM1 0x4
 
 
 /* device class code */
@@ -29,24 +29,24 @@
 
 
 /* interface class code */
-#define USB_INTERFACE_COMMUNICATIONS  0x2
-#define USB_INTERFACE_DATA            0xA
+#define USB_INTERFACE_COMMUNICATIONS 0x2
+#define USB_INTERFACE_DATA           0xA
 
 
 /* communications class subclass codes */
-#define USB_SUBCLASS_DLCM      0x1	/* direct line control model */
-#define USB_SUBCLASS_ACM       0x2	/* abstract control model */
-#define USB_SUBCLASS_TCM       0x3	/* telephone control model */
-#define USB_SUBCLASS_MCCM      0x4	/* multi-channel control model */
-#define USB_SUBCLASS_CAPI      0x5	/* CAPI control model */
-#define USB_SUBCLASS_ECM       0x6	/* ethernet networking control model */
-#define USB_SUBCLASS_ATM       0x7	/* ATM networking control model */
-#define USB_SUBCLASS_WIRELESS  0x8	/* wireless handset control model */
-#define USB_SUBCLASS_DEV_MGMT  0x9	/* device management */
-#define USB_SUBCLASS_MDLM      0xa	/* mobile direct line model */
-#define USB_SUBCLASS_OBEX      0xb	/* OBEX */
-#define USB_SUBCLASS_EEM       0xc	/* ethernet emulation model */
-#define USB_SUBCLASS_NCM       0xd	/* network control model */
+#define USB_SUBCLASS_DLCM     0x1 /* direct line control model */
+#define USB_SUBCLASS_ACM      0x2 /* abstract control model */
+#define USB_SUBCLASS_TCM      0x3 /* telephone control model */
+#define USB_SUBCLASS_MCCM     0x4 /* multi-channel control model */
+#define USB_SUBCLASS_CAPI     0x5 /* CAPI control model */
+#define USB_SUBCLASS_ECM      0x6 /* ethernet networking control model */
+#define USB_SUBCLASS_ATM      0x7 /* ATM networking control model */
+#define USB_SUBCLASS_WIRELESS 0x8 /* wireless handset control model */
+#define USB_SUBCLASS_DEV_MGMT 0x9 /* device management */
+#define USB_SUBCLASS_MDLM     0xa /* mobile direct line model */
+#define USB_SUBCLASS_OBEX     0xb /* OBEX */
+#define USB_SUBCLASS_EEM      0xc /* ethernet emulation model */
+#define USB_SUBCLASS_NCM      0xd /* network control model */
 
 
 /* descriptors subclassses for communications class (CC)*/

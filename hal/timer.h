@@ -19,8 +19,8 @@
 
 #include <lib/types.h>
 
-#define TIMER_EXPIRE   0
-#define TIMER_VALCHG   4
+#define TIMER_EXPIRE 0
+#define TIMER_VALCHG 4
 
 
 /* Function initializes timer controller */

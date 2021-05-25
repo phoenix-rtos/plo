@@ -21,8 +21,8 @@
 
 
 #define CONCATENATE(x, y) x##y
-#define PIN2MUX(x) CONCATENATE(pctl_mux_gpio_, x)
-#define PIN2PAD(x) CONCATENATE(pctl_pad_gpio_, x)
+#define PIN2MUX(x)        CONCATENATE(pctl_mux_gpio_, x)
+#define PIN2PAD(x)        CONCATENATE(pctl_pad_gpio_, x)
 
 #define UART_MAX_CNT 12
 
@@ -121,8 +121,7 @@ static int uart_handleIntr(u16 irq, void *buff)
 	}
 
 	/* Transmit */
-	while (uart_getTXcount(uart) < uart->txFifoSz)
-	{
+	while (uart_getTXcount(uart) < uart->txFifoSz) {
 		if ((uart->txHead + 1) % BUFFER_SIZE != uart->txTail) {
 			uart->txHead = (uart->txHead + 1) % BUFFER_SIZE;
 			*(uart->base + datar) = uart->txBuff[uart->txHead];
@@ -261,26 +260,86 @@ static u32 calculate_baudrate(int baud)
 static int uart_getIsel(int uart, int mux, int *isel, int *val)
 {
 	switch (mux) {
-		case pctl_mux_gpio_ad_24:      *isel = pctl_isel_lpuart1_txd; *val = 0; break;
-		case pctl_mux_gpio_disp_b1_02: *isel = pctl_isel_lpuart1_txd; *val = 1; break;
-		case pctl_mux_gpio_ad_25:      *isel = pctl_isel_lpuart1_rxd; *val = 0; break;
-		case pctl_mux_gpio_disp_b1_03: *isel = pctl_isel_lpuart1_rxd; *val = 1; break;
-		case pctl_mux_gpio_disp_b2_06: *isel = pctl_isel_lpuart7_txd; *val = 1; break;
-		case pctl_mux_gpio_ad_00:      *isel = pctl_isel_lpuart7_txd; *val = 0; break;
-		case pctl_mux_gpio_disp_b2_07: *isel = pctl_isel_lpuart7_rxd; *val = 1; break;
-		case pctl_mux_gpio_ad_01:      *isel = pctl_isel_lpuart7_rxd; *val = 0; break;
-		case pctl_mux_gpio_ad_02:      *isel = pctl_isel_lpuart8_txd; *val = 0; break;
-		case pctl_mux_gpio_ad_03:      *isel = pctl_isel_lpuart8_rxd; *val = 0; break;
-		case pctl_mux_gpio_lpsr_08:    *isel = pctl_isel_lpuart11_txd; *val = 1; break;
-		case pctl_mux_gpio_lpsr_04:    *isel = pctl_isel_lpuart11_txd; *val = 0; break;
-		case pctl_mux_gpio_lpsr_09:    *isel = pctl_isel_lpuart11_rxd; *val = 1; break;
-		case pctl_mux_gpio_lpsr_05:    *isel = pctl_isel_lpuart11_rxd; *val = 0; break;
-		case pctl_mux_gpio_lpsr_06:    *isel = pctl_isel_lpuart12_txd; *val = 1; break;
-		case pctl_mux_gpio_lpsr_00:    *isel = pctl_isel_lpuart12_txd; *val = 0; break;
-		case pctl_mux_gpio_lpsr_10:    *isel = pctl_isel_lpuart12_txd; *val = 2; break;
-		case pctl_mux_gpio_lpsr_07:    *isel = pctl_isel_lpuart12_rxd; *val = 1; break;
-		case pctl_mux_gpio_lpsr_01:    *isel = pctl_isel_lpuart12_rxd; *val = 0; break;
-		case pctl_mux_gpio_lpsr_11:    *isel = pctl_isel_lpuart12_rxd; *val = 2; break;
+		case pctl_mux_gpio_ad_24:
+			*isel = pctl_isel_lpuart1_txd;
+			*val = 0;
+			break;
+		case pctl_mux_gpio_disp_b1_02:
+			*isel = pctl_isel_lpuart1_txd;
+			*val = 1;
+			break;
+		case pctl_mux_gpio_ad_25:
+			*isel = pctl_isel_lpuart1_rxd;
+			*val = 0;
+			break;
+		case pctl_mux_gpio_disp_b1_03:
+			*isel = pctl_isel_lpuart1_rxd;
+			*val = 1;
+			break;
+		case pctl_mux_gpio_disp_b2_06:
+			*isel = pctl_isel_lpuart7_txd;
+			*val = 1;
+			break;
+		case pctl_mux_gpio_ad_00:
+			*isel = pctl_isel_lpuart7_txd;
+			*val = 0;
+			break;
+		case pctl_mux_gpio_disp_b2_07:
+			*isel = pctl_isel_lpuart7_rxd;
+			*val = 1;
+			break;
+		case pctl_mux_gpio_ad_01:
+			*isel = pctl_isel_lpuart7_rxd;
+			*val = 0;
+			break;
+		case pctl_mux_gpio_ad_02:
+			*isel = pctl_isel_lpuart8_txd;
+			*val = 0;
+			break;
+		case pctl_mux_gpio_ad_03:
+			*isel = pctl_isel_lpuart8_rxd;
+			*val = 0;
+			break;
+		case pctl_mux_gpio_lpsr_08:
+			*isel = pctl_isel_lpuart11_txd;
+			*val = 1;
+			break;
+		case pctl_mux_gpio_lpsr_04:
+			*isel = pctl_isel_lpuart11_txd;
+			*val = 0;
+			break;
+		case pctl_mux_gpio_lpsr_09:
+			*isel = pctl_isel_lpuart11_rxd;
+			*val = 1;
+			break;
+		case pctl_mux_gpio_lpsr_05:
+			*isel = pctl_isel_lpuart11_rxd;
+			*val = 0;
+			break;
+		case pctl_mux_gpio_lpsr_06:
+			*isel = pctl_isel_lpuart12_txd;
+			*val = 1;
+			break;
+		case pctl_mux_gpio_lpsr_00:
+			*isel = pctl_isel_lpuart12_txd;
+			*val = 0;
+			break;
+		case pctl_mux_gpio_lpsr_10:
+			*isel = pctl_isel_lpuart12_txd;
+			*val = 2;
+			break;
+		case pctl_mux_gpio_lpsr_07:
+			*isel = pctl_isel_lpuart12_rxd;
+			*val = 1;
+			break;
+		case pctl_mux_gpio_lpsr_01:
+			*isel = pctl_isel_lpuart12_rxd;
+			*val = 0;
+			break;
+		case pctl_mux_gpio_lpsr_11:
+			*isel = pctl_isel_lpuart12_rxd;
+			*val = 2;
+			break;
 		case pctl_mux_gpio_disp_b2_09:
 			if (uart == 0) {
 				*isel = pctl_isel_lpuart1_rxd;
@@ -318,63 +377,63 @@ static void uart_initPins(void)
 	} info[] = {
 #if UART1
 		{ 0,
-		{ PIN2MUX(UART1_TX_PIN), PIN2MUX(UART1_RX_PIN) },
-		{ PIN2PAD(UART1_TX_PIN), PIN2PAD(UART1_RX_PIN) } },
+			{ PIN2MUX(UART1_TX_PIN), PIN2MUX(UART1_RX_PIN) },
+			{ PIN2PAD(UART1_TX_PIN), PIN2PAD(UART1_RX_PIN) } },
 #endif
 #if UART2
 		{ 1,
-		{ PIN2MUX(UART2_TX_PIN), PIN2MUX(UART2_RX_PIN) },
-		{ PIN2PAD(UART2_TX_PIN), PIN2PAD(UART2_RX_PIN) } },
+			{ PIN2MUX(UART2_TX_PIN), PIN2MUX(UART2_RX_PIN) },
+			{ PIN2PAD(UART2_TX_PIN), PIN2PAD(UART2_RX_PIN) } },
 #endif
 #if UART3
 		{ 2,
-		{ PIN2MUX(UART3_TX_PIN), PIN2MUX(UART3_RX_PIN) },
-		{ PIN2PAD(UART3_TX_PIN), PIN2PAD(UART3_RX_PIN) } },
+			{ PIN2MUX(UART3_TX_PIN), PIN2MUX(UART3_RX_PIN) },
+			{ PIN2PAD(UART3_TX_PIN), PIN2PAD(UART3_RX_PIN) } },
 #endif
 #if UART4
 		{ 3,
-		{ PIN2MUX(UART4_TX_PIN), PIN2MUX(UART4_RX_PIN) },
-		{ PIN2PAD(UART4_TX_PIN), PIN2PAD(UART4_RX_PIN) } },
+			{ PIN2MUX(UART4_TX_PIN), PIN2MUX(UART4_RX_PIN) },
+			{ PIN2PAD(UART4_TX_PIN), PIN2PAD(UART4_RX_PIN) } },
 #endif
 #if UART5
 		{ 4,
-		{ PIN2MUX(UART5_TX_PIN), PIN2MUX(UART5_RX_PIN) },
-		{ PIN2PAD(UART5_TX_PIN), PIN2PAD(UART5_RX_PIN) } },
+			{ PIN2MUX(UART5_TX_PIN), PIN2MUX(UART5_RX_PIN) },
+			{ PIN2PAD(UART5_TX_PIN), PIN2PAD(UART5_RX_PIN) } },
 #endif
 #if UART6
 		{ 5,
-		{ PIN2MUX(UART6_TX_PIN), PIN2MUX(UART6_RX_PIN) },
-		{ PIN2PAD(UART6_TX_PIN), PIN2PAD(UART6_RX_PIN) } },
+			{ PIN2MUX(UART6_TX_PIN), PIN2MUX(UART6_RX_PIN) },
+			{ PIN2PAD(UART6_TX_PIN), PIN2PAD(UART6_RX_PIN) } },
 #endif
 #if UART7
 		{ 6,
-		{ PIN2MUX(UART7_TX_PIN), PIN2MUX(UART7_RX_PIN) },
-		{ PIN2PAD(UART7_TX_PIN), PIN2PAD(UART7_RX_PIN) } },
+			{ PIN2MUX(UART7_TX_PIN), PIN2MUX(UART7_RX_PIN) },
+			{ PIN2PAD(UART7_TX_PIN), PIN2PAD(UART7_RX_PIN) } },
 #endif
 #if UART8
 		{ 7,
-		{ PIN2MUX(UART8_TX_PIN), PIN2MUX(UART8_RX_PIN) },
-		{ PIN2PAD(UART8_TX_PIN), PIN2PAD(UART8_RX_PIN) } },
+			{ PIN2MUX(UART8_TX_PIN), PIN2MUX(UART8_RX_PIN) },
+			{ PIN2PAD(UART8_TX_PIN), PIN2PAD(UART8_RX_PIN) } },
 #endif
 #if UART9
 		{ 8,
-		{ PIN2MUX(UART9_TX_PIN), PIN2MUX(UART9_RX_PIN) },
-		{ PIN2PAD(UART9_TX_PIN), PIN2PAD(UART9_RX_PIN) } },
+			{ PIN2MUX(UART9_TX_PIN), PIN2MUX(UART9_RX_PIN) },
+			{ PIN2PAD(UART9_TX_PIN), PIN2PAD(UART9_RX_PIN) } },
 #endif
 #if UART10
 		{ 9,
-		{ PIN2MUX(UART10_TX_PIN), PIN2MUX(UART10_RX_PIN) },
-		{ PIN2PAD(UART10_TX_PIN), PIN2PAD(UART10_RX_PIN) } },
+			{ PIN2MUX(UART10_TX_PIN), PIN2MUX(UART10_RX_PIN) },
+			{ PIN2PAD(UART10_TX_PIN), PIN2PAD(UART10_RX_PIN) } },
 #endif
 #if UART11
 		{ 10,
-		{ PIN2MUX(UART11_TX_PIN), PIN2MUX(UART11_RX_PIN) },
-		{ PIN2PAD(UART11_TX_PIN), PIN2PAD(UART11_RX_PIN) } },
+			{ PIN2MUX(UART11_TX_PIN), PIN2MUX(UART11_RX_PIN) },
+			{ PIN2PAD(UART11_TX_PIN), PIN2PAD(UART11_RX_PIN) } },
 #endif
 #if UART12
 		{ 11,
-		{ PIN2MUX(UART12_TX_PIN), PIN2MUX(UART12_RX_PIN) },
-		{ PIN2PAD(UART12_TX_PIN), PIN2PAD(UART12_RX_PIN) } },
+			{ PIN2MUX(UART12_TX_PIN), PIN2MUX(UART12_RX_PIN) },
+			{ PIN2PAD(UART12_TX_PIN), PIN2PAD(UART12_RX_PIN) } },
 #endif
 	};
 

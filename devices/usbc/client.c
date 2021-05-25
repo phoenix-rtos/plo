@@ -96,7 +96,6 @@ int usbclient_receive(int endpt, void *data, unsigned int len)
 }
 
 
-
 int usbclient_intr(u16 irq, void *buff)
 {
 	int i;

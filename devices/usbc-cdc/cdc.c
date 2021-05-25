@@ -92,7 +92,7 @@ const usb_configuration_desc_t dConfig = {
 };
 
 
-const usb_interface_association_desc_t dIad[]= {
+const usb_interface_association_desc_t dIad[] = {
 	{
 		.bLength = 0x08,
 		.bDescriptorType = 0x0b,
@@ -338,7 +338,7 @@ const usb_string_desc_t dStr0 = {
 const usb_string_desc_t dStrprod = {
 	.bLength = 2 * 11 + 2,
 	.bDescriptorType = USB_DESC_STRING,
-	.wData = {'p', 0, 'l', 0, 'o', 0, ' ', 0, 'C', 0, 'D', 0, 'C',  0, ' ', 0, 'A', 0, 'C', 0, 'M',  0 }
+	.wData = { 'p', 0, 'l', 0, 'o', 0, ' ', 0, 'C', 0, 'D', 0, 'C', 0, ' ', 0, 'A', 0, 'C', 0, 'M', 0 }
 };
 
 
