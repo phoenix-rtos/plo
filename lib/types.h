@@ -28,7 +28,7 @@
 #ifndef _TYPES_H_
 #define _TYPES_H_
 
-#include ARCH_TYPES
+#include <arch_types.h>
 
 #define NULL 0
 

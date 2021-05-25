@@ -8,7 +8,7 @@
 
 SIL ?= @
 MAKEFLAGS += --no-print-directory
-VERSION="1.21 rev: "`git rev-parse --short HEAD`
+VERSION="1.21 rev: $(shell git rev-parse --short HEAD)"
 
 KERNEL=1
 
@@ -17,7 +17,7 @@ include ../phoenix-rtos-build/Makefile.$(TARGET_SUFF)
 
 CFLAGS += $(BOARD_CONFIG) -DVERSION=\"$(VERSION)\"
 CFLAGS += -I../plo
-CFLAGS += -DPLO_CONFIG=\"hal/$(TARGET_SUFF)/$(TARGET_SUBFAMILY)/config.h\" -DARCH_TYPES=\"hal/$(TARGET_SUFF)/$(TARGET_SUBFAMILY)/types.h\"
+CFLAGS += -I../plo/hal/$(TARGET_SUFF)/$(TARGET_SUBFAMILY)
 
 include hal/$(TARGET_SUFF)/$(TARGET_SUBFAMILY)/Makefile
 include lib/Makefile

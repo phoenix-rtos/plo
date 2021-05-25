@@ -18,8 +18,7 @@
 #ifndef _HAL_H_
 #define _HAL_H_
 
-#include PLO_CONFIG
-
+#include <config.h>
 #include <lib/types.h>
 
 
