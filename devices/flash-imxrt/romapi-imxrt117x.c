@@ -13,7 +13,6 @@
  * %LICENSE%
  */
 
-
 #include "romapi.h"
 
 
@@ -48,7 +47,7 @@ typedef struct BootloaderTree {
 } bootloader_tree_t;
 
 
-static const bootloader_tree_t ** volatile const bootloader_tree = (void *)FLEXSPI_DRIVER_API_ADDRESS;
+static const bootloader_tree_t **volatile const bootloader_tree = (void *)FLEXSPI_DRIVER_API_ADDRESS;
 
 
 int flexspi_norFlashInit(u32 instance, flexspi_norConfig_t *config)

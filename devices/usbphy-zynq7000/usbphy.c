@@ -13,13 +13,11 @@
  * %LICENSE%
  */
 
+#include <hal/hal.h>
 
-#include "client.h"
-#include "usbphy.h"
-
-#include "zynq.h"
-#include "gpio.h"
-#include "peripherals.h"
+#include <devices/usbc/client.h>
+#include <devices/usbc/usbphy.h>
+#include <devices/gpio-zynq7000/gpio.h>
 
 
 /* Memory size for endpoints and setup data */

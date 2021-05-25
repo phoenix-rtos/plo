@@ -13,12 +13,8 @@
  * %LICENSE%
  */
 
-#include "../hal.h"
-#include "../plostd.h"
-#include "../timer.h"
-
-#include "imxrt.h"
-#include "peripherals.h"
+#include <hal/hal.h>
+#include <hal/timer.h>
 
 
 enum { gpt_cr, gpt_pr, gpt_sr, gpt_ir, gpt_ocr1, gpt_ocr2, gpt_ocr3, gpt_icr1, gpt_icr2, gpt_cnt };
@@ -53,24 +49,25 @@ static int timer_isr(u16 irq, void *data)
 
 int timer_wait(u32 ms, int flags, u16 *p, u16 v)
 {
+	timer_common.done = 0;
+
 	/* Set value that determines when a compare event will be generated */
 	*(timer_common.base + gpt_ocr1) = timer_common.ticksPerMs * ms;
-
 	*(timer_common.base + gpt_ir) |= 0x1; /* Set OF1IE (Output Compare 1 Interrupt Enable) */
-
-	timer_common.done = 0;
 
 	/* Enable timer*/
 	*(timer_common.base + gpt_cr) |= 1;
 
 	while (!timer_common.done) {
-		if (((flags & TIMER_KEYB) && hal_keypressed()) ||
-		    ((flags & TIMER_VALCHG) && *p != v))
+		if ((flags & TIMER_VALCHG) && *p != v) {
+			*(timer_common.base + gpt_ir) = 0;
+			*(timer_common.base + gpt_cr) &= ~0x1;
 			return 1;
+		}
 	}
 
-	/* Disable timer */
-	*(timer_common.base + gpt_cr) |= 0;
+	*(timer_common.base + gpt_ir) = 0;
+	*(timer_common.base + gpt_cr) &= ~0x1;
 
 	return 0;
 }
@@ -80,18 +77,17 @@ void timer_init(void)
 {
 	u32 freq;
 
-	timer_common.base = (void *) GPT1_BASE;
+	timer_common.base = (void *)GPT1_BASE;
 	timer_common.irq = GPT1_IRQ;
 
-	freq = _imxrt_ccmGetFreq(clk_ipg) / 2;  /* 66000000 Hz */
+	freq = _imxrt_ccmGetFreq(clk_ipg) / 2; /* 66000000 Hz */
 	timer_common.ticksPerMs = freq / 1000;
 
 	_imxrt_setDevClock(GPT1_CLK, clk_state_run);
 
 	*(timer_common.base + gpt_cr) |= 1 << 15;
 
-	while (((*(timer_common.base + gpt_cr) >> 15) & 0x1))
-	{ }
+	while (((*(timer_common.base + gpt_cr) >> 15) & 0x1));
 
 	/* Disable GPT and it's interrupts */
 	*(timer_common.base + gpt_cr) = 0;

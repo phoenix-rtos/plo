@@ -97,7 +97,7 @@ enum { scb_cpuid = 0, scb_icsr, scb_vtor, scb_aircr, scb_scr, scb_ccr, scb_shp0,
 	scb_pfr1, scb_dfr, scb_afr, scb_mmfr0, scb_mmfr1, scb_mmfr2, scb_mmf3, scb_isar0, scb_isar1,
 	scb_isar2, scb_isar3, scb_isar4, /* reserved */ scb_clidr = 30, scb_ctr, scb_ccsidr, scb_csselr,
 	scb_cpacr, /* 93 reserved */ scb_stir = 128, /* 15 reserved */ scb_mvfr0 = 144, scb_mvfr1,
-	scb_mvfr2, /* reserved */ scb_iciallu = 148, /* reserved */ scb_icimvau = 150, scb_scimvac,
+	scb_mvfr2, /* reserved */ scb_iciallu = 148, /* reserved */ scb_icimvau = 150, scb_dcimvac,
 	scb_dcisw, scb_dccmvau, scb_dccmvac, scb_dccsw, scb_dccimvac, scb_dccisw, /* 6 reserved */
 	scb_itcmcr = 164, scb_dtcmcr, scb_ahbpcr, scb_cacr, scb_ahbscr, /* reserved */ scb_abfsr = 170 };
 
@@ -518,7 +518,7 @@ void _imxrt_ccmDeinitArmPll(void)
 
 void _imxrt_ccmInitSysPll(u8 div)
 {
-	*(imxrt_common.ccm_analog + ccm_analog_pll_sys) =  (1 << 13) | (div & 1);
+	*(imxrt_common.ccm_analog + ccm_analog_pll_sys) = (1 << 13) | (div & 1);
 
 	while (!(*(imxrt_common.ccm_analog + ccm_analog_pll_sys) & (1 << 31)));
 }
@@ -888,8 +888,7 @@ u32 _imxrt_ccmGetUsb1PfdFreq(int pfd)
 {
 	u32 freq = _imxrt_ccmGetPllFreq(clk_pll_usb1);
 
-	switch (pfd)
-	{
+	switch (pfd) {
 		case clk_pfd0:
 			freq /= *(imxrt_common.ccm_analog + ccm_analog_pfd_480) & 0x3f;
 			break;
@@ -1478,7 +1477,7 @@ void _imxrt_scbSetPriority(s8 excpn, u32 priority)
 {
 	volatile u8 *ptr;
 
-	ptr = &((u8*)(imxrt_common.scb + scb_shp0))[excpn - 4];
+	ptr = &((u8 *)(imxrt_common.scb + scb_shp0))[excpn - 4];
 
 	*ptr = (priority << 4) & 0x0ff;
 }
@@ -1488,7 +1487,7 @@ u32 _imxrt_scbGetPriority(s8 excpn)
 {
 	volatile u8 *ptr;
 
-	ptr = &((u8*)(imxrt_common.scb + scb_shp0))[excpn - 4];
+	ptr = &((u8 *)(imxrt_common.scb + scb_shp0))[excpn - 4];
 
 	return *ptr >> 4;
 }
@@ -1499,7 +1498,7 @@ u32 _imxrt_scbGetPriority(s8 excpn)
 
 void _imxrt_nvicSetIRQ(s8 irqn, u8 state)
 {
-	volatile u32 *ptr = imxrt_common.nvic + ((u8)irqn >> 5) + (state ? nvic_iser: nvic_icer);
+	volatile u32 *ptr = imxrt_common.nvic + ((u8)irqn >> 5) + (state ? nvic_iser : nvic_icer);
 	*ptr |= 1 << (irqn & 0x1F);
 }
 
@@ -1513,7 +1512,7 @@ u32 _imxrt_nvicGetPendingIRQ(s8 irqn)
 
 void _imxrt_nvicSetPendingIRQ(s8 irqn, u8 state)
 {
-	volatile u32 *ptr = imxrt_common.nvic + ((u8)irqn >> 5) + (state ? nvic_ispr: nvic_icpr);
+	volatile u32 *ptr = imxrt_common.nvic + ((u8)irqn >> 5) + (state ? nvic_ispr : nvic_icpr);
 	*ptr |= 1 << (irqn & 0x1F);
 }
 
@@ -1529,7 +1528,7 @@ void _imxrt_nvicSetPriority(s8 irqn, u32 priority)
 {
 	volatile u8 *ptr;
 
-	ptr = ((u8*)(imxrt_common.nvic + nvic_ip)) + irqn;
+	ptr = ((u8 *)(imxrt_common.nvic + nvic_ip)) + irqn;
 
 	*ptr = (priority << 4) & 0x0ff;
 }
@@ -1539,7 +1538,7 @@ u8 _imxrt_nvicGetPriority(s8 irqn)
 {
 	volatile u8 *ptr;
 
-	ptr = ((u8*)(imxrt_common.nvic + nvic_ip)) + irqn;
+	ptr = ((u8 *)(imxrt_common.nvic + nvic_ip)) + irqn;
 
 	return *ptr >> 4;
 }
@@ -1560,7 +1559,7 @@ void _imxrt_nvicSystemReset(void)
 
 int _imxrt_systickInit(u32 interval)
 {
-	u64 load = ((u64) interval * imxrt_common.cpuclk) / 1000000;
+	u64 load = ((u64)interval * imxrt_common.cpuclk) / 1000000;
 	if (load > 0x00ffffff)
 		return -1;
 
@@ -1692,7 +1691,7 @@ void _imxrt_enableMPU(void)
 	imxrt_dataSyncBarrier();
 	imxrt_dataInstrBarrier();
 
-	*(imxrt_common.scb + scb_shcsr) |= ( 1 << 16);
+	*(imxrt_common.scb + scb_shcsr) |= (1 << 16);
 	*(imxrt_common.mpu + mpu_ctrl) = 0x4 | 1;
 }
 
@@ -1702,7 +1701,7 @@ void _imxrt_disableMPU(void)
 	imxrt_dataSyncBarrier();
 	imxrt_dataInstrBarrier();
 
-	*(imxrt_common.scb + scb_shcsr) &= ~( 1 << 16);
+	*(imxrt_common.scb + scb_shcsr) &= ~(1 << 16);
 	*(imxrt_common.mpu + mpu_ctrl) = 0;
 }
 
@@ -1726,7 +1725,7 @@ void _imxrt_enableDCache(void)
 		do {
 			*(imxrt_common.scb + scb_dcisw) = ((sets & 0x1ff) << 5) | ((ways & 0x3) << 30);
 		} while (ways-- != 0);
-	} while(sets-- != 0);
+	} while (sets-- != 0);
 	imxrt_dataSyncBarrier();
 
 	*(imxrt_common.scb + scb_ccr) |= 1 << 16;
@@ -1754,7 +1753,7 @@ void _imxrt_disableDCache(void)
 		do {
 			*(imxrt_common.scb + scb_dcisw) = ((sets & 0x1ff) << 5) | ((ways & 0x3) << 30);
 		} while (ways-- != 0);
-	} while(sets-- != 0);
+	} while (sets-- != 0);
 
 	imxrt_dataSyncBarrier();
 	imxrt_dataInstrBarrier();
@@ -1777,12 +1776,57 @@ void _imxrt_cleanDCache(void)
 		do {
 			*(imxrt_common.scb + scb_dccsw) = ((sets & 0x1ff) << 5) | ((ways & 0x3) << 30);
 		} while (ways-- != 0);
-	} while(sets-- != 0);
+	} while (sets-- != 0);
 
 	imxrt_dataSyncBarrier();
 	imxrt_dataInstrBarrier();
 }
 
+
+void _imxrt_invalDCacheAddr(void *addr, u32 sz)
+{
+	u32 daddr;
+	int dsize;
+
+	if (sz == 0)
+		return;
+
+	daddr = (((u32)addr) & ~0x1f);
+	dsize = sz + ((u32)addr & 0x1f);
+
+	imxrt_dataSyncBarrier();
+
+	do {
+		*(imxrt_common.scb + scb_dcimvac) = daddr;
+		daddr += 0x20;
+		dsize -= 0x20;
+	} while (dsize > 0);
+
+	imxrt_dataSyncBarrier();
+	imxrt_dataInstrBarrier();
+}
+
+
+void _imxrt_invalDCacheAll(void)
+{
+	u32 ccsidr, sets, ways;
+
+	/* select Level 1 data cache */
+	*(imxrt_common.scb + scb_csselr) = 0;
+	imxrt_dataSyncBarrier();
+	ccsidr = *(imxrt_common.scb + scb_ccsidr);
+
+	sets = (ccsidr >> 13) & 0x7fff;
+	do {
+		ways = (ccsidr >> 3) & 0x3ff;
+		do {
+			*(imxrt_common.scb + scb_dcisw) = ((sets & 0x1ff) << 5) | ((ways & 0x3) << 30);
+		} while (ways-- != 0U);
+	} while (sets-- != 0U);
+
+	imxrt_dataSyncBarrier();
+	imxrt_dataInstrBarrier();
+}
 
 
 void _imxrt_enableICache(void)
@@ -1837,7 +1881,7 @@ void _imxrt_init(void)
 	imxrt_common.iomuxsnvs = (void *)0x400a8000;
 	imxrt_common.nvic = (void *)0xe000e100;
 	imxrt_common.scb = (void *)0xe000ed00;
-	imxrt_common.mpu = (void* ) 0xe000ed90;
+	imxrt_common.mpu = (void *)0xe000ed90;
 	imxrt_common.stk = (void *)0xe000e010;
 	imxrt_common.wdog1 = (void *)0x400b8000;
 	imxrt_common.wdog2 = (void *)0x400d0000;
@@ -1884,6 +1928,7 @@ void _imxrt_init(void)
 	_imxrt_ccmSetDiv(clk_div_arm, 0x1);
 	_imxrt_ccmSetDiv(clk_div_ahb, 0x0);
 	_imxrt_ccmSetDiv(clk_div_ipg, 0x3);
+
 
 	/* Now CPU runs again on ARM PLL at 528M (with divider 2) */
 	_imxrt_ccmSetMux(clk_mux_prePeriph, 0x3);

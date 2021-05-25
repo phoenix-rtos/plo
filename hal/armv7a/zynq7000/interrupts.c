@@ -14,15 +14,14 @@
  */
 
 #include "interrupts.h"
-#include "cpu.h"
 
-#include "../hal.h"
-#include "../types.h"
-#include "../errors.h"
+#include <hal/hal.h>
+#include <lib/errno.h>
 
-#define MPCORE_BASE_ADDRESS  0xf8f00000
-#define SIZE_INTERRUPTS		 95
-#define SPI_FIRST_IRQID      32
+
+#define MPCORE_BASE_ADDRESS 0xf8f00000
+#define SIZE_INTERRUPTS     95
+#define SPI_FIRST_IRQID     32
 
 
 enum {
@@ -125,9 +124,9 @@ void interrupts_dispatch(void)
 		return;
 
 	if (interrupts_common.handlers[n].f != NULL)
-		 interrupts_common.handlers[n].f(n, interrupts_common.handlers[n].data);
+		interrupts_common.handlers[n].f(n, interrupts_common.handlers[n].data);
 
-	*(interrupts_common.mpcore + ceoir) =  (*(interrupts_common.mpcore + ceoir) & ~0x3ff) | n;
+	*(interrupts_common.mpcore + ceoir) = (*(interrupts_common.mpcore + ceoir) & ~0x3ff) | n;
 
 	return;
 }
@@ -136,24 +135,24 @@ void interrupts_dispatch(void)
 int interrupts_setHandler(u16 n, int (*f)(u16, void *), void *data)
 {
 	if (f == NULL || n >= SIZE_INTERRUPTS)
-		return ERR_ARG;
+		return -EINVAL;
 
 	interrupts_common.handlers[n].n = n;
 	interrupts_common.handlers[n].data = data;
 	interrupts_common.handlers[n].f = f;
 
-	interrupts_setPriority(n, 0xa);   /* each of the irqs has the same priority */
-	interrupts_setCPU(n, 0x1);        /* CPU 0 handle all irqs                  */
+	interrupts_setPriority(n, 0xa); /* each of the irqs has the same priority */
+	interrupts_setCPU(n, 0x1);      /* CPU 0 handle all irqs                  */
 	interrupts_enableIRQ(n);
 
-	return ERR_NONE;
+	return EOK;
 }
 
 
 int interrupts_deleteHandler(u16 n)
 {
 	if (n >= SIZE_INTERRUPTS || interrupts_common.handlers[n].data == NULL || interrupts_common.handlers[n].f == NULL)
-		return ERR_ARG;
+		return -EINVAL;
 
 	hal_cli();
 
@@ -164,7 +163,7 @@ int interrupts_deleteHandler(u16 n)
 
 	hal_sti();
 
-	return ERR_NONE;
+	return EOK;
 }
 
 

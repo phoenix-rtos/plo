@@ -16,8 +16,12 @@
 #ifndef SYSPAGE_H_
 #define SYSPAGE_H_
 
-#include "config.h"
-#include "types.h"
+#include <hal/hal.h>
+#include <lib/types.h>
+
+
+#define SIZE_APP_NAME 15
+#define SIZE_MAP_NAME 7
 
 
 /* TODO: Make it compatible with Phoenix-RTOS kernel;
@@ -42,19 +46,26 @@ extern void syspage_setAddress(void *addr);
 extern void *syspage_getAddress(void);
 
 
-
 /* General functions */
 
 extern int syspage_save(void);
 
 
-extern void syspage_show(void);
+extern void syspage_showAddr(void);
 
+
+extern void syspage_showMaps(void);
+
+
+extern void syspage_showApps(void);
+
+
+extern void syspage_showKernel(void);
 
 
 /* Map's functions */
 
-extern int syspage_addmap(const char *name, void *start, void *end, u32 attr);
+extern int syspage_addmap(const char *name, void *start, void *end, const char *attr);
 
 
 extern int syspage_getMapTop(const char *map, void **addr);
@@ -71,6 +82,8 @@ extern int syspage_write2Map(const char *map, const u8 *buff, size_t len);
 
 extern void syspage_addEntries(addr_t start, size_t sz);
 
+
+extern int syspage_getMapAttr(const char *map, unsigned int *attr);
 
 
 /* Program's functions */

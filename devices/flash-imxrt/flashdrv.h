@@ -17,11 +17,10 @@
 #ifndef _IMXRT_FLASHDRV_H_
 #define _IMXRT_FLASHDRV_H_
 
-#include "../../types.h"
 #include "romapi.h"
 
-#include "peripherals.h"
-
+#include <hal/hal.h>
+#include <lib/types.h>
 
 typedef struct {
 	u32 size;
@@ -45,30 +44,5 @@ typedef struct {
 
 	char buff[FLASH_DEFAULT_SECTOR_SIZE];
 } flash_context_t;
-
-
-extern s32 flashdrv_readData(flash_context_t *ctx, u32 offset, char *buff, u32 size);
-
-
-extern s32 flashdrv_directBytesWrite(flash_context_t *ctx, u32 offset, const char *buff, u32 size);
-
-
-extern s32 flashdrv_bufferedPagesWrite(flash_context_t *ctx, u32 offset, const char *buff, u32 size);
-
-
-extern void flashdrv_sync(flash_context_t *ctx);
-
-
-extern int flashdrv_chipErase(flash_context_t *ctx);
-
-
-extern int flashdrv_sectorErase(flash_context_t *ctx, u32 offset);
-
-
-extern int flashdrv_init(flash_context_t *ctx);
-
-
-extern void flashdrv_contextDestroy(flash_context_t *ctx);
-
 
 #endif

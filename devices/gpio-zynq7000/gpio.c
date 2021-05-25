@@ -13,16 +13,14 @@
  * %LICENSE%
  */
 
-#include "../types.h"
-#include "../errors.h"
-
 #include "gpio.h"
-#include "zynq.h"
-#include "peripherals.h"
+
+#include <hal/hal.h>
+#include <lib/errno.h>
 
 
-#define MAX_BANK_NB        4
-#define BANK_REGS_OFFS     0x10
+#define MAX_BANK_NB    4
+#define BANK_REGS_OFFS 0x10
 
 
 enum {
@@ -55,18 +53,18 @@ static int gpio_getPinPos(u8 pin, u8 *bank, u8 *pos)
 	int i;
 
 	if (pin > pinsPos[MAX_BANK_NB - 1].max)
-		return ERR_ARG;
+		return -EINVAL;
 
 	for (i = 0; i < MAX_BANK_NB; ++i) {
 		if (pin >= pinsPos[i].min && pin <= pinsPos[i].max) {
 			*bank = i;
 			*pos = pin - pinsPos[i].min;
 
-			return ERR_NONE;
+			return EOK;
 		}
 	}
 
-	return ERR_ARG;
+	return -EINVAL;
 }
 
 
@@ -76,12 +74,12 @@ int gpio_writePin(u8 pin, u8 val)
 	u8 bank, pos;
 
 	if (gpio_getPinPos(pin, &bank, &pos) < 0)
-		return ERR_ARG;
+		return -EINVAL;
 
 	v = *(gpio_common.base + data + (BANK_REGS_OFFS * bank));
 	*(gpio_common.base + data + (BANK_REGS_OFFS * bank)) = (v & ~(1 << pos)) | (!!val << pos);
 
-	return ERR_NONE;
+	return EOK;
 }
 
 
@@ -91,12 +89,12 @@ int gpio_readPin(u8 pin, u8 *val)
 	u8 bank, pos;
 
 	if (gpio_getPinPos(pin, &bank, &pos) < 0)
-		return ERR_ARG;
+		return -EINVAL;
 
 	v = *(gpio_common.base + data_ro + (BANK_REGS_OFFS * bank));
 	*val = !!(v & (1 << pos));
 
-	return ERR_NONE;
+	return EOK;
 }
 
 
@@ -106,12 +104,12 @@ int gpio_getPinDir(u8 pin, u8 *dir)
 	u8 bank, pos;
 
 	if (gpio_getPinPos(pin, &bank, &pos) < 0)
-		return ERR_ARG;
+		return -EINVAL;
 
 	d = *(gpio_common.base + dirm + (BANK_REGS_OFFS * bank));
 	*dir = !!(d & (1 << pos));
 
-	return ERR_NONE;
+	return EOK;
 }
 
 
@@ -121,7 +119,7 @@ int gpio_setPinDir(u8 pin, u8 dir)
 	u8 bank, pos;
 
 	if (gpio_getPinPos(pin, &bank, &pos) < 0)
-		return ERR_ARG;
+		return -EINVAL;
 
 	offs = BANK_REGS_OFFS * bank;
 	d = *(gpio_common.base + dirm + offs);
@@ -130,52 +128,52 @@ int gpio_setPinDir(u8 pin, u8 dir)
 	*(gpio_common.base + dirm + offs) = v;
 	*(gpio_common.base + oen + offs) = v;
 
-	return ERR_NONE;
+	return EOK;
 }
 
 
 int gpio_writeBank(u8 bank, u32 val)
 {
 	if (bank >= MAX_BANK_NB)
-		return ERR_ARG;
+		return -EINVAL;
 
- 	*(gpio_common.base + data + (BANK_REGS_OFFS * bank)) = val;
+	*(gpio_common.base + data + (BANK_REGS_OFFS * bank)) = val;
 
-	return ERR_NONE;
+	return EOK;
 }
 
 
 int gpio_readBank(u8 bank, u32 *val)
 {
 	if (bank >= MAX_BANK_NB)
-		return ERR_ARG;
+		return -EINVAL;
 
 	*val = *(gpio_common.base + data_ro + (BANK_REGS_OFFS * bank));
 
-	return ERR_NONE;
+	return EOK;
 }
 
 
 int gpio_getBankDir(u8 bank, u32 *dir)
 {
 	if (bank >= MAX_BANK_NB)
-		return ERR_ARG;
+		return -EINVAL;
 
 	*dir = *(gpio_common.base + dirm + (BANK_REGS_OFFS * bank));
 
-	return ERR_NONE;
+	return EOK;
 }
 
 
 int gpio_setBankDir(u8 bank, u32 dir)
 {
 	if (bank >= MAX_BANK_NB)
-		return ERR_ARG;
+		return -EINVAL;
 
 	*(gpio_common.base + dirm + (BANK_REGS_OFFS * bank)) = dir;
 	*(gpio_common.base + oen + (BANK_REGS_OFFS * bank)) = dir;
 
-	return ERR_NONE;
+	return EOK;
 }
 
 

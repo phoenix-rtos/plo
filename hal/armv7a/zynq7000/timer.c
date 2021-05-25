@@ -13,16 +13,13 @@
  * %LICENSE%
  */
 
-
-#include "../hal.h"
-#include "../timer.h"
-
-#include "peripherals.h"
+#include <hal/hal.h>
+#include <hal/timer.h>
 
 
 /* TODO: this value should be calculated and provide by zynq API */
-#define TTC_SRC_CLK_CPU_1x   111111115 /* Hz */
-#define TTC_DEFAULT_FREQ     1000      /* Hz */
+#define TTC_SRC_CLK_CPU_1x 111111115 /* Hz */
+#define TTC_DEFAULT_FREQ   1000      /* Hz */
 
 
 enum {
@@ -107,8 +104,7 @@ int timer_wait(u32 ms, int flags, u16 *p, u16 v)
 	*(timer_common.base + ier) = 0x1;
 
 	while (timer_common.leftTime) {
-		if (((flags & TIMER_KEYB) && hal_keypressed()) ||
-		    ((flags & TIMER_VALCHG) && *p != v))
+		if ((flags & TIMER_VALCHG) && *p != v)
 			return 1;
 	}
 

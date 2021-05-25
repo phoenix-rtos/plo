@@ -20,7 +20,9 @@
 /* Periperals configuration */
 
 /* Interrupts */
-#define SIZE_INTERRUPTS 167
+#define SIZE_INTERRUPTS (217 + 16)
+
+#define UART_MAX_CNT 12
 
 /* UART */
 #ifndef UART1
@@ -75,8 +77,8 @@
 #define UART_CONSOLE 11
 #endif
 
-#define UART_CLK         24000000
-#define UART_BAUDRATE    115200
+#define UART_CLK      24000000
+#define UART_BAUDRATE 115200
 
 #define UART1_BASE  ((void *)0x4007c000)
 #define UART2_BASE  ((void *)0x40080000)
@@ -130,28 +132,28 @@
 #define UART1_RTS_PIN ad_27
 #define UART1_CTS_PIN ad_26
 
-#define UART2_TX_PIN disp_b2_10
-#define UART2_RX_PIN disp_b2_11
+#define UART2_TX_PIN  disp_b2_10
+#define UART2_RX_PIN  disp_b2_11
 #define UART2_RTS_PIN disp_b2_13
 #define UART2_CTS_PIN disp_b2_12
 
-#define UART3_TX_PIN ad_30
-#define UART3_RX_PIN ad_31
+#define UART3_TX_PIN  ad_30
+#define UART3_RX_PIN  ad_31
 #define UART3_RTS_PIN sd_b2_08
 #define UART3_CTS_PIN sd_b2_07
 
-#define UART4_TX_PIN disp_b1_06
-#define UART4_RX_PIN disp_b1_04
+#define UART4_TX_PIN  disp_b1_06
+#define UART4_RX_PIN  disp_b1_04
 #define UART4_RTS_PIN disp_b1_07
 #define UART4_CTS_PIN disp_b1_05
 
-#define UART5_TX_PIN ad_28
-#define UART5_RX_PIN ad_29
+#define UART5_TX_PIN  ad_28
+#define UART5_RX_PIN  ad_29
 #define UART5_RTS_PIN sd_b2_10
 #define UART5_CTS_PIN sd_b2_09
 
-#define UART6_TX_PIN emc_b1_40
-#define UART6_RX_PIN emc_b1_41
+#define UART6_TX_PIN  emc_b1_40
+#define UART6_RX_PIN  emc_b1_41
 #define UART6_RTS_PIN emc_b2_01
 #define UART6_CTS_PIN emc_b2_00
 
@@ -177,8 +179,8 @@
 #define UART8_RTS_PIN ad_05
 #define UART8_CTS_PIN ad_04
 
-#define UART9_TX_PIN sd_b2_00
-#define UART9_RX_PIN sd_b2_01
+#define UART9_TX_PIN  sd_b2_00
+#define UART9_RX_PIN  sd_b2_01
 #define UART9_RTS_PIN sd_b2_03
 #define UART9_CTS_PIN sd_b2_02
 
@@ -218,33 +220,38 @@
 #define UART12_CTS_PIN lpsr_05
 
 
-
 /* GPT - general purpose timer */
 
-#define GPT1_BASE           ((void *)0x400ec000)
-#define GPT1_CLK            pctl_clk_gpt1
-#define GPT1_IRQ            gpt1_irq
+#define GPT1_BASE ((void *)0x400ec000)
+#define GPT1_CLK  pctl_clk_gpt1
+#define GPT1_IRQ  gpt1_irq
 
-#define GPT2_BASE           ((void *)0x400f0000)
-#define GPT2_CLK            pctl_clk_gpt2
-#define GPT2_IRQ            gpt2_irq
+#define GPT2_BASE ((void *)0x400f0000)
+#define GPT2_CLK  pctl_clk_gpt2
+#define GPT2_IRQ  gpt2_irq
 
 
 /* FLASH */
 
-#define FLASH_NO                   FLASH_FLEXSPI1_MOUNTED + FLASH_FLEXSPI2_MOUNTED
-#define FLASH_DEFAULT_SECTOR_SIZE  0x1000
+#define FLASH_NO                  FLASH_FLEXSPI1_MOUNTED + FLASH_FLEXSPI2_MOUNTED
+#define FLASH_DEFAULT_SECTOR_SIZE 0x1000
 
-#define FLASH_FLEXSPI1_MOUNTED     1
-#define FLASH_FLEXSPI1             0x30000000
-#define FLASH_SIZE_FLEXSPI1        0x10000000
-#define FLASH_FLEXSPI1_INSTANCE    0x1
-#define FLASH_FLEXSPI1_QSPI_FREQ   0xc0000007
+#define FLASH_FLEXSPI1_MOUNTED   1
+#define FLASH_FLEXSPI1           0x30000000
+#define FLASH_SIZE_FLEXSPI1      0x10000000
+#define FLASH_FLEXSPI1_INSTANCE  0x1
+#define FLASH_FLEXSPI1_QSPI_FREQ 0xc0000007
 
-#define FLASH_FLEXSPI2_MOUNTED     0
-#define FLASH_FLEXSPI2             0x60000000
-#define FLASH_SIZE_FLEXSPI2        0x1f800000
-#define FLASH_FLEXSPI2_INSTANCE    0x2
-#define FLASH_FLEXSPI2_QSPI_FREQ   0xc0000007
+#define FLASH_FLEXSPI2_MOUNTED   0
+#define FLASH_FLEXSPI2           0x60000000
+#define FLASH_SIZE_FLEXSPI2      0x1f800000
+#define FLASH_FLEXSPI2_INSTANCE  0x2
+#define FLASH_FLEXSPI2_QSPI_FREQ 0xc0000007
+
+
+/* USB */
+
+#define PHFS_ACM_PORTS_NB 1 /* Number of ports define by CDC driver; min = 1, max = 2 */
+
 
 #endif

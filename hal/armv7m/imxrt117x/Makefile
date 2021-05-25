@@ -10,7 +10,7 @@ INIT_RAM = 0x20250000
 INIT_FLASH = 0x30000000
 
 BSS=-Tbss=20011000
-LDFLAGS+=--defsym=plo_bss=0x20011000
+LDFLAGS+=--defsym _plo_bss=0x20011000
 
 LDFLAGS:=$(filter-out -Tbss% , $(LDFLAGS))
 LDFLAGS:=$(filter-out -Tdata% , $(LDFLAGS))
@@ -20,7 +20,9 @@ CFLAGS+= -mfloat-abi=soft
 
 GCCLIB := $(shell $(CC) $(CFLAGS) -print-libgcc-file-name)
 
+PLO_COMMANDS = alias app call console copy devs dump echo go help kernel map phfs script syspage wait
+
 include devices/uart-imxrt117x/Makefile
 include devices/flash-imxrt/Makefile
 
-OBJS += $(addprefix $(PREFIX_O)hal/$(TARGET_SUFF)/$(TARGET_SUBFAMILY)/, _startup.o hal.o imxrt.o cmd.o timer.o )
+OBJS += $(addprefix $(PREFIX_O)hal/$(TARGET_SUFF)/$(TARGET_SUBFAMILY)/, _startup.o hal.o imxrt.o timer.o console.o)

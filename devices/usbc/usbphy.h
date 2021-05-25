@@ -13,11 +13,10 @@
  * %LICENSE%
  */
 
-
 #ifndef _PHY_H_
 #define _PHY_H_
 
-#include "../types.h"
+#include <lib/types.h>
 
 
 /* Function returns buffer which is a multiple of USB_BUFFER_SIZE.
@@ -26,7 +25,7 @@ extern void *usbclient_allocBuff(u32 size);
 
 
 /* Function cleans the whole memory assigned to endpoints and setup memory. */
-extern void  usbclient_buffReset(void);
+extern void usbclient_buffReset(void);
 
 
 /* Function returns ID of USB controller interrupt.                         */

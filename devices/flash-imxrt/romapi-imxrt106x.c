@@ -13,7 +13,6 @@
  * %LICENSE%
  */
 
-
 #include "romapi.h"
 
 
@@ -34,7 +33,7 @@ typedef struct {
 } flexspi_norDriverInterface_t;
 
 
-static const flexspi_norDriverInterface_t * volatile const flexspi_norApi = (void *)FLEXSPI_DRIVER_API_ADDRESS;
+static const flexspi_norDriverInterface_t *volatile const flexspi_norApi = (void *)FLEXSPI_DRIVER_API_ADDRESS;
 
 
 int flexspi_norFlashInit(u32 instance, flexspi_norConfig_t *config)

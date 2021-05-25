@@ -13,11 +13,11 @@
  * %LICENSE%
  */
 
-#include "../../errors.h"
-
 #include "lut.h"
 #include "flashcfg.h"
-#include "peripherals.h"
+
+#include <hal/hal.h>
+#include <lib/errno.h>
 
 
 static int flashcfg_getWindbondConfig(flash_context_t *ctx)
@@ -29,11 +29,11 @@ static int flashcfg_getWindbondConfig(flash_context_t *ctx)
 			ctx->properties.sector_size = FLASH_DEFAULT_SECTOR_SIZE;
 			break;
 
-		default :
-			return ERR_ARG;
+		default:
+			return -EINVAL;
 	}
 
-	return ERR_NONE;
+	return EOK;
 }
 
 
@@ -41,8 +41,8 @@ static void flashcfg_setWindbondLUT(flash_context_t *ctx)
 {
 	/* QUAD Fast Read */
 	ctx->config.mem.lut[4 * QUAD_FAST_READ_SEQ_ID] = LUT_INSTR(LUT_CMD_CMD, LUT_PAD1, FLASH_SPANSION_CMD_QIOR, LUT_CMD_ADDR, LUT_PAD4, 0x18); /* 0xa1804eb */
-	ctx->config.mem.lut[4 * QUAD_FAST_READ_SEQ_ID + 1] = LUT_INSTR(LUT_CMD_MODE8, LUT_PAD4, 0x04, LUT_CMD_DUMMY, LUT_PAD4, 0x04); /* 0x32061ef4 */
-	ctx->config.mem.lut[4 * QUAD_FAST_READ_SEQ_ID + 2] = LUT_INSTR(LUT_CMD_READ, LUT_PAD4, 0x04, 0, 0, 0); /* 0x2604 */
+	ctx->config.mem.lut[4 * QUAD_FAST_READ_SEQ_ID + 1] = LUT_INSTR(LUT_CMD_MODE8, LUT_PAD4, 0x04, LUT_CMD_DUMMY, LUT_PAD4, 0x04);             /* 0x32061ef4 */
+	ctx->config.mem.lut[4 * QUAD_FAST_READ_SEQ_ID + 2] = LUT_INSTR(LUT_CMD_READ, LUT_PAD4, 0x04, 0, 0, 0);                                    /* 0x2604 */
 	ctx->config.mem.lut[4 * QUAD_FAST_READ_SEQ_ID + 3] = 0;
 	flexspi_norFlashUpdateLUT(ctx->instance, QUAD_FAST_READ_SEQ_ID, (const u32 *)&ctx->config.mem.lut[4 * QUAD_FAST_READ_SEQ_ID], 1);
 
@@ -74,14 +74,14 @@ static void flashcfg_setWindbondLUT(flash_context_t *ctx)
 
 	/* Quad Input Page Program */
 	ctx->config.mem.lut[4 * PAGE_PROGRAM_SEQ_ID] = LUT_INSTR(LUT_CMD_CMD, LUT_PAD1, FLASH_SPANSION_CMD_QPP, LUT_CMD_ADDR, LUT_PAD1, LUT_3B_ADDR); /* 0x8180432 */
-	ctx->config.mem.lut[4 * PAGE_PROGRAM_SEQ_ID + 1] = LUT_INSTR(LUT_CMD_WRITE, LUT_PAD4, 0x04, 0,0,0); /* 0x2204 */
+	ctx->config.mem.lut[4 * PAGE_PROGRAM_SEQ_ID + 1] = LUT_INSTR(LUT_CMD_WRITE, LUT_PAD4, 0x04, 0, 0, 0);                                         /* 0x2204 */
 	ctx->config.mem.lut[4 * PAGE_PROGRAM_SEQ_ID + 2] = 0;
 	ctx->config.mem.lut[4 * PAGE_PROGRAM_SEQ_ID + 3] = 0;
 	flexspi_norFlashUpdateLUT(ctx->instance, PAGE_PROGRAM_SEQ_ID, (const u32 *)&ctx->config.mem.lut[4 * PAGE_PROGRAM_SEQ_ID], 1);
 
 	/* Chip Erase */
 	ctx->config.mem.lut[4 * CHIP_ERASE_SEQ_ID] = LUT_INSTR(LUT_CMD_CMD, LUT_PAD1, FLASH_SPANSION_CMD_BE, 0, 0, 0); /* 0x0460 */
-	ctx->config.mem.lut[4 * CHIP_ERASE_SEQ_ID + 1] = LUT_INSTR(LUT_CMD_WRITE, LUT_PAD1, 0x04, 0, 0, 0); /* 0x2004 */
+	ctx->config.mem.lut[4 * CHIP_ERASE_SEQ_ID + 1] = LUT_INSTR(LUT_CMD_WRITE, LUT_PAD1, 0x04, 0, 0, 0);            /* 0x2004 */
 	ctx->config.mem.lut[4 * CHIP_ERASE_SEQ_ID + 2] = 0;
 	ctx->config.mem.lut[4 * CHIP_ERASE_SEQ_ID + 3] = 0;
 
@@ -103,11 +103,11 @@ static int flashcfg_getIssiConfig(flash_context_t *ctx)
 			ctx->properties.sector_size = FLASH_DEFAULT_SECTOR_SIZE;
 			break;
 
-		default :
-			return ERR_ARG;
+		default:
+			return -EINVAL;
 	}
 
-	return ERR_NONE;
+	return EOK;
 }
 
 
@@ -133,11 +133,11 @@ static int flashcfg_getMicronConfig(flash_context_t *ctx)
 			break;
 
 
-		default :
-			return ERR_ARG;
+		default:
+			return -EINVAL;
 	}
 
-	return ERR_NONE;
+	return EOK;
 }
 
 
@@ -145,7 +145,7 @@ static void flashcfg_setMicronLUT(flash_context_t *ctx)
 {
 	/* 4 - Byte QUAD Fast Read */
 	ctx->config.mem.lut[4 * QUAD_FAST_READ_SEQ_ID] = LUT_INSTR(LUT_CMD_CMD, LUT_PAD1, FLASH_SPANSION_CMD_4QIOR, LUT_CMD_ADDR, LUT_PAD4, LUT_4B_ADDR); /* 0xa2004ec */
-	ctx->config.mem.lut[4 * QUAD_FAST_READ_SEQ_ID + 1] = LUT_INSTR(LUT_CMD_DUMMY, LUT_PAD4, 0xa, LUT_CMD_READ, LUT_PAD4, 0x04); /* 0x2604320a */
+	ctx->config.mem.lut[4 * QUAD_FAST_READ_SEQ_ID + 1] = LUT_INSTR(LUT_CMD_DUMMY, LUT_PAD4, 0xa, LUT_CMD_READ, LUT_PAD4, 0x04);                       /* 0x2604320a */
 	ctx->config.mem.lut[4 * QUAD_FAST_READ_SEQ_ID + 2] = 0;
 	ctx->config.mem.lut[4 * QUAD_FAST_READ_SEQ_ID + 3] = 0;
 	flexspi_norFlashUpdateLUT(ctx->instance, QUAD_FAST_READ_SEQ_ID, (const u32 *)&ctx->config.mem.lut[4 * QUAD_FAST_READ_SEQ_ID], 1);
@@ -178,14 +178,15 @@ static void flashcfg_setMicronLUT(flash_context_t *ctx)
 
 	/* 4 - Byte Quad Extended Page Program */
 	ctx->config.mem.lut[4 * PAGE_PROGRAM_SEQ_ID] = LUT_INSTR(LUT_CMD_CMD, LUT_PAD1, FLASH_SPANSION_CMD_4QEPP, LUT_CMD_ADDR, LUT_PAD4, LUT_4B_ADDR); /* 0xa20043e */
-	ctx->config.mem.lut[4 * PAGE_PROGRAM_SEQ_ID + 1] =  LUT_INSTR(LUT_CMD_WRITE, LUT_PAD4, 0x04, 0, 0, 0); /* 0x2204 */
+	ctx->config.mem.lut[4 * PAGE_PROGRAM_SEQ_ID + 1] = LUT_INSTR(LUT_CMD_WRITE, LUT_PAD4, 0x04, 0, 0, 0);                                           /* 0x2204 */
 	ctx->config.mem.lut[4 * PAGE_PROGRAM_SEQ_ID + 2] = 0;
 	ctx->config.mem.lut[4 * PAGE_PROGRAM_SEQ_ID + 3] = 0;
-	flexspi_norFlashUpdateLUT(ctx->instance, PAGE_PROGRAM_SEQ_ID, (const u32 *)&ctx->config.mem.lut[4 * PAGE_PROGRAM_SEQ_ID], 1);;
+	flexspi_norFlashUpdateLUT(ctx->instance, PAGE_PROGRAM_SEQ_ID, (const u32 *)&ctx->config.mem.lut[4 * PAGE_PROGRAM_SEQ_ID], 1);
+	;
 
 	/* Chip Erase */
 	ctx->config.mem.lut[4 * CHIP_ERASE_SEQ_ID] = LUT_INSTR(LUT_CMD_CMD, LUT_PAD1, FLASH_SPANSION_CMD_BE, 0, 0, 0); /* 0x0460 */
-	ctx->config.mem.lut[4 * CHIP_ERASE_SEQ_ID + 1] = LUT_INSTR(LUT_CMD_WRITE, LUT_PAD1, 0x04, 0, 0, 0); /* 0x2004 */
+	ctx->config.mem.lut[4 * CHIP_ERASE_SEQ_ID + 1] = LUT_INSTR(LUT_CMD_WRITE, LUT_PAD1, 0x04, 0, 0, 0);            /* 0x2004 */
 	ctx->config.mem.lut[4 * CHIP_ERASE_SEQ_ID + 2] = 0;
 	ctx->config.mem.lut[4 * CHIP_ERASE_SEQ_ID + 3] = 0;
 
@@ -203,27 +204,27 @@ int flashcfg_getCfg(flash_context_t *ctx)
 	switch (GET_MANUFACTURE_ID(ctx->flashID)) {
 		case flash_windbond:
 			if (flashcfg_getWindbondConfig(ctx) < 0)
-				return ERR_ARG;
+				return -EINVAL;
 			flashcfg_setWindbondLUT(ctx);
 			break;
 
 		case flash_issi:
 			if (flashcfg_getIssiConfig(ctx) < 0)
-				return ERR_ARG;
+				return -EINVAL;
 			flashcfg_setIssiLut(ctx);
 			break;
 
 		case flash_micron:
 			if (flashcfg_getMicronConfig(ctx) < 0)
-				return ERR_ARG;
+				return -EINVAL;
 
 			/* TODO: provide support for chip erase on MT25QL01GBBB in LUT */
 			flashcfg_setMicronLUT(ctx);
 			break;
 
 		default:
-			return ERR_ARG;
+			return -EINVAL;
 	}
 
-	return ERR_NONE;
+	return EOK;
 }

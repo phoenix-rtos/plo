@@ -13,10 +13,10 @@
  * %LICENSE%
  */
 
-#include "../hal.h"
-#include "../errors.h"
-
 #include "client.h"
+
+#include <hal/hal.h>
+#include <lib/errno.h>
 
 
 struct {
@@ -151,7 +151,7 @@ int desc_init(usb_desc_list_t *desList, usb_common_data_t *usb_data_in, usb_dc_t
 		}
 	}
 
-	return ERR_NONE;
+	return EOK;
 }
 
 
@@ -186,7 +186,7 @@ static void desc_ReqSetConfig(void)
 static int desc_ReqGetConfig(const usb_setup_packet_t *setup)
 {
 	if (setup->wValue != 0 || setup->wIndex != 0 || setup->wLength != 1)
-		return ERR_NONE;
+		return EOK;
 
 	if (desc_common.dc->status != DC_CONFIGURED)
 		desc_common.data->endpts[0].buf[USB_ENDPT_DIR_OUT].buffer[0] = 0;
@@ -195,7 +195,7 @@ static int desc_ReqGetConfig(const usb_setup_packet_t *setup)
 
 	ctrl_execTransfer(0, (u32)desc_common.data->endpts[0].buf[USB_ENDPT_DIR_OUT].buffer, setup->wLength, USB_ENDPT_DIR_OUT);
 
-	return ERR_NONE;
+	return EOK;
 }
 
 
@@ -254,11 +254,11 @@ static void desc_defaultSetup(const usb_setup_packet_t *setup)
 
 int desc_setup(const usb_setup_packet_t *setup)
 {
-	int res = ERR_NONE;
+	int res = EOK;
 
 
 	if (EXTRACT_REQ_TYPE(setup->bmRequestType) != REQUEST_TYPE_STANDARD)
-		return ERR_NONE;
+		return EOK;
 
 	switch (setup->bRequest) {
 		case REQ_SET_ADDRESS:
@@ -300,11 +300,11 @@ static void desc_ClassReqSetReport(const usb_setup_packet_t *setup)
 	dtd_t *dtd = ctrl_execTransfer(0, (u32)desc_common.data->endpts[0].buf[USB_ENDPT_DIR_OUT].buffer, 64 + setup->wLength, USB_ENDPT_DIR_OUT); /* read data to buffer with URB struct*/
 
 	if (!DTD_ERROR(dtd)) {
-		desc_common.dc->op = DC_OP_RCV_ENDP0;  /* mark that data is ready */
+		desc_common.dc->op = DC_OP_RCV_ENDP0; /* mark that data is ready */
 		desc_common.data->endpts[0].buf[USB_ENDPT_DIR_OUT].len = 64 + setup->wLength - DTD_SIZE(dtd);
 	}
 	else {
-		desc_common.dc->op = DC_OP_RCV_ERR;    /* mark that data is uncomplete */
+		desc_common.dc->op = DC_OP_RCV_ERR; /* mark that data is incomplete */
 		desc_common.data->endpts[0].buf[USB_ENDPT_DIR_OUT].len = -1;
 	}
 }
@@ -312,10 +312,10 @@ static void desc_ClassReqSetReport(const usb_setup_packet_t *setup)
 
 int desc_classSetup(const usb_setup_packet_t *setup)
 {
-	int res = ERR_NONE;
+	int res = EOK;
 
 	if (EXTRACT_REQ_TYPE(setup->bmRequestType) != REQUEST_TYPE_CLASS)
-		return ERR_NONE;
+		return EOK;
 
 	switch (setup->bRequest) {
 		case CLASS_REQ_SET_IDLE:
@@ -334,7 +334,7 @@ int desc_classSetup(const usb_setup_packet_t *setup)
 
 		case CLASS_REQ_SET_LINE_CODING:
 			ctrl_execTransfer(0, (u32)desc_common.data->endpts[0].buf[USB_ENDPT_DIR_OUT].buffer, 64 + setup->wLength, USB_ENDPT_DIR_OUT); /* read data to buffer with URB struct*/
-			ctrl_execTransfer(0, (u32)desc_common.data->endpts[0].buf[USB_ENDPT_DIR_IN].buffer, 0, USB_ENDPT_DIR_IN); /* ACK */
+			ctrl_execTransfer(0, (u32)desc_common.data->endpts[0].buf[USB_ENDPT_DIR_IN].buffer, 0, USB_ENDPT_DIR_IN);                     /* ACK */
 			break;
 
 		case CLASS_REQ_SET_CONTROL_LINE_STATE:

@@ -15,19 +15,20 @@
 
 
 #include "syspage.h"
-#include "errors.h"
-#include "hal.h"
-#include "plostd.h"
 
-#define MAX_PROGRAMS_NB         32
-#define MAX_MAPS_NB             16
-#define MAX_MAP_NAME_SIZE       8
-#define MAX_ARGS_SIZE           256
-#define MAX_ENTRIES_NB          6     /* 3 of kernel's sections, 2 of plo's sections and syspage */
-#define MAX_CMDLINE_SIZE        16
+#include <hal/hal.h>
+#include <lib/log.h>
+#include <lib/console.h>
+#include <lib/errno.h>
 
-#define MAX_SYSPAGE_SIZE        (sizeof(syspage_t) + MAX_ARGS_SIZE + MAX_PROGRAMS_NB * sizeof(syspage_program_t) \
-                                 + MAX_MAPS_NB * sizeof(syspage_map_t))
+
+#define MAX_PROGRAMS_NB   32
+#define MAX_MAPS_NB       16
+#define MAX_MAP_NAME_SIZE 8
+#define MAX_ARGS_SIZE     256
+#define MAX_ENTRIES_NB    6 /* 3 of kernel's sections, 2 of plo's sections and syspage */
+
+#define MAX_SYSPAGE_SIZE (sizeof(syspage_t) + MAX_ARGS_SIZE + MAX_PROGRAMS_NB * sizeof(syspage_program_t) + MAX_MAPS_NB * sizeof(syspage_map_t))
 
 
 #pragma pack(push, 1)
@@ -38,7 +39,7 @@ typedef struct {
 	u32 attr;
 
 	u8 id;
-	char name[MAX_MAP_NAME_SIZE];
+	char name[SIZE_MAP_NAME + 1];
 } syspage_map_t;
 
 
@@ -49,7 +50,7 @@ typedef struct {
 	u8 dmap;
 	u8 imap;
 
-	char cmdline[MAX_CMDLINE_SIZE];
+	char name[SIZE_APP_NAME + 1];
 } syspage_program_t;
 
 
@@ -79,7 +80,6 @@ typedef struct {
 } syspage_t;
 
 #pragma pack(pop)
-
 
 
 typedef struct {
@@ -118,7 +118,6 @@ struct {
 } syspage_common;
 
 
-
 /* Auxiliary functions */
 
 static int syspage_getMapID(const char *name, u8 *id)
@@ -128,13 +127,13 @@ static int syspage_getMapID(const char *name, u8 *id)
 
 	for (i = 0; i < syspage_common.mapsCnt; ++i) {
 		map = &syspage_common.maps[i].map;
-		if (plostd_strncmp(name, map->name, plostd_strlen(map->name)) == 0) {
+		if (hal_strncmp(name, map->name, hal_strlen(map->name)) == 0) {
 			*id = map->id;
-			return ERR_NONE;
+			return EOK;
 		}
 	}
 
-	return ERR_ARG;
+	return -EINVAL;
 }
 
 
@@ -184,13 +183,90 @@ static int syspage_isMapFree(u8 id, size_t sz)
 		if (entry->start < (top + sz) && entry->end > top) {
 			/* Move top to the end of entries */
 			syspage_common.maps[id].top = entry->end;
-			return ERR_ARG;
+			return -EINVAL;
 		}
 	}
 
-	return ERR_NONE;
+	return EOK;
 }
 
+
+static int syspage_strAttr2ui(const char *str, unsigned int *attr)
+{
+	int i;
+
+	*attr = 0;
+	for (i = 0; str[i]; ++i) {
+		switch (str[i]) {
+			case 'r':
+				*attr |= mAttrRead;
+				break;
+
+			case 'w':
+				*attr |= mAttrWrite;
+				break;
+
+			case 'x':
+				*attr |= mAttrExec;
+				break;
+
+			case 's':
+				*attr |= mAttrShareable;
+				break;
+
+			case 'c':
+				*attr |= mAttrCacheable;
+				break;
+
+			case 'b':
+				*attr |= mAttrBufferable;
+				break;
+
+			default:
+				log_error("\nsyspage: Wrong attribute - '%c'", str[i]);
+				return -EINVAL;
+		}
+	}
+
+	return EOK;
+}
+
+
+static void syspage_uiAttr2str(unsigned int attr, char *str)
+{
+	unsigned int i = 0;
+	unsigned int pos = 0;
+
+	for (i = 0; i < 32; ++i) {
+		switch (attr & (1 << i)) {
+			case mAttrRead:
+				str[pos++] = 'r';
+				break;
+
+			case mAttrWrite:
+				str[pos++] = 'w';
+				break;
+
+			case mAttrExec:
+				str[pos++] = 'x';
+				break;
+
+			case mAttrShareable:
+				str[pos++] = 's';
+				break;
+
+			case mAttrCacheable:
+				str[pos++] = 'c';
+				break;
+
+			case mAttrBufferable:
+				str[pos++] = 'b';
+				break;
+		}
+	}
+
+	str[pos] = '\0';
+}
 
 
 /* Initialization function */
@@ -216,7 +292,6 @@ void syspage_init(void)
 		}
 	}
 }
-
 
 
 /* Syspage's location functions */
@@ -263,7 +338,7 @@ int syspage_save(void)
 	int i;
 
 	if (syspage_common.syspage == NULL)
-		return ERR_MEM;
+		return -ENOMEM;
 
 	/* Save syspage arguments */
 	syspage_common.argCnt++; /* The last char is '\0' */
@@ -291,51 +366,72 @@ int syspage_save(void)
 		syspage_common.syspage->syspagesz += sizeof(syspage_hal_t);
 	}
 
-	return ERR_NONE;
+	return EOK;
 }
 
 
-/* TODO: align text and show map's attributes as string based on integer */
-void syspage_show(void)
+void syspage_showMaps(void)
 {
 	int i;
+	char attr[33];
 	plo_map_t *pmap;
-	syspage_program_t *prog;
 
-	plostd_printf(ATTR_LOADER, "\nSyspage addres: 0x%p\n", syspage_getAddress());
-	plostd_printf(ATTR_NONE, "--------------------------\n");
-
-	plostd_printf(ATTR_LOADER, "Kernel sections: \n");
-	plostd_printf(ATTR_USER, ".text: %p \tsize: %p\n", syspage_common.syspage->kernel.text, syspage_common.syspage->kernel.textsz);
-	plostd_printf(ATTR_USER, ".data: %p \tsize: %p\n", syspage_common.syspage->kernel.data, syspage_common.syspage->kernel.datasz);
-	plostd_printf(ATTR_USER, ".bss:  %p \tsize: %p\n", syspage_common.syspage->kernel.bss, syspage_common.syspage->kernel.bsssz);
-
-	plostd_printf(ATTR_LOADER, "\nPrograms number: %d\n", syspage_common.progsCnt);
-	if (syspage_common.progsCnt) {
-		plostd_printf(ATTR_LOADER, "NAME\t\tSTART\t\tEND\t\tIMAP\tDMAP\n");
-		for (i = 0; i < syspage_common.progsCnt; ++i) {
-			prog = &syspage_common.progs[i];
-			plostd_printf(ATTR_USER, "%s\t%p\t%p\t%d\t%d\n", prog->cmdline, prog->start, prog->end, prog->imap, prog->dmap);
-		}
+	if (syspage_common.mapsCnt == 0) {
+		lib_printf("\nMaps number: 0");
+		return;
 	}
 
-	plostd_printf(ATTR_LOADER, "\n");
-	plostd_printf(ATTR_LOADER, "Mulimaps number: %d\n", syspage_common.mapsCnt);
-	if (syspage_common.mapsCnt) {
-		plostd_printf(ATTR_LOADER, "ID\tNAME\tSTART\t\tEND\tTOP\t\tFREESZ\tATTR\n");
-		for (i = 0; i < syspage_common.mapsCnt; ++i) {
-			pmap = &syspage_common.maps[i];
-			plostd_printf(ATTR_USER, "%d\t%s\t%p\t%p\t%p\t%p\t%d\n",  pmap->map.id,  pmap->map.name, pmap->map.start, pmap->map.end,
-			              pmap->top, pmap->map.end - pmap->top, pmap->map.attr);
-		}
+	lib_printf(CONSOLE_BOLD "\n%-4s %-8s %-14s %-14s %-14s %-14s %s\n", "ID", "NAME", "START", "END", "STOP", "FREESZ", "ATTR");
+	lib_printf(CONSOLE_NORMAL);
+	for (i = 0; i < syspage_common.mapsCnt; ++i) {
+		pmap = &syspage_common.maps[i];
+		syspage_uiAttr2str(pmap->map.attr, attr);
+		lib_printf("%d%-3s %-8s 0x%08x%4s 0x%08x%4s 0x%08x%4s 0x%08x%4s %s\n", pmap->map.id, "", pmap->map.name,
+			pmap->map.start, "", pmap->map.end, "", pmap->top, "", pmap->map.end - pmap->top, "", attr);
 	}
 }
 
+
+void syspage_showApps(void)
+{
+	int i;
+	syspage_program_t *prog;
+	if (syspage_common.progsCnt == 0) {
+		lib_printf("\nApps number: 0");
+		return;
+	}
+
+	lib_printf(CONSOLE_BOLD "\n%-16s %-14s %-14s %-14s %-14s\n", "NAME", "START", "END", "IMAP ID", "DMAP ID");
+	lib_printf(CONSOLE_NORMAL);
+	for (i = 0; i < syspage_common.progsCnt; ++i) {
+		prog = &syspage_common.progs[i];
+		lib_printf("%-16s 0x%08x%4s 0x%08x%4s %d%13s %d\n", prog->name, prog->start, "", prog->end, "", prog->imap, "", prog->dmap);
+	}
+}
+
+
+void syspage_showKernel(void)
+{
+	if (syspage_common.syspage->kernel.textsz == 0) {
+		lib_printf("\nKernel is not loaded");
+		return;
+	}
+	lib_printf(CONSOLE_BOLD "\nKernel sections: \n" CONSOLE_NORMAL);
+	lib_printf("%-8s 0x%08x \tsize: 0x%08x\n", ".text:", syspage_common.syspage->kernel.text, syspage_common.syspage->kernel.textsz);
+	lib_printf("%-8s 0x%08x \tsize: 0x%08x\n", ".data:", syspage_common.syspage->kernel.data, syspage_common.syspage->kernel.datasz);
+	lib_printf("%-8s 0x%08x \tsize: 0x%08x\n", ".bss:", syspage_common.syspage->kernel.bss, syspage_common.syspage->kernel.bsssz);
+}
+
+
+void syspage_showAddr(void)
+{
+	lib_printf("\nSyspage address: 0x%x\n", syspage_getAddress());
+}
 
 
 /* Map's functions */
 
-int syspage_addmap(const char *name, void *start, void *end, u32 attr)
+int syspage_addmap(const char *name, void *start, void *end, const char *attr)
 {
 	int i;
 	size_t size;
@@ -348,8 +444,8 @@ int syspage_addmap(const char *name, void *start, void *end, u32 attr)
 	for (i = 0; i < syspage_common.mapsCnt; ++i) {
 		map = &syspage_common.maps[i].map;
 		if (((map->start < (addr_t)end) && (map->end > (addr_t)start)) ||
-			(plostd_strncmp(name, map->name, plostd_strlen(map->name)) == 0))
-			return ERR_ARG;
+			(hal_strncmp(name, map->name, hal_strlen(map->name)) == 0))
+			return -EINVAL;
 	}
 
 	ploMap = &syspage_common.maps[mapID];
@@ -357,11 +453,12 @@ int syspage_addmap(const char *name, void *start, void *end, u32 attr)
 
 	map->start = (addr_t)start;
 	map->end = (addr_t)end;
-	map->attr = attr;
 	map->id = mapID;
+	if (syspage_strAttr2ui(attr, &map->attr) < 0)
+		return -EINVAL;
 
-	len =  plostd_strlen(name) ;
-	size = min(len, MAX_MAP_NAME_SIZE - 1);
+	len = hal_strlen(name);
+	size = min(len, SIZE_MAP_NAME - 1);
 
 	hal_memcpy(map->name, name, size);
 	map->name[size] = '\0';
@@ -376,7 +473,7 @@ int syspage_addmap(const char *name, void *start, void *end, u32 attr)
 
 	syspage_common.mapsCnt++;
 
-	return ERR_NONE;
+	return EOK;
 }
 
 
@@ -385,13 +482,13 @@ int syspage_getMapTop(const char *map, void **addr)
 	u8 id;
 
 	if (syspage_getMapID(map, &id) < 0) {
-		plostd_printf(ATTR_ERROR, "\nMAPS for %s does not exist!\n", map);
-		return ERR_ARG;
+		log_error("\nsyspage: %s does not exist", map);
+		return -EINVAL;
 	}
 
 	*addr = (void *)syspage_common.maps[id].top;
 
-	return ERR_NONE;
+	return EOK;
 }
 
 
@@ -402,21 +499,21 @@ int syspage_alignMapTop(const char *map)
 	plo_map_t *ploMap;
 
 	if (syspage_getMapID(map, &id) < 0) {
-		plostd_printf(ATTR_ERROR, "\nMAPS for %s does not exist!\n", map);
-		return ERR_ARG;
+		log_error("\nsyspage: %s does not exist", map);
+		return -EINVAL;
 	}
 
 	ploMap = &syspage_common.maps[id];
 	newTop = (ploMap->top + PAGE_SIZE - 1) & ~(PAGE_SIZE - 1);
 
 	if (newTop > ploMap->map.end) {
-		plostd_printf(ATTR_ERROR, "\nMap %s is full!\n", map);
-		return ERR_MEM;
+		log_error("\nsyspage:  %s is full!\n", map);
+		return -ENOMEM;
 	}
 
 	ploMap->top = newTop;
 
-	return ERR_NONE;
+	return EOK;
 }
 
 
@@ -425,13 +522,13 @@ int syspage_getFreeSize(const char *map, size_t *sz)
 	u8 id;
 
 	if (syspage_getMapID(map, &id) < 0) {
-		plostd_printf(ATTR_ERROR, "\nMAPS for %s does not exist!\n", map);
-		return ERR_ARG;
+		log_error("\nsyspage: %s does not exist", map);
+		return -EINVAL;
 	}
 
 	*sz = syspage_common.maps[id].map.end - syspage_common.maps[id].top;
 
-	return ERR_NONE;
+	return EOK;
 }
 
 
@@ -442,28 +539,28 @@ int syspage_write2Map(const char *map, const u8 *buff, size_t len)
 	plo_map_t *ploMap;
 
 	if (syspage_getMapID(map, &id) < 0) {
-		plostd_printf(ATTR_ERROR, "\nMAPS for %s does not exist!\n", map);
-		return ERR_ARG;
+		log_error("\nsyspage: %s does not exist", map);
+		return -EINVAL;
 	}
 
 	ploMap = &syspage_common.maps[id];
 	freesz = ploMap->map.end - ploMap->top;
 
 	if (freesz < len) {
-		plostd_printf(ATTR_ERROR, "\nThere isn't any free space in %s !\n", map);
-		return ERR_ARG;
+		log_error("\nsyspage: There isn't any free space in %s", map);
+		return -EINVAL;
 	}
 
 	if (syspage_isMapFree(id, len) < 0) {
-		plostd_printf(ATTR_ERROR, "\nUps!! You encountered on some data. Top has been moved. Please try again!!\n");
-		return ERR_MEM;
+		log_error("\nsyspage: You encountered on some data. Top has been moved. Please try again!");
+		return -ENOMEM;
 	}
 
 	hal_memcpy((void *)ploMap->top, buff, len);
 
 	ploMap->top += len;
 
-	return ERR_NONE;
+	return EOK;
 }
 
 
@@ -487,10 +584,24 @@ void syspage_addEntries(addr_t start, size_t sz)
 }
 
 
+int syspage_getMapAttr(const char *map, unsigned int *attr)
+{
+	u8 id;
+
+	if (syspage_getMapID(map, &id) < 0) {
+		log_error("\nsyspage: %s does not exist", map);
+		return -EINVAL;
+	}
+
+	*attr = syspage_common.maps[id].map.attr;
+
+	return EOK;
+}
+
 
 /* Program's functions */
 
-int syspage_addProg(void *start, void *end, const char *imap, const char *dmap, const char *name, u32 flags)
+int syspage_addProg(void *start, void *end, const char *imap, const char *dmap, const char *cmdline, u32 flags)
 {
 	u8 imapID, dmapID;
 	unsigned int pos, len;
@@ -499,25 +610,25 @@ int syspage_addProg(void *start, void *end, const char *imap, const char *dmap, 
 	const u32 isExec = (flags & flagSyspageExec) != 0;
 
 	if ((syspage_getMapID(imap, &imapID) < 0) || (syspage_getMapID(dmap, &dmapID) < 0)) {
-		plostd_printf(ATTR_ERROR, "\nMAPS for %s does not exist!\n", name);
-		return ERR_ARG;
+		log_error("\nsyspage: %s or %s does not exist!\n", imap, dmap);
+		return -EINVAL;
 	}
 
-	len = plostd_strlen(name);
+	len = hal_strlen(cmdline);
 
 	if (syspage_common.argCnt + isExec + len + 1 + 1 > MAX_ARGS_SIZE) {
-		plostd_printf(ATTR_ERROR, "\nMAX_ARGS_SIZE for %s exceeded!\n", name);
-		return ERR_ARG;
+		log_error("\nsyspage: MAX_ARGS_SIZE for %s exceeded!\n", cmdline);
+		return -EINVAL;
 	}
 
 	for (pos = 0; pos < len; pos++) {
-		if (name[pos] == ';')
+		if (cmdline[pos] == ';')
 			break;
 	}
 
-	if (pos >= MAX_CMDLINE_SIZE) {
-		plostd_printf(ATTR_ERROR, "\nSyspage program %s, name is too long!\n", name);
-		return ERR_ARG;
+	if (pos > SIZE_APP_NAME) {
+		log_error("\nsyspage: %s, name is too long!\n", cmdline);
+		return -EINVAL;
 	}
 
 	prog = &syspage_common.progs[progID];
@@ -529,23 +640,22 @@ int syspage_addProg(void *start, void *end, const char *imap, const char *dmap, 
 	if (isExec)
 		syspage_common.args[syspage_common.argCnt++] = 'X';
 
-	hal_memcpy((void *)&syspage_common.args[syspage_common.argCnt], name, len);
+	hal_memcpy((void *)&syspage_common.args[syspage_common.argCnt], cmdline, len);
 
 	syspage_common.argCnt += len;
 	syspage_common.args[syspage_common.argCnt++] = ' ';
 	syspage_common.args[syspage_common.argCnt] = '\0';
 
 	/* copy only program name, without (;) args) */
-	hal_memcpy(prog->cmdline, name, pos);
+	hal_memcpy(prog->name, cmdline, pos);
 
-	while (pos < MAX_CMDLINE_SIZE)
-		prog->cmdline[pos++] = '\0';
+	while (pos <= SIZE_APP_NAME)
+		prog->name[pos++] = '\0';
 
 	syspage_common.progsCnt++;
 
-	return ERR_NONE;
+	return EOK;
 }
-
 
 
 /* Setting kernel's data */
@@ -584,4 +694,3 @@ void syspage_setHalData(const syspage_hal_t *hal)
 	if (sizeof(syspage_hal_t) != 0)
 		hal_memcpy((void *)&syspage_common.hal, (void *)hal, sizeof(syspage_hal_t));
 }
-

@@ -13,11 +13,11 @@
  * %LICENSE%
  */
 
-#include "../hal.h"
-#include "../errors.h"
-
 #include "client.h"
 #include "usbphy.h"
+
+#include <hal/hal.h>
+#include <lib/errno.h>
 
 
 struct {
@@ -55,11 +55,11 @@ static int ctrl_allocBuff(int endpt, int dir)
 	ctrl_common.data->endpts[endpt].buf[dir].buffer = usbclient_allocBuff(USB_BUFFER_SIZE);
 
 	if (ctrl_common.data->endpts[endpt].buf[dir].buffer == NULL)
-		return ERR_MEM;
+		return -ENOMEM;
 
 	ctrl_common.data->endpts[endpt].buf[dir].len = 0;
 
-	return ERR_NONE;
+	return EOK;
 }
 
 
@@ -77,7 +77,7 @@ static void *ctrl_allocQtdMem(void)
 			((char *)ctrl_common.dc->dtdMem)[i] = 0;
 	}
 
-	return  (void *)(ctrl_common.dc->dtdMem + 0x40 * (ctrl_common.qtdOffs++));
+	return (void *)(ctrl_common.dc->dtdMem + 0x40 * (ctrl_common.qtdOffs++));
 }
 
 
@@ -93,7 +93,7 @@ static int ctrl_dtdInit(int endpt, int inQH, int outQh)
 	if (outQh) {
 		dtd = ctrl_allocQtdMem();
 		if (dtd == NULL)
-			return ERR_MEM;
+			return -ENOMEM;
 
 		ctrl_common.dc->endptqh[qh].base = (((u32)dtd) & ~0xfff);
 		ctrl_common.dc->endptqh[qh].size = 0x40;
@@ -104,7 +104,7 @@ static int ctrl_dtdInit(int endpt, int inQH, int outQh)
 	if (inQH) {
 		dtd = ctrl_allocQtdMem();
 		if (dtd == NULL)
-			return ERR_MEM;
+			return -ENOMEM;
 
 		ctrl_common.dc->endptqh[++qh].base = (((u32)dtd) & ~0xfff) + (64 * sizeof(dtd_t));
 		ctrl_common.dc->endptqh[qh].size = 0x40;
@@ -112,7 +112,7 @@ static int ctrl_dtdInit(int endpt, int inQH, int outQh)
 		ctrl_common.dc->endptqh[qh].tail = dtd + 64;
 	}
 
-	return ERR_NONE;
+	return EOK;
 }
 
 
@@ -140,13 +140,13 @@ static int ctrl_initEndptQh(int endpt, int dir, endpt_data_t *endpt_init)
 int ctrl_endptInit(int endpt, endpt_data_t *endpt_init)
 {
 	s8 i;
-	int res = ERR_NONE;
+	int res = EOK;
 	u32 setup = 0;
 
 	if (endpt == 0)
 		return -1;
 
-	if ((res = ctrl_dtdInit(endpt, endpt_init->caps[USB_ENDPT_DIR_IN].init, endpt_init->caps[USB_ENDPT_DIR_OUT].init)) != ERR_NONE)
+	if ((res = ctrl_dtdInit(endpt, endpt_init->caps[USB_ENDPT_DIR_IN].init, endpt_init->caps[USB_ENDPT_DIR_OUT].init)) != EOK)
 		return res;
 
 	for (i = 0; i < ENDPOINTS_DIR_NB; ++i) {
@@ -171,10 +171,10 @@ int ctrl_endpt0Init(void)
 	u32 qh_addr, tmp;
 
 	if (ctrl_allocBuff(0, USB_ENDPT_DIR_IN) < 0)
-		return ERR_MEM;
+		return -ENOMEM;
 
 	if (ctrl_allocBuff(0, USB_ENDPT_DIR_OUT) < 0)
-		return ERR_MEM;
+		return -ENOMEM;
 
 	ctrl_common.data->endpts[0].caps[USB_ENDPT_DIR_IN].init = 1;
 	ctrl_common.data->endpts[0].caps[USB_ENDPT_DIR_OUT].init = 1;
@@ -183,14 +183,14 @@ int ctrl_endpt0Init(void)
 	ctrl_common.dc->endptqh = usbclient_allocBuff(USB_BUFFER_SIZE);
 
 	if (ctrl_common.dc->endptqh == NULL)
-		return ERR_MEM;
+		return -ENOMEM;
 
 	for (i = 0; i < USB_BUFFER_SIZE; ++i)
 		((char *)ctrl_common.dc->endptqh)[i] = 0;
 
 	qh_addr = ((u32)((void *)ctrl_common.dc->endptqh)) & ~0xfff;
 
-	tmp =  0x40 << 16 /* max 64 bytes */ | 0x1 << 29 | 0x1 << 15 /* ios */;
+	tmp = 0x40 << 16 /* max 64 bytes */ | 0x1 << 29 | 0x1 << 15 /* ios */;
 	ctrl_common.dc->endptqh[0].caps = tmp;
 	ctrl_common.dc->endptqh[0].dtd_next = 0x1; /* invalid */
 	ctrl_common.dc->endptqh[1].caps = tmp;
@@ -211,7 +211,7 @@ int ctrl_endpt0Init(void)
 	*(ctrl_common.dc->base + endptprime) |= 1 << 16;
 
 
-	return ERR_NONE;
+	return EOK;
 }
 
 
@@ -249,7 +249,7 @@ static int ctrl_buildDtd(dtd_t *dtd, u32 paddr, u32 size)
 		paddr += 0x1000;
 	}
 
-	return ERR_NONE;
+	return EOK;
 }
 
 

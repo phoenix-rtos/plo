@@ -13,12 +13,11 @@
  * %LICENSE%
  */
 
+#include <hal/hal.h>
 
-#include "client.h"
-#include "usbphy.h"
+#include <devices/usbc/client.h>
+#include <devices/usbc/usbphy.h>
 
-#include "imxrt.h"
-#include "peripherals.h"
 
 /* Memory size for endpoints and setup data */
 #define BUFF_SIZE (ENDPOINTS_DIR_NB * ENDPOINTS_NUMBER + 1) * USB_BUFFER_SIZE
@@ -63,7 +62,7 @@ void *usbclient_allocBuff(u32 size)
 }
 
 
-void  usbclient_buffReset(void)
+void usbclient_buffReset(void)
 {
 	phyusb_common.buffCounter = 0;
 }

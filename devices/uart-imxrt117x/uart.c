@@ -13,39 +13,18 @@
  * %LICENSE%
  */
 
-#include "../../errors.h"
-#include "../../timer.h"
-#include "../../hal.h"
+#include <hal/hal.h>
+#include <hal/timer.h>
+#include <lib/errno.h>
+#include <lib/lib.h>
+#include <devices/devs.h>
 
-#include "peripherals.h"
-#include "imxrt.h"
-#include "uart.h"
 
 #define CONCATENATE(x, y) x##y
-#define PIN2MUX(x) CONCATENATE(pctl_mux_gpio_, x)
-#define PIN2PAD(x) CONCATENATE(pctl_pad_gpio_, x)
-
-#define UART_MAX_CNT 12
-
-#define UART1_POS 0
-#define UART2_POS (UART1_POS + UART1)
-#define UART3_POS (UART2_POS + UART2)
-#define UART4_POS (UART3_POS + UART3)
-#define UART5_POS (UART4_POS + UART4)
-#define UART6_POS (UART5_POS + UART5)
-#define UART7_POS (UART6_POS + UART6)
-#define UART8_POS (UART7_POS + UART7)
-#define UART9_POS (UART8_POS + UART8)
-#define UART10_POS (UART9_POS + UART9)
-#define UART11_POS (UART10_POS + UART10)
-#define UART12_POS (UART11_POS + UART11)
-
-#define UART_CNT (UART1 + UART2 + UART3 + UART4 + UART5 + UART6 + \
-	UART7 + UART8 + UART9 + UART10 + UART11 + UART12)
-
+#define PIN2MUX(x)        CONCATENATE(pctl_mux_gpio_, x)
+#define PIN2PAD(x)        CONCATENATE(pctl_pad_gpio_, x)
 
 #define BUFFER_SIZE 0x200
-
 
 typedef struct {
 	volatile u32 *base;
@@ -66,48 +45,64 @@ typedef struct {
 
 
 struct {
-	uart_t uarts[UART_CNT];
+	uart_t uarts[UART_MAX_CNT];
+	int init;
 } uart_common;
-
-
-const int uartConfig[] = { UART1, UART2, UART3, UART4, UART5, UART6,
-	UART7, UART8, UART9, UART10, UART11, UART12 };
-
-
-const int uartPos[] = { UART1_POS, UART2_POS, UART3_POS, UART4_POS, UART5_POS, UART6_POS,
-	UART7_POS, UART8_POS, UART9_POS, UART10_POS, UART11_POS, UART12_POS };
 
 
 enum { veridr = 0, paramr, globalr, pincfgr, baudr, statr, ctrlr, datar, matchr, modirr, fifor, waterr };
 
 
-int uart_getRXcount(uart_t *uart)
+static const u32 fifoSzLut[] = { 1, 4, 8, 16, 32, 64, 128, 256 };
+
+const int uartLut[] = { UART1, UART2, UART3, UART4, UART5, UART6, UART7, UART8, UART9, UART10, UART11, UART12 };
+
+static const struct {
+	volatile u32 *base;
+	int dev;
+	unsigned irq;
+} infoUarts[] = {
+	{ UART1_BASE, UART1_CLK, UART1_IRQ },
+	{ UART2_BASE, UART2_CLK, UART2_IRQ },
+	{ UART3_BASE, UART3_CLK, UART3_IRQ },
+	{ UART4_BASE, UART4_CLK, UART4_IRQ },
+	{ UART5_BASE, UART5_CLK, UART5_IRQ },
+	{ UART6_BASE, UART6_CLK, UART6_IRQ },
+	{ UART7_BASE, UART7_CLK, UART7_IRQ },
+	{ UART8_BASE, UART8_CLK, UART8_IRQ },
+	{ UART9_BASE, UART9_CLK, UART9_IRQ },
+	{ UART10_BASE, UART10_CLK, UART10_IRQ },
+	{ UART11_BASE, UART11_CLK, UART11_IRQ },
+	{ UART12_BASE, UART12_CLK, UART12_IRQ }
+};
+
+
+/* TODO: temporary solution, it should be moved to device tree */
+static uart_t *uart_getInstance(unsigned int minor)
+{
+	if (minor >= UART_MAX_CNT)
+		return NULL;
+
+	if (uartLut[minor] == 0)
+		return NULL;
+
+	return &uart_common.uarts[minor];
+}
+
+
+static int uart_getRXcount(uart_t *uart)
 {
 	return (*(uart->base + waterr) >> 24) & 0xff;
 }
 
 
-int uart_getTXcount(uart_t *uart)
+static int uart_getTXcount(uart_t *uart)
 {
 	return (*(uart->base + waterr) >> 8) & 0xff;
 }
 
 
-int uart_rxEmpty(unsigned int pn)
-{
-	uart_t *uart;
-	--pn;
-
-	if (pn >= (sizeof(uartConfig) / sizeof(uartConfig[0])) || !uartConfig[pn])
-		return ERR_ARG;
-
-	uart = &uart_common.uarts[uartPos[pn]];
-
-	return uart->rxHead == uart->rxTail;
-}
-
-
-int uart_handleIntr(u16 irq, void *buff)
+static int uart_handleIntr(u16 irq, void *buff)
 {
 	uart_t *uart = (uart_t *)buff;
 
@@ -124,8 +119,7 @@ int uart_handleIntr(u16 irq, void *buff)
 	}
 
 	/* Transmit */
-	while (uart_getTXcount(uart) < uart->txFifoSz)
-	{
+	while (uart_getTXcount(uart) < uart->txFifoSz) {
 		if ((uart->txHead + 1) % BUFFER_SIZE != uart->txTail) {
 			uart->txHead = (uart->txHead + 1) % BUFFER_SIZE;
 			*(uart->base + datar) = uart->txBuff[uart->txHead];
@@ -139,102 +133,6 @@ int uart_handleIntr(u16 irq, void *buff)
 
 	return 0;
 }
-
-
-int uart_read(unsigned int pn, u8 *buff, u16 len, u16 timeout)
-{
-	uart_t *uart;
-	u16 l, cnt;
-
-	--pn;
-
-	if (pn >= (sizeof(uartConfig) / sizeof(uartConfig[0])) || !uartConfig[pn])
-		return ERR_ARG;
-
-	uart = &uart_common.uarts[uartPos[pn]];
-
-	if (!timer_wait(timeout, TIMER_VALCHG, &uart->rxHead, uart->rxTail))
-		return ERR_UART_TIMEOUT;
-
-	hal_cli();
-
-	if (uart->rxHead > uart->rxTail)
-		l = min(uart->rxHead - uart->rxTail, len);
-	else
-		l = min(BUFFER_SIZE - uart->rxTail, len);
-
-	hal_memcpy(buff, &uart->rxBuff[uart->rxTail], l);
-	cnt = l;
-	if ((len > l) && (uart->rxHead < uart->rxTail)) {
-		hal_memcpy(buff + l, &uart->rxBuff[0], min(len - l, uart->rxHead));
-		cnt += min(len - l, uart->rxHead);
-	}
-	uart->rxTail = ((uart->rxTail + cnt) % BUFFER_SIZE);
-
-	hal_sti();
-
-	return cnt;
-}
-
-
-int uart_write(unsigned int pn, const u8 *buff, u16 len)
-{
-	uart_t *uart;
-	u16 l, cnt = 0;
-
-	--pn;
-
-	if (pn >= (sizeof(uartConfig) / sizeof(uartConfig[0])) || !uartConfig[pn])
-		return ERR_ARG;
-
-	uart = &uart_common.uarts[uartPos[pn]];
-
-	while (uart->txHead == uart->txTail && uart->tFull)
-		;
-
-	hal_cli();
-	if (uart->txHead > uart->txTail)
-		l = min(uart->txHead - uart->txTail, len);
-	else
-		l = min(BUFFER_SIZE - uart->txTail, len);
-
-	hal_memcpy(&uart->txBuff[uart->txTail], buff, l);
-	cnt = l;
-	if ((len > l) && (uart->txTail >= uart->txHead)) {
-		hal_memcpy(uart->txBuff, buff + l, min(len - l, uart->txHead));
-		cnt += min(len - l, uart->txHead);
-	}
-
-	/* Initialize sending */
-	if (uart->txTail == uart->txHead)
-		*(uart->base + datar) = uart->txBuff[uart->txHead];
-
-	uart->txTail = ((uart->txTail + cnt) % BUFFER_SIZE);
-
-	if (uart->txTail == uart->txHead)
-		uart->tFull = 1;
-
-	*(uart->base + ctrlr) |= 1 << 23;
-
-	hal_sti();
-
-	return cnt;
-}
-
-
-int uart_safewrite(unsigned int pn, const u8 *buff, u16 len)
-{
-	int l;
-
-	for (l = 0; len;) {
-		if ((l = uart_write(pn, buff, len)) < 0)
-			return ERR_MSG_IO;
-		buff += l;
-		len -= l;
-	}
-	return 0;
-}
-
 
 
 static int uart_muxVal(int uart, int mux)
@@ -360,26 +258,86 @@ static u32 calculate_baudrate(int baud)
 static int uart_getIsel(int uart, int mux, int *isel, int *val)
 {
 	switch (mux) {
-		case pctl_mux_gpio_ad_24:      *isel = pctl_isel_lpuart1_txd; *val = 0; break;
-		case pctl_mux_gpio_disp_b1_02: *isel = pctl_isel_lpuart1_txd; *val = 1; break;
-		case pctl_mux_gpio_ad_25:      *isel = pctl_isel_lpuart1_rxd; *val = 0; break;
-		case pctl_mux_gpio_disp_b1_03: *isel = pctl_isel_lpuart1_rxd; *val = 1; break;
-		case pctl_mux_gpio_disp_b2_06: *isel = pctl_isel_lpuart7_txd; *val = 1; break;
-		case pctl_mux_gpio_ad_00:      *isel = pctl_isel_lpuart7_txd; *val = 0; break;
-		case pctl_mux_gpio_disp_b2_07: *isel = pctl_isel_lpuart7_rxd; *val = 1; break;
-		case pctl_mux_gpio_ad_01:      *isel = pctl_isel_lpuart7_rxd; *val = 0; break;
-		case pctl_mux_gpio_ad_02:      *isel = pctl_isel_lpuart8_txd; *val = 0; break;
-		case pctl_mux_gpio_ad_03:      *isel = pctl_isel_lpuart8_rxd; *val = 0; break;
-		case pctl_mux_gpio_lpsr_08:    *isel = pctl_isel_lpuart11_txd; *val = 1; break;
-		case pctl_mux_gpio_lpsr_04:    *isel = pctl_isel_lpuart11_txd; *val = 0; break;
-		case pctl_mux_gpio_lpsr_09:    *isel = pctl_isel_lpuart11_rxd; *val = 1; break;
-		case pctl_mux_gpio_lpsr_05:    *isel = pctl_isel_lpuart11_rxd; *val = 0; break;
-		case pctl_mux_gpio_lpsr_06:    *isel = pctl_isel_lpuart12_txd; *val = 1; break;
-		case pctl_mux_gpio_lpsr_00:    *isel = pctl_isel_lpuart12_txd; *val = 0; break;
-		case pctl_mux_gpio_lpsr_10:    *isel = pctl_isel_lpuart12_txd; *val = 2; break;
-		case pctl_mux_gpio_lpsr_07:    *isel = pctl_isel_lpuart12_rxd; *val = 1; break;
-		case pctl_mux_gpio_lpsr_01:    *isel = pctl_isel_lpuart12_rxd; *val = 0; break;
-		case pctl_mux_gpio_lpsr_11:    *isel = pctl_isel_lpuart12_rxd; *val = 2; break;
+		case pctl_mux_gpio_ad_24:
+			*isel = pctl_isel_lpuart1_txd;
+			*val = 0;
+			break;
+		case pctl_mux_gpio_disp_b1_02:
+			*isel = pctl_isel_lpuart1_txd;
+			*val = 1;
+			break;
+		case pctl_mux_gpio_ad_25:
+			*isel = pctl_isel_lpuart1_rxd;
+			*val = 0;
+			break;
+		case pctl_mux_gpio_disp_b1_03:
+			*isel = pctl_isel_lpuart1_rxd;
+			*val = 1;
+			break;
+		case pctl_mux_gpio_disp_b2_06:
+			*isel = pctl_isel_lpuart7_txd;
+			*val = 1;
+			break;
+		case pctl_mux_gpio_ad_00:
+			*isel = pctl_isel_lpuart7_txd;
+			*val = 0;
+			break;
+		case pctl_mux_gpio_disp_b2_07:
+			*isel = pctl_isel_lpuart7_rxd;
+			*val = 1;
+			break;
+		case pctl_mux_gpio_ad_01:
+			*isel = pctl_isel_lpuart7_rxd;
+			*val = 0;
+			break;
+		case pctl_mux_gpio_ad_02:
+			*isel = pctl_isel_lpuart8_txd;
+			*val = 0;
+			break;
+		case pctl_mux_gpio_ad_03:
+			*isel = pctl_isel_lpuart8_rxd;
+			*val = 0;
+			break;
+		case pctl_mux_gpio_lpsr_08:
+			*isel = pctl_isel_lpuart11_txd;
+			*val = 1;
+			break;
+		case pctl_mux_gpio_lpsr_04:
+			*isel = pctl_isel_lpuart11_txd;
+			*val = 0;
+			break;
+		case pctl_mux_gpio_lpsr_09:
+			*isel = pctl_isel_lpuart11_rxd;
+			*val = 1;
+			break;
+		case pctl_mux_gpio_lpsr_05:
+			*isel = pctl_isel_lpuart11_rxd;
+			*val = 0;
+			break;
+		case pctl_mux_gpio_lpsr_06:
+			*isel = pctl_isel_lpuart12_txd;
+			*val = 1;
+			break;
+		case pctl_mux_gpio_lpsr_00:
+			*isel = pctl_isel_lpuart12_txd;
+			*val = 0;
+			break;
+		case pctl_mux_gpio_lpsr_10:
+			*isel = pctl_isel_lpuart12_txd;
+			*val = 2;
+			break;
+		case pctl_mux_gpio_lpsr_07:
+			*isel = pctl_isel_lpuart12_rxd;
+			*val = 1;
+			break;
+		case pctl_mux_gpio_lpsr_01:
+			*isel = pctl_isel_lpuart12_rxd;
+			*val = 0;
+			break;
+		case pctl_mux_gpio_lpsr_11:
+			*isel = pctl_isel_lpuart12_rxd;
+			*val = 2;
+			break;
 		case pctl_mux_gpio_disp_b2_09:
 			if (uart == 0) {
 				*isel = pctl_isel_lpuart1_rxd;
@@ -417,63 +375,63 @@ static void uart_initPins(void)
 	} info[] = {
 #if UART1
 		{ 0,
-		{ PIN2MUX(UART1_TX_PIN), PIN2MUX(UART1_RX_PIN) },
-		{ PIN2PAD(UART1_TX_PIN), PIN2PAD(UART1_RX_PIN) } },
+			{ PIN2MUX(UART1_TX_PIN), PIN2MUX(UART1_RX_PIN) },
+			{ PIN2PAD(UART1_TX_PIN), PIN2PAD(UART1_RX_PIN) } },
 #endif
 #if UART2
 		{ 1,
-		{ PIN2MUX(UART2_TX_PIN), PIN2MUX(UART2_RX_PIN) },
-		{ PIN2PAD(UART2_TX_PIN), PIN2PAD(UART2_RX_PIN) } },
+			{ PIN2MUX(UART2_TX_PIN), PIN2MUX(UART2_RX_PIN) },
+			{ PIN2PAD(UART2_TX_PIN), PIN2PAD(UART2_RX_PIN) } },
 #endif
 #if UART3
 		{ 2,
-		{ PIN2MUX(UART3_TX_PIN), PIN2MUX(UART3_RX_PIN) },
-		{ PIN2PAD(UART3_TX_PIN), PIN2PAD(UART3_RX_PIN) } },
+			{ PIN2MUX(UART3_TX_PIN), PIN2MUX(UART3_RX_PIN) },
+			{ PIN2PAD(UART3_TX_PIN), PIN2PAD(UART3_RX_PIN) } },
 #endif
 #if UART4
 		{ 3,
-		{ PIN2MUX(UART4_TX_PIN), PIN2MUX(UART4_RX_PIN) },
-		{ PIN2PAD(UART4_TX_PIN), PIN2PAD(UART4_RX_PIN) } },
+			{ PIN2MUX(UART4_TX_PIN), PIN2MUX(UART4_RX_PIN) },
+			{ PIN2PAD(UART4_TX_PIN), PIN2PAD(UART4_RX_PIN) } },
 #endif
 #if UART5
 		{ 4,
-		{ PIN2MUX(UART5_TX_PIN), PIN2MUX(UART5_RX_PIN) },
-		{ PIN2PAD(UART5_TX_PIN), PIN2PAD(UART5_RX_PIN) } },
+			{ PIN2MUX(UART5_TX_PIN), PIN2MUX(UART5_RX_PIN) },
+			{ PIN2PAD(UART5_TX_PIN), PIN2PAD(UART5_RX_PIN) } },
 #endif
 #if UART6
 		{ 5,
-		{ PIN2MUX(UART6_TX_PIN), PIN2MUX(UART6_RX_PIN) },
-		{ PIN2PAD(UART6_TX_PIN), PIN2PAD(UART6_RX_PIN) } },
+			{ PIN2MUX(UART6_TX_PIN), PIN2MUX(UART6_RX_PIN) },
+			{ PIN2PAD(UART6_TX_PIN), PIN2PAD(UART6_RX_PIN) } },
 #endif
 #if UART7
 		{ 6,
-		{ PIN2MUX(UART7_TX_PIN), PIN2MUX(UART7_RX_PIN) },
-		{ PIN2PAD(UART7_TX_PIN), PIN2PAD(UART7_RX_PIN) } },
+			{ PIN2MUX(UART7_TX_PIN), PIN2MUX(UART7_RX_PIN) },
+			{ PIN2PAD(UART7_TX_PIN), PIN2PAD(UART7_RX_PIN) } },
 #endif
 #if UART8
 		{ 7,
-		{ PIN2MUX(UART8_TX_PIN), PIN2MUX(UART8_RX_PIN) },
-		{ PIN2PAD(UART8_TX_PIN), PIN2PAD(UART8_RX_PIN) } },
+			{ PIN2MUX(UART8_TX_PIN), PIN2MUX(UART8_RX_PIN) },
+			{ PIN2PAD(UART8_TX_PIN), PIN2PAD(UART8_RX_PIN) } },
 #endif
 #if UART9
 		{ 8,
-		{ PIN2MUX(UART9_TX_PIN), PIN2MUX(UART9_RX_PIN) },
-		{ PIN2PAD(UART9_TX_PIN), PIN2PAD(UART9_RX_PIN) } },
+			{ PIN2MUX(UART9_TX_PIN), PIN2MUX(UART9_RX_PIN) },
+			{ PIN2PAD(UART9_TX_PIN), PIN2PAD(UART9_RX_PIN) } },
 #endif
 #if UART10
 		{ 9,
-		{ PIN2MUX(UART10_TX_PIN), PIN2MUX(UART10_RX_PIN) },
-		{ PIN2PAD(UART10_TX_PIN), PIN2PAD(UART10_RX_PIN) } },
+			{ PIN2MUX(UART10_TX_PIN), PIN2MUX(UART10_RX_PIN) },
+			{ PIN2PAD(UART10_TX_PIN), PIN2PAD(UART10_RX_PIN) } },
 #endif
 #if UART11
 		{ 10,
-		{ PIN2MUX(UART11_TX_PIN), PIN2MUX(UART11_RX_PIN) },
-		{ PIN2PAD(UART11_TX_PIN), PIN2PAD(UART11_RX_PIN) } },
+			{ PIN2MUX(UART11_TX_PIN), PIN2MUX(UART11_RX_PIN) },
+			{ PIN2PAD(UART11_TX_PIN), PIN2PAD(UART11_RX_PIN) } },
 #endif
 #if UART12
 		{ 11,
-		{ PIN2MUX(UART12_TX_PIN), PIN2MUX(UART12_RX_PIN) },
-		{ PIN2PAD(UART12_TX_PIN), PIN2PAD(UART12_RX_PIN) } },
+			{ PIN2MUX(UART12_TX_PIN), PIN2MUX(UART12_RX_PIN) },
+			{ PIN2PAD(UART12_TX_PIN), PIN2PAD(UART12_RX_PIN) } },
 #endif
 	};
 
@@ -491,55 +449,159 @@ static void uart_initPins(void)
 }
 
 
-u32 uart_getBaudrate(void)
+/* Device interface */
+
+static ssize_t uart_read(unsigned int minor, addr_t offs, u8 *buff, unsigned int len, unsigned int timeout)
 {
-	return UART_BAUDRATE;
+	uart_t *uart;
+	u16 l, cnt;
+
+	if ((uart = uart_getInstance(minor)) == NULL)
+		return -EINVAL;
+
+	if (!timer_wait(timeout, TIMER_VALCHG, &uart->rxHead, uart->rxTail))
+		return -ETIME;
+
+	hal_cli();
+
+	if (uart->rxHead > uart->rxTail)
+		l = min(uart->rxHead - uart->rxTail, len);
+	else
+		l = min(BUFFER_SIZE - uart->rxTail, len);
+
+	hal_memcpy(buff, &uart->rxBuff[uart->rxTail], l);
+	cnt = l;
+	if ((len > l) && (uart->rxHead < uart->rxTail)) {
+		hal_memcpy(buff + l, &uart->rxBuff[0], min(len - l, uart->rxHead));
+		cnt += min(len - l, uart->rxHead);
+	}
+	uart->rxTail = ((uart->rxTail + cnt) % BUFFER_SIZE);
+
+	hal_sti();
+
+	return cnt;
 }
 
 
-void uart_init(void)
+static ssize_t uart_write(unsigned int minor, const u8 *buff, unsigned int len)
 {
-	u32 t;
-	int i, dev;
+	uart_t *uart;
+	unsigned int l, cnt = 0;
+
+	if ((uart = uart_getInstance(minor)) == NULL)
+		return -EINVAL;
+
+	while (uart->txHead == uart->txTail && uart->tFull)
+		;
+
+	hal_cli();
+	if (uart->txHead > uart->txTail)
+		l = min(uart->txHead - uart->txTail, len);
+	else
+		l = min(BUFFER_SIZE - uart->txTail, len);
+
+	hal_memcpy(&uart->txBuff[uart->txTail], buff, l);
+	cnt = l;
+	if ((len > l) && (uart->txTail >= uart->txHead)) {
+		hal_memcpy(uart->txBuff, buff + l, min(len - l, uart->txHead));
+		cnt += min(len - l, uart->txHead);
+	}
+
+	/* Initialize sending */
+	if (uart->txTail == uart->txHead)
+		*(uart->base + datar) = uart->txBuff[uart->txHead];
+
+	uart->txTail = ((uart->txTail + cnt) % BUFFER_SIZE);
+
+	if (uart->txTail == uart->txHead)
+		uart->tFull = 1;
+
+	*(uart->base + ctrlr) |= 1 << 23;
+
+	hal_sti();
+
+	return cnt;
+}
+
+
+static ssize_t uart_safeWrite(unsigned int minor, addr_t offs, const u8 *buff, unsigned int len)
+{
+	unsigned int l;
+
+	for (l = 0; len;) {
+		if ((l = uart_write(minor, buff, len)) < 0)
+			return -ENXIO;
+		buff += l;
+		len -= l;
+	}
+
+	return 0;
+}
+
+
+static int uart_sync(unsigned int minor)
+{
 	uart_t *uart;
 
-	static const u32 fifoSzLut[] = { 1, 4, 8, 16, 32, 64, 128, 256 };
-	static const struct {
-		volatile u32 *base;
-		int dev;
-		unsigned irq;
-	} info[] = {
-		{ UART1_BASE, UART1_CLK, UART1_IRQ },
-		{ UART2_BASE, UART2_CLK, UART2_IRQ },
-		{ UART3_BASE, UART3_CLK, UART3_IRQ },
-		{ UART4_BASE, UART4_CLK, UART4_IRQ },
-		{ UART5_BASE, UART5_CLK, UART5_IRQ },
-		{ UART6_BASE, UART6_CLK, UART6_IRQ },
-		{ UART7_BASE, UART7_CLK, UART7_IRQ },
-		{ UART8_BASE, UART8_CLK, UART8_IRQ },
-		{ UART9_BASE, UART9_CLK, UART9_IRQ },
-		{ UART10_BASE, UART10_CLK, UART10_IRQ },
-		{ UART11_BASE, UART11_CLK, UART11_IRQ },
-		{ UART12_BASE, UART12_CLK, UART12_IRQ }
-	};
+	if ((uart = uart_getInstance(minor)) == NULL)
+		return -EINVAL;
 
-	uart_initPins();
+	/* TBD */
 
-	for (i = 0, dev = 0; dev < sizeof(uartConfig) / sizeof(uartConfig[0]); ++dev) {
-		if (!uartConfig[dev])
-			continue;
+	return EOK;
+}
 
-		_imxrt_setDevClock(info[dev].dev, 0, 0, 0, 0, 1);
 
-		uart = &uart_common.uarts[i++];
-		uart->base = info[dev].base;
-		uart->rxHead = 0;
-		uart->txHead = 0;
-		uart->rxTail = 0;
+static int uart_done(unsigned int minor)
+{
+	uart_t *uart;
 
-		uart->txTail = 0;
-		uart->tFull = 0;
+	if ((uart = uart_getInstance(minor)) == NULL)
+		return -EINVAL;
 
+	/* disable TX and RX */
+	*(uart->base + ctrlr) &= ~((1 << 19) | (1 << 18));
+	*(uart->base + ctrlr) &= ~((1 << 23) | (1 << 21));
+
+	hal_irquninst(uart->irq);
+
+	return EOK;
+}
+
+
+static int uart_map(unsigned int minor, addr_t addr, size_t sz, int mode, addr_t memaddr, size_t memsz, int memmode, addr_t *a)
+{
+	if (minor >= UART_MAX_CNT)
+		return -EINVAL;
+
+	/* Device mode cannot be higher than map mode to copy data */
+	if ((mode & memmode) != mode)
+		return -EINVAL;
+
+	/* uart is not mappable to any region */
+	return dev_isNotMappable;
+}
+
+
+static int uart_init(unsigned int minor)
+{
+	u32 t;
+	uart_t *uart;
+
+	if ((uart = uart_getInstance(minor)) == NULL)
+		return -EINVAL;
+
+	if (uart_common.init == 0) {
+		uart_initPins();
+		uart_common.init = 1;
+	}
+
+	uart->base = infoUarts[minor].base;
+
+	_imxrt_setDevClock(infoUarts[minor].dev, 0, 0, 0, 0, 1);
+
+	/* Skip controller initialization if it has been already done by hal */
+	if (!(*(uart->base + ctrlr) & (1 << 19 | 1 << 18))) {
 		/* Disable TX and RX */
 		*(uart->base + ctrlr) &= ~((1 << 19) | (1 << 18));
 
@@ -567,41 +629,36 @@ void uart_init(void)
 		/* Enable FIFO */
 		*(uart->base + fifor) |= (1 << 7) | (1 << 3);
 		*(uart->base + fifor) |= 0x3 << 14;
-
-		/* Clear all status flags */
-		*(uart->base + statr) |= 0xc01fc000;
-
-		uart->rxFifoSz = fifoSzLut[*(uart->base + fifor) & 0x7];
-		uart->txFifoSz = fifoSzLut[(*(uart->base + fifor) >> 4) & 0x7];
-
-		/* Enable receiver interrupt */
-		*(uart->base + ctrlr) |= 1 << 21;
-
-		/* Enable TX and RX */
-		*(uart->base + ctrlr) |= (1 << 19) | (1 << 18);
-
-		hal_irqinst(info[dev].irq, uart_handleIntr, (void *)uart);
 	}
 
-	return;
+	/* Clear all status flags */
+	*(uart->base + statr) |= 0xc01fc000;
+
+	uart->rxFifoSz = fifoSzLut[*(uart->base + fifor) & 0x7];
+	uart->txFifoSz = fifoSzLut[(*(uart->base + fifor) >> 4) & 0x7];
+
+	/* Enable receiver interrupt */
+	*(uart->base + ctrlr) |= 1 << 21;
+
+	/* Enable TX and RX */
+	*(uart->base + ctrlr) |= (1 << 19) | (1 << 18);
+
+	hal_irqinst(infoUarts[minor].irq, uart_handleIntr, (void *)uart);
+
+	return EOK;
 }
 
 
-void uart_done(void)
+__attribute__((constructor)) static void uart_reg(void)
 {
-	int i, dev;
-	uart_t *uart;
+	static const dev_handler_t h = {
+		.init = uart_init,
+		.done = uart_done,
+		.read = uart_read,
+		.write = uart_safeWrite,
+		.sync = uart_sync,
+		.map = uart_map,
+	};
 
-	for (i = 0, dev = 0; dev < sizeof(uartConfig) / sizeof(uartConfig[0]); ++dev) {
-		if (!uartConfig[dev])
-			continue;
-
-		uart = &uart_common.uarts[i++];
-
-		/* disable TX and RX */
-		*(uart->base + ctrlr) &= ~((1 << 19) | (1 << 18));
-		*(uart->base + ctrlr) &= ~((1 << 23) | (1 << 21));
-
-		hal_irquninst(uart->irq);
-	}
+	devs_register(DEV_UART, UART_MAX_CNT, &h);
 }

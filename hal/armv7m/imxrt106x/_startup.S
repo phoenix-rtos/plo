@@ -198,7 +198,7 @@ _plo:
     str r1, [r0]
     ldr r0, [r1]
     msr msp, r0
-    ldr r8, =plo_init
+    ldr r8, =_startc
     bx r8
 
 .size _start, .-_start
@@ -208,19 +208,16 @@ _plo:
 .globl _interrupts_dispatch
 .type _interrupts_dispatch, %function
 _interrupts_dispatch:
-    cpsid if
-
     mrs r0, ipsr
     sub r1, sp, #44
     stmdb sp!, {r1-r2, r4-r11, lr}
 
 _intd0:
-    bl low_irqdispatch
+    bl hal_irqdispatch
     ldr sp, [sp]
 _intd1:
     ldmia sp!, {r0-r1, r4-r11, lr}
 
-    cpsie if
     bx lr
 .size _interrupts_dispatch, .-_interrupts_dispatch
 .ltorg

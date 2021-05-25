@@ -23,6 +23,8 @@
 #define SIZE_INTERRUPTS 167
 
 /* UART */
+#define UART_MAX_CNT 8
+
 #ifndef UART1
 #define UART1 1
 #endif
@@ -96,8 +98,8 @@
 #define UART_CONSOLE 1
 #endif
 
-#define UART_CLK         80000000
-#define UART_BAUDRATE    115200
+#define UART_CLK      80000000
+#define UART_BAUDRATE 115200
 
 #define UART1_BASE ((void *)0x40184000)
 #define UART2_BASE ((void *)0x40188000)
@@ -127,8 +129,8 @@
 #define UART8_IRQ 27 + 16
 
 
-#define UART1_TX_PIN ad_b0_12
-#define UART1_RX_PIN ad_b0_13
+#define UART1_TX_PIN  ad_b0_12
+#define UART1_RX_PIN  ad_b0_13
 #define UART1_RTS_PIN ad_b0_15
 #define UART1_CTS_PIN ad_b0_14
 
@@ -222,41 +224,41 @@
 #define UART8_CTS_PIN sd_b0_02
 
 
-
 /* GPT - general purpose timer */
 
-#define GPT1_BASE           ((void *)0x401ec000)
-#define GPT1_CLK            pctl_clk_gpt1_bus
-#define GPT1_IRQ            100 + 16
+#define GPT1_BASE ((void *)0x401ec000)
+#define GPT1_CLK  pctl_clk_gpt1_bus
+#define GPT1_IRQ  100 + 16
 
-#define GPT2_BASE           ((void *)0x401f0000)
-#define GPT2_CLK            pctl_clk_gpt2_bus
-#define GPT2_IRQ            101 + 16
+#define GPT2_BASE ((void *)0x401f0000)
+#define GPT2_CLK  pctl_clk_gpt2_bus
+#define GPT2_IRQ  101 + 16
 
 
 /* USB OTG */
 
-#define USB0_BASE_ADDR       ((void *)0x402E0000)
-#define USB0_PHY_BASE_ADDR   ((void *)0x400D9000)
+#define USB0_BASE_ADDR     ((void *)0x402E0000)
+#define USB0_PHY_BASE_ADDR ((void *)0x400D9000)
+#define USB0_IRQ           usb_otg1_irq
 
-#define USB0_IRQ             usb_otg1_irq
+#define PHFS_ACM_PORTS_NB 1 /* Number of ports define by CDC driver; min = 1, max = 2 */
 
 
 /* FLASH */
 
-#define FLASH_NO                   FLASH_FLEXSPI1_MOUNTED + FLASH_FLEXSPI2_MOUNTED
-#define FLASH_DEFAULT_SECTOR_SIZE  0x1000
+#define FLASH_NO                  FLASH_FLEXSPI1_MOUNTED + FLASH_FLEXSPI2_MOUNTED
+#define FLASH_DEFAULT_SECTOR_SIZE 0x1000
 
-#define FLASH_FLEXSPI1_MOUNTED     1
-#define FLASH_FLEXSPI1             0x60000000
-#define FLASH_SIZE_FLEXSPI1        0x10000000
-#define FLASH_FLEXSPI1_INSTANCE    0x0
-#define FLASH_FLEXSPI1_QSPI_FREQ   0xc0000008
+#define FLASH_FLEXSPI1_MOUNTED   1
+#define FLASH_FLEXSPI1           0x60000000
+#define FLASH_SIZE_FLEXSPI1      0x10000000
+#define FLASH_FLEXSPI1_INSTANCE  0x0
+#define FLASH_FLEXSPI1_QSPI_FREQ 0xc0000008
 
-#define FLASH_FLEXSPI2_MOUNTED     1
-#define FLASH_FLEXSPI2             0x70000000
-#define FLASH_SIZE_FLEXSPI2        0x0f000000
-#define FLASH_FLEXSPI2_INSTANCE    0x1
-#define FLASH_FLEXSPI2_QSPI_FREQ   0xc0000008
+#define FLASH_FLEXSPI2_MOUNTED   1
+#define FLASH_FLEXSPI2           0x70000000
+#define FLASH_SIZE_FLEXSPI2      0x0f000000
+#define FLASH_FLEXSPI2_INSTANCE  0x1
+#define FLASH_FLEXSPI2_QSPI_FREQ 0xc0000008
 
 #endif

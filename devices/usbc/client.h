@@ -16,9 +16,9 @@
 #ifndef _CLIENT_H_
 #define _CLIENT_H_
 
-#include "../types.h"
-
 #include "usbclient.h"
+
+#include <lib/types.h>
 
 
 #define USB_BUFFER_SIZE 0x1000
@@ -26,11 +26,11 @@
 #define ENDPOINTS_NUMBER 7
 #define ENDPOINTS_DIR_NB 2
 
-#define MIN(X, Y)           (((X) < (Y)) ? (X) : (Y))
+#define MIN(X, Y) (((X) < (Y)) ? (X) : (Y))
 
-#define DTD_SIZE(dtd)       ((dtd->dtd_token >> 16) & 0x7fff)
-#define DTD_ERROR(dtd)      (dtd->dtd_token & (0xd << 3))
-#define DTD_ACTIVE(dtd)     (dtd->dtd_token & (1 << 7))
+#define DTD_SIZE(dtd)   ((dtd->dtd_token >> 16) & 0x7fff)
+#define DTD_ERROR(dtd)  (dtd->dtd_token & (0xd << 3))
+#define DTD_ACTIVE(dtd) (dtd->dtd_token & (1 << 7))
 
 
 /* device controller structures */
@@ -40,7 +40,7 @@ typedef struct _dtd_t {
 	u32 dtd_next;
 	u32 dtd_token;
 	u32 buff_ptr[5];
-	u8  padding[4];
+	u8 padding[4];
 } __attribute__((packed)) dtd_t;
 
 
@@ -105,10 +105,10 @@ typedef struct _usb_dc_t {
 
 /* usb spec related stuff */
 typedef struct _endpt_caps_t {
-	u8  mult;
-	u8  zlt;
+	u8 mult;
+	u8 zlt;
 	u16 max_pkt_len;
-	u8  ios;
+	u8 ios;
 	u8 init;
 } endpt_caps_t;
 
@@ -135,7 +135,7 @@ typedef struct _endpt_data_t {
 } endpt_data_t;
 
 
-typedef struct{
+typedef struct {
 	char *setupMem;
 	endpt_data_t endpts[ENDPOINTS_NUMBER];
 } usb_common_data_t;
@@ -150,7 +150,6 @@ extern int desc_classSetup(const usb_setup_packet_t *setup);
 
 
 extern int desc_setup(const usb_setup_packet_t *setup);
-
 
 
 /* Controller's functions */

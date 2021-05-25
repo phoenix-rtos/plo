@@ -19,7 +19,7 @@
 
 /* iMXRT peripherals */
 
-#include "../types.h"
+#include <lib/types.h>
 
 enum { gpio1 = 0, gpio2, gpio3, gpio4, gpio5 };
 
@@ -632,6 +632,12 @@ extern void  _imxrt_cleanDCache(void);
 
 
 extern void _imxrt_enableICache(void);
+
+
+extern void _imxrt_invalDCacheAll(void);
+
+
+extern void _imxrt_invalDCacheAddr(void *addr, u32 sz);
 
 
 extern void _imxrt_disableICache(void);

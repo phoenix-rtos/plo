@@ -13,24 +13,11 @@
  * %LICENSE%
  */
 
+#include <syspage.h>
+#include <hal/hal.h>
+#include <lib/errno.h>
+#include <hal/timer.h>
 
-#include "imxrt.h"
-#include "config.h"
-#include "cmd-board.h"
-#include "peripherals.h"
-
-#include "client.h"
-#include "phfs-usb.h"
-#include "cdc-client.h"
-#include "phfs-flash.h"
-#include "uart.h"
-#include "phfs-serial.h"
-
-#include "../../hal.h"
-#include "../../plostd.h"
-#include "../../errors.h"
-#include "../../timer.h"
-#include "../../syspage.h"
 
 typedef struct {
 	void *data;
@@ -38,176 +25,54 @@ typedef struct {
 } intr_handler_t;
 
 
-/* Board command definitions */
-const cmd_t board_cmds[] = {
-	{ cmd_flexram,    "flexram", " - define flexram value, usage: flexram <value>" },
-	{ NULL, NULL, NULL }
-};
-
-
-const cmd_device_t devices[] = {
-	{ "flash0", PDN_FLASH0 },
-	{ "flash1", PDN_FLASH1 },
-	{ "com1", PDN_COM1 },
-	{ "usb0", PDN_USB0 },
-	{ NULL, NULL }
-};
-
-
-
 struct{
-	u16 timeout;
-	u32 kernel_entry;
+	addr_t kernel_entry;
 	intr_handler_t irqs[SIZE_INTERRUPTS];
 } hal_common;
 
 
-/* Initialization functions */
+extern void _end(void);
+extern void _plo_bss(void);
+
 
 void hal_init(void)
 {
-	int i;
-
-	hal_common.kernel_entry = 0;
-	for (i = 0; i < SIZE_INTERRUPTS; ++i) {
-		hal_common.irqs[i].data = NULL;
-		hal_common.irqs[i].isr = NULL;
-	}
-
 	_imxrt_init();
 	timer_init();
-	hal_setLaunchTimeout(3);
+
+	hal_consoleInit();
 
 	syspage_init();
 	syspage_setAddress((void *)SYSPAGE_ADDRESS);
 
 	/* Add entries related to plo image */
-	syspage_addEntries((u32)plo_bss, (u32)_end - (u32)plo_bss + STACK_SIZE);
+	syspage_addEntries((u32)_plo_bss, (u32)_end - (u32)_plo_bss + STACK_SIZE);
 }
 
 
 void hal_done(void)
 {
-	phfs_serialDeinit();
-	phfs_usbDeinit();
 	timer_done();
 
 	_imxrt_cleanDCache();
 }
 
 
-void hal_initphfs(phfs_handler_t *handlers)
+const char *hal_cpuInfo(void)
 {
-	int i;
-
-	/* Handlers for flash memories */
-	for (i = 0; i < 2; ++i) {
-		handlers[PDN_FLASH0 + i].open = phfsflash_open;
-		handlers[PDN_FLASH0 + i].read = phfsflash_read;
-		handlers[PDN_FLASH0 + i].write = phfsflash_write;
-		handlers[PDN_FLASH0 + i].close = phfsflash_close;
-		handlers[PDN_FLASH0 + i].dn = i;
-	}
-	phfsflash_init();
-
-	handlers[PDN_COM1].open = phfs_serialOpen;
-	handlers[PDN_COM1].read = phfs_serialRead;
-	handlers[PDN_COM1].write = phfs_serialWrite;
-	handlers[PDN_COM1].close = phfs_serialClose;
-	handlers[PDN_COM1].dn = PHFS_SERIAL_LOADER_ID;
-	phfs_serialInit();
-
-	handlers[PDN_USB0].open = phfs_usbOpen;
-	handlers[PDN_USB0].read = phfs_usbRead;
-	handlers[PDN_USB0].write = phfs_usbWrite;
-	handlers[PDN_USB0].close = phfs_usbClose;
-	handlers[PDN_USB0].dn = endpt_bulk_acm0;
-	phfs_usbInit();
+	return "Cortex-M i.MX RT106x";
 }
 
 
-void hal_initdevs(cmd_device_t **devs)
-{
-	*devs = (cmd_device_t *)devices;
-}
-
-
-void hal_appendcmds(cmd_t *cmds)
-{
-	int i = 0;
-
-	/* Find the last declared cmd */
-	while (cmds[i++].cmd != NULL);
-
-	if ((MAX_COMMANDS_NB - --i) < (sizeof(board_cmds) / sizeof(cmd_t)))
-		return;
-
-	hal_memcpy(&cmds[i], board_cmds, sizeof(board_cmds));
-}
-
-
-
-/* Setters and getters for common data */
-
-void hal_setDefaultIMAP(char *imap)
-{
-	hal_memcpy(imap, "ocram2", 7);
-}
-
-
-void hal_setDefaultDMAP(char *dmap)
-{
-	hal_memcpy(dmap, "ocram2", 7);
-}
-
-
-void hal_setKernelEntry(u32 addr)
+void hal_setKernelEntry(addr_t addr)
 {
 	hal_common.kernel_entry = addr;
-}
-
-
-void hal_setLaunchTimeout(u32 timeout)
-{
-	hal_common.timeout = timeout;
-}
-
-
-u32 hal_getLaunchTimeout(void)
-{
-	return hal_common.timeout;
 }
 
 
 addr_t hal_vm2phym(addr_t addr)
 {
 	return addr;
-}
-
-
-void hal_memcpy(void *dst, const void *src, unsigned int l)
-{
-	__asm__ volatile(" \
-		orr r3, %0, %1; \
-		ands r3, #3; \
-		bne 2f; \
-	1: \
-		cmp %2, #4; \
-		ittt hs; \
-		ldrhs r3, [%1], #4; \
-		strhs r3, [%0], #4; \
-		subshs %2, #4; \
-		bhs 1b; \
-	2: \
-		cmp %2, #0; \
-		ittt ne; \
-		ldrbne r3, [%1], #1; \
-		strbne r3, [%0], #1; \
-		subsne %2, #1; \
-		bne 2b"
-	: "+l" (dst), "+l" (src), "+l" (l)
-	:
-	: "r3", "memory", "cc");
 }
 
 
@@ -232,8 +97,17 @@ int hal_launch(void)
 }
 
 
+extern void hal_invalDCacheAll(void)
+{
+	_imxrt_invalDCacheAll();
+}
 
-/* Opeartions on interrupts */
+
+void hal_invalDCacheAddr(addr_t addr, size_t sz)
+{
+	_imxrt_invalDCacheAddr((void *)addr, sz);
+}
+
 
 void hal_cli(void)
 {
@@ -247,7 +121,7 @@ void hal_sti(void)
 }
 
 
-int low_irqdispatch(u16 irq)
+int hal_irqdispatch(u16 irq)
 {
 	if (hal_common.irqs[irq].isr == NULL)
 		return -1;
@@ -258,16 +132,10 @@ int low_irqdispatch(u16 irq)
 }
 
 
-void hal_maskirq(u16 n, u8 v)
-{
-	//TODO
-}
-
-
 int hal_irqinst(u16 irq, int (*isr)(u16, void *), void *data)
 {
 	if (irq >= SIZE_INTERRUPTS)
-		return ERR_ARG;
+		return -EINVAL;
 
 	hal_cli();
 	hal_common.irqs[irq].isr = isr;
@@ -288,77 +156,4 @@ int hal_irquninst(u16 irq)
 	hal_sti();
 
 	return 0;
-}
-
-
-/* Communication functions */
-
-void hal_setattr(char attr)
-{
-	switch (attr) {
-	case ATTR_DEBUG:
-		uart_safewrite(UART_CONSOLE, (u8 *)"\033[0m\033[32m", 9);
-		break;
-	case ATTR_USER:
-		uart_safewrite(UART_CONSOLE, (u8 *)"\033[0m", 4);
-		break;
-	case ATTR_INIT:
-		uart_safewrite(UART_CONSOLE, (u8 *)"\033[0m\033[35m", 9);
-		break;
-	case ATTR_LOADER:
-		uart_safewrite(UART_CONSOLE, (u8 *)"\033[0m\033[1m", 8);
-		break;
-	case ATTR_ERROR:
-		uart_safewrite(UART_CONSOLE, (u8 *)"\033[0m\033[31m", 9);
-		break;
-	}
-
-	return;
-}
-
-
-void hal_putc(const char ch)
-{
-	uart_write(UART_CONSOLE, (u8 *)&ch, 1);
-}
-
-
-void hal_getc(char *c, char *sc)
-{
-	while (uart_read(UART_CONSOLE, (u8 *)c, 1, 500) <= 0)
-		;
-	*sc = 0;
-
-	/* Translate backspace */
-	if (*c == 127)
-		*c = 8;
-
-	/* Simple parser for VT100 commands */
-	else if (*c == 27) {
-		while (uart_read(UART_CONSOLE, (u8 *)c, 1, 500) <= 0)
-			;
-
-		switch (*c) {
-		case 91:
-			while (uart_read(UART_CONSOLE, (u8 *)c, 1, 500) <= 0)
-				;
-
-			switch (*c) {
-			case 'A':             /* UP */
-				*sc = 72;
-				break;
-			case 'B':             /* DOWN */
-				*sc = 80;
-				break;
-			}
-			break;
-		}
-		*c = 0;
-	}
-}
-
-
-int hal_keypressed(void)
-{
-	return !uart_rxEmpty(UART_CONSOLE);
 }

@@ -16,8 +16,9 @@
 #ifndef _INTERRUPTS_H_
 #define _INTERRUPTS_H_
 
-#include "../types.h"
 #include "cpu.h"
+
+#include <lib/types.h>
 
 
 /* Function installs new handler for interrupt given by n */
