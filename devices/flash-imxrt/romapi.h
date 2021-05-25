@@ -75,7 +75,7 @@ typedef struct {
 	u32 controllerMiscOption;          /* Controller Misc Options, see Misc feature bit definitions for more */
 	u8 deviceType;                     /* Device Type:  See Flash Type Definition for more details */
 	u8 sflashPadType;                  /* Serial Flash Pad Type: 1 - Single, 2 - Dual, 4 - Quad, 8 - Octal */
-	u8 serialClkFreq;                  /* Serial Flash Frequencey, device specific definitions, See System Boot */
+	u8 serialClkFreq;                  /* Serial Flash Frequency, device specific definitions, See System Boot */
 	u8 lutCustomSeqEnable;             /* LUT customization Enable, it is required if the program/erase cannot */
 	u32 reserved3[2];                  /* Reserved for future use */
 	u32 sflashA1Size;                  /* Size of Flash connected to A1 */
@@ -107,7 +107,7 @@ typedef struct {
 	u8 serialNorType;                 /* Serial NOR Flash type: 0/1/2/3 */
 	u8 needExitNoCmdMode;             /* Need to exit NoCmd mode before other IP command */
 	u8 halfClkForNonReadCmd;          /* Half the Serial Clock for non-read command: true/false */
-	u8 needRestoreNoCmdMode;          /* Need to Restore NoCmd mode after IP commmand execution */
+	u8 needRestoreNoCmdMode;          /* Need to Restore NoCmd mode after IP command execution */
 	u32 blockSize;                    /* Block size */
 	u32 reserved2[11];                /* Reserved for future use */
 } flexspi_norConfig_t;

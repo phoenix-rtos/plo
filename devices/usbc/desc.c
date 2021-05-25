@@ -304,7 +304,7 @@ static void desc_ClassReqSetReport(const usb_setup_packet_t *setup)
 		desc_common.data->endpts[0].buf[USB_ENDPT_DIR_OUT].len = 64 + setup->wLength - DTD_SIZE(dtd);
 	}
 	else {
-		desc_common.dc->op = DC_OP_RCV_ERR; /* mark that data is uncomplete */
+		desc_common.dc->op = DC_OP_RCV_ERR; /* mark that data is incomplete */
 		desc_common.data->endpts[0].buf[USB_ENDPT_DIR_OUT].len = -1;
 	}
 }

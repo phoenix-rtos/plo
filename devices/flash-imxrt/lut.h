@@ -61,7 +61,7 @@
 #define FLASH_SPANSION_CMD_RDSR1      0x05 /* Read Status Register - 1 */
 #define FLASH_SPANSION_CMD_RDSR2      0x35 /* Read Status Register - 2 */
 #define FLASH_SPANSION_CMD_RDSR3      0x15 /* Read Status Register - 3 */
-#define FLASH_SPANSION_CMD_EQM        0x35 /* Enebale quad input/output mode */
+#define FLASH_SPANSION_CMD_EQM        0x35 /* Enable quad input/output mode */
 #define FLASH_SPANSION_CMD_RQM        0xF5 /* Reset quad input/output mode */
 #define FLASH_SPANSION_CMD_WRR1       0x01 /* Write Status Register - 1 */
 #define FLASH_SPANSION_CMD_WRR2       0x31 /* Write Status Register - 2 */
