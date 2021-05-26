@@ -43,7 +43,7 @@ static int cmd_syspage(char *s)
 	}
 
 	addr = lib_strtoul(args[0], &end, 0);
-	if (hal_strlen(end) != 0) {
+	if (*end) {
 		log_error("\nWrong args %s", s);
 		return -EINVAL;
 	}

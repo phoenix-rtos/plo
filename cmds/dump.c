@@ -44,7 +44,7 @@ static int cmd_dump(char *s)
 	}
 
 	offs = lib_strtoul(args[0], &endptr, 16);
-	if (hal_strlen(endptr) != 0) {
+	if (*endptr) {
 		log_error("\nWrong address value: %s", args[0]);
 		return -EINVAL;
 	}

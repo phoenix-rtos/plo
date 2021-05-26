@@ -52,14 +52,14 @@ static int cmd_map(char *s)
 
 	++argID;
 	start = lib_strtoul(args[argID], &endptr, 0);
-	if (hal_strlen(endptr) != 0) {
+	if (*endptr) {
 		log_error("\nWrong args: %s", s);
 		return -EINVAL;
 	}
 
 	++argID;
 	end = lib_strtoul(args[argID], &endptr, 0);
-	if (hal_strlen(endptr) != 0) {
+	if (*endptr) {
 		log_error("\nWrong args: %s", s);
 		return -EINVAL;
 	}
