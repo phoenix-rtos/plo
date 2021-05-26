@@ -37,7 +37,7 @@ static int cmd_go(char *s)
 	}
 
 	log_info("\nRunning Phoenix-RTOS");
-	lib_printf(CONSOLE_CLEAR);
+	lib_printf(CONSOLE_NORMAL CONSOLE_CLEAR CONSOLE_CURSOR_SHOW);
 	hal_launch();
 
 	return EOK;
