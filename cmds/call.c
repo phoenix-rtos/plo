@@ -53,7 +53,6 @@ static int cmd_call(char *s)
 	}
 
 	/* ARG_2: magic number*/
-	hal_memset(buff, 0, SIZE_CMD_ARG_LINE);
 	if ((res = phfs_read(h, offs, (u8 *)buff, SIZE_MAGIC_NB)) < 0) {
 		log_error("\nCan't read %s from %s", args[1], args[0]);
 		return -EIO;
@@ -70,7 +69,6 @@ static int cmd_call(char *s)
 	/* Execute script */
 	i = 0;
 	lib_printf(CONSOLE_NORMAL);
-	hal_memset(buff, 0, SIZE_CMD_ARG_LINE);
 	do {
 		if ((res = phfs_read(h, offs, (u8 *)&c, 1)) < 0) {
 			log_error("\nCan't read %s from %s", args[1], args[0]);
@@ -78,13 +76,12 @@ static int cmd_call(char *s)
 		}
 
 		offs += res;
-		if (c == '\n' || i > SIZE_CMD_ARG_LINE) {
-			i = 0;
+		if (res == 0 || c == '\n' || i == (sizeof(buff) - 1)) {
+			buff[i] = '\0';
 			cmd_parse(buff);
-			hal_memset(buff, 0, SIZE_CMD_ARG_LINE);
+			i = 0;
 			continue;
 		}
-
 		buff[i++] = c;
 	} while (res > 0);
 
