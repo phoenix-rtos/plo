@@ -33,7 +33,7 @@ static int cmd_map(char *s)
 	u8 namesz;
 	char mapname[SIZE_MAP_NAME + 1];
 
-	unsigned int argID = 0, argsc = 0;
+	unsigned int argsc = 0;
 	cmdarg_t *args;
 
 	argsc = cmd_getArgs(s, DEFAULT_BLANKS, &args);
@@ -41,30 +41,30 @@ static int cmd_map(char *s)
 		syspage_showMaps();
 		return EOK;
 	}
-	else if (argsc < 4) {
+	else if (argsc != 4) {
 		log_error("\nWrong args: %s", s);
 		return -EINVAL;
 	}
 
-	namesz = (hal_strlen(args[argID]) < SIZE_MAP_NAME) ? (hal_strlen(args[argID]) + 1) : SIZE_MAP_NAME;
-	hal_memcpy(mapname, args[argID], namesz);
+	namesz = hal_strlen(args[0]);
+	if (namesz >= sizeof(mapname))
+		namesz = sizeof(mapname) - 1;
+	hal_memcpy(mapname, args[0], namesz);
 	mapname[namesz] = '\0';
 
-	++argID;
-	start = lib_strtoul(args[argID], &endptr, 0);
+	start = lib_strtoul(args[1], &endptr, 0);
 	if (*endptr) {
 		log_error("\nWrong args: %s", s);
 		return -EINVAL;
 	}
 
-	++argID;
-	end = lib_strtoul(args[argID], &endptr, 0);
+	end = lib_strtoul(args[2], &endptr, 0);
 	if (*endptr) {
 		log_error("\nWrong args: %s", s);
 		return -EINVAL;
 	}
 
-	if (syspage_addmap(mapname, (void *)start, (void *)end, args[++argID]) < 0) {
+	if (syspage_addmap(mapname, (void *)start, (void *)end, args[3]) < 0) {
 		log_error("\nCan't create map %s", mapname);
 		return -EINVAL;
 	}
