@@ -21,7 +21,7 @@
 
 static void cmd_syspageInfo(void)
 {
-	lib_printf("sets syspage address or shows it, usage: syspage <address>");
+	lib_printf("sets syspage address or shows it, usage: syspage [address]");
 }
 
 

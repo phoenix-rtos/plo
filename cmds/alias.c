@@ -21,7 +21,7 @@
 
 static void cmd_aliasInfo(void)
 {
-	lib_printf("sets alias to file, usage <name> <offset> <size>");
+	lib_printf("sets alias to file, usage: alias [<name> <offset> <size>]");
 }
 
 
