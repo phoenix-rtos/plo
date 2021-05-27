@@ -88,7 +88,7 @@ static int cmd_parseDev(handler_t *h, addr_t *offs, size_t *sz, cmdarg_t *args, 
 	if (*endptr) {
 		*offs = 0;
 		*sz = 0;
-		if (phfs_open(alias, args[(*argsID)], 0, h) < 0) {
+		if (phfs_open(alias, args[*argsID], 0, h) < 0) {
 			log_error("\nCan't open file '%s' on %s", args[*argsID], alias);
 			return -EIO;
 		}
