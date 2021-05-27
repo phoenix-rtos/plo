@@ -16,6 +16,7 @@
 #include "cmd.h"
 
 #include <lib/log.h>
+#include <lib/ctype.h>
 #include <hal/hal.h>
 
 
@@ -29,6 +30,7 @@ static int cmd_echo(char *s)
 {
 	unsigned int argsc;
 	cmdarg_t *args;
+	char *p;
 
 	argsc = cmd_getArgs(s, DEFAULT_BLANKS, &args);
 	/* Show echo status */
@@ -48,11 +50,18 @@ static int cmd_echo(char *s)
 		return -EINVAL;
 	}
 
+	/* convert to lowercase */
+	p = args[0];
+	for (p = args[0]; *p; p++) {
+		if (isupper(*p))
+			*p |= 0x20;
+	}
+
 	/* Set echo */
-	if (hal_strcmp(args[0], "ON") == 0 || hal_strcmp(args[0], "on") == 0) {
+	if ((args[0][0] == 'o') && (args[0][1] == 'n') && (args[0][2] == '\0')) {
 		log_setEcho(1);
 	}
-	else if (hal_strcmp(args[0], "OFF") == 0 || hal_strcmp(args[0], "off") == 0) {
+	else if ((args[0][0] == 'o') && (args[0][1] == 'f') && (args[0][2] == 'f') && (args[0][3] == '\0')) {
 		log_setEcho(0);
 	}
 	else {
