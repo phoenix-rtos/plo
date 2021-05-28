@@ -21,7 +21,7 @@
 
 static void cmd_phfsInfo(void)
 {
-	lib_printf("registers device in phfs, usage: phfs <alias> <major.minor> [protocol]");
+	lib_printf("registers device in phfs, usage: phfs [<alias> <major.minor> [protocol]]");
 }
 
 

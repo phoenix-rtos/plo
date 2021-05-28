@@ -23,7 +23,7 @@
 
 static void cmd_kernelInfo(void)
 {
-	lib_printf("loads Phoenix - RTOS, usage: kernel <dev>]");
+	lib_printf("loads Phoenix - RTOS, usage: kernel [dev]");
 }
 
 

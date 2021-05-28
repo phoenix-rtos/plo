@@ -21,7 +21,7 @@
 
 static void cmd_mapInfo(void)
 {
-	lib_printf("defines multimap, usage: map <start> <end> <name> <attributes>");
+	lib_printf("defines multimap, usage: map [<name> <start> <end> <attributes>]");
 }
 
 

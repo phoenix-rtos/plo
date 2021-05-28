@@ -21,7 +21,7 @@
 
 static void cmd_echoInfo(void)
 {
-	lib_printf("command switch on/off information logs, usage: echo <on/off>");
+	lib_printf("command switch on/off information logs, usage: echo [on/off]");
 }
 
 

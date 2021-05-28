@@ -23,7 +23,7 @@
 
 static void cmd_appInfo(void)
 {
-	lib_printf("loads app, usage: app <dev> [-x] <name> <imap> <dmap>");
+	lib_printf("loads app, usage: app [<dev> [-x] <name> <imap> <dmap>]");
 }
 
 
