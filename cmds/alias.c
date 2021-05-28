@@ -44,10 +44,7 @@ static int cmd_alias(char *s)
 	}
 
 
-	for (i = 0; i < 3; ++i) {
-		if (i == 0)
-			continue;
-
+	for (i = 1; i < 3; ++i) {
 		if (i == 1)
 			addr = lib_strtoul(args[i], &end, 0);
 		else if (i == 2)
