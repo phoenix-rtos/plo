@@ -35,7 +35,7 @@ static int cmd_wait(char *s)
 	static const char prompt[] = "Waiting for input";
 
 	argsc = cmd_getArgs(s, DEFAULT_BLANKS, &args);
-	lib_printf("\n%s %s", CONSOLE_NORMAL);
+	lib_printf("\n%s", CONSOLE_NORMAL);
 	/* User doesn't provide time, waiting in infinite loop */
 	if (argsc != 1) {
 		while (1) {
