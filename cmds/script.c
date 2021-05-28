@@ -64,7 +64,6 @@ static int cmd_script(char *s)
 		return -EINVAL;
 	}
 
-	hal_memset(buff, 0, SIZE_CMD_ARG_LINE);
 	if ((res = phfs_read(h, offs, (u8 *)buff, SIZE_MAGIC_NB)) < 0) {
 		log_error("\nCan't read %s from %s", args[1], args[0]);
 		return -EIO;
