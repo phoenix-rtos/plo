@@ -54,9 +54,9 @@ static void cmd_skipblanks(const char *line, unsigned int *pos, const char *blan
 
 
 /* TODO: old code needs to be cleaned up */
-static char *cmd_getnext(const char *line, unsigned int *pos, const char *blanks, const char *cites, char *word, unsigned int len)
+static char *cmd_getnext(const char *line, unsigned int *pos, const char *blanks, char *word, unsigned int len)
 {
-	char citefl = 0, c;
+	char c;
 	unsigned int i, wp = 0;
 
 	/* Skip leading blank characters */
@@ -65,28 +65,12 @@ static char *cmd_getnext(const char *line, unsigned int *pos, const char *blanks
 	wp = 0;
 	while ((c = line[*pos]) != 0) {
 
-		/* Test cite characters */
-		if (cites) {
-			for (i = 0; cites[i]; i++) {
-				if (c == cites[i]) {
-					citefl ^= 1;
-					break;
-				}
-			}
-
-			/* Go to next iteration if cite character found */
-			if (cites[i]) {
-				(*pos)++;
-				continue;
-			}
-		}
-
 		/* Test separators */
 		for (i = 0; blanks[i]; i++) {
 			if (c == blanks[i])
 				break;
 		}
-		if (!citefl && blanks[i])
+		if (blanks[i])
 			break;
 
 		word[wp++] = c;
@@ -95,9 +79,6 @@ static char *cmd_getnext(const char *line, unsigned int *pos, const char *blanks
 
 		(*pos)++;
 	}
-
-	if (citefl)
-		return NULL;
 
 	word[wp] = 0;
 
@@ -146,7 +127,7 @@ void cmd_parse(char *line)
 	char word[SIZE_CMD_ARG_LINE], cmd[SIZE_CMD_ARG_LINE];
 
 	for (;;) {
-		if (cmd_getnext(line, &p, "\n", DEFAULT_CITES, word, sizeof(word)) == NULL) {
+		if (cmd_getnext(line, &p, "\n", word, sizeof(word)) == NULL) {
 			log_error("\nSyntax error");
 			return;
 		}
@@ -154,7 +135,7 @@ void cmd_parse(char *line)
 			break;
 
 		wp = 0;
-		if (cmd_getnext(word, &wp, DEFAULT_BLANKS, DEFAULT_CITES, cmd, sizeof(cmd)) == NULL) {
+		if (cmd_getnext(word, &wp, DEFAULT_BLANKS, cmd, sizeof(cmd)) == NULL) {
 			log_error("\nSyntax error");
 			return;
 		}
@@ -183,7 +164,7 @@ int cmd_getArgs(const char *cmd, const char *blank, cmdarg_t **args)
 
 	for (i = 0; i < MAX_CMD_ARGS_NB; ++i) {
 		hal_memset(cmd_common.args[i], 0, SIZE_CMD_ARG_LINE);
-		if (cmd_getnext(cmd, &pos, blank, NULL, cmd_common.args[i], SIZE_CMD_ARG_LINE) == NULL || *cmd_common.args[i] == 0)
+		if (cmd_getnext(cmd, &pos, blank, cmd_common.args[i], SIZE_CMD_ARG_LINE) == NULL || *cmd_common.args[i] == 0)
 			break;
 	}
 
