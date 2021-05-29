@@ -78,7 +78,10 @@ static int cmd_call(char *s)
 		offs += res;
 		if (res == 0 || c == '\n' || i == (sizeof(buff) - 1)) {
 			buff[i] = '\0';
-			cmd_parse(buff);
+
+			if (cmd_parse(buff) < 0)
+				return -EINVAL;
+
 			i = 0;
 			continue;
 		}

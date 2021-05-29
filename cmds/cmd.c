@@ -106,8 +106,22 @@ void cmd_reg(const cmd_t *cmd)
 
 void cmd_run(void)
 {
+	unsigned int p;
+	char line[SIZE_CMD_ARG_LINE];
+
 	lib_printf("\ncmd: Executing pre-init script");
-	cmd_parse((char *)script);
+
+	for (p = 0; *(script + p) == '\0';) {
+		if (cmd_getnext((char *)script, &p, "\n", line, sizeof(line)) == NULL) {
+			log_error("\nSyntax error");
+			break;
+		}
+		if (*line == 0) /* empty line */
+			continue;
+
+		if (cmd_parse(line) < 0)
+			break;
+	}
 }
 
 
@@ -121,40 +135,28 @@ const cmd_t *cmd_getCmd(unsigned int id)
 
 
 /* TODO: old code needs to be cleaned up */
-void cmd_parse(char *line)
+int cmd_parse(char *line)
 {
-	unsigned int p = 0, wp, i;
-	char word[SIZE_CMD_ARG_LINE], cmd[SIZE_CMD_ARG_LINE];
+	unsigned int p, i;
+	char cmd[SIZE_CMD_ARG_LINE];
 
-	for (;;) {
-		if (cmd_getnext(line, &p, "\n", word, sizeof(word)) == NULL) {
-			log_error("\nSyntax error");
-			return;
-		}
-		if (*word == 0)
-			break;
+	if (*line == '\0')
+		return EOK;
 
-		wp = 0;
-		if (cmd_getnext(word, &wp, DEFAULT_BLANKS, cmd, sizeof(cmd)) == NULL) {
-			log_error("\nSyntax error");
-			return;
-		}
-
-		/* Find command and launch associated function */
-		for (i = 0; i < SIZE_CMDS; i++) {
-			if (hal_strcmp(cmd, cmd_common.cmds[i]->name) != 0)
-				continue;
-
-			if (cmd_common.cmds[i]->run(word + wp) < 0)
-				return;
-
-			break;
-		}
-		if (i >= SIZE_CMDS) {
-			log_error("\n'%s' - unknown command!", cmd);
-			return;
-		}
+	p = 0;
+	if (cmd_getnext(line, &p, DEFAULT_BLANKS, cmd, sizeof(cmd)) == NULL) {
+		log_error("\nSyntax error");
+		return -EINVAL;
 	}
+
+	/* Find command and launch associated function */
+	for (i = 0; i < SIZE_CMDS; i++) {
+		if (hal_strcmp(cmd, cmd_common.cmds[i]->name) == 0)
+			return cmd_common.cmds[i]->run(line + p);
+	}
+
+	log_error("\n'%s' - unknown command!", cmd);
+	return -EINVAL;
 }
 
 

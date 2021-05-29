@@ -57,7 +57,7 @@ extern const cmd_t *cmd_getCmd(unsigned int id);
 
 
 /* Function parses loader commands */
-extern void cmd_parse(char *line);
+extern int cmd_parse(char *line);
 
 
 /* Function prase arguments from command */
