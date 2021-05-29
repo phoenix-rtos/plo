@@ -242,8 +242,6 @@ void cmd_prompt(void)
 		if (c) {
 			if (c == '\r') {
 				if (pos) {
-					cmd_common.lines[cmd_common.ll][pos] = 0;
-
 					cmd_parse(cmd_common.lines[cmd_common.ll]);
 
 					cmd_common.ll = (cmd_common.ll + 1) % SIZE_HIST;
@@ -255,7 +253,7 @@ void cmd_prompt(void)
 			}
 
 			/* If character isn't backspace add it to line buffer */
-			if ((c != 8) && (pos < SIZE_CMD_ARG_LINE)) {
+			if ((c != 8) && (pos < SIZE_CMD_ARG_LINE - 1)) {
 				console_putc(c);
 				cmd_common.lines[cmd_common.ll][pos++] = c;
 				cmd_common.lines[cmd_common.ll][pos] = 0;
