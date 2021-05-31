@@ -34,10 +34,10 @@ static int cmd_echo(char *s)
 	/* Show echo status */
 	if (argsc == 0) {
 		if (log_getEcho()) {
-			log_info("\nEcho is ON");
+			lib_printf("\nEcho is 'on'");
 		}
 		else {
-			log_info("\nEcho is OFF");
+			lib_printf("\nEcho is 'off'");
 		}
 
 		return EOK;
@@ -49,10 +49,10 @@ static int cmd_echo(char *s)
 	}
 
 	/* Set echo */
-	if (hal_strcmp(args[0], "ON") == 0 || hal_strcmp(args[0], "on") == 0) {
+	if (hal_strcmp(args[0], "on") == 0) {
 		log_setEcho(1);
 	}
-	else if (hal_strcmp(args[0], "OFF") == 0 || hal_strcmp(args[0], "off") == 0) {
+	else if (hal_strcmp(args[0], "off") == 0) {
 		log_setEcho(0);
 	}
 	else {
