@@ -444,6 +444,12 @@ int _zynq_loadPL(u32 srcAddr, u32 srcLen)
 
 static void _zynq_ddrInit(void)
 {
+	/* DDR Control register's value differs from reset value (0x00000200).
+	 * It allows to detect running under emulator (qemu) which sets DDR controler's registers to 0. */
+	if (*(zynq_common.ddr + ddrc_ctrl) != 0x00000200)
+		return;
+
+
 	/* DDR initialization */
 
 	_zynq_slcrUnlock();
