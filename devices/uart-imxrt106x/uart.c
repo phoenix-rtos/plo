@@ -34,13 +34,13 @@ typedef struct {
 	u16 txFifoSz;
 
 	u8 rxBuff[BUFFER_SIZE];
-	u16 rxHead;
-	u16 rxTail;
+	volatile u16 rxHead;
+	volatile u16 rxTail;
 
 	u8 txBuff[BUFFER_SIZE];
-	u16 txHead;
-	u16 txTail;
-	u8 tFull;
+	volatile u16 txHead;
+	volatile u16 txTail;
+	volatile u8 tFull;
 } uart_t;
 
 
@@ -128,9 +128,9 @@ static int uart_handleIntr(u16 irq, void *buff)
 	}
 
 	/* Transmit */
-	while (uart_getTXcount(uart) < uart->txFifoSz && !((*(uart->base + statr) >> 22) & 0x1)) {
-		uart->txHead = (uart->txHead + 1) % BUFFER_SIZE;
-		if (uart->txHead != uart->txTail) {
+	while (uart_getTXcount(uart) < uart->txFifoSz) {
+		if ((uart->txHead + 1) % BUFFER_SIZE != uart->txTail) {
+			uart->txHead = (uart->txHead + 1) % BUFFER_SIZE;
 			*(uart->base + datar) = uart->txBuff[uart->txHead];
 			uart->tFull = 0;
 		}
