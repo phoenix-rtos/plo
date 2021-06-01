@@ -47,7 +47,7 @@ static int timer_isr(u16 irq, void *data)
 }
 
 
-int timer_wait(u32 ms, int flags, u16 *p, u16 v)
+int timer_wait(u32 ms, int flags, volatile u16 *p, u16 v)
 {
 	timer_common.done = 0;
 
