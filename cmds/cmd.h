@@ -24,7 +24,6 @@
 
 
 #define DEFAULT_BLANKS " \t"
-#define DEFAULT_CITES  "\""
 
 #define SIZE_CMD_ARG_LINE 81
 #define SIZE_MSG_BUFF     0x100
