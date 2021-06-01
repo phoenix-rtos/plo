@@ -92,7 +92,7 @@ static void timer_setPrescaler(u32 freq)
 }
 
 
-int timer_wait(u32 ms, int flags, u16 *p, u16 v)
+int timer_wait(u32 ms, int flags, volatile u16 *p, u16 v)
 {
 	/* Set value that determines when an irq t will be generated */
 	timer_common.leftTime = ms;
