@@ -217,7 +217,7 @@ _intd0:
     ldr sp, [sp]
 _intd1:
     ldmia sp!, {r0-r1, r4-r11, lr}
-
+	dmb
     bx lr
 .size _interrupts_dispatch, .-_interrupts_dispatch
 .ltorg
