@@ -132,7 +132,7 @@ static int cmd_app(char *s)
 		syspage_showApps();
 		return EOK;
 	}
-	else if (argsc < 4 || argsc > 6) {
+	else if (argsc < 4 || argsc > 5) {
 		log_error("\nWrong args: %s", s);
 		return -EINVAL;
 	}
@@ -153,8 +153,8 @@ static int cmd_app(char *s)
 	}
 
 	/* ARG_2: cmdline */
-	if (argID >= argsc) {
-		log_error("\nWrong args: %s", s);
+	if (argID != (argsc - 3)) {
+		log_error("\nInvalid args, 'dmap' is not declared");
 		return -EINVAL;
 	}
 
@@ -165,7 +165,7 @@ static int cmd_app(char *s)
 			break;
 	}
 
-	if (pos > SIZE_APP_NAME) {
+	if (pos >= SIZE_APP_NAME) {
 		log_error("\nApp %s name is too long", cmdline);
 		return -EINVAL;
 	}
@@ -174,24 +174,12 @@ static int cmd_app(char *s)
 	appName[pos] = '\0';
 
 	/* ARG_3: Get map for instruction section */
-	if ((argID + 1) < argsc) {
-		hal_memcpy(imap, args[++argID], 8);
-		imap[sizeof(imap) - 1] = '\0';
-	}
-	else {
-		log_error("\nInstruction's map for %s is not defined", appName);
-		return -EINVAL;
-	}
+	hal_memcpy(imap, args[++argID], sizeof(imap));
+	imap[sizeof(imap) - 1] = '\0';
 
 	/* ARG_4: Get map for data section */
-	if ((argID + 1) < argsc) {
-		hal_memcpy(dmap, args[++argID], 8);
-		dmap[sizeof(dmap) - 1] = '\0';
-	}
-	else {
-		log_error("\nData's map for %s is not defined", appName);
-		return -EINVAL;
-	}
+	hal_memcpy(dmap, args[++argID], sizeof(dmap));
+	dmap[sizeof(dmap) - 1] = '\0';
 
 	/* Open file */
 	if (phfs_open(args[0], appName, 0, &handler) < 0) {
