@@ -23,7 +23,7 @@
 
 
 #define SIZE_PHFS_HANDLERS 8
-#define SIZE_PHFS_FILES    10
+#define SIZE_PHFS_FILES    20
 
 #define PHFS_TIMEOUT_MS 500
 
