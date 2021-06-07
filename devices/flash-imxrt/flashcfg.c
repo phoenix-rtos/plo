@@ -65,12 +65,14 @@ static void flashcfg_setWindbondLUT(flash_context_t *ctx)
 	ctx->config.mem.lut[4 * SECTOR_ERASE_SEQ_ID + 1] = 0;
 	ctx->config.mem.lut[4 * SECTOR_ERASE_SEQ_ID + 2] = 0;
 	ctx->config.mem.lut[4 * SECTOR_ERASE_SEQ_ID + 3] = 0;
+	flexspi_norFlashUpdateLUT(ctx->instance, SECTOR_ERASE_SEQ_ID, (const u32 *)&ctx->config.mem.lut[4 * SECTOR_ERASE_SEQ_ID], 1);
 
 	/* Block Erase */
 	ctx->config.mem.lut[4 * BLOCK_ERASE_SEQ_ID] = LUT_INSTR(LUT_CMD_CMD, LUT_PAD1, FLASH_SPANSION_CMD_SE, LUT_CMD_ADDR, LUT_PAD1, LUT_3B_ADDR); /* 0x81804d8 */
 	ctx->config.mem.lut[4 * BLOCK_ERASE_SEQ_ID + 1] = 0;
 	ctx->config.mem.lut[4 * BLOCK_ERASE_SEQ_ID + 2] = 0;
 	ctx->config.mem.lut[4 * BLOCK_ERASE_SEQ_ID + 3] = 0;
+	flexspi_norFlashUpdateLUT(ctx->instance, BLOCK_ERASE_SEQ_ID, (const u32 *)&ctx->config.mem.lut[4 * BLOCK_ERASE_SEQ_ID], 1);
 
 	/* Quad Input Page Program */
 	ctx->config.mem.lut[4 * PAGE_PROGRAM_SEQ_ID] = LUT_INSTR(LUT_CMD_CMD, LUT_PAD1, FLASH_SPANSION_CMD_QPP, LUT_CMD_ADDR, LUT_PAD1, LUT_3B_ADDR); /* 0x8180432 */
@@ -169,12 +171,14 @@ static void flashcfg_setMicronLUT(flash_context_t *ctx)
 	ctx->config.mem.lut[4 * SECTOR_ERASE_SEQ_ID + 1] = 0;
 	ctx->config.mem.lut[4 * SECTOR_ERASE_SEQ_ID + 2] = 0;
 	ctx->config.mem.lut[4 * SECTOR_ERASE_SEQ_ID + 3] = 0;
+	flexspi_norFlashUpdateLUT(ctx->instance, SECTOR_ERASE_SEQ_ID, (const u32 *)&ctx->config.mem.lut[4 * SECTOR_ERASE_SEQ_ID], 1);
 
 	/* 4 - Byte Block Erase */
 	ctx->config.mem.lut[4 * BLOCK_ERASE_SEQ_ID] = LUT_INSTR(LUT_CMD_CMD, LUT_PAD1, FLASH_SPANSION_CMD_4SE, LUT_CMD_ADDR, LUT_PAD1, LUT_4B_ADDR); /* 0x82004dc */
 	ctx->config.mem.lut[4 * BLOCK_ERASE_SEQ_ID + 1] = 0;
 	ctx->config.mem.lut[4 * BLOCK_ERASE_SEQ_ID + 2] = 0;
 	ctx->config.mem.lut[4 * BLOCK_ERASE_SEQ_ID + 3] = 0;
+	flexspi_norFlashUpdateLUT(ctx->instance, BLOCK_ERASE_SEQ_ID, (const u32 *)&ctx->config.mem.lut[4 * BLOCK_ERASE_SEQ_ID], 1);
 
 	/* 4 - Byte Quad Extended Page Program */
 	ctx->config.mem.lut[4 * PAGE_PROGRAM_SEQ_ID] = LUT_INSTR(LUT_CMD_CMD, LUT_PAD1, FLASH_SPANSION_CMD_4QEPP, LUT_CMD_ADDR, LUT_PAD4, LUT_4B_ADDR); /* 0xa20043e */
@@ -182,13 +186,13 @@ static void flashcfg_setMicronLUT(flash_context_t *ctx)
 	ctx->config.mem.lut[4 * PAGE_PROGRAM_SEQ_ID + 2] = 0;
 	ctx->config.mem.lut[4 * PAGE_PROGRAM_SEQ_ID + 3] = 0;
 	flexspi_norFlashUpdateLUT(ctx->instance, PAGE_PROGRAM_SEQ_ID, (const u32 *)&ctx->config.mem.lut[4 * PAGE_PROGRAM_SEQ_ID], 1);
-	;
 
 	/* Chip Erase */
 	ctx->config.mem.lut[4 * CHIP_ERASE_SEQ_ID] = LUT_INSTR(LUT_CMD_CMD, LUT_PAD1, FLASH_SPANSION_CMD_BE, 0, 0, 0); /* 0x0460 */
 	ctx->config.mem.lut[4 * CHIP_ERASE_SEQ_ID + 1] = LUT_INSTR(LUT_CMD_WRITE, LUT_PAD1, 0x04, 0, 0, 0);            /* 0x2004 */
 	ctx->config.mem.lut[4 * CHIP_ERASE_SEQ_ID + 2] = 0;
 	ctx->config.mem.lut[4 * CHIP_ERASE_SEQ_ID + 3] = 0;
+	flexspi_norFlashUpdateLUT(ctx->instance, CHIP_ERASE_SEQ_ID, (const u32 *)&ctx->config.mem.lut[4 * CHIP_ERASE_SEQ_ID], 1);
 
 	/* READ JEDEC ID*/
 	ctx->config.mem.lut[4 * READ_JEDEC_ID_SEQ_ID] = LUT_INSTR(LUT_CMD_CMD, LUT_PAD1, FLASH_SPANSION_CMD_RDID, LUT_CMD_READ, LUT_PAD1, 0x04); /* 0x2404049f */
