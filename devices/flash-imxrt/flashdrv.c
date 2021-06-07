@@ -319,7 +319,7 @@ static int flashdrv_init(unsigned int minor)
 			return -EINVAL;
 	}
 	else {
-		hal_memcpy((void *)&ctx->config.mem, &_fcfb, sizeof(ctx->config.mem));
+		hal_memcpy((void *)&ctx->config, &_fcfb, sizeof(ctx->config));
 	}
 
 	if (flashdrv_getVendorID(ctx, &ctx->flashID) != 0)
