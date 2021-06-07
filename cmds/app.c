@@ -121,7 +121,7 @@ static int cmd_app(char *s)
 
 	char *cmdline;
 	unsigned int flags = 0;
-	char imap[8], dmap[8], appName[SIZE_APP_NAME];
+	char imap[8], dmap[8], appName[SIZE_APP_NAME + 1];
 
 	handler_t handler;
 	phfs_stat_t stat;
@@ -165,7 +165,7 @@ static int cmd_app(char *s)
 			break;
 	}
 
-	if (pos >= SIZE_APP_NAME) {
+	if (pos > SIZE_APP_NAME) {
 		log_error("\nApp %s name is too long", cmdline);
 		return -EINVAL;
 	}
