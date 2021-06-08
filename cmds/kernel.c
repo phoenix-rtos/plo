@@ -23,13 +23,14 @@
 
 static void cmd_kernelInfo(void)
 {
-	lib_printf("loads Phoenix - RTOS, usage: kernel [dev]");
+	lib_printf("loads Phoenix-RTOS, usage: kernel [<dev> [name]]");
 }
 
 
 static int cmd_kernel(char *s)
 {
 	u8 buff[384];
+	char *kname;
 	void *loffs;
 	handler_t handler;
 	addr_t minaddr = 0xffffffff, maxaddr = 0, offs = 0;
@@ -47,24 +48,26 @@ static int cmd_kernel(char *s)
 		syspage_showKernel();
 		return EOK;
 	}
-	else if (argsc != 1) {
+	else if (argsc > 2) {
 		log_error("\nWrong args: %s", s);
 		return -EINVAL;
 	}
 
-	if (phfs_open(args[0], KERNEL_PATH, 0, &handler) < 0) {
-		log_error("\nCannot open %s, on %s", KERNEL_PATH, args[0]);
+	kname = (argsc == 2) ? args[1] : KERNEL_PATH;
+
+	if (phfs_open(args[0], kname, 0, &handler) < 0) {
+		log_error("\nCannot open %s, on %s", kname, args[0]);
 		return -EINVAL;
 	}
 
 	/* Read ELF header */
 	if (phfs_read(handler, offs, (u8 *)&hdr, (u32)sizeof(Elf32_Ehdr)) < 0) {
-		log_error("\nCan't read %s, on %s", KERNEL_PATH, args[0]);
+		log_error("\nCan't read %s, on %s", kname, args[0]);
 		return -EINVAL;
 	}
 
 	if ((hdr.e_ident[0] != 0x7f) || (hdr.e_ident[1] != 'E') || (hdr.e_ident[2] != 'L') || (hdr.e_ident[3] != 'F')) {
-		log_error("\n%s isn't an ELF object", KERNEL_PATH);
+		log_error("\n%s isn't an ELF object", kname);
 		return -EINVAL;
 	}
 
@@ -72,7 +75,7 @@ static int cmd_kernel(char *s)
 	for (k = 0; k < hdr.e_phnum; k++) {
 		offs = hdr.e_phoff + k * sizeof(Elf32_Phdr);
 		if (phfs_read(handler, offs, (u8 *)&phdr, (u32)sizeof(Elf32_Phdr)) < 0) {
-			log_error("\nCan't read %s, on %s", KERNEL_PATH, args[0]);
+			log_error("\nCan't read %s, on %s", kname, args[0]);
 			return -EINVAL;
 		}
 
@@ -90,7 +93,7 @@ static int cmd_kernel(char *s)
 			for (i = 0; i < phdr.p_filesz / sizeof(buff); i++) {
 				offs = phdr.p_offset + i * sizeof(buff);
 				if (phfs_read(handler, offs, buff, (u32)sizeof(buff)) < 0) {
-					log_error("\nCan't read %s, on %s", KERNEL_PATH, args[0]);
+					log_error("\nCan't read %s, on %s", kname, args[0]);
 					return -EINVAL;
 				}
 				hal_memcpy(loffs, buff, sizeof(buff));
@@ -102,7 +105,7 @@ static int cmd_kernel(char *s)
 			if (size != 0) {
 				offs = phdr.p_offset + i * sizeof(buff);
 				if (phfs_read(handler, offs, buff, size) < 0) {
-					log_error("\nCan't read %s, on %s", KERNEL_PATH, args[0]);
+					log_error("\nCan't read %s, on %s", kname, args[0]);
 					return -EINVAL;
 				}
 
@@ -116,7 +119,7 @@ static int cmd_kernel(char *s)
 		offs = hdr.e_shoff + k * sizeof(Elf32_Shdr);
 
 		if (phfs_read(handler, offs, (u8 *)&shdr, (u32)sizeof(Elf32_Shdr)) < 0) {
-			log_error("\nCan't read %s, on %s", KERNEL_PATH, args[0]);
+			log_error("\nCan't read %s, on %s", kname, args[0]);
 			return -EINVAL;
 		}
 
@@ -132,11 +135,11 @@ static int cmd_kernel(char *s)
 	syspage_setKernelEntry(hal_vm2phym(hdr.e_entry));
 
 	if (phfs_close(handler) < 0) {
-		log_error("\nCan't close %s, on %s", KERNEL_PATH, args[0]);
+		log_error("\nCan't close %s, on %s", kname, args[0]);
 		return -EINVAL;
 	}
 
-	log_info("\nLoading %s", KERNEL_PATH);
+	log_info("\nLoaded %s", kname);
 
 	return EOK;
 }
