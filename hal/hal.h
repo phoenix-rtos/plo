@@ -70,10 +70,6 @@ extern int hal_irqinst(u16 irq, int (*isr)(u16, void *), void *data);
 extern int hal_irquninst(u16 irq);
 
 
-/* Function initializes console which uses polling methods to transmit data */
-extern void hal_consoleInit(void);
-
-
 /* Function writes data to uart controller */
 extern void hal_consolePrint(const char *s);
 

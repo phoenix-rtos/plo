@@ -30,8 +30,12 @@ struct{
 } hal_common;
 
 
+/* Linker symbols */
 extern void _end(void);
 extern void _plo_bss(void);
+
+/* Console */
+extern void hal_consoleInit(void);
 
 
 /* Initialization functions */
