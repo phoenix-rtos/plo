@@ -13,8 +13,6 @@
  * %LICENSE%
  */
 
-#include "interrupts.h"
-
 #include <hal/hal.h>
 #include <lib/errno.h>
 
@@ -132,11 +130,12 @@ void interrupts_dispatch(void)
 }
 
 
-int interrupts_setHandler(u16 n, int (*f)(u16, void *), void *data)
+int hal_irqinst(u16 n, int (*f)(u16, void *), void *data)
 {
 	if (f == NULL || n >= SIZE_INTERRUPTS)
 		return -EINVAL;
 
+	hal_cli();
 	interrupts_common.handlers[n].n = n;
 	interrupts_common.handlers[n].data = data;
 	interrupts_common.handlers[n].f = f;
@@ -145,29 +144,30 @@ int interrupts_setHandler(u16 n, int (*f)(u16, void *), void *data)
 	interrupts_setCPU(n, 0x1);      /* CPU 0 handle all irqs                  */
 	interrupts_enableIRQ(n);
 
-	return EOK;
-}
-
-
-int interrupts_deleteHandler(u16 n)
-{
-	if (n >= SIZE_INTERRUPTS || interrupts_common.handlers[n].data == NULL || interrupts_common.handlers[n].f == NULL)
-		return -EINVAL;
-
-	hal_cli();
-
-	interrupts_common.handlers[n].data = NULL;
-	interrupts_common.handlers[n].f = NULL;
-
-	interrupts_disableIRQ(n);
-
 	hal_sti();
 
 	return EOK;
 }
 
 
-void interrupts_init(void)
+int hal_irquninst(u16 n)
+{
+	hal_cli();
+
+	if (n >= SIZE_INTERRUPTS || interrupts_common.handlers[n].data == NULL || interrupts_common.handlers[n].f == NULL)
+		return -EINVAL;
+
+	interrupts_common.handlers[n].data = NULL;
+	interrupts_common.handlers[n].f = NULL;
+
+	interrupts_disableIRQ(n);
+	hal_sti();
+
+	return EOK;
+}
+
+
+void hal_interruptsInit(void)
 {
 	int i;
 

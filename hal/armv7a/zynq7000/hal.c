@@ -13,8 +13,6 @@
  * %LICENSE%
  */
 
-#include "interrupts.h"
-
 #include <syspage.h>
 #include <hal/hal.h>
 #include <lib/errno.h>
@@ -31,13 +29,17 @@ struct{
 extern void _end(void);
 extern void _plo_bss(void);
 
+/* Console */
+extern void hal_consoleInit(void);
 
-/* Initialization functions */
+/* Interrupt */
+extern void hal_interruptsInit(void);
+
 
 void hal_init(void)
 {
 	_zynq_init();
-	interrupts_init();
+	hal_interruptsInit();
 
 	gpio_init();
 	timer_init();
@@ -128,30 +130,4 @@ void hal_cli(void)
 void hal_sti(void)
 {
 	__asm__ volatile("cpsie if");
-}
-
-
-int low_irqdispatch(u16 irq)
-{
-	return 0;
-}
-
-
-int hal_irqinst(u16 irq, int (*isr)(u16, void *), void *data)
-{
-	hal_cli();
-	interrupts_setHandler(irq, isr, data);
-	hal_sti();
-
-	return 0;
-}
-
-
-int hal_irquninst(u16 irq)
-{
-	hal_cli();
-	interrupts_deleteHandler(irq);
-	hal_sti();
-
-	return 0;
 }
