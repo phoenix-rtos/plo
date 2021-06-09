@@ -111,6 +111,8 @@ struct {
 	size_t mapsCnt;
 	plo_map_t maps[MAX_MAPS_NB];
 
+	addr_t kernel_entry;
+
 	/* General entries: syspage, kernel's elf sections and plo's elf sections */
 	map_entry_t entries[MAX_ENTRIES_NB];
 
@@ -429,6 +431,65 @@ void syspage_showAddr(void)
 }
 
 
+/* Validation */
+
+int syspage_validateAddrMap(unsigned int opt, addr_t addr, u8 id, unsigned int attr)
+{
+	int i;
+	plo_map_t *pmap;
+
+	for (i = 0; i < syspage_common.mapsCnt; ++i) {
+		pmap = &syspage_common.maps[i];
+
+		if (addr >= pmap->map.start && addr < pmap->map.end) {
+			/* optional check if addr is below map top */
+			if ((opt & flagValidateTop) != 0 && addr >= pmap->top)
+				break;
+
+			/* optional check of map id */
+			if ((opt & flagValidateMap) != 0 && id != i)
+				break;
+
+			/* optional check of map attributes */
+			if ((opt & flagValidateAttr) != 0 && (pmap->map.attr & attr) != attr)
+				break;
+
+			return EOK;
+		}
+	}
+
+	return -EINVAL;
+}
+
+
+int syspage_validateKernel(addr_t *addr)
+{
+	if (syspage_common.syspage->kernel.textsz == 0)
+		return -EINVAL;
+
+	if (syspage_common.syspage->kernel.bsssz == 0)
+		return -EINVAL;
+
+	if (syspage_common.syspage->kernel.datasz > 0) {
+		if (syspage_validateAddrMap(flagValidateAttr, syspage_common.syspage->kernel.data, 0, mAttrRead | mAttrWrite) != EOK)
+			return -EINVAL;
+	}
+
+	if (syspage_validateAddrMap(flagValidateAttr | flagValidateTop, syspage_common.syspage->kernel.text, 0, mAttrExec) != EOK)
+		return -EINVAL;
+
+	if (syspage_validateAddrMap(flagValidateAttr | flagValidateTop, syspage_common.kernel_entry, 0, mAttrExec) != EOK)
+		return -EINVAL;
+
+	if (syspage_validateAddrMap(flagValidateAttr, syspage_common.syspage->kernel.bss, 0, mAttrRead | mAttrWrite) != EOK)
+		return -EINVAL;
+
+	*addr = syspage_common.kernel_entry;
+
+	return EOK;
+}
+
+
 /* Map's functions */
 
 int syspage_addmap(const char *name, void *start, void *end, const char *attr)
@@ -674,6 +735,12 @@ int syspage_addProg(void *start, void *end, const char *imap, const char *dmap, 
 
 
 /* Setting kernel's data */
+
+void syspage_setKernelEntry(addr_t addr)
+{
+	syspage_common.kernel_entry = addr;
+}
+
 
 void syspage_setKernelText(void *addr, size_t size)
 {

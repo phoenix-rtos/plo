@@ -19,11 +19,6 @@
 #include <devices/gpio-zynq7000/gpio.h>
 
 
-struct{
-	addr_t kernel_entry;
-} hal_common;
-
-
 /* Linker symbols */
 extern void _end(void);
 extern void _plo_bss(void);
@@ -91,7 +86,7 @@ void hal_cpuInvCacheAll(unsigned int type)
 }
 
 
-void hal_setKernelEntry(addr_t addr)
+addr_t hal_vm2phym(addr_t addr)
 {
 	addr_t offs;
 
@@ -100,23 +95,11 @@ void hal_setKernelEntry(addr_t addr)
 		addr = ADDR_DDR + offs;
 	}
 
-	hal_common.kernel_entry = addr;
-}
-
-
-addr_t hal_vm2phym(addr_t addr)
-{
-	u32 offs;
-	if ((u32)VADDR_KERNEL_INIT != (u32)ADDR_DDR) {
-		offs = addr - VADDR_KERNEL_INIT;
-		addr = ADDR_DDR + offs;
-	}
-
 	return addr;
 }
 
 
-int hal_launch(void)
+int hal_cpuJump(addr_t addr)
 {
 	time_t start;
 	syspage_save();
@@ -132,7 +115,7 @@ int hal_launch(void)
 	__asm__ volatile("mov r9, %1; \
 		 blx %0"
 		 :
-		 : "r"(hal_common.kernel_entry), "r"(syspage_getAddress()));
+		 : "r"(addr), "r"(syspage_getAddress()));
 
 	hal_interruptsEnable();
 

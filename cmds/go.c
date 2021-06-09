@@ -15,6 +15,7 @@
 
 #include "cmd.h"
 
+#include <syspage.h>
 #include <hal/hal.h>
 #include <lib/log.h>
 #include <lib/console.h>
@@ -30,16 +31,23 @@ static int cmd_go(char *s)
 {
 	unsigned int argsc;
 	cmdarg_t *args;
+	addr_t kernel_entry;
+	int ret;
 
 	if ((argsc = cmd_getArgs(s, DEFAULT_BLANKS, &args)) != 0) {
 		log_error("\nWrong args: %s", s);
 		return -EINVAL;
 	}
 
+	if ((ret = syspage_validateKernel(&kernel_entry)) != EOK) {
+		log_error("\nValid kernel image has not been loaded.");
+		return ret;
+	}
+
 	log_info("\nRunning Phoenix-RTOS");
 	lib_printf(CONSOLE_NORMAL CONSOLE_CLEAR CONSOLE_CURSOR_SHOW);
-	hal_launch();
 
+	hal_cpuJump(kernel_entry);
 	return EOK;
 }
 

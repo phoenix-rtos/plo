@@ -33,6 +33,10 @@ enum { mAttrRead = 0x01, mAttrWrite = 0x02, mAttrExec = 0x04, mAttrShareable = 0
 enum { flagSyspageExec = 0x01 };
 
 
+/* syspage_validateAddrMap type of validation bitflags */
+enum { flagValidateTop = 0x01, flagValidateMap = 0x02, flagValidateAttr = 0x04 };
+
+
 /* Initialization function */
 extern void syspage_init(void);
 
@@ -60,6 +64,14 @@ extern void syspage_showApps(void);
 
 
 extern void syspage_showKernel(void);
+
+
+/* Validation */
+
+extern int syspage_validateAddrMap(unsigned int ftype, addr_t addr, u8 id, unsigned int attr);
+
+
+extern int syspage_validateKernel(addr_t *addr);
 
 
 /* Map's functions */
@@ -94,6 +106,9 @@ extern int syspage_addProg(void *start, void *end, const char *imap, const char 
 
 
 /* Setting kernel's data */
+
+extern void syspage_setKernelEntry(addr_t addr);
+
 
 extern void syspage_setKernelText(void *addr, size_t size);
 

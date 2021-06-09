@@ -5,7 +5,7 @@
  *
  * Hardware Abstraction Layer
  *
- * Copyright 2012, 2017, 2020 Phoenix Systems
+ * Copyright 2012, 2017, 2020-2021 Phoenix Systems
  * Copyright 2006 Radoslaw F. Wawrzusiak
  * Copyright 2001, 2005 Pawel Pisarczyk
  * Authors: Pawel Pisarczyk, Radoslaw F. Wawrzusiak, Hubert Buczynski
@@ -41,14 +41,11 @@ extern void hal_cpuInvCache(unsigned int type, addr_t addr, size_t sz);
 extern void hal_cpuInvCacheAll(unsigned int type);
 
 
-/* Function sets kernel's entry address */
-extern void hal_setKernelEntry(addr_t addr);
-
 /* Function translates virtual address into physical */
 extern addr_t hal_vm2phym(addr_t addr);
 
 /* Function starts kernel loaded into memory */
-extern int hal_launch(void);
+extern int hal_cpuJump(addr_t addr);
 
 
 /* Function enables interrupts */
