@@ -37,8 +37,9 @@ extern void _plo_bss(void);
 extern void timer_init(void);
 extern void timer_done(void);
 
+/* Console */
+extern void console_init(void);
 
-/* Initialization functions */
 
 void hal_init(void)
 {

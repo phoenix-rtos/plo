@@ -34,7 +34,7 @@ void hal_consolePrint(const char *s)
 }
 
 
-void hal_consoleInit(void)
+void console_init(void)
 {
 	u32 t;
 

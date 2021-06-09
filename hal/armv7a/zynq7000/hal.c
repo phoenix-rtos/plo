@@ -35,6 +35,9 @@ extern void timer_done(void);
 /* Interrupts */
 extern void interrupts_init(void);
 
+/* Console */
+void console_init(void);
+
 
 void hal_init(void)
 {
@@ -43,7 +46,7 @@ void hal_init(void)
 
 	gpio_init();
 	timer_init();
-	hal_consoleInit();
+	console_init();
 
 	syspage_init();
 	syspage_setAddress((void *)SYSPAGE_ADDRESS);
