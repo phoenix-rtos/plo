@@ -1,7 +1,7 @@
 /*
  * Phoenix-RTOS
  *
- * plo - operating system loader
+ * Operating system loader
  *
  * Hardware Abstraction Layer
  *
@@ -18,7 +18,6 @@
 #include <syspage.h>
 #include <hal/hal.h>
 #include <lib/errno.h>
-#include <hal/timer.h>
 #include <devices/gpio-zynq7000/gpio.h>
 
 
@@ -30,6 +29,10 @@ struct{
 /* Linker symbols */
 extern void _end(void);
 extern void _plo_bss(void);
+
+/* Timer */
+extern void timer_init(void);
+extern void timer_done(void);
 
 
 /* Initialization functions */
@@ -87,10 +90,12 @@ addr_t hal_vm2phym(addr_t addr)
 
 int hal_launch(void)
 {
+	time_t start;
 	syspage_save();
 
 	/* Give the LPUART transmitters some time */
-	timer_wait(100, TIMER_EXPIRE, NULL, 0);
+	start = hal_getTime();
+	while ((hal_getTime() - start) < 100);
 
 	/* Tidy up */
 	hal_done();

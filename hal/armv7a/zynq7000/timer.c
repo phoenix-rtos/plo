@@ -1,7 +1,7 @@
 /*
  * Phoenix-RTOS
  *
- * plo - operating system loader
+ * Operating system loader
  *
  * Triple Timer controler
  *
@@ -14,7 +14,6 @@
  */
 
 #include <hal/hal.h>
-#include <hal/timer.h>
 
 
 /* TODO: this value should be calculated and provide by zynq API */
@@ -29,40 +28,25 @@ enum {
 };
 
 
-typedef struct {
+struct {
 	volatile u32 *base;
-	volatile u32 done;
-	volatile u32 leftTime;
+	volatile time_t time;
 	u32 ticksPerFreq;
-
-	u16 irq;
-} timer_t;
-
-
-timer_t timer_common;
+} timer_common;
 
 
 static int timer_isr(u16 irq, void *data)
 {
 	u32 st;
-	timer_t *timer = (timer_t *)data;
 
-	st = *(timer->base + isr);
+	st = *(timer_common.base + isr);
 
 	/* Interval IRQ */
-	if (st & 0x1) {
-		if (!(timer->leftTime--)) {
-			/* Reset counter */
-			*(timer->base + cnt_ctrl) &= ~(1 << 1);
-
-			/* Disable irq */
-			*(timer->base + isr) |= 0x1;
-			*(timer->base + ier) &= ~0x1;
-		}
-	}
+	if (st & 0x1)
+		++timer_common.time;
 
 	/* Clear irq status */
-	*(timer->base + isr) = st;
+	*(timer_common.base + isr) = st;
 
 	return 0;
 }
@@ -76,7 +60,7 @@ static void timer_setPrescaler(u32 freq)
 	ticks = TTC_SRC_CLK_CPU_1x / freq;
 
 	prescaler = 0;
-	while ((ticks > 0xffff) && (prescaler < 0x10)) {
+	while ((ticks >= 0xffff) && (prescaler < 0x10)) {
 		prescaler++;
 		ticks /= 2;
 	}
@@ -92,38 +76,15 @@ static void timer_setPrescaler(u32 freq)
 }
 
 
-int timer_wait(u32 ms, int flags, volatile u16 *p, u16 v)
+time_t hal_getTime(void)
 {
-	/* Set value that determines when an irq t will be generated */
-	timer_common.leftTime = ms;
-	*(timer_common.base + interval_val) |= timer_common.ticksPerFreq & 0xffff;
+	time_t val;
 
-	/* Reset counter */
-	*(timer_common.base + cnt_ctrl) = 0x2;
-	/* Enable interval irq timer */
-	*(timer_common.base + ier) = 0x1;
+	hal_cli();
+	val = timer_common.time;
+	hal_sti();
 
-	while (timer_common.leftTime) {
-		if ((flags & TIMER_VALCHG) && *p != v)
-			return 1;
-	}
-
-	return 0;
-}
-
-
-void timer_init(void)
-{
-	timer_common.irq = TTC0_1_IRQ;
-	timer_common.base = TTC0_BASE_ADDR;
-
-	/* Reset controller */
-	timer_done();
-
-	/* Trigger interrupt at TTC_DEFAULT_FREQ = 1000 Hz */
-	timer_setPrescaler(TTC_DEFAULT_FREQ);
-
-	hal_irqinst(timer_common.irq, timer_isr, (void *)&timer_common);
+	return val;
 }
 
 
@@ -148,5 +109,27 @@ void timer_done(void)
 	/* Reset counters and restart counting */
 	*(timer_common.base + cnt_ctrl) = 0x10;
 
-	hal_irquninst(timer_common.irq);
+	hal_irquninst(TTC0_1_IRQ);
+}
+
+
+void timer_init(void)
+{
+	timer_common.time = 0;
+	timer_common.base = TTC0_BASE_ADDR;
+
+	/* Reset controller */
+	timer_done();
+
+	/* Trigger interrupt at TTC_DEFAULT_FREQ = 1000 Hz */
+	timer_setPrescaler(TTC_DEFAULT_FREQ);
+
+	hal_irqinst(TTC0_1_IRQ, timer_isr, NULL);
+
+	*(timer_common.base + interval_val) |= timer_common.ticksPerFreq & 0xffff;
+
+	/* Reset counter */
+	*(timer_common.base + cnt_ctrl) = 0x2;
+	/* Enable interval irq timer */
+	*(timer_common.base + ier) = 0x1;
 }
