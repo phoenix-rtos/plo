@@ -38,13 +38,16 @@ extern void _plo_bss(void);
 extern void timer_init(void);
 extern void timer_done(void);
 
+/* Console */
+void console_init(void);
+
 
 void hal_init(void)
 {
 	_imxrt_init();
 	timer_init();
 
-	hal_consoleInit();
+	console_init();
 
 	syspage_init();
 	syspage_setAddress((void *)SYSPAGE_ADDRESS);

@@ -38,7 +38,7 @@ void hal_consolePrint(const char *s)
 	}
 }
 
-static void hal_initClock(void)
+static void console_initClock(void)
 {
 	ctl_clock_t ctl;
 
@@ -55,7 +55,7 @@ static void hal_initClock(void)
 }
 
 
-static void hal_setPin(u32 pin)
+static void console_setPin(u32 pin)
 {
 	ctl_mio_t ctl;
 
@@ -89,11 +89,11 @@ static void hal_setPin(u32 pin)
 }
 
 
-void hal_consoleInit(void)
+void console_init(void)
 {
-	hal_initClock();
-	hal_setPin(UART1_RX);
-	hal_setPin(UART1_TX);
+	console_initClock();
+	console_setPin(UART1_RX);
+	console_setPin(UART1_TX);
 
 	halconsole_common.uart = UART1_BASE_ADDR;
 
