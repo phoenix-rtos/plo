@@ -1,7 +1,7 @@
 /*
  * Phoenix-RTOS
  *
- * plo loader
+ * Operating system loader
  *
  * MPCore exception and interrupt handling
  *
@@ -12,8 +12,6 @@
  *
  * %LICENSE%
  */
-
-#include "interrupts.h"
 
 #include <hal/hal.h>
 #include <lib/errno.h>
@@ -41,8 +39,7 @@ enum {
 };
 
 
-typedef struct _intr_handler_t {
-	u16 n;
+typedef struct {
 	int (*f)(u16, void *);
 	void *data;
 } intr_handler_t;
@@ -132,35 +129,34 @@ void interrupts_dispatch(void)
 }
 
 
-int interrupts_setHandler(u16 n, int (*f)(u16, void *), void *data)
+int hal_irqinst(u16 n, int (*f)(u16, void *), void *data)
 {
 	if (f == NULL || n >= SIZE_INTERRUPTS)
 		return -EINVAL;
 
-	interrupts_common.handlers[n].n = n;
+	hal_cli();
 	interrupts_common.handlers[n].data = data;
 	interrupts_common.handlers[n].f = f;
 
 	interrupts_setPriority(n, 0xa); /* each of the irqs has the same priority */
 	interrupts_setCPU(n, 0x1);      /* CPU 0 handle all irqs                  */
 	interrupts_enableIRQ(n);
+	hal_sti();
 
 	return EOK;
 }
 
 
-int interrupts_deleteHandler(u16 n)
+int hal_irquninst(u16 n)
 {
+	hal_cli();
 	if (n >= SIZE_INTERRUPTS || interrupts_common.handlers[n].data == NULL || interrupts_common.handlers[n].f == NULL)
 		return -EINVAL;
-
-	hal_cli();
 
 	interrupts_common.handlers[n].data = NULL;
 	interrupts_common.handlers[n].f = NULL;
 
 	interrupts_disableIRQ(n);
-
 	hal_sti();
 
 	return EOK;
