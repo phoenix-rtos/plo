@@ -5,7 +5,7 @@
  *
  * Hardware Abstraction Layer
  *
- * Copyright 2020 Phoenix Systems
+ * Copyright 2020-2021 Phoenix Systems
  * Author: Hubert Buczynski, Marcin Baran
  *
  * This file is part of Phoenix-RTOS.
@@ -24,7 +24,6 @@ typedef struct {
 
 
 struct{
-	addr_t kernel_entry;
 	intr_handler_t irqs[SIZE_INTERRUPTS];
 } hal_common;
 
@@ -96,19 +95,13 @@ void hal_cpuInvCacheAll(unsigned int type)
 }
 
 
-void hal_setKernelEntry(addr_t addr)
-{
-	hal_common.kernel_entry = addr;
-}
-
-
 addr_t hal_vm2phym(addr_t addr)
 {
 	return addr;
 }
 
 
-int hal_launch(void)
+int hal_cpuJump(addr_t addr)
 {
 	time_t start;
 
@@ -125,7 +118,7 @@ int hal_launch(void)
 	__asm__ volatile("mov r9, %1; \
 		 blx %0"
 		 :
-		 : "r"(hal_common.kernel_entry), "r"(syspage_getAddress()));
+		 : "r"(addr), "r"(syspage_getAddress()));
 	hal_interruptsEnable();
 
 	return -1;

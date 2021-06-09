@@ -122,14 +122,14 @@ static int cmd_kernel(char *s)
 
 		/* Find .bss section header */
 		if (shdr.sh_type == SHT_NOBITS && shdr.sh_flags == (SHF_WRITE | SHF_ALLOC))
-			syspage_setKernelBss((void *)shdr.sh_addr, (u32)shdr.sh_size);
+			syspage_setKernelBss((void *)hal_vm2phym(shdr.sh_addr), (u32)shdr.sh_size);
 	}
 
 	/* TODO: it is temporary solution. It should be defined. */
 	syspage_setKernelData(0, 0);
 
-	syspage_setKernelText((void *)minaddr, maxaddr - minaddr);
-	hal_setKernelEntry(hdr.e_entry);
+	syspage_setKernelText((void *)hal_vm2phym(minaddr), maxaddr - minaddr);
+	syspage_setKernelEntry(hal_vm2phym(hdr.e_entry));
 
 	if (phfs_close(handler) < 0) {
 		log_error("\nCan't close %s, on %s", KERNEL_PATH, args[0]);
