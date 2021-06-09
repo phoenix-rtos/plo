@@ -1,7 +1,7 @@
 /*
  * Phoenix-RTOS
  *
- * plo - operating system loader
+ * Operating system loader
  *
  * Hardware Abstraction Layer
  *
@@ -68,6 +68,10 @@ extern int hal_irqinst(u16 irq, int (*isr)(u16, void *), void *data);
 
 /* Function removes interrupts from controller */
 extern int hal_irquninst(u16 irq);
+
+
+/* Function returns time in milliseconds from plo start */
+extern time_t hal_getTime(void);
 
 
 /* Function initializes console which uses polling methods to transmit data */
