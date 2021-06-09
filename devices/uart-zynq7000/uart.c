@@ -1,7 +1,7 @@
 /*
  * Phoenix-RTOS
  *
- * plo - operating system loader
+ * Operating system loader
  *
  * Zynq-7000 Serial driver
  *
@@ -14,7 +14,6 @@
  */
 
 #include <hal/hal.h>
-#include <hal/timer.h>
 #include <lib/errno.h>
 #include <lib/lib.h>
 #include <devices/devs.h>
@@ -220,14 +219,18 @@ static ssize_t uart_read(unsigned int minor, addr_t offs, u8 *buff, unsigned int
 {
 	u16 l, cnt = 0;
 	uart_t *uart;
+	time_t start;
 
 	if (minor >= UARTS_MAX_CNT)
 		return -EINVAL;
 
 	uart = &uart_common.uarts[minor];
 
-	if (!timer_wait(timeout, TIMER_VALCHG, &uart->rxHead, uart->rxTail))
-		return -ETIME;
+	start = hal_getTime();
+	while (uart->rxHead == uart->rxTail) {
+		if ((hal_getTime() - start) >= timeout)
+			return -ETIME;
+	}
 
 	hal_cli();
 
