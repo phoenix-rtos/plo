@@ -14,7 +14,6 @@
  */
 
 #include <hal/hal.h>
-#include <hal/timer.h>
 #include <lib/errno.h>
 #include <lib/lib.h>
 #include <devices/devs.h>
@@ -455,13 +454,16 @@ static ssize_t uart_read(unsigned int minor, addr_t offs, u8 *buff, unsigned int
 {
 	uart_t *uart;
 	u16 l, cnt;
+	time_t start;
 
 	if ((uart = uart_getInstance(minor)) == NULL)
 		return -EINVAL;
 
-	if (!timer_wait(timeout, TIMER_VALCHG, &uart->rxHead, uart->rxTail))
-		return -ETIME;
-
+	start = hal_getTime();
+	while (uart->rxHead == uart->rxTail) {
+		if ((hal_getTime() - start) >= timeout)
+			return -ETIME;
+	}
 	hal_cli();
 
 	if (uart->rxHead > uart->rxTail)
