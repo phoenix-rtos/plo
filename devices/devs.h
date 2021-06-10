@@ -16,7 +16,7 @@
 #ifndef _DEVS_H_
 #define _DEVS_H_
 
-#include <lib/types.h>
+#include <hal/hal.h>
 
 #define DEV_UART  0
 #define DEV_USB   1

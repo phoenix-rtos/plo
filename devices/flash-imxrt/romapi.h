@@ -16,7 +16,7 @@
 #ifndef _FLEXSPI_ROM_API_H_
 #define _FLEXSPI_ROM_API_H_
 
-#include <lib/types.h>
+#include <hal/hal.h>
 
 typedef struct {
 	volatile u32 option0;

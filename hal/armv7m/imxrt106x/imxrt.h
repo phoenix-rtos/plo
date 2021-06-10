@@ -19,7 +19,7 @@
 
 /* iMXRT peripherals */
 
-#include <lib/types.h>
+#include "types.h"
 
 enum { gpio1 = 0, gpio2, gpio3, gpio4, gpio5 };
 

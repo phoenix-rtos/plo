@@ -12,7 +12,6 @@
  */
 
 #include <hal/hal.h>
-#include <lib/types.h>
 
 extern void _end(void);
 extern void _plo_bss(void);

@@ -13,8 +13,6 @@
  * %LICENSE%
  */
 
-#include <hal/hal.h>
-
 #include <devices/usbc/client.h>
 #include <devices/usbc/usbphy.h>
 

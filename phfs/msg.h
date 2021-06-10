@@ -16,7 +16,6 @@
 #ifndef _MSG_H_
 #define _MSG_H_
 
-#include <lib/types.h>
 #include <hal/hal.h>
 
 /* Special characters */

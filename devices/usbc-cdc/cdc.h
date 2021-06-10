@@ -16,7 +16,7 @@
 #ifndef _USB_CDC_H_
 #define _USB_CDC_H_
 
-#include <lib/types.h>
+#include <hal/hal.h>
 
 
 /* endpoints descriptions */

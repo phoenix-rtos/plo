@@ -19,7 +19,6 @@
 
 #include <lib/lib.h>
 #include <lib/log.h>
-#include <lib/types.h>
 #include <lib/errno.h>
 
 

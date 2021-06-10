@@ -19,7 +19,6 @@
 #define _HAL_H_
 
 #include <config.h>
-#include <lib/types.h>
 
 
 /* Function initializes clocks, peripherals and basic controllers */

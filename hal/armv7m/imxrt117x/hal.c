@@ -46,7 +46,7 @@ void hal_init(void)
 	_imxrt_init();
 	timer_init();
 
-	hal_consoleInit();
+	console_init();
 
 	syspage_init();
 	syspage_setAddress((void *)SYSPAGE_ADDRESS);

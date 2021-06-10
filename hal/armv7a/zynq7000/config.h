@@ -18,6 +18,7 @@
 #define _CONFIG_H_
 
 #include "zynq.h"
+#include "types.h"
 #include "peripherals.h"
 #include "../string.h"
 
