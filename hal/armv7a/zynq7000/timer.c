@@ -76,7 +76,7 @@ static void timer_setPrescaler(u32 freq)
 }
 
 
-time_t hal_getTime(void)
+time_t hal_timerGet(void)
 {
 	time_t val;
 

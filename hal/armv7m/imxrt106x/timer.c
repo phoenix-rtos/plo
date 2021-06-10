@@ -39,7 +39,7 @@ static int timer_isr(u16 irq, void *data)
 }
 
 
-time_t hal_getTime(void)
+time_t hal_timerGet(void)
 {
 	time_t val;
 
