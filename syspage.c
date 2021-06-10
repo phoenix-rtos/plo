@@ -381,7 +381,7 @@ void syspage_showMaps(void)
 		return;
 	}
 
-	lib_printf(CONSOLE_BOLD "\n%-4s %-8s %-14s %-14s %-14s %-14s %s\n", "ID", "NAME", "START", "END", "STOP", "FREESZ", "ATTR");
+	lib_printf(CONSOLE_BOLD "\n%-4s %-8s %-14s %-14s %-14s %-14s %s\n", "ID", "NAME", "START", "END", "TOP", "FREESZ", "ATTR");
 	lib_printf(CONSOLE_NORMAL);
 	for (i = 0; i < syspage_common.mapsCnt; ++i) {
 		pmap = &syspage_common.maps[i];
@@ -487,6 +487,21 @@ int syspage_getMapTop(const char *map, void **addr)
 	}
 
 	*addr = (void *)syspage_common.maps[id].top;
+
+	return EOK;
+}
+
+
+int syspage_setMapTop(const char *map, void *addr)
+{
+	u8 id;
+
+	if (syspage_getMapID(map, &id) < 0) {
+		log_error("\nsyspage: %s does not exist", map);
+		return -EINVAL;
+	}
+
+	syspage_common.maps[id].top = (addr_t)addr;
 
 	return EOK;
 }

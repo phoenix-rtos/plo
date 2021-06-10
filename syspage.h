@@ -70,6 +70,9 @@ extern int syspage_addmap(const char *name, void *start, void *end, const char *
 extern int syspage_getMapTop(const char *map, void **addr);
 
 
+extern int syspage_setMapTop(const char *map, void *addr);
+
+
 extern int syspage_alignMapTop(const char *map);
 
 
