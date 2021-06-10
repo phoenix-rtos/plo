@@ -226,9 +226,9 @@ static ssize_t uart_read(unsigned int minor, addr_t offs, u8 *buff, unsigned int
 
 	uart = &uart_common.uarts[minor];
 
-	start = hal_getTime();
+	start = hal_timerGet();
 	while (uart->rxHead == uart->rxTail) {
-		if ((hal_getTime() - start) >= timeout)
+		if ((hal_timerGet() - start) >= timeout)
 			return -ETIME;
 	}
 

@@ -70,7 +70,7 @@ extern int hal_irquninst(u16 irq);
 
 
 /* Function returns time in milliseconds from plo start */
-extern time_t hal_getTime(void);
+extern time_t hal_timerGet(void);
 
 
 /* Function writes data to uart controller */

@@ -90,8 +90,8 @@ int hal_launch(void)
 	syspage_save();
 
 	/* Give the LPUART transmitters some time */
-	start = hal_getTime();
-	while ((hal_getTime() - start) < 100);
+	start = hal_timerGet();
+	while ((hal_timerGet() - start) < 100);
 
 	/* Tidy up */
 	hal_done();
