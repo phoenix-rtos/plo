@@ -70,6 +70,32 @@ const char *hal_cpuInfo(void)
 }
 
 
+void hal_cpuInvCache(unsigned int type, addr_t addr, size_t sz)
+{
+	switch (type) {
+		case hal_cpuDCache:
+			/* TODO */
+		case hal_cpuICache:
+			/* TODO */
+		default:
+			break;
+	}
+}
+
+
+void hal_cpuInvCacheAll(unsigned int type)
+{
+	switch (type) {
+		case hal_cpuDCache:
+			/* TODO */
+		case hal_cpuICache:
+			/* TODO */
+		default:
+			break;
+	}
+}
+
+
 void hal_setKernelEntry(addr_t addr)
 {
 	hal_common.kernel_entry = addr;
@@ -103,18 +129,6 @@ int hal_launch(void)
 	hal_interruptsEnable();
 
 	return -1;
-}
-
-
-extern void hal_invalDCacheAll(void)
-{
-	/* TODO */
-}
-
-
-void hal_invalDCacheAddr(addr_t addr, size_t sz)
-{
-	/* TODO */
 }
 
 

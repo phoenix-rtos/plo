@@ -21,6 +21,9 @@
 #include <config.h>
 
 
+enum { hal_cpuICache = 0, hal_cpuDCache };
+
+
 /* Function initializes clocks, peripherals and basic controllers */
 extern void hal_init(void);
 
@@ -31,27 +34,21 @@ extern void hal_done(void);
 /* Function returns information about CPU */
 extern const char *hal_cpuInfo(void);
 
+/* Function invalidates data or instruction cache */
+extern void hal_cpuInvCache(unsigned int type, addr_t addr, size_t sz);
+
+/* Function invalidates the whole data or instruction cache */
+extern void hal_cpuInvCacheAll(unsigned int type);
+
 
 /* Function sets kernel's entry address */
 extern void hal_setKernelEntry(addr_t addr);
 
-
 /* Function translates virtual address into physical */
 extern addr_t hal_vm2phym(addr_t addr);
 
-
 /* Function starts kernel loaded into memory */
 extern int hal_launch(void);
-
-
-/* Function invalidates all data cache */
-extern void hal_invalDCacheAll(void);
-
-
-/* Function invalidates data cache region */
-extern void hal_invalDCacheAddr(addr_t addr, size_t sz);
-
-
 
 
 /* Function enables interrupts */

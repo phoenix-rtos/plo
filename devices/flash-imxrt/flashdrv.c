@@ -88,7 +88,7 @@ static void flashdrv_syncCtx(flash_context_t *ctx)
 		flexspi_norFlashPageProgram(ctx->instance, &ctx->config, dstAddr, src);
 	}
 
-	hal_invalDCacheAddr(initAddr, ctx->properties.sector_size);
+	hal_cpuInvCache(hal_cpuDCache, initAddr, ctx->properties.sector_size);
 
 	ctx->counter = 0;
 	ctx->sectorID = -1;
@@ -133,7 +133,7 @@ static s32 flashdrv_bufferedPagesWrite(flash_context_t *ctx, u32 offset, const c
 			if (flexspi_norFlashErase(ctx->instance, &ctx->config, ctx->properties.sector_size * sector_id, ctx->properties.sector_size) != 0)
 				return savedBytes;
 
-			hal_invalDCacheAddr(ctx->address + ctx->properties.sector_size * sector_id, ctx->properties.sector_size);
+			hal_cpuInvCache(hal_cpuDCache, ctx->address + ctx->properties.sector_size * sector_id, ctx->properties.sector_size);
 
 			ctx->sectorID = sector_id;
 			ctx->counter = offset - ctx->properties.sector_size * ctx->sectorID;
