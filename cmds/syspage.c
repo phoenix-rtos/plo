@@ -48,7 +48,7 @@ static int cmd_syspage(char *s)
 		return -EINVAL;
 	}
 
-	syspage_setAddress((void *)addr);
+	syspage_setAddress(addr);
 	log_info("\nSetting address: 0x%x", addr);
 
 	return EOK;
