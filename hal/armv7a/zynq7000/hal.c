@@ -102,13 +102,13 @@ int hal_launch(void)
 	/* Tidy up */
 	hal_done();
 
-	hal_cli();
+	hal_interruptsDisable();
 	__asm__ volatile("mov r9, %1; \
 		 blx %0"
 		 :
 		 : "r"(hal_common.kernel_entry), "r"(syspage_getAddress()));
 
-	hal_sti();
+	hal_interruptsEnable();
 
 	return -1;
 }
@@ -126,13 +126,13 @@ void hal_invalDCacheAddr(addr_t addr, size_t sz)
 }
 
 
-void hal_cli(void)
+void hal_interruptsDisable(void)
 {
 	__asm__ volatile("cpsid if");
 }
 
 
-void hal_sti(void)
+void hal_interruptsEnable(void)
 {
 	__asm__ volatile("cpsie if");
 }

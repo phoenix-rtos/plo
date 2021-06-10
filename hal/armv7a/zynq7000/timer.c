@@ -35,7 +35,7 @@ struct {
 } timer_common;
 
 
-static int timer_isr(u16 irq, void *data)
+static int timer_isr(unsigned int irq, void *data)
 {
 	u32 st;
 
@@ -80,9 +80,9 @@ time_t hal_timerGet(void)
 {
 	time_t val;
 
-	hal_cli();
+	hal_interruptsDisable();
 	val = timer_common.time;
-	hal_sti();
+	hal_interruptsEnable();
 
 	return val;
 }
@@ -109,7 +109,7 @@ void timer_done(void)
 	/* Reset counters and restart counting */
 	*(timer_common.base + cnt_ctrl) = 0x10;
 
-	hal_irquninst(TTC0_1_IRQ);
+	hal_interruptsSet(TTC0_1_IRQ, NULL, NULL);
 }
 
 
@@ -124,7 +124,7 @@ void timer_init(void)
 	/* Trigger interrupt at TTC_DEFAULT_FREQ = 1000 Hz */
 	timer_setPrescaler(TTC_DEFAULT_FREQ);
 
-	hal_irqinst(TTC0_1_IRQ, timer_isr, NULL);
+	hal_interruptsSet(TTC0_1_IRQ, timer_isr, NULL);
 
 	*(timer_common.base + interval_val) |= timer_common.ticksPerFreq & 0xffff;
 
