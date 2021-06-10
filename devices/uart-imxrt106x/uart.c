@@ -27,7 +27,7 @@
 
 typedef struct {
 	volatile u32 *base;
-	u16 irq;
+	unsigned int irq;
 
 	u16 rxFifoSz;
 	u16 txFifoSz;
@@ -100,7 +100,7 @@ static uart_t *uart_getInstance(unsigned int minor)
 }
 
 
-static int uart_handleIntr(u16 irq, void *buff)
+static int uart_handleIntr(unsigned int irq, void *buff)
 {
 	u32 flags;
 	uart_t *uart = (uart_t *)buff;
@@ -449,7 +449,7 @@ static ssize_t uart_read(unsigned int minor, addr_t offs, u8 *buff, unsigned int
 			return -ETIME;
 	}
 
-	hal_cli();
+	hal_interruptsDisable();
 
 	if (uart->rxHead > uart->rxTail)
 		l = min(uart->rxHead - uart->rxTail, len);
@@ -464,7 +464,7 @@ static ssize_t uart_read(unsigned int minor, addr_t offs, u8 *buff, unsigned int
 	}
 	uart->rxTail = ((uart->rxTail + cnt) % BUFFER_SIZE);
 
-	hal_sti();
+	hal_interruptsEnable();
 
 	return cnt;
 }
@@ -481,7 +481,7 @@ static ssize_t uart_write(unsigned int minor, const u8 *buff, unsigned int len)
 	while (uart->txHead == uart->txTail && uart->tFull)
 		;
 
-	hal_cli();
+	hal_interruptsDisable();
 	if (uart->txHead > uart->txTail)
 		l = min(uart->txHead - uart->txTail, len);
 	else
@@ -505,7 +505,7 @@ static ssize_t uart_write(unsigned int minor, const u8 *buff, unsigned int len)
 
 	*(uart->base + ctrlr) |= 1 << 23;
 
-	hal_sti();
+	hal_interruptsEnable();
 
 	return cnt;
 }
@@ -562,7 +562,7 @@ static int uart_done(unsigned int minor)
 	*(uart->base + globalr) &= ~(1 << 1);
 	imxrt_dataBarrier();
 
-	hal_irquninst(uart->irq);
+	hal_interruptsSet(uart->irq, NULL, NULL);
 
 	return EOK;
 }
@@ -646,7 +646,7 @@ static int uart_init(unsigned int minor)
 	*(uart->base + ctrlr) |= (1 << 19) | (1 << 18);
 
 	_imxrt_setDevClock(info[minor].dev, clk_state_run);
-	hal_irqinst(info[minor].irq, uart_handleIntr, (void *)uart);
+	hal_interruptsSet(info[minor].irq, uart_handleIntr, (void *)uart);
 
 	lib_printf("\ndev/uart: Initializing uart(%d.%d)", DEV_UART, minor);
 

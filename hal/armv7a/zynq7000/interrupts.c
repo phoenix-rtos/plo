@@ -40,7 +40,7 @@ enum {
 
 
 typedef struct {
-	int (*f)(u16, void *);
+	int (*f)(unsigned int, void *);
 	void *data;
 } intr_handler_t;
 
@@ -129,35 +129,25 @@ void interrupts_dispatch(void)
 }
 
 
-int hal_irqinst(u16 n, int (*f)(u16, void *), void *data)
+int hal_interruptsSet(unsigned int n, int (*f)(unsigned int, void *), void *data)
 {
-	if (f == NULL || n >= SIZE_INTERRUPTS)
+	if (n >= SIZE_INTERRUPTS)
 		return -EINVAL;
 
-	hal_cli();
+	hal_interruptsDisable();
 	interrupts_common.handlers[n].data = data;
 	interrupts_common.handlers[n].f = f;
 
-	interrupts_setPriority(n, 0xa); /* each of the irqs has the same priority */
-	interrupts_setCPU(n, 0x1);      /* CPU 0 handle all irqs                  */
-	interrupts_enableIRQ(n);
-	hal_sti();
+	if (f == NULL) {
+		interrupts_disableIRQ(n);
+	}
+	else {
+		interrupts_setPriority(n, 0xa); /* each of the irqs has the same priority */
+		interrupts_setCPU(n, 0x1);      /* CPU 0 handle all irqs                  */
+		interrupts_enableIRQ(n);
+	}
 
-	return EOK;
-}
-
-
-int hal_irquninst(u16 n)
-{
-	hal_cli();
-	if (n >= SIZE_INTERRUPTS || interrupts_common.handlers[n].data == NULL || interrupts_common.handlers[n].f == NULL)
-		return -EINVAL;
-
-	interrupts_common.handlers[n].data = NULL;
-	interrupts_common.handlers[n].f = NULL;
-
-	interrupts_disableIRQ(n);
-	hal_sti();
+	hal_interruptsEnable();
 
 	return EOK;
 }
@@ -205,5 +195,5 @@ void interrupts_init(void)
 	/* EnableS = 1; EnableNS = 1; AckCtl = 1; FIQEn = 0 */
 	*(interrupts_common.mpcore + cicr) = (*(interrupts_common.mpcore + cicr) & ~0x7) | 0x7;
 
-	hal_sti();
+	hal_interruptsEnable();
 }

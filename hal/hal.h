@@ -24,7 +24,6 @@
 /* Function initializes clocks, peripherals and basic controllers */
 extern void hal_init(void);
 
-
 /* Function resets basic controllers */
 extern void hal_done(void);
 
@@ -53,20 +52,16 @@ extern void hal_invalDCacheAll(void);
 extern void hal_invalDCacheAddr(addr_t addr, size_t sz);
 
 
-/* Function disables interrupts */
-extern void hal_cli(void);
 
 
 /* Function enables interrupts */
-extern void hal_sti(void);
+extern void hal_interruptsEnable(void);
 
+/* Function disables interrupts */
+extern void hal_interruptsDisable(void);
 
 /* Function registers interrupts in controller */
-extern int hal_irqinst(u16 irq, int (*isr)(u16, void *), void *data);
-
-
-/* Function removes interrupts from controller */
-extern int hal_irquninst(u16 irq);
+extern int hal_interruptsSet(unsigned int irq, int (*isr)(unsigned int, void *), void *data);
 
 
 /* Function returns time in milliseconds from plo start */

@@ -20,7 +20,7 @@
 
 typedef struct {
 	void *data;
-	int (*isr)(u16, void *);
+	int (*isr)(unsigned int, void *);
 } intr_handler_t;
 
 
@@ -96,12 +96,12 @@ int hal_launch(void)
 	/* Tidy up */
 	hal_done();
 
-	hal_cli();
+	hal_interruptsDisable();
 	__asm__ volatile("mov r9, %1; \
 		 blx %0"
 		 :
 		 : "r"(hal_common.kernel_entry), "r"(syspage_getAddress()));
-	hal_sti();
+	hal_interruptsEnable();
 
 	return -1;
 }
@@ -119,51 +119,46 @@ void hal_invalDCacheAddr(addr_t addr, size_t sz)
 }
 
 
-void hal_cli(void)
-{
-	__asm__ volatile("cpsid if");
-}
-
-
-void hal_sti(void)
+void hal_interruptsEnable(void)
 {
 	__asm__ volatile("cpsie if");
 }
 
 
-int hal_irqdispatch(u16 irq)
+void hal_interruptsDisable(void)
 {
-	if (hal_common.irqs[irq].isr == NULL)
-		return -1;
-
-	hal_common.irqs[irq].isr(irq, hal_common.irqs[irq].data);
-
-	return 0;
+	__asm__ volatile("cpsid if");
 }
 
 
-int hal_irqinst(u16 irq, int (*isr)(u16, void *), void *data)
+int hal_interruptsSet(unsigned int irq, int (*isr)(unsigned int, void *), void *data)
 {
 	if (irq >= SIZE_INTERRUPTS)
 		return -EINVAL;
 
-	hal_cli();
+	hal_interruptsDisable();
 	hal_common.irqs[irq].isr = isr;
 	hal_common.irqs[irq].data = data;
 
-	_imxrt_nvicSetPriority(irq - 0x10, 1);
-	_imxrt_nvicSetIRQ(irq - 0x10, 1);
-	hal_sti();
+	if (isr == NULL) {
+		_imxrt_nvicSetIRQ(irq - 0x10, 0);
+	}
+	else {
+		_imxrt_nvicSetPriority(irq - 0x10, 1);
+		_imxrt_nvicSetIRQ(irq - 0x10, 1);
+	}
+	hal_interruptsEnable();
 
-	return 0;
+	return EOK;
 }
 
 
-int hal_irquninst(u16 irq)
+int hal_irqdispatch(unsigned int irq)
 {
-	hal_cli();
-	_imxrt_nvicSetIRQ(irq - 0x10, 0);
-	hal_sti();
+	if (hal_common.irqs[irq].isr == NULL)
+		return -EINTR;
 
-	return 0;
+	hal_common.irqs[irq].isr(irq, hal_common.irqs[irq].data);
+
+	return EOK;
 }

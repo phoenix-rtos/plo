@@ -96,7 +96,7 @@ int usbclient_receive(int endpt, void *data, unsigned int len)
 }
 
 
-int usbclient_intr(u16 irq, void *buff)
+int usbclient_intr(unsigned int irq, void *buff)
 {
 	int i;
 
@@ -147,7 +147,7 @@ int usbclient_init(usb_desc_list_t *desList)
 		return -1;
 	}
 
-	hal_irqinst(phy_getIrq(), usbclient_intr, (void *)NULL);
+	hal_interruptsSet(phy_getIrq(), usbclient_intr, (void *)NULL);
 	return EOK;
 }
 
@@ -156,6 +156,7 @@ int usbclient_destroy(void)
 {
 	ctrl_reset();
 	usbclient_buffReset();
+	hal_interruptsSet(phy_getIrq(), NULL, NULL);
 
 	phy_reset();
 

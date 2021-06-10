@@ -25,7 +25,7 @@ struct {
 } timer_common;
 
 
-static int timer_isr(u16 irq, void *data)
+static int timer_isr(unsigned int irq, void *data)
 {
 	/* Output Compare 1 Interrupt */
 	if (*(timer_common.base + gpt_sr) & 0x1) {
@@ -43,9 +43,9 @@ time_t hal_timerGet(void)
 {
 	time_t val;
 
-	hal_cli();
+	hal_interruptsDisable();
 	val = timer_common.time;
-	hal_sti();
+	hal_interruptsEnable();
 
 	return val;
 }
@@ -60,7 +60,7 @@ void timer_done(void)
 	/* Clear status register */
 	*(timer_common.base + gpt_sr) = *(timer_common.base + gpt_sr);
 
-	hal_irquninst(GPT1_IRQ);
+	hal_interruptsSet(GPT1_IRQ, NULL, NULL);
 }
 
 
@@ -92,7 +92,7 @@ void timer_init(void)
 	/* Set enable mode (ENMOD) and Free-Run mode */
 	*(timer_common.base + gpt_cr) |= (1 << 1) | (1 << 3) | (1 << 5);
 
-	hal_irqinst(GPT1_IRQ, timer_isr, NULL);
+	hal_interruptsSet(GPT1_IRQ, timer_isr, NULL);
 
 	*(timer_common.base + gpt_ocr1) = ticksPerMs;
 	*(timer_common.base + gpt_ir) |= 0x1; /* Set OF1IE (Output Compare 1 Interrupt Enable) */
