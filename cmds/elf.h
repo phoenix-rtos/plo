@@ -16,7 +16,7 @@
 #ifndef _ELF_H_
 #define _ELF_H_
 
-#include <lib/types.h>
+#include <hal/hal.h>
 
 
 typedef u16 Elf32_Half;

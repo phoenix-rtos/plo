@@ -20,7 +20,6 @@
 #include "romapi.h"
 
 #include <hal/hal.h>
-#include <lib/types.h>
 
 typedef struct {
 	u32 size;

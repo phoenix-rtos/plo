@@ -18,8 +18,6 @@
 
 #include "usb.h"
 
-#include <lib/types.h>
-
 
 /* Library configuration structure */
 typedef struct _usb_desc_list_t {

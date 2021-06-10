@@ -18,7 +18,7 @@
 
 
 #include "cpu.h"
-#include <lib/types.h>
+#include "types.h"
 
 
 enum { clk_disable = 0, clk_enable };
