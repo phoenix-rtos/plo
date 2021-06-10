@@ -27,7 +27,7 @@ static void cmd_appInfo(void)
 }
 
 
-static int cmd_cpphfs2map(handler_t handler, const char *imap)
+static int cmd_cpphfs2map(handler_t handler, const char *imap, void *top)
 {
 	int res;
 	addr_t offs = 0;
@@ -35,12 +35,15 @@ static int cmd_cpphfs2map(handler_t handler, const char *imap)
 
 	do {
 		if ((res = phfs_read(handler, offs, buff, SIZE_MSG_BUFF)) < 0) {
+			syspage_setMapTop(imap, top);
 			log_error("\nCan't read data");
 			return -EIO;
 		}
 
-		if (syspage_write2Map(imap, buff, res) < 0)
+		if (syspage_write2Map(imap, buff, res) < 0) {
+			syspage_setMapTop(imap, top);
 			return -EINVAL;
+		}
 
 		offs += res;
 	} while (res > 0);
@@ -85,7 +88,7 @@ static int cmd_loadApp(handler_t handler, size_t size, const char *imap, const c
 
 	/* Copy program's elf to imap */
 	if (res == dev_isNotMappable) {
-		if ((res = cmd_cpphfs2map(handler, imap)) < 0)
+		if ((res = cmd_cpphfs2map(handler, imap, start)) < 0)
 			return res;
 
 		/* Get map top address after copying */
