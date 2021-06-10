@@ -43,10 +43,10 @@ extern void syspage_init(void);
 
 /* Syspage's location functions */
 
-extern void syspage_setAddress(void *addr);
+extern void syspage_setAddress(addr_t addr);
 
 
-extern void *syspage_getAddress(void);
+extern addr_t syspage_getAddress(void);
 
 
 /* General functions */
@@ -76,13 +76,13 @@ extern int syspage_validateKernel(addr_t *addr);
 
 /* Map's functions */
 
-extern int syspage_addmap(const char *name, void *start, void *end, const char *attr);
+extern int syspage_addmap(const char *name, addr_t start, addr_t end, const char *attr);
 
 
-extern int syspage_getMapTop(const char *map, void **addr);
+extern int syspage_getMapTop(const char *map, addr_t *addr);
 
 
-extern int syspage_setMapTop(const char *map, void *addr);
+extern int syspage_setMapTop(const char *map, addr_t addr);
 
 
 extern int syspage_alignMapTop(const char *map);
@@ -102,7 +102,7 @@ extern int syspage_getMapAttr(const char *map, unsigned int *attr);
 
 /* Program's functions */
 
-extern int syspage_addProg(void *start, void *end, const char *imap, const char *dmap, const char *name, u32 flags);
+extern int syspage_addProg(addr_t start, addr_t end, const char *imap, const char *dmap, const char *name, u32 flags);
 
 
 /* Setting kernel's data */
@@ -110,13 +110,13 @@ extern int syspage_addProg(void *start, void *end, const char *imap, const char 
 extern void syspage_setKernelEntry(addr_t addr);
 
 
-extern void syspage_setKernelText(void *addr, size_t size);
+extern void syspage_setKernelText(addr_t addr, size_t size);
 
 
-extern void syspage_setKernelBss(void *addr, size_t size);
+extern void syspage_setKernelBss(addr_t addr, size_t size);
 
 
-extern void syspage_setKernelData(void *addr, size_t size);
+extern void syspage_setKernelData(addr_t addr, size_t size);
 
 
 /* Add specific hal data */

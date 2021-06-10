@@ -27,7 +27,7 @@ static void cmd_appInfo(void)
 }
 
 
-static int cmd_cpphfs2map(handler_t handler, const char *imap, void *top)
+static int cmd_cpphfs2map(handler_t handler, const char *imap, addr_t top)
 {
 	int res;
 	addr_t offs = 0;
@@ -56,7 +56,7 @@ static int cmd_loadApp(handler_t handler, size_t size, const char *imap, const c
 {
 	int res;
 	Elf32_Ehdr hdr;
-	void *start, *end;
+	addr_t start, end;
 	addr_t addr, offs = 0;
 	unsigned int attr;
 
@@ -81,7 +81,7 @@ static int cmd_loadApp(handler_t handler, size_t size, const char *imap, const c
 		return -EINVAL;
 	}
 
-	if ((res = phfs_map(handler, offs, size, mAttrRead | mAttrWrite, (addr_t)start, size, attr, &addr)) < 0) {
+	if ((res = phfs_map(handler, offs, size, mAttrRead | mAttrWrite, start, size, attr, &addr)) < 0) {
 		log_error("\nDevice is not mappable in %s", imap);
 		return -EINVAL;
 	}
@@ -98,7 +98,7 @@ static int cmd_loadApp(handler_t handler, size_t size, const char *imap, const c
 		if (phfs_getFileAddr(handler, &offs) < 0)
 			return -EINVAL;
 
-		start = (void *)(offs + addr);
+		start = offs + addr;
 		end = start + size;
 	}
 	else {

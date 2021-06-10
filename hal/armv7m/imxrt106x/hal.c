@@ -49,10 +49,10 @@ void hal_init(void)
 	console_init();
 
 	syspage_init();
-	syspage_setAddress((void *)SYSPAGE_ADDRESS);
+	syspage_setAddress(SYSPAGE_ADDRESS);
 
 	/* Add entries related to plo image */
-	syspage_addEntries((u32)_plo_bss, (u32)_end - (u32)_plo_bss + STACK_SIZE);
+	syspage_addEntries((addr_t)_plo_bss, (addr_t)_end - (addr_t)_plo_bss + STACK_SIZE);
 }
 
 

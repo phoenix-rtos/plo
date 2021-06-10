@@ -298,7 +298,7 @@ void syspage_init(void)
 
 /* Syspage's location functions */
 
-void syspage_setAddress(void *addr)
+void syspage_setAddress(addr_t addr)
 {
 	size_t sz;
 
@@ -306,7 +306,7 @@ void syspage_setAddress(void *addr)
 	syspage_common.syspage = (void *)addr;
 	sz = (size_t)(MAX_SYSPAGE_SIZE / PAGE_SIZE) * PAGE_SIZE + (MAX_SYSPAGE_SIZE % PAGE_SIZE ? PAGE_SIZE : 0); /* allign to PAGE_SIZE */
 
-	syspage_addEntries((addr_t)addr, sz);
+	syspage_addEntries(addr, sz);
 
 	syspage_common.syspage->arg = NULL;
 	syspage_common.syspage->maps = NULL;
@@ -327,9 +327,9 @@ void syspage_setAddress(void *addr)
 }
 
 
-void *syspage_getAddress(void)
+addr_t syspage_getAddress(void)
 {
-	return (void *)syspage_common.syspage;
+	return (addr_t)syspage_common.syspage;
 }
 
 
@@ -492,7 +492,7 @@ int syspage_validateKernel(addr_t *addr)
 
 /* Map's functions */
 
-int syspage_addmap(const char *name, void *start, void *end, const char *attr)
+int syspage_addmap(const char *name, addr_t start, addr_t end, const char *attr)
 {
 	int i;
 	size_t size;
@@ -504,7 +504,7 @@ int syspage_addmap(const char *name, void *start, void *end, const char *attr)
 	/* Check whether map exists and overlaps with other maps */
 	for (i = 0; i < syspage_common.mapsCnt; ++i) {
 		map = &syspage_common.maps[i].map;
-		if (((map->start < (addr_t)end) && (map->end > (addr_t)start)) ||
+		if (((map->start < end) && (map->end > start)) ||
 			(hal_strncmp(name, map->name, hal_strlen(map->name)) == 0))
 			return -EINVAL;
 	}
@@ -512,8 +512,8 @@ int syspage_addmap(const char *name, void *start, void *end, const char *attr)
 	ploMap = &syspage_common.maps[mapID];
 	map = &ploMap->map;
 
-	map->start = (addr_t)start;
-	map->end = (addr_t)end;
+	map->start = start;
+	map->end = end;
 	map->id = mapID;
 	if (syspage_strAttr2ui(attr, &map->attr) < 0)
 		return -EINVAL;
@@ -524,7 +524,7 @@ int syspage_addmap(const char *name, void *start, void *end, const char *attr)
 	hal_memcpy(map->name, name, size);
 	map->name[size] = '\0';
 
-	ploMap->top = (addr_t)start;
+	ploMap->top = start;
 
 	for (i = 0; i < MAX_ENTRIES_NB; ++i) {
 		entry = &syspage_common.entries[i];
@@ -538,7 +538,7 @@ int syspage_addmap(const char *name, void *start, void *end, const char *attr)
 }
 
 
-int syspage_getMapTop(const char *map, void **addr)
+int syspage_getMapTop(const char *map, addr_t *addr)
 {
 	u8 id;
 
@@ -547,13 +547,13 @@ int syspage_getMapTop(const char *map, void **addr)
 		return -EINVAL;
 	}
 
-	*addr = (void *)syspage_common.maps[id].top;
+	*addr = syspage_common.maps[id].top;
 
 	return EOK;
 }
 
 
-int syspage_setMapTop(const char *map, void *addr)
+int syspage_setMapTop(const char *map, addr_t addr)
 {
 	u8 id;
 
@@ -562,7 +562,7 @@ int syspage_setMapTop(const char *map, void *addr)
 		return -EINVAL;
 	}
 
-	syspage_common.maps[id].top = (addr_t)addr;
+	syspage_common.maps[id].top = addr;
 
 	return EOK;
 }
@@ -677,7 +677,7 @@ int syspage_getMapAttr(const char *map, unsigned int *attr)
 
 /* Program's functions */
 
-int syspage_addProg(void *start, void *end, const char *imap, const char *dmap, const char *cmdline, u32 flags)
+int syspage_addProg(addr_t start, addr_t end, const char *imap, const char *dmap, const char *cmdline, u32 flags)
 {
 	u8 imapID, dmapID;
 	unsigned int pos, len;
@@ -708,8 +708,8 @@ int syspage_addProg(void *start, void *end, const char *imap, const char *dmap, 
 	}
 
 	prog = &syspage_common.progs[progID];
-	prog->start = (addr_t)start;
-	prog->end = (addr_t)end;
+	prog->start = start;
+	prog->end = end;
 	prog->dmap = dmapID;
 	prog->imap = imapID;
 
@@ -742,30 +742,30 @@ void syspage_setKernelEntry(addr_t addr)
 }
 
 
-void syspage_setKernelText(void *addr, size_t size)
+void syspage_setKernelText(addr_t addr, size_t size)
 {
-	syspage_common.syspage->kernel.text = (addr_t)addr;
+	syspage_common.syspage->kernel.text = addr;
 	syspage_common.syspage->kernel.textsz = size;
 
-	syspage_addEntries((addr_t)addr, size);
+	syspage_addEntries(addr, size);
 }
 
 
-void syspage_setKernelBss(void *addr, size_t size)
+void syspage_setKernelBss(addr_t addr, size_t size)
 {
-	syspage_common.syspage->kernel.bss = (addr_t)addr;
+	syspage_common.syspage->kernel.bss = addr;
 	syspage_common.syspage->kernel.bsssz = size;
 
-	syspage_addEntries((addr_t)addr, size);
+	syspage_addEntries(addr, size);
 }
 
 
-void syspage_setKernelData(void *addr, size_t size)
+void syspage_setKernelData(addr_t addr, size_t size)
 {
-	syspage_common.syspage->kernel.data = (addr_t)addr;
+	syspage_common.syspage->kernel.data = addr;
 	syspage_common.syspage->kernel.datasz = size;
 
-	syspage_addEntries((addr_t)addr, size);
+	syspage_addEntries(addr, size);
 }
 
 

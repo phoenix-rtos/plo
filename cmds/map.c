@@ -64,7 +64,7 @@ static int cmd_map(char *s)
 		return -EINVAL;
 	}
 
-	if (syspage_addmap(mapname, (void *)start, (void *)end, args[3]) < 0) {
+	if (syspage_addmap(mapname, start, end, args[3]) < 0) {
 		log_error("\nCan't create map %s", mapname);
 		return -EINVAL;
 	}
