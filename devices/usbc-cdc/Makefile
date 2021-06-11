@@ -6,7 +6,4 @@
 # %LICENSE%
 #
 
-include devices/usbc/Makefile
-include devices/usbphy-$(TARGET_SUBFAMILY)/Makefile
-
-OBJS += $(addprefix $(PREFIX_O)devices/usbc-cdc/, cdc.o)
+OBJS += $(addprefix $(PREFIX_O)devices/usbc-cdc/, cdc.o client.o ctrl.o desc.o usbphy-$(TARGET_SUBFAMILY).o)

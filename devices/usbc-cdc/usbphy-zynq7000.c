@@ -13,8 +13,8 @@
  * %LICENSE%
  */
 
-#include <devices/usbc/client.h>
-#include <devices/usbc/usbphy.h>
+#include "client.h"
+#include "usbphy.h"
 #include <devices/gpio-zynq7000/gpio.h>
 
 

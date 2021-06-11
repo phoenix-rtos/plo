@@ -14,9 +14,9 @@
  */
 
 #include "cdc.h"
+#include "usbclient.h"
 
 #include <devices/devs.h>
-#include <devices/usbc/usbclient.h>
 #include <hal/hal.h>
 #include <lib/list.h>
 #include <lib/lib.h>
