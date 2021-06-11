@@ -29,7 +29,6 @@ struct {
 	volatile u32 *nvic;
 	volatile u32 *stk;
 	volatile u32 *scb;
-	volatile u32 *mpu;
 	volatile u16 *wdog1;
 	volatile u16 *wdog2;
 	volatile u32 *rtwdog;
@@ -101,8 +100,10 @@ enum { scb_cpuid = 0, scb_icsr, scb_vtor, scb_aircr, scb_scr, scb_ccr, scb_shp0,
 	scb_dcisw, scb_dccmvau, scb_dccmvac, scb_dccsw, scb_dccimvac, scb_dccisw, /* 6 reserved */
 	scb_itcmcr = 164, scb_dtcmcr, scb_ahbpcr, scb_cacr, scb_ahbscr, /* reserved */ scb_abfsr = 170 };
 
+
 enum { mpu_type, mpu_ctrl, mpu_rnr, mpu_rbar, mpu_rasr, mpu_rbar_a1, mpu_rasr_a1, mpu_rbar_a2, mpu_rasr_a2,
 	   mpu_rbar_a3, mpu_rasr_a3 };
+
 
 enum { nvic_iser = 0, nvic_icer = 32, nvic_ispr = 64, nvic_icpr = 96, nvic_iabr = 128,
 	nvic_ip = 192, nvic_stir = 896 };
@@ -1686,29 +1687,6 @@ int _imxrt_gpioGetPort(unsigned int d, u32 *val)
 }
 
 
-/* MPU */
-
-
-void _imxrt_enableMPU(void)
-{
-	imxrt_dataSyncBarrier();
-	imxrt_dataInstrBarrier();
-
-	*(imxrt_common.scb + scb_shcsr) |= (1 << 16);
-	*(imxrt_common.mpu + mpu_ctrl) = 0x4 | 1;
-}
-
-
-void _imxrt_disableMPU(void)
-{
-	imxrt_dataSyncBarrier();
-	imxrt_dataInstrBarrier();
-
-	*(imxrt_common.scb + scb_shcsr) &= ~(1 << 16);
-	*(imxrt_common.mpu + mpu_ctrl) = 0;
-}
-
-
 /* Cache */
 
 
@@ -1884,7 +1862,6 @@ void _imxrt_init(void)
 	imxrt_common.iomuxsnvs = (void *)0x400a8000;
 	imxrt_common.nvic = (void *)0xe000e100;
 	imxrt_common.scb = (void *)0xe000ed00;
-	imxrt_common.mpu = (void *)0xe000ed90;
 	imxrt_common.stk = (void *)0xe000e010;
 	imxrt_common.wdog1 = (void *)0x400b8000;
 	imxrt_common.wdog2 = (void *)0x400d0000;

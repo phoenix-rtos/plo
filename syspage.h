@@ -100,6 +100,9 @@ extern void syspage_addEntries(addr_t start, size_t sz);
 extern int syspage_getMapAttr(const char *map, unsigned int *attr);
 
 
+extern const char *syspage_getMapName(u32 id);
+
+
 /* Program's functions */
 
 extern int syspage_addProg(addr_t start, addr_t end, const char *imap, const char *dmap, const char *name, u32 flags);

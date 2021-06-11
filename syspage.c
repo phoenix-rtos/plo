@@ -398,16 +398,20 @@ void syspage_showApps(void)
 {
 	int i;
 	syspage_program_t *prog;
+	const char *imap, *dmap;
+
 	if (syspage_common.progsCnt == 0) {
 		lib_printf("\nApps number: 0");
 		return;
 	}
 
-	lib_printf(CONSOLE_BOLD "\n%-16s %-14s %-14s %-14s %-14s\n", "NAME", "START", "END", "IMAP ID", "DMAP ID");
+	lib_printf(CONSOLE_BOLD "\n%-16s %-14s %-14s %-14s %-14s\n", "NAME", "START", "END", "IMAP NAME", "DMAP NAME");
 	lib_printf(CONSOLE_NORMAL);
 	for (i = 0; i < syspage_common.progsCnt; ++i) {
 		prog = &syspage_common.progs[i];
-		lib_printf("%-16s 0x%08x%4s 0x%08x%4s %d%13s %d\n", prog->name, prog->start, "", prog->end, "", prog->imap, "", prog->dmap);
+		imap = syspage_common.maps[prog->imap].map.name;
+		dmap = syspage_common.maps[prog->dmap].map.name;
+		lib_printf("%-16s 0x%08x%4s 0x%08x%4s %-14s %-14s\n", prog->name, prog->start, "", prog->end, "", imap, dmap);
 	}
 }
 
@@ -494,7 +498,7 @@ int syspage_validateKernel(addr_t *addr)
 
 int syspage_addmap(const char *name, addr_t start, addr_t end, const char *attr)
 {
-	int i;
+	int i, res;
 	size_t size;
 	map_entry_t *entry;
 	syspage_map_t *map;
@@ -515,8 +519,11 @@ int syspage_addmap(const char *name, addr_t start, addr_t end, const char *attr)
 	map->start = start;
 	map->end = end;
 	map->id = mapID;
-	if (syspage_strAttr2ui(attr, &map->attr) < 0)
-		return -EINVAL;
+	if ((res = syspage_strAttr2ui(attr, &map->attr)) < 0)
+		return res;
+
+	if ((res = hal_memAddMap(start, end, map->attr, mapID)) < 0)
+		return res;
 
 	len = hal_strlen(name);
 	size = min(len, SIZE_MAP_NAME - 1);
@@ -550,6 +557,20 @@ int syspage_getMapTop(const char *map, addr_t *addr)
 	*addr = syspage_common.maps[id].top;
 
 	return EOK;
+}
+
+
+const char *syspage_getMapName(u32 id)
+{
+	plo_map_t *pmap = syspage_common.maps;
+	int i;
+
+	for (i = 0; i < syspage_common.mapsCnt; i++, pmap++) {
+		if (pmap->map.id == id)
+			return pmap->map.name;
+	}
+
+	return NULL;
 }
 
 

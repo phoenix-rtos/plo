@@ -17,7 +17,6 @@
 #include <hal/hal.h>
 #include <lib/errno.h>
 
-
 typedef struct {
 	void *data;
 	int (*isr)(unsigned int, void *);
@@ -38,12 +37,13 @@ extern void timer_init(void);
 extern void timer_done(void);
 
 /* Console */
-void console_init(void);
+extern void console_init(void);
 
 
 void hal_init(void)
 {
 	_imxrt_init();
+	mpu_init();
 	timer_init();
 
 	console_init();
@@ -96,8 +96,20 @@ addr_t hal_kernelGetAddress(addr_t addr)
 }
 
 
+int hal_memAddMap(addr_t start, addr_t end, u32 attr, u32 mapId)
+{
+	return mpu_regionAlloc(start, end, attr, mapId, 1);
+}
+
+
 int hal_cpuJump(addr_t addr)
 {
+	syspage_hal_t hal;
+
+	/* Store hal data into syspage */
+	mpu_getHalData(&hal);
+
+	syspage_setHalData(&hal);
 	syspage_save();
 
 	/* Tidy up */
