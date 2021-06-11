@@ -6,7 +6,7 @@
  * Types
  *
  * Copyright 2021 Phoenix Systems
- * Author: Hubert Buczynski
+ * Author: Hubert Buczynski, Gerard Swiderski
  *
  * This file is part of Phoenix-RTOS.
  *
@@ -54,7 +54,16 @@ typedef unsigned long long time_t;
 
 
 typedef struct {
-	/* Empty hal data */
+	struct {
+		u32 type;
+		u32 allocCnt;
+		struct {
+			u32 rbar;
+			u32 rasr;
+		} table[16] __attribute__((aligned(8)));
+		u32 map[16]; /* ((u32)-1) = map is not assigned */
+	} mpu;
 } syspage_hal_t;
+
 
 #endif

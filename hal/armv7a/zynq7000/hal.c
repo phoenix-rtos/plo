@@ -86,6 +86,12 @@ addr_t hal_kernelGetAddress(addr_t addr)
 }
 
 
+int hal_memAddMap(addr_t start, addr_t end, u32 attr, u32 mapId)
+{
+	return EOK;
+}
+
+
 int hal_cpuJump(addr_t addr)
 {
 	syspage_save();

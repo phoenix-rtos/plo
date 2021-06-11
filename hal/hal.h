@@ -45,6 +45,10 @@ extern int hal_cpuJump(addr_t addr);
 extern addr_t hal_kernelGetAddress(addr_t addr);
 
 
+/* Function validates and add memory map at hal region level */
+extern int hal_memAddMap(addr_t start, addr_t end, u32 attr, u32 mapId);
+
+
 /* Function enables interrupts */
 extern void hal_interruptsEnable(void);
 
