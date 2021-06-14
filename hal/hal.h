@@ -37,15 +37,12 @@ extern const char *hal_cpuInfo(void);
 /* Function invalidates data or instruction cache */
 extern void hal_cpuInvCache(unsigned int type, addr_t addr, size_t sz);
 
-/* Function invalidates the whole data or instruction cache */
-extern void hal_cpuInvCacheAll(unsigned int type);
+/* Function starts kernel loaded into memory */
+extern int hal_cpuJump(addr_t addr);
 
 
 /* Function translates virtual address into physical */
 extern addr_t hal_kernelGetAddress(addr_t addr);
-
-/* Function starts kernel loaded into memory */
-extern int hal_cpuJump(addr_t addr);
 
 
 /* Function enables interrupts */
