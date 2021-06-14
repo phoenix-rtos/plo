@@ -16,8 +16,6 @@
 #ifndef _CTYPE_H_
 #define _CTYPE_H_
 
-#include "types.h"
-
 
 extern int islower(int c);
 
