@@ -42,7 +42,7 @@ extern void hal_cpuInvCacheAll(unsigned int type);
 
 
 /* Function translates virtual address into physical */
-extern addr_t hal_vm2phym(addr_t addr);
+extern addr_t hal_kernelGetAddress(addr_t addr);
 
 /* Function starts kernel loaded into memory */
 extern int hal_cpuJump(addr_t addr);

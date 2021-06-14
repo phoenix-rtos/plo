@@ -88,7 +88,7 @@ static int cmd_kernel(char *s)
 					maxaddr = phdr.p_paddr + phdr.p_memsz;
 			}
 
-			loffs = (void *)hal_vm2phym((addr_t)phdr.p_vaddr);
+			loffs = (void *)hal_kernelGetAddress((addr_t)phdr.p_vaddr);
 
 			for (i = 0; i < phdr.p_filesz / sizeof(buff); i++) {
 				offs = phdr.p_offset + i * sizeof(buff);
@@ -125,14 +125,14 @@ static int cmd_kernel(char *s)
 
 		/* Find .bss section header */
 		if (shdr.sh_type == SHT_NOBITS && shdr.sh_flags == (SHF_WRITE | SHF_ALLOC))
-			syspage_setKernelBss(hal_vm2phym(shdr.sh_addr), (addr_t)shdr.sh_size);
+			syspage_setKernelBss(hal_kernelGetAddress(shdr.sh_addr), (addr_t)shdr.sh_size);
 	}
 
 	/* TODO: it is temporary solution. It should be defined. */
 	syspage_setKernelData(0, 0);
 
-	syspage_setKernelText(hal_vm2phym(minaddr), maxaddr - minaddr);
-	syspage_setKernelEntry(hal_vm2phym(hdr.e_entry));
+	syspage_setKernelText(hal_kernelGetAddress(minaddr), maxaddr - minaddr);
+	syspage_setKernelEntry(hal_kernelGetAddress(hdr.e_entry));
 
 	if (phfs_close(handler) < 0) {
 		log_error("\nCan't close %s, on %s", kname, args[0]);

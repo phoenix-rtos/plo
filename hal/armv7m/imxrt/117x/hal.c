@@ -95,7 +95,7 @@ void hal_cpuInvCacheAll(unsigned int type)
 }
 
 
-addr_t hal_vm2phym(addr_t addr)
+addr_t hal_kernelGetAddress(addr_t addr)
 {
 	return addr;
 }
