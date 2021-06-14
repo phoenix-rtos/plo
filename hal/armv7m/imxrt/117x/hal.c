@@ -82,19 +82,6 @@ void hal_cpuInvCache(unsigned int type, addr_t addr, size_t sz)
 }
 
 
-void hal_cpuInvCacheAll(unsigned int type)
-{
-	switch (type) {
-		case hal_cpuDCache:
-			/* TODO */
-		case hal_cpuICache:
-			/* TODO */
-		default:
-			break;
-	}
-}
-
-
 addr_t hal_kernelGetAddress(addr_t addr)
 {
 	return addr;

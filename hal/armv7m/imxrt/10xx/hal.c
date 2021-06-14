@@ -74,7 +74,10 @@ void hal_cpuInvCache(unsigned int type, addr_t addr, size_t sz)
 {
 	switch (type) {
 		case hal_cpuDCache:
-			_imxrt_invalDCacheAddr((void *)addr, sz);
+			if (sz == (size_t)-1)
+				_imxrt_invalDCacheAll();
+			else
+				_imxrt_invalDCacheAddr((void *)addr, sz);
 			break;
 
 		case hal_cpuICache:
@@ -83,22 +86,6 @@ void hal_cpuInvCache(unsigned int type, addr_t addr, size_t sz)
 			break;
 	}
 }
-
-
-void hal_cpuInvCacheAll(unsigned int type)
-{
-	switch (type) {
-		case hal_cpuDCache:
-			_imxrt_invalDCacheAll();
-			break;
-
-		case hal_cpuICache:
-			/* TODO */
-		default:
-			break;
-	}
-}
-
 
 
 addr_t hal_kernelGetAddress(addr_t addr)
