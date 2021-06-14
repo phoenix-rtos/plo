@@ -15,7 +15,6 @@
 
 #include "lib.h"
 #include "ctype.h"
-#include "types.h"
 
 
 unsigned int lib_strtoul(char *nptr, char **endptr, int base)

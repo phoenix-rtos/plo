@@ -16,7 +16,7 @@
 #ifndef _LIB_PLO_H_
 #define _LIB_PLO_H_
 
-#include "types.h"
+#include <hal/hal.h>
 
 
 #define min(a, b) ((a > b) ? b : a)

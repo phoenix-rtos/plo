@@ -14,7 +14,6 @@
  */
 
 #include "lib.h"
-#include "types.h"
 #include "format.h"
 
 #include <hal/hal.h>

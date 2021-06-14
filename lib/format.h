@@ -16,7 +16,7 @@
 #ifndef _FORMAT_H_
 #define _FORMAT_H_
 
-#include "types.h"
+#include <hal/hal.h>
 
 
 typedef void (*feedfunc)(void *, char);
