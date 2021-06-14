@@ -18,9 +18,9 @@
 #define _CONFIG_H_
 
 #include "imxrt.h"
-#include "types.h"
 #include "peripherals.h"
-#include "../string.h"
+#include "../types.h"
+#include "../../string.h"
 
 
 #define KERNEL_PATH "phoenix-armv7m7-imxrt117x.elf"

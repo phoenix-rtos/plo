@@ -1,7 +1,7 @@
 #
-# Makefile for plo/armv7a9-zynq7000
+# Makefile for Phoenix-RTOS loader (ARMv7A HAL zynq7000)
 #
-# Copyright 2020 Phoenix Systems
+# Copyright 2021 Phoenix Systems
 #
 # %LICENSE%
 #
