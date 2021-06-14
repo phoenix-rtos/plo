@@ -17,9 +17,8 @@ include ../phoenix-rtos-build/Makefile.$(TARGET_SUFF)
 
 CFLAGS += $(BOARD_CONFIG) -DVERSION=\"$(VERSION)\"
 CFLAGS += -I../plo
-CFLAGS += -I../plo/hal/$(TARGET_SUFF)/$(TARGET_SUBFAMILY)
 
-include hal/$(TARGET_SUFF)/$(TARGET_SUBFAMILY)/Makefile
+include hal/$(TARGET_SUFF)/Makefile
 include lib/Makefile
 include devices/Makefile
 include phfs/Makefile
