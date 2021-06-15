@@ -19,7 +19,7 @@
 #include <hal/hal.h>
 
 
-#define SIZE_APP_NAME 15
+#define SIZE_APP_NAME 31
 #define SIZE_MAP_NAME 7
 
 
