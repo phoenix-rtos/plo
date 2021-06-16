@@ -26,7 +26,8 @@
 #define SIZE_MSG_BUFF     0x100
 #define SIZE_MAGIC_NB     8
 
-#define MAX_CMD_ARGS_NB (10 + 1)
+/* Reserve +1 for terminating NULL pointer in conformance to C standard */
+#define SIZE_CMD_ARGV (10 + 1)
 
 typedef struct {
 	const char name[12];

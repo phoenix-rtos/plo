@@ -22,14 +22,13 @@ static void cmd_helpInfo(void)
 }
 
 
-static int cmd_help(char *s)
+static int cmd_help(int argc, char *argv[])
 {
 	const cmd_t *cmd;
-	unsigned int i = 0, argsc;
-	cmdarg_t *args;
+	unsigned int i = 0;
 
-	if ((argsc = cmd_getArgs(s, DEFAULT_BLANKS, &args)) != 0) {
-		log_error("\nWrong args: %s", s);
+	if (argc != 1) {
+		log_error("\n%s: Command does not accept arguments", argv[0]);
 		return -EINVAL;
 	}
 

@@ -27,21 +27,19 @@ static void cmd_goInfo(void)
 }
 
 
-static int cmd_go(char *s)
+static int cmd_go(int argc, char *argv[])
 {
-	unsigned int argsc;
-	cmdarg_t *args;
 	addr_t kernel_entry;
-	int ret;
+	int res;
 
-	if ((argsc = cmd_getArgs(s, DEFAULT_BLANKS, &args)) != 0) {
-		log_error("\nWrong args: %s", s);
+	if (argc != 1) {
+		log_error("\n%s: Command does not accept arguments", argv[0]);
 		return -EINVAL;
 	}
 
-	if ((ret = syspage_validateKernel(&kernel_entry)) != EOK) {
+	if ((res = syspage_validateKernel(&kernel_entry)) != EOK) {
 		log_error("\nValid kernel image has not been loaded.");
-		return ret;
+		return res;
 	}
 
 	log_info("\nRunning Phoenix-RTOS");

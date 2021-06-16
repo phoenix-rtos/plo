@@ -25,26 +25,23 @@ static void cmd_syspageInfo(void)
 }
 
 
-static int cmd_syspage(char *s)
+static int cmd_syspage(int argc, char *argv[])
 {
 	char *end;
 	addr_t addr;
-	unsigned int argsc;
-	cmdarg_t *args;
 
-	argsc = cmd_getArgs(s, DEFAULT_BLANKS, &args);
-	if (argsc == 0) {
+	if (argc == 1) {
 		syspage_showAddr();
 		return EOK;
 	}
-	else if (argsc > 1) {
-		log_error("\nWrong args %s", s);
+	else if (argc > 2) {
+		log_error("\n%s: Wrong argument count", argv[0]);
 		return -EINVAL;
 	}
 
-	addr = lib_strtoul(args[0], &end, 0);
+	addr = lib_strtoul(argv[1], &end, 0);
 	if (*end) {
-		log_error("\nWrong args %s", s);
+		log_error("\n%s: Wrong arguments", argv[0]);
 		return -EINVAL;
 	}
 

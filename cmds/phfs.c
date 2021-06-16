@@ -25,41 +25,40 @@ static void cmd_phfsInfo(void)
 }
 
 
-static int cmd_phfs(char *s)
+static int cmd_phfs(int argc, char *argv[])
 {
+	int res;
 	char *endptr;
-	cmdarg_t *args;
-	unsigned int major, minor, argsc;
+	unsigned int major, minor;
 
-	argsc = cmd_getArgs(s, ". \t", &args);
-	if (argsc == 0) {
+	if (argc == 1) {
 		phfs_showDevs();
 		return EOK;
 	}
-	else if (argsc < 3 || argsc > 4) {
-		log_error("\nWrong args: %s", s);
+	else if (argc < 3 || argc > 4) {
+		log_error("\n%s: Wrong argument count", argv[0]);
 		return -EINVAL;
 	}
 
 	/* Get major/minor */
-	major = lib_strtoul(args[1], &endptr, 0);
-	if (*endptr) {
-		log_error("\nWrong major value %s for %s", args[1], args[0]);
+	major = lib_strtoul(argv[2], &endptr, 0);
+	if (*endptr != '.') {
+		log_error("\n%s: Wrong major value for %s", argv[0], argv[1]);
 		return -EINVAL;
 	}
 
-	minor = lib_strtoul(args[2], &endptr, 0);
-	if (*endptr) {
-		log_error("\nWrong minor value %s for %s", args[2], args[0]);
+	minor = lib_strtoul(++endptr, &endptr, 0);
+	if (*endptr != '\0') {
+		log_error("\n%s: Wrong minor value for %s", argv[0], argv[1]);
 		return -EINVAL;
 	}
 
-	if (phfs_regDev(args[0], major, minor, (argsc == 3) ? NULL : args[3]) < 0) {
-		log_error("\nCan't register %s in phfs", args[0]);
-		return -EINVAL;
+	if ((res = phfs_regDev(argv[1], major, minor, (argc == 3) ? NULL : argv[3])) < 0) {
+		log_error("\nCan't register %s in phfs", argv[0]);
+		return res;
 	}
 
-	log_info("\nRegistering phfs %s", args[0]);
+	log_info("\nRegistering phfs %s", argv[1]);
 
 	return EOK;
 }

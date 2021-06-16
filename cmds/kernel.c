@@ -27,10 +27,11 @@ static void cmd_kernelInfo(void)
 }
 
 
-static int cmd_kernel(char *s)
+static int cmd_kernel(int argc, char *argv[])
 {
+	ssize_t res;
 	u8 buff[384];
-	char *kname;
+	const char *kname;
 	void *loffs;
 	handler_t handler;
 	addr_t minaddr = 0xffffffff, maxaddr = 0, offs = 0;
@@ -40,30 +41,27 @@ static int cmd_kernel(char *s)
 	Elf32_Phdr phdr;
 	Elf32_Word i = 0, k = 0, size = 0;
 
-	unsigned int argsc;
-	cmdarg_t *args;
-
 	/* Parse arguments */
-	if ((argsc = cmd_getArgs(s, DEFAULT_BLANKS, &args)) == 0) {
+	if (argc == 1) {
 		syspage_showKernel();
 		return EOK;
 	}
-	else if (argsc > 2) {
-		log_error("\nWrong args: %s", s);
+	else if (argc > 3) {
+		log_error("\n%s: Wrong argument count", argv[0]);
 		return -EINVAL;
 	}
 
-	kname = (argsc == 2) ? args[1] : KERNEL_PATH;
+	kname = (argc == 3) ? argv[2] : KERNEL_PATH;
 
-	if (phfs_open(args[0], kname, 0, &handler) < 0) {
-		log_error("\nCannot open %s, on %s", kname, args[0]);
-		return -EINVAL;
+	if ((res = phfs_open(argv[1], kname, 0, &handler)) < 0) {
+		log_error("\nCannot open %s, on %s", kname, argv[1]);
+		return res;
 	}
 
 	/* Read ELF header */
-	if (phfs_read(handler, offs, (u8 *)&hdr, (u32)sizeof(Elf32_Ehdr)) < 0) {
-		log_error("\nCan't read %s, on %s", kname, args[0]);
-		return -EINVAL;
+	if ((res = phfs_read(handler, offs, (u8 *)&hdr, (u32)sizeof(Elf32_Ehdr))) < 0) {
+		log_error("\nCan't read %s, on %s", kname, argv[1]);
+		return res;
 	}
 
 	if ((hdr.e_ident[0] != 0x7f) || (hdr.e_ident[1] != 'E') || (hdr.e_ident[2] != 'L') || (hdr.e_ident[3] != 'F')) {
@@ -74,9 +72,9 @@ static int cmd_kernel(char *s)
 	/* Read program segments */
 	for (k = 0; k < hdr.e_phnum; k++) {
 		offs = hdr.e_phoff + k * sizeof(Elf32_Phdr);
-		if (phfs_read(handler, offs, (u8 *)&phdr, (u32)sizeof(Elf32_Phdr)) < 0) {
-			log_error("\nCan't read %s, on %s", kname, args[0]);
-			return -EINVAL;
+		if ((res = phfs_read(handler, offs, (u8 *)&phdr, (u32)sizeof(Elf32_Phdr))) < 0) {
+			log_error("\nCan't read %s, on %s", kname, argv[1]);
+			return res;
 		}
 
 		if ((phdr.p_type == PHT_LOAD)) {
@@ -92,9 +90,9 @@ static int cmd_kernel(char *s)
 
 			for (i = 0; i < phdr.p_filesz / sizeof(buff); i++) {
 				offs = phdr.p_offset + i * sizeof(buff);
-				if (phfs_read(handler, offs, buff, (u32)sizeof(buff)) < 0) {
-					log_error("\nCan't read %s, on %s", kname, args[0]);
-					return -EINVAL;
+				if ((res = phfs_read(handler, offs, buff, (u32)sizeof(buff))) < 0) {
+					log_error("\nCan't read %s, on %s", kname, argv[1]);
+					return res;
 				}
 				hal_memcpy(loffs, buff, sizeof(buff));
 				loffs += sizeof(buff);
@@ -104,9 +102,9 @@ static int cmd_kernel(char *s)
 			size = phdr.p_filesz % sizeof(buff);
 			if (size != 0) {
 				offs = phdr.p_offset + i * sizeof(buff);
-				if (phfs_read(handler, offs, buff, size) < 0) {
-					log_error("\nCan't read %s, on %s", kname, args[0]);
-					return -EINVAL;
+				if ((res = phfs_read(handler, offs, buff, size)) < 0) {
+					log_error("\nCan't read %s, on %s", kname, argv[1]);
+					return res;
 				}
 
 				hal_memcpy((void *)loffs, buff, size);
@@ -118,9 +116,9 @@ static int cmd_kernel(char *s)
 	for (k = 0; k < hdr.e_shnum; k++) {
 		offs = hdr.e_shoff + k * sizeof(Elf32_Shdr);
 
-		if (phfs_read(handler, offs, (u8 *)&shdr, (u32)sizeof(Elf32_Shdr)) < 0) {
-			log_error("\nCan't read %s, on %s", kname, args[0]);
-			return -EINVAL;
+		if ((res = phfs_read(handler, offs, (u8 *)&shdr, (u32)sizeof(Elf32_Shdr))) < 0) {
+			log_error("\nCan't read %s, on %s", kname, argv[1]);
+			return res;
 		}
 
 		/* Find .bss section header */
@@ -134,9 +132,9 @@ static int cmd_kernel(char *s)
 	syspage_setKernelText(hal_kernelGetAddress(minaddr), maxaddr - minaddr);
 	syspage_setKernelEntry(hal_kernelGetAddress(hdr.e_entry));
 
-	if (phfs_close(handler) < 0) {
-		log_error("\nCan't close %s, on %s", kname, args[0]);
-		return -EINVAL;
+	if ((res = phfs_close(handler)) < 0) {
+		log_error("\nCan't close %s, on %s", kname, argv[1]);
+		return res;
 	}
 
 	log_info("\nLoaded %s", kname);

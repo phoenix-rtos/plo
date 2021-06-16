@@ -25,43 +25,41 @@ static void cmd_aliasInfo(void)
 }
 
 
-static int cmd_alias(char *s)
+static int cmd_alias(int argc, char *argv[])
 {
 	char *end;
 	size_t sz = 0;
 	addr_t addr = 0;
-	unsigned int i, argsc;
-	cmdarg_t *args;
+	unsigned int i;
 
-	argsc = cmd_getArgs(s, DEFAULT_BLANKS, &args);
-	if (argsc == 0) {
+	if (argc == 1) {
 		phfs_showFiles();
 		return EOK;
 	}
-	else if (argsc != 3) {
-		log_error("\nWrong args: %s", s);
+	else if (argc != 4) {
+		log_error("\n%s: Wrong argument count", argv[0]);
 		return -EINVAL;
 	}
 
 
-	for (i = 1; i < 3; ++i) {
-		if (i == 1)
-			addr = lib_strtoul(args[i], &end, 0);
-		else if (i == 2)
-			sz = lib_strtoul(args[i], &end, 0);
+	for (i = 2; i < 4; ++i) {
+		if (i == 2)
+			addr = lib_strtoul(argv[i], &end, 0);
+		else if (i == 3)
+			sz = lib_strtoul(argv[i], &end, 0);
 
 		if (*end) {
-			log_error("\nWrong args: %s", s);
+			log_error("\n%s: Wrong arguments", argv[0]);
 			return -EINVAL;
 		}
 	}
 
-	if (phfs_regFile(args[0], addr, sz) < 0) {
-		log_error("\nCan't register file %s", args[0]);
+	if (phfs_regFile(argv[1], addr, sz) < 0) {
+		log_error("\nCan't register file %s", argv[1]);
 		return -EINVAL;
 	}
 
-	log_info("\nRegistering file %s ", args[0]);
+	log_info("\nRegistering file %s ", argv[1]);
 
 	return EOK;
 }

@@ -25,48 +25,45 @@ static void cmd_mapInfo(void)
 }
 
 
-static int cmd_map(char *s)
+static int cmd_map(int argc, char *argv[])
 {
+	int res;
 	char *endptr;
 	addr_t start, end;
 
 	u8 namesz;
 	char mapname[SIZE_MAP_NAME + 1];
 
-	unsigned int argsc = 0;
-	cmdarg_t *args;
-
-	argsc = cmd_getArgs(s, DEFAULT_BLANKS, &args);
-	if (argsc == 0) {
+	if (argc == 1) {
 		syspage_showMaps();
 		return EOK;
 	}
-	else if (argsc != 4) {
-		log_error("\nWrong args: %s", s);
+	else if (argc != 5) {
+		log_error("\n%s: Wrong argument count", argv[0]);
 		return -EINVAL;
 	}
 
-	namesz = hal_strlen(args[0]);
+	namesz = hal_strlen(argv[1]);
 	if (namesz >= sizeof(mapname))
 		namesz = sizeof(mapname) - 1;
-	hal_memcpy(mapname, args[0], namesz);
+	hal_memcpy(mapname, argv[1], namesz);
 	mapname[namesz] = '\0';
 
-	start = lib_strtoul(args[1], &endptr, 0);
+	start = lib_strtoul(argv[2], &endptr, 0);
 	if (*endptr) {
-		log_error("\nWrong args: %s", s);
+		log_error("\n%s: Wrong arguments", argv[0]);
 		return -EINVAL;
 	}
 
-	end = lib_strtoul(args[2], &endptr, 0);
+	end = lib_strtoul(argv[3], &endptr, 0);
 	if (*endptr) {
-		log_error("\nWrong args: %s", s);
+		log_error("\n%s: Wrong arguments", argv[0]);
 		return -EINVAL;
 	}
 
-	if (syspage_addmap(mapname, start, end, args[3]) < 0) {
+	if ((res = syspage_addmap(mapname, start, end, argv[4])) < 0) {
 		log_error("\nCan't create map %s", mapname);
-		return -EINVAL;
+		return res;
 	}
 
 	log_info("\nCreating map %s", mapname);

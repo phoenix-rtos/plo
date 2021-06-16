@@ -66,46 +66,47 @@ static ssize_t cmd_cpphfs2phfs(handler_t srcHandler, addr_t srcAddr, size_t srcS
 }
 
 
-static int cmd_parseDev(handler_t *h, addr_t *offs, size_t *sz, cmdarg_t *args, unsigned int *argsID, unsigned int argsc, const char **file)
+static int cmd_parseDev(handler_t *h, addr_t *offs, size_t *sz, unsigned int argc, char *argv[], unsigned int *argvID, const char **file)
 {
-	char *alias;
+	int res;
+	const char *alias;
 	char *endptr;
 
-	if (h == NULL || offs == NULL || sz == NULL || args == NULL || argsID == NULL)
+	if (h == NULL || offs == NULL || sz == NULL || argv == NULL || argvID == NULL)
 		return -EINVAL;
 
-	alias = args[(*argsID)++];
+	alias = argv[(*argvID)++];
 
-	if (*argsID >= argsc) {
-		log_error("\nWrong args for %s", alias);
+	if (*argvID >= argc) {
+		log_error("\n%s: Wrong argument count", argv[0]);
 		return -EINVAL;
 	}
 
-	*offs = lib_strtoul(args[*argsID], &endptr, 0);
+	*offs = lib_strtoul(argv[*argvID], &endptr, 0);
 
 	/* Open device using alias to file */
 	if (*endptr) {
 		*offs = 0;
 		*sz = 0;
-		*file = args[*argsID];
-		if (phfs_open(alias, args[*argsID], 0, h) < 0) {
-			log_error("\nCan't open file '%s' on %s", args[*argsID], alias);
-			return -EIO;
+		*file = argv[*argvID];
+		if ((res = phfs_open(alias, argv[*argvID], 0, h)) < 0) {
+			log_error("\nCan't open file '%s' on %s", argv[*argvID], alias);
+			return res;
 		}
-		(*argsID)++;
+		(*argvID)++;
 	}
 	/* Open device using direct access to memory */
 	else {
-		*sz = lib_strtoul(args[++(*argsID)], &endptr, 0);
+		*sz = lib_strtoul(argv[++(*argvID)], &endptr, 0);
 		*file = NULL;
 		if (*endptr) {
-			log_error("\nWrong size value: %s, for %s with offs 0x%x", args[(*argsID)], alias, *offs);
+			log_error("\nWrong size value: %s, for %s with offs 0x%x", argv[(*argvID)], alias, *offs);
 			return -EINVAL;
 		}
 
-		if (phfs_open(alias, NULL, 0, h) < 0) {
+		if ((res = phfs_open(alias, NULL, 0, h)) < 0) {
 			log_error("\nCan't open file '%s' with offset 0x%x", alias, *offs);
-			return -EIO;
+			return res;
 		}
 	}
 
@@ -113,7 +114,7 @@ static int cmd_parseDev(handler_t *h, addr_t *offs, size_t *sz, cmdarg_t *args, 
 }
 
 
-static int cmd_copy(char *s)
+static int cmd_copy(int argc, char *argv[])
 {
 	size_t sz[2];
 	ssize_t res;
@@ -121,19 +122,18 @@ static int cmd_copy(char *s)
 	handler_t h[2];
 	const char *file[2];
 
-	unsigned int argsc, argsID = 0;
-	cmdarg_t *args;
+	unsigned int argvID = 1;
 
 	/* Parse all comand's arguments */
-	if ((argsc = cmd_getArgs(s, DEFAULT_BLANKS, &args)) < 4) {
-		log_error("\nWrong args: %s", s);
+	if (argc < 5) {
+		log_error("\n%s: Wrong argument count", argv[0]);
 		return -EINVAL;
 	}
 
-	if ((res = cmd_parseDev(&h[0], &offs[0], &sz[0], args, &argsID, argsc, &file[0])) < 0)
+	if ((res = cmd_parseDev(&h[0], &offs[0], &sz[0], argc, argv, &argvID, &file[0])) < 0)
 		return res;
 
-	if ((res = cmd_parseDev(&h[1], &offs[1], &sz[1], args, &argsID, argsc, &file[1])) < 0)
+	if ((res = cmd_parseDev(&h[1], &offs[1], &sz[1], argc, argv, &argvID, &file[1])) < 0)
 		return res;
 
 	/* Copy data between devices */

@@ -29,24 +29,24 @@ static void cmd_appInfo(void)
 
 static int cmd_cpphfs2map(handler_t handler, const char *imap, addr_t top)
 {
-	int res;
+	ssize_t len, res;
 	addr_t offs = 0;
 	u8 buff[SIZE_MSG_BUFF];
 
 	do {
-		if ((res = phfs_read(handler, offs, buff, SIZE_MSG_BUFF)) < 0) {
+		if ((len = phfs_read(handler, offs, buff, SIZE_MSG_BUFF)) < 0) {
 			syspage_setMapTop(imap, top);
 			log_error("\nCan't read data");
-			return -EIO;
+			return len;
 		}
 
-		if (syspage_write2Map(imap, buff, res) < 0) {
+		offs += len;
+
+		if ((res = syspage_write2Map(imap, buff, len)) < 0) {
 			syspage_setMapTop(imap, top);
-			return -EINVAL;
+			return res;
 		}
-
-		offs += res;
-	} while (res > 0);
+	} while (len > 0);
 
 	return EOK;
 }
@@ -54,7 +54,7 @@ static int cmd_cpphfs2map(handler_t handler, const char *imap, addr_t top)
 
 static int cmd_loadApp(handler_t handler, size_t size, const char *imap, const char *dmap, const char *cmdline, u32 flags)
 {
-	int res;
+	size_t res;
 	Elf32_Ehdr hdr;
 	addr_t start, end;
 	addr_t addr, offs = 0;
@@ -63,7 +63,7 @@ static int cmd_loadApp(handler_t handler, size_t size, const char *imap, const c
 	/* Check ELF header */
 	if ((res = phfs_read(handler, offs, (u8 *)&hdr, (u32)sizeof(Elf32_Ehdr))) < 0) {
 		log_error("\nCan't read data");
-		return -EIO;
+		return res;
 	}
 
 	if ((hdr.e_ident[0] != 0x7f) || (hdr.e_ident[1] != 'E') || (hdr.e_ident[2] != 'L') || (hdr.e_ident[3] != 'F')) {
@@ -83,7 +83,7 @@ static int cmd_loadApp(handler_t handler, size_t size, const char *imap, const c
 
 	if ((res = phfs_map(handler, offs, size, mAttrRead | mAttrWrite, start, size, attr, &addr)) < 0) {
 		log_error("\nDevice is not mappable in %s", imap);
-		return -EINVAL;
+		return res;
 	}
 
 	/* Copy program's elf to imap */
@@ -95,8 +95,8 @@ static int cmd_loadApp(handler_t handler, size_t size, const char *imap, const c
 		syspage_getMapTop(imap, &end);
 	}
 	else if (res == dev_isMappable) {
-		if (phfs_getFileAddr(handler, &offs) < 0)
-			return -EINVAL;
+		if ((res = phfs_getFileAddr(handler, &offs)) < 0)
+			return res;
 
 		start = offs + addr;
 		end = start + size;
@@ -106,9 +106,9 @@ static int cmd_loadApp(handler_t handler, size_t size, const char *imap, const c
 		return -EIO;
 	}
 
-	if (syspage_addProg(start, end, imap, dmap, cmdline, flags) < 0) {
+	if ((res = syspage_addProg(start, end, imap, dmap, cmdline, flags)) < 0) {
 		log_error("\nCan't add program to syspage");
-		return -EINVAL;
+		return res;
 	}
 
 	return EOK;
@@ -116,13 +116,12 @@ static int cmd_loadApp(handler_t handler, size_t size, const char *imap, const c
 
 
 /* TODO: allow to add more than 2 maps */
-static int cmd_app(char *s)
+static int cmd_app(int argc, char *argv[])
 {
-	int argID = 0;
-	unsigned int argsc, pos;
-	cmdarg_t *args;
+	int res, argvID = 0;
+	unsigned int pos;
 
-	char *cmdline;
+	const char *cmdline;
 	unsigned int flags = 0;
 	char imap[8], dmap[8], appName[SIZE_APP_NAME + 1];
 
@@ -130,39 +129,38 @@ static int cmd_app(char *s)
 	phfs_stat_t stat;
 
 	/* Parse command arguments */
-	argsc = cmd_getArgs(s, DEFAULT_BLANKS, &args);
-	if (argsc == 0) {
+	if (argc == 1) {
 		syspage_showApps();
 		return EOK;
 	}
-	else if (argsc < 4 || argsc > 5) {
-		log_error("\nWrong args: %s", s);
+	else if (argc < 5 || argc > 6) {
+		log_error("\n%s: Wrong argument count", argv[0]);
 		return -EINVAL;
 	}
 
 	/* ARG_0: alias to device - it will be check in phfs_open */
 
 	/* ARG_1: optional flags */
-	argID = 1;
-	if (args[argID][0] == '-') {
-		if ((args[argID][1] | 0x20) == 'x' && args[argID][2] == '\0') {
+	argvID = 2;
+	if (argv[argvID][0] == '-') {
+		if ((argv[argvID][1] | 0x20) == 'x' && argv[argvID][2] == '\0') {
 			flags |= flagSyspageExec;
-			argID++;
+			argvID++;
 		}
 		else {
-			log_error("\nWrong args: %s", s);
+			log_error("\n%s: Wrong arguments", argv[0]);
 			return -EINVAL;
 		}
 	}
 
 	/* ARG_2: cmdline */
-	if (argID != (argsc - 3)) {
-		log_error("\nInvalid args, 'dmap' is not declared");
+	if (argvID != (argc - 3)) {
+		log_error("\n%s: Invalid arg, 'dmap' is not declared", argv[0]);
 		return -EINVAL;
 	}
 
 	/* Get app name from cmdline */
-	cmdline = args[argID];
+	cmdline = argv[argvID];
 	for (pos = 0; cmdline[pos]; pos++) {
 		if (cmdline[pos] == ';')
 			break;
@@ -173,37 +171,37 @@ static int cmd_app(char *s)
 		return -EINVAL;
 	}
 
-	hal_memcpy(appName, args[argID], pos);
+	hal_memcpy(appName, argv[argvID], pos);
 	appName[pos] = '\0';
 
 	/* ARG_3: Get map for instruction section */
-	hal_memcpy(imap, args[++argID], sizeof(imap));
+	hal_memcpy(imap, argv[++argvID], sizeof(imap));
 	imap[sizeof(imap) - 1] = '\0';
 
 	/* ARG_4: Get map for data section */
-	hal_memcpy(dmap, args[++argID], sizeof(dmap));
+	hal_memcpy(dmap, argv[++argvID], sizeof(dmap));
 	dmap[sizeof(dmap) - 1] = '\0';
 
 	/* Open file */
-	if (phfs_open(args[0], appName, 0, &handler) < 0) {
-		log_error("\nCan't open %s on %s", appName, args[0]);
-		return -EINVAL;
+	if ((res = phfs_open(argv[1], appName, 0, &handler)) < 0) {
+		log_error("\nCan't open %s on %s", appName, argv[1]);
+		return res;
 	}
 
 	/* Get file's properties */
-	if (phfs_stat(handler, &stat) < 0) {
-		log_error("\nCan't get stat from %s", args[0]);
-		return -EINVAL;
+	if ((res = phfs_stat(handler, &stat)) < 0) {
+		log_error("\nCan't get stat from %s", argv[1]);
+		return res;
 	}
 
-	if (cmd_loadApp(handler, stat.size, imap, dmap, cmdline, flags) < 0) {
-		log_error("\nCan't load %s to %s via %s", appName, imap, args[0]);
-		return -EIO;
+	if ((res = cmd_loadApp(handler, stat.size, imap, dmap, cmdline, flags)) < 0) {
+		log_error("\nCan't load %s to %s via %s", appName, imap, argv[1]);
+		return res;
 	}
 
-	if (phfs_close(handler) < 0) {
+	if ((res = phfs_close(handler)) < 0) {
 		log_error("\nCan't  close %s", appName);
-		return -EINVAL;
+		return res;
 	}
 
 	log_info("\nLoading %s", appName);
