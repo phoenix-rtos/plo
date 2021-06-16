@@ -18,6 +18,7 @@
 
 #include <hal/hal.h>
 #include <lib/console.h>
+#include <lib/ctype.h>
 
 
 #define SIZE_HIST          8
@@ -32,57 +33,49 @@ extern char script[];
 
 struct {
 	const cmd_t *cmds[SIZE_CMDS];
-	char args[MAX_CMD_ARGS_NB][SIZE_CMD_ARG_LINE];
-
 	int ll;
 	int cl;
 	char lines[SIZE_HIST][SIZE_CMD_ARG_LINE];
 } cmd_common;
 
 
-static void cmd_skipblanks(const char *line, unsigned int *pos, const char *blanks)
+static int cmd_parseArgLine(const char **lines, char *buf, size_t bufsz, char *argv[], size_t argvsz)
 {
-	const char *p;
+	char *const end = buf + bufsz;
+	int argc = 0;
 
-	while (line[*pos]) {
-		for (p = blanks; *p && line[*pos] != *p; p++);
-		if (!*p)
-			break;
-		(*pos)++;
-	}
-}
+	if (lines == NULL || *lines == NULL || **lines == '\0')
+		return -1; /* EOF */
 
-
-/* TODO: old code needs to be cleaned up */
-static char *cmd_getnext(const char *line, unsigned int *pos, const char *blanks, char *word, unsigned int len)
-{
-	char c;
-	unsigned int i, wp = 0;
-
-	/* Skip leading blank characters */
-	cmd_skipblanks(line, pos, blanks);
-
-	wp = 0;
-	while ((c = line[*pos]) != 0) {
-
-		/* Test separators */
-		for (i = 0; blanks[i]; i++) {
-			if (c == blanks[i])
+	while (**lines != '\0') {
+		if (isspace(**lines)) {
+			if (isblank(*(*lines)++))
+				continue;
+			else
 				break;
 		}
-		if (blanks[i])
-			break;
 
-		word[wp++] = c;
-		if (wp == len)
-			return NULL;
+		if (argc + 1 >= argvsz) {
+			log_error("\ncmd: Too many arguments");
+			return -EINVAL;
+		}
 
-		(*pos)++;
+		argv[argc++] = buf;
+
+		while (isgraph(**lines) && buf < end)
+			*buf++ = *(*lines)++;
+
+		if (buf >= end) {
+			log_error("\ncmd: Command buffer too small");
+			return -ENOMEM;
+		}
+
+		*buf++ = '\0';
 	}
 
-	word[wp] = 0;
+	argv[argc] = NULL;
 
-	return word;
+	return argc;
 }
 
 
@@ -104,10 +97,10 @@ void cmd_reg(const cmd_t *cmd)
 }
 
 
-void cmd_run(void)
+int cmd_run(void)
 {
 	lib_printf("\ncmd: Executing pre-init script");
-	cmd_parse((char *)script);
+	return cmd_parse(script);
 }
 
 
@@ -120,58 +113,44 @@ const cmd_t *cmd_getCmd(unsigned int id)
 }
 
 
-/* TODO: old code needs to be cleaned up */
-void cmd_parse(char *line)
+int cmd_parse(const char *script)
 {
-	unsigned int p = 0, wp, i;
-	char word[SIZE_CMD_ARG_LINE], cmd[SIZE_CMD_ARG_LINE];
+	char *argv[MAX_CMD_ARGS_NB];
+	char argline[SIZE_CMD_ARG_LINE];
+	int ret, argc;
+	unsigned int i;
 
 	for (;;) {
-		if (cmd_getnext(line, &p, "\n", word, sizeof(word)) == NULL) {
-			log_error("\nSyntax error");
-			return;
-		}
-		if (*word == 0)
-			break;
+		argc = cmd_parseArgLine(&script, argline, SIZE_CMD_ARG_LINE, argv, MAX_CMD_ARGS_NB);
 
-		wp = 0;
-		if (cmd_getnext(word, &wp, DEFAULT_BLANKS, cmd, sizeof(cmd)) == NULL) {
-			log_error("\nSyntax error");
-			return;
-		}
+		/* skip empty lines */
+		if (argc == 0)
+			continue;
+		/* either end of script or no script */
+		else if (argc == -1)
+			return EOK;
+		/* error */
+		else if (argc < 0)
+			return argc;
 
 		/* Find command and launch associated function */
 		for (i = 0; i < SIZE_CMDS; i++) {
-			if (hal_strcmp(cmd, cmd_common.cmds[i]->name) != 0)
+			if (hal_strcmp(argv[0], cmd_common.cmds[i]->name) != 0)
 				continue;
 
-			if (cmd_common.cmds[i]->run(word + wp) < 0)
-				return;
+			if ((ret = cmd_common.cmds[i]->run(argc, argv)) < 0)
+				return ret;
 
 			break;
 		}
+
 		if (i >= SIZE_CMDS) {
-			log_error("\n'%s' - unknown command!", cmd);
-			return;
+			log_error("\n'%s' - unknown command!", argv[0]);
+			return -EINVAL;
 		}
 	}
 }
 
-
-int cmd_getArgs(const char *cmd, const char *blank, cmdarg_t **args)
-{
-	unsigned int i, pos = 0;
-
-	for (i = 0; i < MAX_CMD_ARGS_NB; ++i) {
-		hal_memset(cmd_common.args[i], 0, SIZE_CMD_ARG_LINE);
-		if (cmd_getnext(cmd, &pos, blank, cmd_common.args[i], SIZE_CMD_ARG_LINE) == NULL || *cmd_common.args[i] == 0)
-			break;
-	}
-
-	*args = (void *)&cmd_common.args;
-
-	return i;
-}
 
 /* TODO: old code needs to be cleaned up */
 void cmd_prompt(void)
