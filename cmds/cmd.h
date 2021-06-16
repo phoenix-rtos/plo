@@ -22,19 +22,15 @@
 #include <lib/errno.h>
 
 
-#define DEFAULT_BLANKS " \t"
-
 #define SIZE_CMD_ARG_LINE 81
 #define SIZE_MSG_BUFF     0x100
 #define SIZE_MAGIC_NB     8
 
-#define MAX_CMD_ARGS_NB 10
-
-typedef char cmdarg_t[SIZE_CMD_ARG_LINE];
+#define MAX_CMD_ARGS_NB (10 + 1)
 
 typedef struct {
 	const char name[12];
-	const int (*run)(char *);
+	const int (*run)(int, char *[]);
 	const void (*info)(void);
 } cmd_t;
 
@@ -44,7 +40,7 @@ extern void cmd_reg(const cmd_t *cmd);
 
 
 /* Function runs pre-init script */
-extern void cmd_run(void);
+extern int cmd_run(void);
 
 
 /* Function shows prompt and start interaction with user */
@@ -56,11 +52,7 @@ extern const cmd_t *cmd_getCmd(unsigned int id);
 
 
 /* Function parses loader commands */
-extern void cmd_parse(char *line);
-
-
-/* Function prase arguments from command */
-extern int cmd_getArgs(const char *cmd, const char *blank, cmdarg_t **args);
+extern int cmd_parse(const char *line);
 
 
 #endif
