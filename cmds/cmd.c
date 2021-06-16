@@ -55,6 +55,7 @@ static int cmd_parseArgLine(const char **lines, char *buf, size_t bufsz, char *a
 				break;
 		}
 
+		/* Argument count and one NULL pointer */
 		if (argc + 1 >= argvsz) {
 			log_error("\ncmd: Too many arguments");
 			return -EINVAL;
@@ -115,13 +116,13 @@ const cmd_t *cmd_getCmd(unsigned int id)
 
 int cmd_parse(const char *script)
 {
-	char *argv[MAX_CMD_ARGS_NB];
+	char *argv[SIZE_CMD_ARGV];
 	char argline[SIZE_CMD_ARG_LINE];
 	int ret, argc;
 	unsigned int i;
 
 	for (;;) {
-		argc = cmd_parseArgLine(&script, argline, SIZE_CMD_ARG_LINE, argv, MAX_CMD_ARGS_NB);
+		argc = cmd_parseArgLine(&script, argline, SIZE_CMD_ARG_LINE, argv, SIZE_CMD_ARGV);
 
 		/* skip empty lines */
 		if (argc == 0)

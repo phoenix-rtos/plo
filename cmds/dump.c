@@ -26,7 +26,7 @@ static void cmd_dumpInfo(void)
 
 
 /* TODO: old code needs to be cleaned up; address has to be checked with maps */
-static int cmd_dump(char *s)
+static int cmd_dump(int argc, char *argv[])
 {
 	u8 byte;
 	addr_t offs;
@@ -34,18 +34,14 @@ static int cmd_dump(char *s)
 	unsigned int x, y;
 	static const int xsize = 16, ysize = 16;
 
-	unsigned int argsc;
-	cmdarg_t *args;
-
-	argsc = cmd_getArgs(s, DEFAULT_BLANKS, &args);
-	if (argsc == 0) {
-		log_error("\nArguments have to be defined");
+	if (argc == 1) {
+		log_error("\n%s: Arguments have to be defined", argv[0]);
 		return -EINVAL;
 	}
 
-	offs = lib_strtoul(args[0], &endptr, 16);
+	offs = lib_strtoul(argv[1], &endptr, 16);
 	if (*endptr) {
-		log_error("\nWrong address value: %s", args[0]);
+		log_error("\n%s: Wrong arguments", argv[0]);
 		return -EINVAL;
 	}
 

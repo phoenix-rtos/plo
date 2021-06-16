@@ -26,37 +26,33 @@ static void cmd_bistreamInfo(void)
 }
 
 
-static int cmd_bitstream(char *s)
+static int cmd_bitstream(int argc, char *argv[])
 {
-	int res;
+	ssize_t res;
 	handler_t handler;
 	u8 buff[SIZE_MSG_BUFF];
 	addr_t offs = 0, addr = BITSREAM_ADDR;
 
-	unsigned int argsc;
-	cmdarg_t *args;
-
-	argsc = cmd_getArgs(s, DEFAULT_BLANKS, &args);
-	if (argsc == 0) {
-		log_error("\nArguments have to be defined");
+	if (argc == 1) {
+		log_error("\n%s: Arguments have to be defined", argv[0]);
 		return -EINVAL;
 	}
-	else if (argsc != 2) {
-		log_error("\nWrong args: %s", s);
+	else if (argc != 3) {
+		log_error("\n%s: Wrong argument count", argv[0]);
 		return -EINVAL;
 	}
 
 
-	if (phfs_open(args[0], args[1], 0, &handler) < 0) {
-		log_error("\nCan't open %s, on %s", args[1], args[0]);
-		return -EINVAL;
+	if ((res = phfs_open(argv[1], argv[2], 0, &handler)) < 0) {
+		log_error("\nCan't open %s, on %s", argv[2], argv[1]);
+		return res;
 	}
 
 	log_info("\nLoading bitstream into DDR, please wait...");
 	do {
 		if ((res = phfs_read(handler, offs, buff, sizeof(buff))) < 0) {
-			log_error("\nCan't read %s from %s", args[1], args[0]);
-			return -EINVAL;
+			log_error("\nCan't read %s from %s", argv[2], argv[1]);
+			return res;
 		}
 
 		hal_memcpy((void *)addr, buff, res);
@@ -65,9 +61,9 @@ static int cmd_bitstream(char *s)
 	} while (res != 0);
 
 	log_info("\nLoading bitstream into PL");
-	if (_zynq_loadPL(BITSREAM_ADDR, addr - BITSREAM_ADDR) < 0) {
+	if ((res = _zynq_loadPL(BITSREAM_ADDR, addr - BITSREAM_ADDR)) < 0) {
 		log_error("\nPL was not initialized, bitstream is incorrect");
-		return -EINVAL;
+		return res;
 	}
 
 	log_info("\nPL was successfully initialized");

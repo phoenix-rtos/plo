@@ -25,19 +25,17 @@ static void cmd_waitInfo(void)
 }
 
 
-static int cmd_wait(char *s)
+static int cmd_wait(int argc, char *argv[])
 {
 	int i;
 	char c;
 	char *endptr;
-	unsigned int time, step, argsc;
-	cmdarg_t *args;
+	unsigned int time, step;
 	static const char prompt[] = "Waiting for input";
 
-	argsc = cmd_getArgs(s, DEFAULT_BLANKS, &args);
 	lib_printf("\n%s", CONSOLE_NORMAL);
 	/* User doesn't provide time, waiting in infinite loop */
-	if (argsc != 1) {
+	if (argc != 2) {
 		while (1) {
 			lib_printf("\r%*s \r%s ", sizeof(prompt) + 4, "", prompt);
 			for (i = 0; i < 3; ++i) {
@@ -49,9 +47,9 @@ static int cmd_wait(char *s)
 	}
 
 	/* Wait for the time specified by the user */
-	time = lib_strtoul(args[0], &endptr, 0);
+	time = lib_strtoul(argv[1], &endptr, 0);
 	if (*endptr) {
-		log_error("\nWrong args: %s", s);
+		log_error("\n%s: Wrong argument count", argv[0]);
 		return -EINVAL;
 	}
 

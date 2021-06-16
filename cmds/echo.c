@@ -25,14 +25,10 @@ static void cmd_echoInfo(void)
 }
 
 
-static int cmd_echo(char *s)
+static int cmd_echo(int argc, char *argv[])
 {
-	unsigned int argsc;
-	cmdarg_t *args;
-
-	argsc = cmd_getArgs(s, DEFAULT_BLANKS, &args);
 	/* Show echo status */
-	if (argsc == 0) {
+	if (argc == 1) {
 		if (log_getEcho()) {
 			lib_printf("\nEcho is 'on'");
 		}
@@ -43,20 +39,20 @@ static int cmd_echo(char *s)
 		return EOK;
 	}
 
-	if (argsc != 1) {
-		log_error("\nWrong args: %s", s);
+	if (argc != 2) {
+		log_error("\n%s: Wrong arguments", argv[0]);
 		return -EINVAL;
 	}
 
 	/* Set echo */
-	if (hal_strcmp(args[0], "on") == 0) {
+	if (hal_strcmp(argv[1], "on") == 0) {
 		log_setEcho(1);
 	}
-	else if (hal_strcmp(args[0], "off") == 0) {
+	else if (hal_strcmp(argv[1], "off") == 0) {
 		log_setEcho(0);
 	}
 	else {
-		log_error("\nWrong args: %s", s);
+		log_error("\n%s: Wrong arguments", argv[0]);
 		return -EINVAL;
 	}
 
