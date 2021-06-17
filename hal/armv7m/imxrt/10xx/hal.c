@@ -51,6 +51,8 @@ void hal_init(void)
 	syspage_init();
 	syspage_setAddress(SYSPAGE_ADDRESS);
 
+	_imxrt_scbSetPriorityGrouping(3);
+
 	/* Add entries related to plo image */
 	syspage_addEntries((addr_t)_plo_bss, (addr_t)_end - (addr_t)_plo_bss + STACK_SIZE);
 }
@@ -143,7 +145,7 @@ int hal_interruptsSet(unsigned int irq, int (*isr)(unsigned int, void *), void *
 		_imxrt_nvicSetIRQ(irq - 0x10, 0);
 	}
 	else {
-		_imxrt_nvicSetPriority(irq - 0x10, 1);
+		_imxrt_nvicSetPriority(irq - 0x10, 0);
 		_imxrt_nvicSetIRQ(irq - 0x10, 1);
 	}
 	hal_interruptsEnable();
