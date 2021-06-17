@@ -52,47 +52,95 @@ static const bootloader_tree_t **volatile const bootloader_tree = (void *)FLEXSP
 
 int flexspi_norFlashInit(u32 instance, flexspi_norConfig_t *config)
 {
-	return (*bootloader_tree)->flexspiNorDriver->init(instance, config);
+	int res;
+
+	hal_interruptsDisable();
+	res = (*bootloader_tree)->flexspiNorDriver->init(instance, config);
+	hal_interruptsEnable();
+
+	return res;
 }
 
 
 int flexspi_norFlashPageProgram(u32 instance, flexspi_norConfig_t *config, u32 dstAddr, const u32 *src)
 {
-	return (*bootloader_tree)->flexspiNorDriver->page_program(instance, config, dstAddr, src);
+	int res;
+
+	hal_interruptsDisable();
+	res = (*bootloader_tree)->flexspiNorDriver->page_program(instance, config, dstAddr, src);
+	hal_interruptsEnable();
+
+	return res;
 }
 
 
 int flexspi_norFlashEraseAll(u32 instance, flexspi_norConfig_t *config)
 {
-	return (*bootloader_tree)->flexspiNorDriver->erase_all(instance, config);
+	int res;
+
+	hal_interruptsDisable();
+	res = (*bootloader_tree)->flexspiNorDriver->erase_all(instance, config);
+	hal_interruptsEnable();
+
+	return res;
 }
 
 
 int flexspi_norGetConfig(u32 instance, flexspi_norConfig_t *config, serial_norConfigOption_t *option)
 {
-	return (*bootloader_tree)->flexspiNorDriver->get_config(instance, config, option);
+	int res;
+
+	hal_interruptsDisable();
+	res = (*bootloader_tree)->flexspiNorDriver->get_config(instance, config, option);
+	hal_interruptsEnable();
+
+	return res;
 }
 
 
 int flexspi_norFlashErase(u32 instance, flexspi_norConfig_t *config, u32 start, u32 length)
 {
-	return (*bootloader_tree)->flexspiNorDriver->erase(instance, config, start, length);
+	int res;
+
+	hal_interruptsDisable();
+	res = (*bootloader_tree)->flexspiNorDriver->erase(instance, config, start, length);
+	hal_interruptsEnable();
+
+	return res;
 }
 
 
 int flexspi_norFlashRead(u32 instance, flexspi_norConfig_t *config, char *dst, u32 start, u32 bytes)
 {
-	return (*bootloader_tree)->flexspiNorDriver->read(instance, config, (u32 *)dst, start, bytes);
+	int res;
+
+	hal_interruptsDisable();
+	res = (*bootloader_tree)->flexspiNorDriver->read(instance, config, (u32 *)dst, start, bytes);
+	hal_interruptsEnable();
+
+	return res;
 }
 
 
 int flexspi_norFlashUpdateLUT(u32 instance, u32 seqIndex, const u32 *lutBase, u32 seqNumber)
 {
-	return (*bootloader_tree)->flexspiNorDriver->update_lut(instance, seqIndex, lutBase, seqNumber);
+	int res;
+
+	hal_interruptsDisable();
+	res = (*bootloader_tree)->flexspiNorDriver->update_lut(instance, seqIndex, lutBase, seqNumber);
+	hal_interruptsEnable();
+
+	return res;
 }
 
 
 int flexspi_norFlashExecuteSeq(u32 instance, flexspi_xfer_t *xfer)
 {
-	return (*bootloader_tree)->flexspiNorDriver->xfer(instance, xfer);
+	int res;
+
+	hal_interruptsDisable();
+	res = (*bootloader_tree)->flexspiNorDriver->xfer(instance, xfer);
+	hal_interruptsEnable();
+
+	return res;
 }
