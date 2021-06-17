@@ -27,9 +27,10 @@ static void cmd_copyInfo(void)
 }
 
 
-static int cmd_cpphfs2phfs(handler_t srcHandler, addr_t srcAddr, size_t srcSz, handler_t dstHandler, addr_t dstAddr, size_t dstSz)
+static ssize_t cmd_cpphfs2phfs(handler_t srcHandler, addr_t srcAddr, size_t srcSz, handler_t dstHandler, addr_t dstAddr, size_t dstSz)
 {
 	int res;
+	addr_t addr = dstAddr;
 	size_t size, chunk;
 	u8 buff[SIZE_MSG_BUFF];
 
@@ -56,18 +57,18 @@ static int cmd_cpphfs2phfs(handler_t srcHandler, addr_t srcAddr, size_t srcSz, h
 		srcAddr += res;
 		size -= res;
 
-		if ((res = phfs_write(dstHandler, dstAddr, buff, res)) < 0) {
-			log_error("\nCan't write data to address: 0x%x\n", dstAddr);
+		if ((res = phfs_write(dstHandler, addr, buff, res)) < 0) {
+			log_error("\nCan't write data to address: 0x%x\n", addr);
 			return -EIO;
 		}
-		dstAddr += res;
+		addr += res;
 	} while (size > 0 && res > 0);
 
-	return 0;
+	return addr - dstAddr;
 }
 
 
-static int cmd_parseDev(handler_t *h, addr_t *offs, size_t *sz, cmdarg_t *args, unsigned int *argsID, unsigned int argsc)
+static int cmd_parseDev(handler_t *h, addr_t *offs, size_t *sz, cmdarg_t *args, unsigned int *argsID, unsigned int argsc, const char **file)
 {
 	char *alias;
 	char *endptr;
@@ -88,6 +89,7 @@ static int cmd_parseDev(handler_t *h, addr_t *offs, size_t *sz, cmdarg_t *args, 
 	if (*endptr) {
 		*offs = 0;
 		*sz = 0;
+		*file = args[*argsID];
 		if (phfs_open(alias, args[*argsID], 0, h) < 0) {
 			log_error("\nCan't open file '%s' on %s", args[*argsID], alias);
 			return -EIO;
@@ -97,6 +99,7 @@ static int cmd_parseDev(handler_t *h, addr_t *offs, size_t *sz, cmdarg_t *args, 
 	/* Open device using direct access to memory */
 	else {
 		*sz = lib_strtoul(args[++(*argsID)], &endptr, 0);
+		*file = NULL;
 		if (*endptr) {
 			log_error("\nWrong size value: %s, for %s with offs 0x%x", args[(*argsID)], alias, *offs);
 			return -EINVAL;
@@ -115,8 +118,10 @@ static int cmd_parseDev(handler_t *h, addr_t *offs, size_t *sz, cmdarg_t *args, 
 static int cmd_copy(char *s)
 {
 	size_t sz[2];
+	ssize_t res;
 	addr_t offs[2];
 	handler_t h[2];
+	const char *file[2];
 
 	unsigned int argsc, argsID = 0;
 	cmdarg_t *args;
@@ -127,15 +132,15 @@ static int cmd_copy(char *s)
 		return -EINVAL;
 	}
 
-	if (cmd_parseDev(&h[0], &offs[0], &sz[0], args, &argsID, argsc) < 0)
+	if (cmd_parseDev(&h[0], &offs[0], &sz[0], args, &argsID, argsc, &file[0]) < 0)
 		return -EINVAL;
 
-	if (cmd_parseDev(&h[1], &offs[1], &sz[1], args, &argsID, argsc) < 0)
+	if (cmd_parseDev(&h[1], &offs[1], &sz[1], args, &argsID, argsc, &file[1]) < 0)
 		return -EINVAL;
 
 	/* Copy data between devices */
 	log_info("\nCopying data, please wait...");
-	if (cmd_cpphfs2phfs(h[0], offs[0], sz[0], h[1], offs[1], sz[1]) < 0) {
+	if ((res = cmd_cpphfs2phfs(h[0], offs[0], sz[0], h[1], offs[1], sz[1])) < 0) {
 		log_error("\nCopying failed");
 		phfs_close(h[0]);
 		phfs_close(h[1]);
@@ -146,6 +151,9 @@ static int cmd_copy(char *s)
 
 	phfs_close(h[0]);
 	phfs_close(h[1]);
+
+	if (phfs_regFile((file[1] == NULL) ? file[0] : file[1], offs[1], res) < 0)
+		return -ENXIO;
 
 	return EOK;
 }
