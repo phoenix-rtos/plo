@@ -109,40 +109,40 @@ _fcfb:
 .org _fcfb + 0x1000, 0xff
 
 ivt_flash:
-    .word 0x412000d1                         /* hdr */
-    .word _start                             /* entry */
-    .word 0                                  /* reserved 1 */
-    .word 0                                  /* dcd */
-    .word flash_boot_data                    /* boot_data */
-    .word ivt_flash                          /* self */
-    .word 0                                  /* csf */
-    .word 0                                  /* reserved 2 */
+	.word 0x412000d1                         /* hdr */
+	.word _start                             /* entry */
+	.word 0                                  /* reserved 1 */
+	.word 0                                  /* dcd */
+	.word flash_boot_data                    /* boot_data */
+	.word ivt_flash                          /* self */
+	.word 0                                  /* csf */
+	.word 0                                  /* reserved 2 */
 
 flash_boot_data:
-    .word FLEXSPI2_BASE                      /* load address */
-    .word _etext - _fcfb                     /* size */
-    .word 0                                  /* plugin */
-    .word 0xffffffff                         /* empty - extra data word */
+	.word FLEXSPI2_BASE                      /* load address */
+	.word _etext - _fcfb                     /* size */
+	.word 0                                  /* plugin */
+	.word 0xffffffff                         /* empty - extra data word */
 
 ivt_flash_end:
 
 .org _fcfb + 0x1050, 0xff
 
 ivt:
-    .word 0x412000d1                         /* hdr */
-    .word _start                             /* entry */
-    .word 0                                  /* reserved 1 */
-    .word 0                                  /* dcd */
-    .word boot_data                          /* boot_data */
-    .word ivt                                /* self */
-    .word 0                                  /* csf */
-    .word 0                                  /* reserved 2 */
+	.word 0x412000d1                         /* hdr */
+	.word _start                             /* entry */
+	.word 0                                  /* reserved 1 */
+	.word 0                                  /* dcd */
+	.word boot_data                          /* boot_data */
+	.word ivt                                /* self */
+	.word 0                                  /* csf */
+	.word 0                                  /* reserved 2 */
 
 boot_data:
-    .word ADDR_ITCM                          /* load address */
-    .word _etext - _fcfb                     /* size */
-    .word 0                                  /* plugin */
-    .word 0xffffffff
+	.word ADDR_ITCM                          /* load address */
+	.word _etext - _fcfb                     /* size */
+	.word 0                                  /* plugin */
+	.word 0xffffffff
 
 ivt_end:
 
@@ -181,26 +181,26 @@ _init_vectors:
 .globl _start
 .type _start, %function
 _start:
-    cpsid if
+	cpsid if
 
-    /* Configure FLEX RAM */
-    ldr r8, =IOMUXC_GPR
-    ldr r9, =0x00200007
-    str r9, [r8, #0x40]
+	/* Configure FLEX RAM */
+	ldr r8, =IOMUXC_GPR
+	ldr r9, =0x00200007
+	str r9, [r8, #0x40]
 
-    ldr r9, =0xaabfffff
-    str r9, [r8, #0x44]
+	ldr r9, =0xaabfffff
+	str r9, [r8, #0x44]
 
 _plo:
-    /* Init vector table and stack pointer */
-    ldr r0, =0xe000ed08
-    ldr r1, =_init_vectors
-    str r1, [r0]
-    ldr r0, [r1]
-    bic r0, 7
-    msr msp, r0
-    ldr r8, =_startc
-    bx r8
+	/* Init vector table and stack pointer */
+	ldr r0, =0xe000ed08
+	ldr r1, =_init_vectors
+	str r1, [r0]
+	ldr r0, [r1]
+	bic r0, 7
+	msr msp, r0
+	ldr r8, =_startc
+	bx r8
 
 .size _start, .-_start
 .ltorg
@@ -209,13 +209,13 @@ _plo:
 .globl _interrupts_dispatch
 .type _interrupts_dispatch, %function
 _interrupts_dispatch:
-    mrs r0, ipsr
-    stmdb sp!, {r0, r4-r11, lr}
-    bl hal_irqdispatch
-    ldmia sp!, {r0, r4-r11, lr}
-    dmb
+	mrs r0, ipsr
+	stmdb sp!, {r0, r4-r11, lr}
+	bl hal_irqdispatch
+	ldmia sp!, {r0, r4-r11, lr}
+	dmb
 
-    bx lr
+	bx lr
 .size _interrupts_dispatch, .-_interrupts_dispatch
 .ltorg
 
@@ -224,8 +224,8 @@ _interrupts_dispatch:
 .type _exceptions_dispatch, %function
 
 _exceptions_dispatch:
-    cpsid if
-    /* TODO: implement exception dispatcher */
-    1: b 1b
+	cpsid if
+	/* TODO: implement exception dispatcher */
+	1: b 1b
 .size _exceptions_dispatch, .-_exceptions_dispatch
 .ltorg
