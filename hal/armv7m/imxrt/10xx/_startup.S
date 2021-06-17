@@ -49,7 +49,7 @@ _fcfb:
 .byte 0, 0, 0
 .word 0, 0, 0, 0 /* configCmdSeqs */
 .word 0, 0, 0, 0 /* cfgCmdArgs */
-.word 0x00000000 /* controllerMiscOption */
+.word 0x00000010 /* controllerMiscOption */
 .byte 0x1        /* deviceType */
 .byte 0x4        /* sflashPadType */
 .byte 0x8        /* serialClkFreq */
@@ -97,11 +97,11 @@ _fcfb:
 
 .word 0x00000100 /* pageSize */
 .word 0x00001000 /* sectorSize */
-.word 0x00000000 /* ipCmdSerialClkFreq */
+.word 0x00000001 /* ipCmdSerialClkFreq */
 .word 0x00000000
 
 /* reserved */
-.word 0x00000000, 0x00000000, 0x00000000, 0x00000000
+.word 0x00010000, 0x00000000, 0x00000000, 0x00000000
 .word 0x00000000, 0x00000000, 0x00000000, 0x00000000
 .word 0x00000000, 0x00000000, 0x00000000, 0x00000000
 
@@ -195,9 +195,9 @@ _plo:
     /* Init vector table and stack pointer */
     ldr r0, =0xe000ed08
     ldr r1, =_init_vectors
-
     str r1, [r0]
     ldr r0, [r1]
+    bic r0, 7
     msr msp, r0
     ldr r8, =_startc
     bx r8
@@ -210,15 +210,11 @@ _plo:
 .type _interrupts_dispatch, %function
 _interrupts_dispatch:
     mrs r0, ipsr
-    sub r1, sp, #44
-    stmdb sp!, {r1-r2, r4-r11, lr}
-
-_intd0:
+    stmdb sp!, {r0, r4-r11, lr}
     bl hal_irqdispatch
-    ldr sp, [sp]
-_intd1:
-    ldmia sp!, {r0-r1, r4-r11, lr}
-	dmb
+    ldmia sp!, {r0, r4-r11, lr}
+    dmb
+
     bx lr
 .size _interrupts_dispatch, .-_interrupts_dispatch
 .ltorg
