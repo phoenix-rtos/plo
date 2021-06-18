@@ -29,42 +29,40 @@ static void cmd_copyInfo(void)
 
 static ssize_t cmd_cpphfs2phfs(handler_t srcHandler, addr_t srcAddr, size_t srcSz, handler_t dstHandler, addr_t dstAddr, size_t dstSz)
 {
-	int res;
-	addr_t addr = dstAddr;
-	size_t size, chunk;
+	ssize_t res;
 	u8 buff[SIZE_MSG_BUFF];
+	size_t chunk, rsz = 0, wsz = 0;
 
 	/* Size is not defined, copy the whole file                 */
 	if (srcSz == 0 && dstSz == 0)
-		size = -1;
+		srcSz = -1;
 	/* Size is defined, use smaller one to copy piece of memory */
 	else if (srcSz != 0 && dstSz != 0)
-		size = (srcSz < dstSz) ? srcSz : dstSz;
+		srcSz = (srcSz < dstSz) ? srcSz : dstSz;
 	/* One of the size is not defined, use the defined one      */
 	else
-		size = (srcSz > dstSz) ? srcSz : dstSz;
+		srcSz = (srcSz > dstSz) ? srcSz : dstSz;
 
 	do {
-		if (size > sizeof(buff))
-			chunk = sizeof(buff);
-		else
-			chunk = size;
-
-		if ((res = phfs_read(srcHandler, srcAddr, buff, chunk)) < 0) {
+		chunk = ((srcSz - rsz) > sizeof(buff)) ? sizeof(buff) : (srcSz - rsz);
+		if ((res = phfs_read(srcHandler, srcAddr + rsz, buff, chunk)) < 0) {
 			log_error("\nCan't read data\n");
-			return -EIO;
+			return res;
 		}
-		srcAddr += res;
-		size -= res;
+		rsz += res;
 
-		if ((res = phfs_write(dstHandler, addr, buff, res)) < 0) {
-			log_error("\nCan't write data to address: 0x%x\n", addr);
-			return -EIO;
+		chunk = res;
+		while (chunk) {
+			if ((res = phfs_write(dstHandler, dstAddr + wsz, buff, chunk)) < 0) {
+				log_error("\nCan't write data to address: 0x%x\n", dstAddr + wsz);
+				return res;
+			}
+			chunk -= res;
+			wsz += res;
 		}
-		addr += res;
-	} while (size > 0 && res > 0);
+	} while ((srcSz - rsz) > 0 && res > 0);
 
-	return addr - dstAddr;
+	return wsz;
 }
 
 
@@ -132,28 +130,28 @@ static int cmd_copy(char *s)
 		return -EINVAL;
 	}
 
-	if (cmd_parseDev(&h[0], &offs[0], &sz[0], args, &argsID, argsc, &file[0]) < 0)
-		return -EINVAL;
+	if ((res = cmd_parseDev(&h[0], &offs[0], &sz[0], args, &argsID, argsc, &file[0])) < 0)
+		return res;
 
-	if (cmd_parseDev(&h[1], &offs[1], &sz[1], args, &argsID, argsc, &file[1]) < 0)
-		return -EINVAL;
+	if ((res = cmd_parseDev(&h[1], &offs[1], &sz[1], args, &argsID, argsc, &file[1])) < 0)
+		return res;
 
 	/* Copy data between devices */
 	log_info("\nCopying data, please wait...");
-	if ((res = cmd_cpphfs2phfs(h[0], offs[0], sz[0], h[1], offs[1], sz[1])) < 0) {
-		log_error("\nCopying failed");
-		phfs_close(h[0]);
-		phfs_close(h[1]);
-		return -EINVAL;
-	}
-
-	log_info("\nFinished copying");
+	res = cmd_cpphfs2phfs(h[0], offs[0], sz[0], h[1], offs[1], sz[1]);
 
 	phfs_close(h[0]);
 	phfs_close(h[1]);
 
-	if (phfs_regFile((file[1] == NULL) ? file[0] : file[1], offs[1], res) < 0)
-		return -ENXIO;
+	if (res < 0) {
+		log_error("\nCopying failed");
+		return res;
+	}
+
+	log_info("\nFinished copying");
+
+	if ((res = phfs_regFile((file[1] == NULL) ? file[0] : file[1], offs[1], res)) < 0)
+		return res;
 
 	return EOK;
 }
