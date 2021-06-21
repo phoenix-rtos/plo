@@ -26,5 +26,5 @@ include devices/gpio-zynq7000/Makefile
 include devices/usbc-cdc/Makefile
 include devices/uart-zynq7000/Makefile
 
-OBJS += $(addprefix $(PREFIX_O)hal/$(TARGET_SUFF)/$(TARGET_SUBFAMILY)/, _startup.o hal.o zynq.o timer.o\
+OBJS += $(addprefix $(PREFIX_O)hal/$(TARGET_SUFF)/$(TARGET_SUBFAMILY)/, _init.o hal.o zynq.o timer.o\
 		interrupts.o console.o)
