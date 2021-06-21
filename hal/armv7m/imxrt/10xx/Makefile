@@ -27,4 +27,4 @@ include devices/usbc-cdc/Makefile
 include devices/uart-imxrt106x/Makefile
 include devices/flash-imxrt/Makefile
 
-OBJS += $(addprefix $(PREFIX_O)hal/$(TARGET_SUFF)/imxrt/10xx/, _startup.o hal.o imxrt.o timer.o console.o)
+OBJS += $(addprefix $(PREFIX_O)hal/$(TARGET_SUFF)/imxrt/10xx/, _init.o hal.o imxrt.o timer.o console.o)
