@@ -25,4 +25,4 @@ PLO_COMMANDS = alias app call console copy devs dump echo go help kernel map phf
 include devices/uart-imxrt117x/Makefile
 include devices/flash-imxrt/Makefile
 
-OBJS += $(addprefix $(PREFIX_O)hal/$(TARGET_SUFF)/imxrt/117x/, _startup.o hal.o imxrt.o timer.o console.o)
+OBJS += $(addprefix $(PREFIX_O)hal/$(TARGET_SUFF)/imxrt/117x/, _init.o hal.o imxrt.o timer.o console.o)
