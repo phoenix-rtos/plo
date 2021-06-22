@@ -24,7 +24,7 @@ extern char script[];
 
 static void cmd_scriptInfo(void)
 {
-	lib_printf("shows script, usage: script <preinit/name> [dev] [magic]");
+	lib_printf("shows script, usage: script [<dev> <name> <magic>]");
 }
 
 
@@ -36,23 +36,13 @@ static int cmd_script(int argc, char *argv[])
 	char buff[SIZE_CMD_ARG_LINE];
 
 	if (argc == 1) {
-		log_error("\n%s: Arguments have to be defined", argv[0]);
-		return -EINVAL;
+		lib_printf(CONSOLE_BOLD "\nPreinit script:");
+		lib_printf(CONSOLE_NORMAL "\n%s", (char *)script);
+		return EOK;
 	}
-	else if (argc != 2 && argc != 4) {
+	else if (argc != 4) {
 		log_error("\n%s: Wrong argument count", argv[0]);
 		return -EINVAL;
-	}
-
-	if (hal_strcmp(argv[1], "preinit") == 0) {
-		lib_printf("\n%s", (char *)script);
-		return EOK;
-	}
-
-	/* Show user script */
-	if (argc != 4) {
-		log_error("\nProvide device and magic number for %s", argv[1]);
-		return EOK;
 	}
 
 	if ((res = phfs_open(argv[1], argv[2], 0, &h)) < 0) {
@@ -73,7 +63,8 @@ static int cmd_script(int argc, char *argv[])
 		return -EINVAL;
 	}
 
-	lib_printf("\n");
+	lib_printf(CONSOLE_BOLD "\nScript - %s:", argv[2]);
+	lib_printf(CONSOLE_NORMAL);
 	do {
 		if ((res = phfs_read(h, offs, (u8 *)buff, SIZE_CMD_ARG_LINE)) < 0) {
 			log_error("\nCan't read %s from %s", argv[2], argv[1]);
