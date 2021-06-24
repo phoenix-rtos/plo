@@ -98,13 +98,7 @@ addr_t hal_kernelGetAddress(addr_t addr)
 
 int hal_cpuJump(addr_t addr)
 {
-	time_t start;
-
 	syspage_save();
-
-	/* Give the LPUART transmitters some time */
-	start = hal_timerGet();
-	while ((hal_timerGet() - start) < 100);
 
 	/* Tidy up */
 	hal_done();

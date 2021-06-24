@@ -546,6 +546,10 @@ static int uart_done(unsigned int minor)
 	if ((uart = uart_getInstance(minor)) == NULL)
 		return -EINVAL;
 
+	/* Wait for transmission activity complete */
+	while ((*(uart->base + statr) & (1 << 22)) == 0)
+		;
+
 	/* Disable TX and RX */
 	*(uart->base + ctrlr) &= ~((1 << 19) | (1 << 18));
 	imxrt_dataBarrier();
