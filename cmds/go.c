@@ -15,6 +15,7 @@
 
 #include "cmd.h"
 
+#include <devices/devs.h>
 #include <syspage.h>
 #include <hal/hal.h>
 #include <lib/log.h>
@@ -44,7 +45,7 @@ static int cmd_go(int argc, char *argv[])
 
 	log_info("\nRunning Phoenix-RTOS");
 	lib_printf(CONSOLE_NORMAL CONSOLE_CLEAR CONSOLE_CURSOR_SHOW);
-
+	devs_done();
 	hal_cpuJump(kernel_entry);
 	return EOK;
 }

@@ -331,6 +331,8 @@ static int uart_done(unsigned int minor)
 
 	uart = &uart_common.uarts[minor];
 
+	/* TODO: wait for end of transmission */
+
 	/* Disable interrupts */
 	*(uart->base + idr) = 0xfff;
 
