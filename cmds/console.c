@@ -50,7 +50,7 @@ static int cmd_console(int argc, char *argv[])
 
 	minor = lib_strtoul(++endptr, &endptr, 0);
 	if (*endptr != '\0') {
-		log_error("\nWrong minor value: %s", argv[2]);
+		log_error("\nWrong minor value: %s", argv[1]);
 		return -EINVAL;
 	}
 
