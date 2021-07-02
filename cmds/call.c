@@ -51,7 +51,7 @@ static int cmd_call(int argc, char *argv[])
 	}
 
 	/* ARG_2: magic number*/
-	if ((len = phfs_read(h, offs, (u8 *)buff, SIZE_MAGIC_NB)) < 0) {
+	if ((len = phfs_read(h, offs, buff, SIZE_MAGIC_NB)) < 0) {
 		log_error("\nCan't read %s from %s", argv[2], argv[1]);
 		return len;
 	}
@@ -68,7 +68,7 @@ static int cmd_call(int argc, char *argv[])
 	i = 0;
 	lib_printf(CONSOLE_NORMAL);
 	do {
-		if ((len = phfs_read(h, offs, (u8 *)&c, 1)) < 0) {
+		if ((len = phfs_read(h, offs, &c, 1)) < 0) {
 			log_error("\nCan't read %s from %s", argv[2], argv[1]);
 			return len;
 		}

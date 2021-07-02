@@ -19,7 +19,7 @@
 #include <hal/hal.h>
 
 
-static inline void hal_memcpy(void *dst, const void *src, unsigned int l)
+static inline void *hal_memcpy(void *dst, const void *src, size_t l)
 {
 	__asm__ volatile
 	(" \
@@ -46,6 +46,8 @@ static inline void hal_memcpy(void *dst, const void *src, unsigned int l)
 	:
 	: "r" (dst), "r" (src), "r" (l)
 	: "r1", "r2", "r3", "r4", "memory", "cc");
+
+	return dst;
 }
 
 
@@ -80,7 +82,7 @@ static inline int hal_memcmp(const void *ptr1, const void *ptr2, size_t num)
 }
 
 
-static inline void hal_memset(void *dst, int v, unsigned int l)
+static inline void *hal_memset(void *dst, int v, size_t l)
 {
 	__asm__ volatile
 	(" \
@@ -106,12 +108,14 @@ static inline void hal_memset(void *dst, int v, unsigned int l)
 	:
 	: "r" (dst), "r" (v & 0xff), "r" (l)
 	: "r1", "r2", "r3", "r4", "memory", "cc");
+
+	return dst;
 }
 
 
-static inline unsigned int hal_strlen(const char *s)
+static inline size_t hal_strlen(const char *s)
 {
-	unsigned int k = 0;
+	size_t k = 0;
 
 	__asm__ volatile
 	(" \
@@ -161,7 +165,7 @@ static inline int hal_strcmp(const char *s1, const char *s2)
 }
 
 
-static inline int hal_strncmp(const char *s1, const char *s2, unsigned int count)
+static inline int hal_strncmp(const char *s1, const char *s2, size_t count)
 {
 	int res = 0;
 

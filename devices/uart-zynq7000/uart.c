@@ -215,9 +215,9 @@ static void uart_initCtrlClock(void)
 
 /* Device interface */
 
-static ssize_t uart_read(unsigned int minor, addr_t offs, u8 *buff, unsigned int len, unsigned int timeout)
+static ssize_t uart_read(unsigned int minor, addr_t offs, void *buff, size_t len, time_t timeout)
 {
-	u16 l, cnt = 0;
+	size_t l, cnt = 0;
 	uart_t *uart;
 	time_t start;
 
@@ -242,7 +242,7 @@ static ssize_t uart_read(unsigned int minor, addr_t offs, u8 *buff, unsigned int
 	hal_memcpy(buff, &uart->rxBuff[uart->rxTail], l);
 	cnt = l;
 	if ((len > l) && (uart->rxHead < uart->rxTail)) {
-		hal_memcpy(buff + l, &uart->rxBuff[0], min(len - l, uart->rxHead));
+		hal_memcpy((char *)buff + l, &uart->rxBuff[0], min(len - l, uart->rxHead));
 		cnt += min(len - l, uart->rxHead);
 	}
 	uart->rxTail = ((uart->rxTail + cnt) % BUFFER_SIZE);
@@ -253,9 +253,9 @@ static ssize_t uart_read(unsigned int minor, addr_t offs, u8 *buff, unsigned int
 }
 
 
-static ssize_t uart_write(unsigned int minor, const u8 *buff, unsigned int len)
+static ssize_t uart_write(unsigned int minor, const void *buff, size_t len)
 {
-	int l, cnt = 0;
+	size_t l, cnt = 0;
 	uart_t *uart;
 
 	if (minor >= UARTS_MAX_CNT)
@@ -275,7 +275,7 @@ static ssize_t uart_write(unsigned int minor, const u8 *buff, unsigned int len)
 	hal_memcpy(&uart->txBuff[uart->txTail], buff, l);
 	cnt = l;
 	if ((len > l) && (uart->txTail >= uart->txHead)) {
-		hal_memcpy(uart->txBuff, buff + l, min(len - l, uart->txHead));
+		hal_memcpy(uart->txBuff, (const char *)buff + l, min(len - l, uart->txHead));
 		cnt += min(len - l, uart->txHead);
 	}
 
@@ -296,15 +296,14 @@ static ssize_t uart_write(unsigned int minor, const u8 *buff, unsigned int len)
 }
 
 
-static ssize_t uart_safeWrite(unsigned int minor, addr_t offs, const u8 *buff, unsigned int len)
+static ssize_t uart_safeWrite(unsigned int minor, addr_t offs, const void *buff, size_t len)
 {
-	unsigned int l;
+	ssize_t res;
+	size_t l;
 
-	for (l = 0; len;) {
-		if ((l = uart_write(minor, buff, len)) < 0)
+	for (l = 0; l < len; l += res) {
+		if ((res = uart_write(minor, (const char *)buff + l, len - l)) < 0)
 			return -ENXIO;
-		buff += l;
-		len -= l;
 	}
 
 	return len;

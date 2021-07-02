@@ -277,7 +277,7 @@ int phfs_open(const char *alias, const char *file, unsigned int flags, handler_t
 }
 
 
-ssize_t phfs_read(handler_t handler, addr_t offs, u8 *buff, unsigned int len)
+ssize_t phfs_read(handler_t handler, addr_t offs, void *buff, size_t len)
 {
 	phfs_file_t *file;
 	phfs_device_t *pd;
@@ -299,12 +299,9 @@ ssize_t phfs_read(handler_t handler, addr_t offs, u8 *buff, unsigned int len)
 			/* Reading file defined by alias */
 			if (handler.id >= SIZE_PHFS_FILES)
 				return -EINVAL;
-
 			file = &phfs_common.files[handler.id];
-			if (offs + len < file->size)
-				return devs_read(pd->major, pd->minor, file->addr + offs, buff, len, PHFS_TIMEOUT_MS);
-			else
-				return devs_read(pd->major, pd->minor, file->addr + offs, buff, file->size - offs, PHFS_TIMEOUT_MS);
+
+			return devs_read(pd->major, pd->minor, file->addr + offs, buff, min(len, file->size - offs), PHFS_TIMEOUT_MS);
 
 		default:
 			break;
@@ -314,7 +311,7 @@ ssize_t phfs_read(handler_t handler, addr_t offs, u8 *buff, unsigned int len)
 }
 
 
-ssize_t phfs_write(handler_t handler, addr_t offs, const u8 *buff, unsigned int len)
+ssize_t phfs_write(handler_t handler, addr_t offs, const void *buff, size_t len)
 {
 	phfs_device_t *pd;
 	phfs_file_t *file;
@@ -336,12 +333,9 @@ ssize_t phfs_write(handler_t handler, addr_t offs, const u8 *buff, unsigned int 
 			/* Writing data to file defined by alias */
 			if (handler.id >= SIZE_PHFS_FILES)
 				return -EINVAL;
-
 			file = &phfs_common.files[handler.id];
-			if (offs + len < file->size)
-				return devs_write(pd->major, pd->minor, file->addr + offs, buff, len);
-			else
-				return devs_write(pd->major, pd->minor, file->addr + offs, buff, file->size - offs);
+
+			return devs_write(pd->major, pd->minor, file->addr + offs, buff, min(len, file->size - offs));
 
 		default:
 			break;

@@ -31,7 +31,7 @@ static int cmd_map(int argc, char *argv[])
 	char *endptr;
 	addr_t start, end;
 
-	u8 namesz;
+	size_t namesz;
 	char mapname[SIZE_MAP_NAME + 1];
 
 	if (argc == 1) {
