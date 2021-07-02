@@ -56,7 +56,7 @@ typedef struct {
 
 int phoenixd_open(const char *file, unsigned int major, unsigned int minor, unsigned int flags)
 {
-	u16 l;
+	size_t l;
 	unsigned int fd;
 	msg_t smsg, rmsg;
 
@@ -82,7 +82,7 @@ int phoenixd_open(const char *file, unsigned int major, unsigned int minor, unsi
 }
 
 
-ssize_t phoenixd_read(unsigned int fd, unsigned int major, unsigned int minor, addr_t offs, u8 *buff, unsigned int len)
+ssize_t phoenixd_read(unsigned int fd, unsigned int major, unsigned int minor, addr_t offs, void *buff, size_t len)
 {
 	msg_t smsg, rmsg;
 	msg_phoenixd_t *io;
@@ -122,7 +122,7 @@ ssize_t phoenixd_read(unsigned int fd, unsigned int major, unsigned int minor, a
 }
 
 
-ssize_t phoenixd_write(unsigned int fd, unsigned int major, unsigned int minor, addr_t offs, const u8 *buff, unsigned int len)
+ssize_t phoenixd_write(unsigned int fd, unsigned int major, unsigned int minor, addr_t offs, const void *buff, size_t len)
 {
 	/* TODO */
 	return EOK;

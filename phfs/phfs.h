@@ -61,11 +61,11 @@ extern int phfs_open(const char *alias, const char *file, unsigned int flags, ha
 
 
 /* Read data from registered device */
-extern ssize_t phfs_read(handler_t handler, addr_t offs, u8 *buff, unsigned int len);
+extern ssize_t phfs_read(handler_t handler, addr_t offs, void *buff, size_t len);
 
 
 /* Write data to registered device */
-extern ssize_t phfs_write(handler_t handler, addr_t offs, const u8 *buff, unsigned int len);
+extern ssize_t phfs_write(handler_t handler, addr_t offs, const void *buff, size_t len);
 
 
 /* Close connection with the device */

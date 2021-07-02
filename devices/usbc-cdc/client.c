@@ -26,7 +26,7 @@ struct {
 } imx_common;
 
 
-int usbclient_send(int endpt, const void *data, unsigned int len)
+ssize_t usbclient_send(int endpt, const void *data, size_t len)
 {
 	dtd_t *res;
 
@@ -46,15 +46,15 @@ int usbclient_send(int endpt, const void *data, unsigned int len)
 }
 
 
-int usbclient_rcvEndp0(void *data, unsigned int len)
+ssize_t usbclient_rcvEndp0(void *data, size_t len)
 {
-	int res = -1;
+	ssize_t res = -1;
 
 	while (imx_common.dc.op != DC_OP_RCV_ENDP0)
 		;
 
 	res = imx_common.data.endpts[0].buf[USB_ENDPT_DIR_OUT].len;
-	hal_memcpy(data, (const char *)imx_common.data.endpts[0].buf[USB_ENDPT_DIR_OUT].buffer, res); /* copy data to buffer */
+	hal_memcpy(data, imx_common.data.endpts[0].buf[USB_ENDPT_DIR_OUT].buffer, res); /* copy data to buffer */
 	imx_common.dc.op = DC_OP_NONE;
 
 	ctrl_execTransfer(0, (u32)imx_common.data.endpts[0].buf[USB_ENDPT_DIR_IN].buffer, 0, USB_ENDPT_DIR_IN); /* ACK */
@@ -63,10 +63,10 @@ int usbclient_rcvEndp0(void *data, unsigned int len)
 }
 
 
-int usbclient_receive(int endpt, void *data, unsigned int len)
+ssize_t usbclient_receive(int endpt, void *data, size_t len)
 {
 	dtd_t *dtd;
-	int res = -1;
+	ssize_t res = -1;
 
 	if (len > USB_BUFFER_SIZE)
 		return -1;
@@ -82,7 +82,7 @@ int usbclient_receive(int endpt, void *data, unsigned int len)
 			if (res > len)
 				res = len;
 
-			hal_memcpy(data, (const char *)imx_common.data.endpts[endpt].buf[USB_ENDPT_DIR_OUT].buffer, res);
+			hal_memcpy(data, imx_common.data.endpts[endpt].buf[USB_ENDPT_DIR_OUT].buffer, res);
 		}
 		else {
 			res = -1;

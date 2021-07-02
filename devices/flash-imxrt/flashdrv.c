@@ -179,7 +179,7 @@ static int flashdrv_defineFlexSPI(flash_context_t *ctx)
 
 
 /* Device interface */
-static ssize_t flashdrv_read(unsigned int minor, addr_t offs, u8 *buff, unsigned int len, unsigned int timeout)
+static ssize_t flashdrv_read(unsigned int minor, addr_t offs, void *buff, size_t len, time_t timeout)
 {
 	if (minor >= FLASH_NO)
 		return -EINVAL;
@@ -189,7 +189,7 @@ static ssize_t flashdrv_read(unsigned int minor, addr_t offs, u8 *buff, unsigned
 }
 
 
-static ssize_t flashdrv_write(unsigned int minor, addr_t offs, const u8 *buff, unsigned int len)
+static ssize_t flashdrv_write(unsigned int minor, addr_t offs, const void *buff, size_t len)
 {
 	addr_t bOffs = 0;
 	flash_context_t *ctx;
@@ -206,7 +206,7 @@ static ssize_t flashdrv_write(unsigned int minor, addr_t offs, const u8 *buff, u
 
 	while (size) {
 		if (size < buffSz) {
-			hal_memcpy(flashdrv_common.buff, buff + bOffs, size);
+			hal_memcpy(flashdrv_common.buff, (const char *)buff + bOffs, size);
 			hal_memset(flashdrv_common.buff + size, 0xff, buffSz - size);
 			if (flashdrv_bufferedPagesWrite(ctx, offs + bOffs, (const char *)flashdrv_common.buff, buffSz) < 0)
 				return -EINVAL;
@@ -214,7 +214,7 @@ static ssize_t flashdrv_write(unsigned int minor, addr_t offs, const u8 *buff, u
 			break;
 		}
 
-		if (flashdrv_bufferedPagesWrite(ctx, offs + bOffs, (const char *)(buff + bOffs), buffSz) < 0)
+		if (flashdrv_bufferedPagesWrite(ctx, offs + bOffs, (const char *)buff + bOffs, buffSz) < 0)
 			return -EINVAL;
 
 		bOffs += buffSz;

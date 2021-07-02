@@ -77,7 +77,7 @@ int devs_check(unsigned int major, unsigned int minor)
 }
 
 
-ssize_t devs_read(unsigned int major, unsigned int minor, addr_t offs, u8 *buff, unsigned int len, unsigned int timeout)
+ssize_t devs_read(unsigned int major, unsigned int minor, addr_t offs, void *buff, size_t len, time_t timeout)
 {
 	const dev_handler_t *h;
 
@@ -92,7 +92,7 @@ ssize_t devs_read(unsigned int major, unsigned int minor, addr_t offs, u8 *buff,
 }
 
 
-ssize_t devs_write(unsigned int major, unsigned int minor, addr_t offs, const u8 *buff, unsigned int len)
+ssize_t devs_write(unsigned int major, unsigned int minor, addr_t offs, const void *buff, size_t len)
 {
 	const dev_handler_t *h;
 

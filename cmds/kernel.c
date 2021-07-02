@@ -60,7 +60,7 @@ static int cmd_kernel(int argc, char *argv[])
 	}
 
 	/* Read ELF header */
-	if ((res = phfs_read(handler, offs, (u8 *)&hdr, (u32)sizeof(Elf32_Ehdr))) < 0) {
+	if ((res = phfs_read(handler, offs, &hdr, sizeof(Elf32_Ehdr))) < 0) {
 		log_error("\nCan't read %s, on %s", kname, argv[1]);
 		return res;
 	}
@@ -73,7 +73,7 @@ static int cmd_kernel(int argc, char *argv[])
 	/* Read program segments */
 	for (k = 0; k < hdr.e_phnum; k++) {
 		offs = hdr.e_phoff + k * sizeof(Elf32_Phdr);
-		if ((res = phfs_read(handler, offs, (u8 *)&phdr, (u32)sizeof(Elf32_Phdr))) < 0) {
+		if ((res = phfs_read(handler, offs, &phdr, sizeof(Elf32_Phdr))) < 0) {
 			log_error("\nCan't read %s, on %s", kname, argv[1]);
 			return res;
 		}
@@ -91,7 +91,7 @@ static int cmd_kernel(int argc, char *argv[])
 
 			for (i = 0; i < phdr.p_filesz / sizeof(buff); i++) {
 				offs = phdr.p_offset + i * sizeof(buff);
-				if ((res = phfs_read(handler, offs, buff, (u32)sizeof(buff))) < 0) {
+				if ((res = phfs_read(handler, offs, buff, sizeof(buff))) < 0) {
 					log_error("\nCan't read %s, on %s", kname, argv[1]);
 					return res;
 				}
@@ -108,14 +108,14 @@ static int cmd_kernel(int argc, char *argv[])
 					return res;
 				}
 
-				hal_memcpy((void *)loffs, buff, size);
+				hal_memcpy(loffs, buff, size);
 			}
 		}
 	}
 
 	/* Read string table section header */
 	offs = hdr.e_shoff + hdr.e_shstrndx * sizeof(Elf32_Shdr);
-	if ((res = phfs_read(handler, offs, (u8 *)&shstrtab, (u32)sizeof(Elf32_Shdr))) < 0) {
+	if ((res = phfs_read(handler, offs, &shstrtab, sizeof(Elf32_Shdr))) < 0) {
 		log_error("\nCan't read %s, on %s", kname, argv[1]);
 		return res;
 	}
@@ -140,7 +140,7 @@ static int cmd_kernel(int argc, char *argv[])
 	for (k = 0; k < hdr.e_shnum; k++) {
 		offs = hdr.e_shoff + k * sizeof(Elf32_Shdr);
 
-		if ((res = phfs_read(handler, offs, (u8 *)&shdr, (u32)sizeof(Elf32_Shdr))) < 0) {
+		if ((res = phfs_read(handler, offs, &shdr, sizeof(Elf32_Shdr))) < 0) {
 			log_error("\nCan't read %s, on %s", kname, argv[1]);
 			return res;
 		}

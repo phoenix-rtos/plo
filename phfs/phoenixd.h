@@ -24,10 +24,10 @@
 extern int phoenixd_open(const char *file, unsigned int major, unsigned int minor, unsigned int flags);
 
 
-extern ssize_t phoenixd_read(unsigned int fd, unsigned int major, unsigned int minor, addr_t offs, u8 *buff, unsigned int len);
+extern ssize_t phoenixd_read(unsigned int fd, unsigned int major, unsigned int minor, addr_t offs, void *buff, size_t len);
 
 
-extern ssize_t phoenixd_write(unsigned int fd, unsigned int major, unsigned int minor, addr_t offs, const u8 *buff, unsigned int len);
+extern ssize_t phoenixd_write(unsigned int fd, unsigned int major, unsigned int minor, addr_t offs, const void *buff, size_t len);
 
 
 extern int phoenixd_stat(unsigned int fd, unsigned int major, unsigned int minor, phfs_stat_t *stat);

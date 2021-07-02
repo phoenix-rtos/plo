@@ -342,7 +342,7 @@ const usb_string_desc_t dStrprod = {
 };
 
 
-static ssize_t cdc_recv(unsigned int minor, addr_t offs, u8 *buff, unsigned int len, unsigned int timeout)
+static ssize_t cdc_recv(unsigned int minor, addr_t offs, void *buff, size_t len, time_t timeout)
 {
 	if (minor > SIZE_USB_ENDPTS)
 		return -EINVAL;
@@ -351,7 +351,7 @@ static ssize_t cdc_recv(unsigned int minor, addr_t offs, u8 *buff, unsigned int 
 }
 
 
-static ssize_t cdc_send(unsigned int minor, addr_t offs, const u8 *buff, unsigned int len)
+static ssize_t cdc_send(unsigned int minor, addr_t offs, const void *buff, size_t len)
 {
 	if (minor > SIZE_USB_ENDPTS)
 		return -EINVAL;

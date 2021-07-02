@@ -32,8 +32,8 @@ typedef struct {
 	int (*sync)(unsigned int minor);
 	int (*map)(unsigned int minor, addr_t addr, size_t sz, int mode, addr_t memaddr, size_t memsz, int memmode, addr_t *a);
 
-	ssize_t (*read)(unsigned int minor, addr_t offs, u8 *buff, unsigned int len, unsigned int timeout);
-	ssize_t (*write)(unsigned int minor, addr_t offs, const u8 *buff, unsigned int len);
+	ssize_t (*read)(unsigned int minor, addr_t offs, void *buff, size_t len, time_t timeout);
+	ssize_t (*write)(unsigned int minor, addr_t offs, const void *buff, size_t len);
 } dev_handler_t;
 
 
@@ -59,11 +59,11 @@ extern int devs_map(unsigned int major, unsigned int minor, addr_t addr, size_t 
 
 
 /* Read data from device */
-extern ssize_t devs_read(unsigned int major, unsigned int minor, addr_t offs, u8 *buff, unsigned int len, unsigned int timeout);
+extern ssize_t devs_read(unsigned int major, unsigned int minor, addr_t offs, void *buff, size_t len, time_t timeout);
 
 
 /* Write data to device */
-extern ssize_t devs_write(unsigned int major, unsigned int minor, addr_t offs, const u8 *buff, unsigned int len);
+extern ssize_t devs_write(unsigned int major, unsigned int minor, addr_t offs, const void *buff, size_t len);
 
 
 /* Reset registered devices */
