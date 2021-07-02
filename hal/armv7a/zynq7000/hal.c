@@ -44,7 +44,7 @@ void hal_init(void)
 	console_init();
 
 	syspage_init();
-	syspage_setAddress(SYSPAGE_ADDRESS);
+	syspage_setAddress(ADDR_SYSPAGE);
 }
 
 

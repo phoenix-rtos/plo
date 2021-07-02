@@ -31,7 +31,7 @@ static int cmd_bitstream(int argc, char *argv[])
 	ssize_t res;
 	handler_t handler;
 	u8 buff[SIZE_MSG_BUFF];
-	addr_t offs = 0, addr = BITSREAM_ADDR;
+	addr_t offs = 0, addr = ADDR_BITSTREAM;
 
 	if (argc == 1) {
 		log_error("\n%s: Arguments have to be defined", argv[0]);
@@ -61,7 +61,7 @@ static int cmd_bitstream(int argc, char *argv[])
 	} while (res != 0);
 
 	log_info("\nLoading bitstream into PL");
-	if ((res = _zynq_loadPL(BITSREAM_ADDR, addr - BITSREAM_ADDR)) < 0) {
+	if ((res = _zynq_loadPL(ADDR_BITSTREAM, addr - ADDR_BITSTREAM)) < 0) {
 		log_error("\nPL was not initialized, bitstream is incorrect");
 		return res;
 	}
