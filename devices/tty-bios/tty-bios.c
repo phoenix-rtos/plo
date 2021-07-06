@@ -21,30 +21,30 @@
 
 /* ANSI escape sequence states */
 enum {
-	ESC_INIT, /* normal */
-	ESC_ESC,  /* ESC */
-	ESC_CSI,  /* ESC [ */
-	ESC_CSIQM /* ESC [ ? */
+	esc_init, /* normal */
+	esc_esc,  /* esc */
+	esc_csi,  /* esc [ */
+	esc_csiqm /* esc [ ? */
 };
 
 
 /* Extended key codes (index to ekeys table) */
 enum {
-	EKEY_UP,    /* Up */
-	EKEY_DOWN,  /* Down */
-	EKEY_RIGHT, /* Right */
-	EKEY_LEFT,  /* Left */
-	EKEY_DELETE /* Delete */
+	ekey_up,    /* up */
+	ekey_down,  /* down */
+	ekey_right, /* right */
+	ekey_left,  /* left */
+	ekey_delete /* delete */
 };
 
 
 /* Extended key codes table */
 static const char *const ekeys[] = {
-	"\033[A",  /* EKEY_UP */
-	"\033[B",  /* EKEY_DOWN */
-	"\033[C",  /* EKEY_RIGHT */
-	"\033[D",  /* EKEY_LEFT */
-	"\033[3~", /* EKEY_DELETE */
+	"\033[A",  /* ekey_up */
+	"\033[B",  /* ekey_down */
+	"\033[C",  /* ekey_right */
+	"\033[D",  /* ekey_left */
+	"\033[3~", /* ekey_delete */
 };
 
 
@@ -140,7 +140,7 @@ static int ttybios_checkc(void)
 }
 
 
-/* Reads character and scan code from terminal input */
+/* Reads character and its scan code from terminal input */
 static void ttybios_getc(char *sc, char *c)
 {
 	unsigned short key;
@@ -195,7 +195,7 @@ static ssize_t ttybios_read(unsigned int minor, addr_t offs, void *buff, size_t 
 	if ((tty = ttybios_get(minor)) == NULL)
 		return -EINVAL;
 
-	if (len && (tty->ekey == NULL)) {
+	if (len && (timeout != -1) && (tty->ekey == NULL)) {
 		start = hal_timerGet();
 		while (!ttybios_checkc()) {
 			if (hal_timerGet() - start >= timeout)
@@ -212,27 +212,23 @@ static ssize_t ttybios_read(unsigned int minor, addr_t offs, void *buff, size_t 
 				tty->ekey = NULL;
 		}
 		/* New key code */
-		else if (ttybios_checkc()) {
+		else {
 			ttybios_getc(&sc, &c);
 
 			/* New extended key code */
 			if (!c) {
 				switch (sc) {
 					case 0x48:
-						tty->ekey = ekeys[EKEY_UP];
+						tty->ekey = ekeys[ekey_up];
 						c = *tty->ekey++;
 						break;
 
 					case 0x50:
-						tty->ekey = ekeys[EKEY_DOWN];
+						tty->ekey = ekeys[ekey_down];
 						c = *tty->ekey++;
 						break;
 				}
 			}
-		}
-		/* No key available */
-		else {
-			break;
 		}
 
 		*(char *)buff++ = c;
@@ -268,7 +264,7 @@ static ssize_t ttybios_write(unsigned int minor, addr_t offs, const void *buff, 
 					for (i = 0; i < sizeof(tty->parms); i++)
 						tty->parms[i] = 0;
 					tty->parmi = 0;
-					tty->esc = ESC_ESC;
+					tty->esc = esc_esc;
 					break;
 
 				default:
@@ -279,26 +275,26 @@ static ssize_t ttybios_write(unsigned int minor, addr_t offs, const void *buff, 
 		/* Process character according to escape sequence state */
 		else {
 			switch (tty->esc) {
-				case ESC_INIT:
+				case esc_init:
 					ttybios_putc(tty->attr, c);
 					break;
 
-				case ESC_ESC:
+				case esc_esc:
 					switch (c) {
 						case '[':
 							for (i = 0; i < sizeof(tty->parms); i++)
 								tty->parms[i] = 0;
 							tty->parmi = 0;
-							tty->esc = ESC_CSI;
+							tty->esc = esc_csi;
 							break;
 
 						default:
-							tty->esc = ESC_INIT;
+							tty->esc = esc_init;
 							break;
 					}
 					break;
 
-				case ESC_CSI:
+				case esc_csi:
 					switch (c) {
 						case '0':
 						case '1':
@@ -315,11 +311,12 @@ static ssize_t ttybios_write(unsigned int minor, addr_t offs, const void *buff, 
 							break;
 
 						case ';':
-							tty->parmi++;
+							if (tty->parmi + 1 < sizeof(tty->parms))
+								tty->parmi++;
 							break;
 
 						case '?':
-							tty->esc = ESC_CSIQM;
+							tty->esc = esc_csiqm;
 							break;
 
 						case 'H':
@@ -334,7 +331,7 @@ static ssize_t ttybios_write(unsigned int minor, addr_t offs, const void *buff, 
 								tty->parms[1] = tty->cols;
 
 							ttybios_setCursor(tty->parms[0] - 1, tty->parms[1] - 1);
-							tty->esc = ESC_INIT;
+							tty->esc = esc_init;
 							break;
 
 						case 'J':
@@ -358,7 +355,7 @@ static ssize_t ttybios_write(unsigned int minor, addr_t offs, const void *buff, 
 
 								ttybios_setCursor(row, col);
 							}
-							tty->esc = ESC_INIT;
+							tty->esc = esc_init;
 							break;
 
 						case 'm':
@@ -398,12 +395,12 @@ static ssize_t ttybios_write(unsigned int minor, addr_t offs, const void *buff, 
 							} while (i++ < tty->parmi);
 
 						default:
-							tty->esc = ESC_INIT;
+							tty->esc = esc_init;
 							break;
 					}
 					break;
 
-				case ESC_CSIQM:
+				case esc_csiqm:
 					switch (c) {
 						case '0':
 						case '1':
@@ -419,11 +416,12 @@ static ssize_t ttybios_write(unsigned int minor, addr_t offs, const void *buff, 
 							tty->parms[tty->parmi] += c - '0';
 
 						case ';':
-							tty->parmi++;
+							if (tty->parmi + 1 < sizeof(tty->parms))
+								tty->parmi++;
 							break;
 
 						default:
-							tty->esc = ESC_INIT;
+							tty->esc = esc_init;
 							break;
 					}
 					break;
@@ -431,7 +429,7 @@ static ssize_t ttybios_write(unsigned int minor, addr_t offs, const void *buff, 
 		}
 	}
 
-	return l;
+	return len;
 }
 
 

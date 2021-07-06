@@ -116,11 +116,11 @@ int hal_interruptsSet(unsigned int irq, int (*f)(unsigned int, void *), void *da
 int interrupts_setIDTEntry(unsigned int n, void (*base)(void), unsigned short sel, unsigned char flags)
 {
 	struct idt_entry_t {
-		unsigned short low;
-		unsigned short sel;
-		unsigned char res;
-		unsigned char type;
-		unsigned short high;
+		u16 low;
+		u16 sel;
+		u8 res;
+		u8 type;
+		u16 high;
 	} __attribute__((packed)) *entry = (struct idt_entry_t *)ADDR_IDT + n;
 
 	if (n >= 0x100)

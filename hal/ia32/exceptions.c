@@ -22,29 +22,29 @@
 
 
 typedef struct {
-	unsigned int dr0;
-	unsigned int dr1;
-	unsigned int dr2;
-	unsigned int dr3;
-	unsigned int dr4;
-	unsigned int dr5;
-	unsigned int edi;
-	unsigned int esi;
-	unsigned int ebp;
-	unsigned int edx;
-	unsigned int ecx;
-	unsigned int ebx;
-	unsigned int eax;
-	unsigned short gs;
-	unsigned short fs;
-	unsigned short es;
-	unsigned short ds;
-	unsigned int err;
-	unsigned int eip;
-	unsigned int cs;
-	unsigned int eflags;
-	unsigned int esp;
-	unsigned int ss;
+	u32 dr0;
+	u32 dr1;
+	u32 dr2;
+	u32 dr3;
+	u32 dr4;
+	u32 dr5;
+	u32 edi;
+	u32 esi;
+	u32 ebp;
+	u32 edx;
+	u32 ecx;
+	u32 ebx;
+	u32 eax;
+	u16 gs;
+	u16 fs;
+	u16 es;
+	u16 ds;
+	u32 err;
+	u32 eip;
+	u32 cs;
+	u32 eflags;
+	u32 esp;
+	u32 ss;
 } __attribute__((packed)) exc_context_t;
 
 
@@ -98,12 +98,14 @@ extern void _exceptions_exc31(void);
 /* Dumps exception context to buffer */
 static void hal_exceptionsDumpContext(char *buff, unsigned int n, exc_context_t *ctx)
 {
+	/* clang-format off */
 	static const char *const mnemonics[] = {
 		"0 #DE",  "1 #DB",  "2 #NMI", "3 #BP",      "4 #OF",  "5 #BR",  "6 #UD",  "7 #NM",
 		"8 #DF",  "9 #",    "10 #TS", "11 #NP",     "12 #SS", "13 #GP", "14 #PF", "15 #",
 		"16 #MF", "17 #AC", "18 #MC", "19 #XM/#XF", "20 #VE", "21 #",   "22 #",   "23 #",
 		"24 #",   "25 #",   "26 #",   "27 #",       "28 #",   "29 #",   "30 #SX", "31 #"
 	};
+	/* clang-format on */
 	unsigned int cr2, i = 0;
 
 	__asm__ volatile(

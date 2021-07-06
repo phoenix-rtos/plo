@@ -45,7 +45,7 @@ typedef unsigned int size_t;
 typedef int ssize_t;
 
 
-/* FIXME: temporary memory entry definition until new syspage implementation */
+/* FIXME: temporary memory entry definition until new syspage implementation is added */
 typedef struct {
 	unsigned long long addr;
 	unsigned long long len;
@@ -69,7 +69,7 @@ typedef struct {
 	unsigned int stack;
 	unsigned int stacksz;
 
-	/* FIXE: remove fields below after new syspage implementation is added */
+	/* FIXME: remove fields below after new syspage implementation is added */
 	unsigned int kernel;
 	unsigned int kernelsz;
 	unsigned int console;
@@ -98,7 +98,7 @@ typedef struct {
 			unsigned int padding;
 		} hdrs[];
 	} progs[];
-} syspage_hal_t;
+} __attribute__((packed)) syspage_hal_t;
 
 
 #endif

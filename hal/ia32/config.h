@@ -24,7 +24,7 @@
 #include "string.h"
 #include "types.h"
 
-/* Boot device nunber */
+/* Boot device number */
 extern unsigned char _plo_bdn;
 
 /* TODO: temporary HAL syspage, should be replaced by new syspage implementation */

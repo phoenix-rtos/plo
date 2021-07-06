@@ -23,34 +23,40 @@
 /* Disk block size */
 #define SIZE_BLOCK 0x200
 
-/* Disk caches size in blocks */
-#define BLOCKS_RCACHE (SIZE_RCACHE / SIZE_BLOCK)
-#define BLOCKS_WCACHE (SIZE_WCACHE / SIZE_BLOCK)
-
 /* Disk access type (BIOS int 0x13 extension) */
 #define DISK_READ  0x42
 #define DISK_WRITE 0x43
+
+/* Disk caches size in blocks */
+#define BLOCKS_RCACHE (SIZE_RCACHE / SIZE_BLOCK)
+#define BLOCKS_WCACHE (SIZE_WCACHE / SIZE_BLOCK)
 
 
 typedef struct {
 	/* Disk geometry packet */
 	struct {
-		unsigned short len;      /* Packet length */
-		unsigned short flags;    /* Packet flags */
-		unsigned int cyls;       /* Cylinders */
-		unsigned int heads;      /* Heads */
-		unsigned int secs;       /* Sectors per track */
-		unsigned long long size; /* Total sectors */
-		unsigned short secsz;    /* Sector size */
-		void *edd;               /* EDD pointer */
-	} __attribute__((packed, aligned(16))) geo;
+		u16 len;   /* Packet length */
+		u16 flags; /* Packet flags */
+		u32 cyls;  /* Cylinders */
+		u32 heads; /* Heads */
+		u32 secs;  /* Sectors per track */
+		u64 size;  /* Total sectors */
+		u16 secsz; /* Sector size */
+		u32 edd;   /* EDD pointer */
+	} __attribute__((packed)) geo;
 	unsigned char dn; /* Disk number */
 } diskbios_t;
+
+
+/* Disk caches */
+static char *const rcache = (char *const)ADDR_RCACHE;
+static char *const wcache = (char *const)ADDR_WCACHE;
 
 
 struct {
 	/* Disks info */
 	diskbios_t disks[DISKBIOS_MAX_CNT];
+	unsigned char init; /* Cache handling initialized? */
 
 	/* Read cache handling */
 	unsigned char lrdn; /* Last read disk */
@@ -65,16 +71,7 @@ struct {
 	unsigned int lwp;   /* Last written wcache position */
 	unsigned int lwb;   /* Last wcache segment begin position */
 	unsigned int lwe;   /* Last wcache segment end position */
-
-	/* Disk caches */
-	char *const rcache; /* Read cache */
-	char *const wcache; /* Write cache */
-} diskbios_common = {
-	.lrdn = -1,
-	.lwdn = -1,
-	.rcache = (char *const)ADDR_RCACHE,
-	.wcache = (char *const)ADDR_WCACHE
-};
+} diskbios_common;
 
 
 /* Retrieves disk geometry */
@@ -133,13 +130,13 @@ static int diskbios_access(diskbios_t *disk, unsigned char mode, unsigned int c,
 {
 	/* Disk Address Packet */
 	struct {
-		unsigned char len;      /* Packet length */
-		unsigned char res;      /* Unused byte */
-		unsigned short secs;    /* Sectors */
-		unsigned short offs;    /* Buffer offset */
-		unsigned short seg;     /* Buffer segment */
-		unsigned long long sec; /* Sector (LBA) */
-	} __attribute__((packed, aligned(16))) dap;
+		u8 len;   /* Packet length */
+		u8 res;   /* Unused byte */
+		u16 secs; /* Sectors */
+		u16 offs; /* Buffer offset */
+		u16 seg;  /* Buffer segment */
+		u64 sec;  /* Sector (LBA) */
+	} __attribute__((packed)) dap;
 	int ret = ((unsigned int)&dap & 0xffff0000) >> 4;
 
 	/* Initialize DAP */
@@ -218,14 +215,14 @@ static ssize_t diskbios_read(unsigned int minor, addr_t offs, void *buff, size_t
 	eb = (offs + len - 1) / SIZE_BLOCK;
 
 	for (; sb <= eb; sb++) {
-		c = sb / disk->geo.secs / disk->geo.heads;
-		h = sb / disk->geo.secs % disk->geo.heads;
+		c = (sb / disk->geo.secs) / disk->geo.heads;
+		h = (sb / disk->geo.secs) % disk->geo.heads;
 		s = sb % disk->geo.secs;
-		p = s / BLOCKS_RCACHE * BLOCKS_RCACHE;
+		p = (s / BLOCKS_RCACHE) * BLOCKS_RCACHE;
 
 		/* Read compact track segment from disk to cache */
 		if ((disk->dn != diskbios_common.lrdn) || (c != diskbios_common.lrc) || (h != diskbios_common.lrh) || (p != diskbios_common.lrp)) {
-			if (diskbios_access(disk, DISK_READ, c, h, p + 1, min(BLOCKS_RCACHE, disk->geo.secs - p), diskbios_common.rcache))
+			if (diskbios_access(disk, DISK_READ, c, h, p + 1, min(BLOCKS_RCACHE, disk->geo.secs - p), rcache))
 				return -EIO;
 
 			diskbios_common.lrdn = disk->dn;
@@ -235,9 +232,8 @@ static ssize_t diskbios_read(unsigned int minor, addr_t offs, void *buff, size_t
 		}
 
 		/* Read data from cache */
-		size = (sb == eb) ? len - l : SIZE_BLOCK - offs % SIZE_BLOCK;
-		hal_memcpy(buff, diskbios_common.rcache + s % BLOCKS_RCACHE * SIZE_BLOCK + offs % SIZE_BLOCK, size);
-		buff += size;
+		size = (sb == eb) ? len - l : SIZE_BLOCK - (offs % SIZE_BLOCK);
+		hal_memcpy((char *)buff + l, rcache + (s % BLOCKS_RCACHE) * SIZE_BLOCK + (offs % SIZE_BLOCK), size);
 		offs += size;
 		l += size;
 	}
@@ -246,7 +242,6 @@ static ssize_t diskbios_read(unsigned int minor, addr_t offs, void *buff, size_t
 }
 
 
-/* Writes character to terminal output */
 static ssize_t diskbios_write(unsigned int minor, addr_t offs, const void *buff, size_t len)
 {
 	diskbios_t *disk;
@@ -265,18 +260,18 @@ static ssize_t diskbios_write(unsigned int minor, addr_t offs, const void *buff,
 	eb = (offs + len - 1) / SIZE_BLOCK;
 
 	for (; sb <= eb; sb++) {
-		c = sb / disk->geo.secs / disk->geo.heads;
-		h = sb / disk->geo.secs % disk->geo.heads;
+		c = (sb / disk->geo.secs) / disk->geo.heads;
+		h = (sb / disk->geo.secs) % disk->geo.heads;
 		s = sb % disk->geo.secs;
 		b = s % BLOCKS_WCACHE;
-		p = s / BLOCKS_WCACHE * BLOCKS_WCACHE;
+		p = (s / BLOCKS_WCACHE) * BLOCKS_WCACHE;
 
 		/* Write compact track segment from cache to disk */
 		if ((diskbios_common.lwb != diskbios_common.lwe) &&
 			((disk->dn != diskbios_common.lwdn) || (c != diskbios_common.lwc) || (h != diskbios_common.lwh) || (p != diskbios_common.lwp) || (b + 1 < diskbios_common.lwb) || (b > diskbios_common.lwe))) {
 			if (diskbios_access(disk, DISK_WRITE,
-				diskbios_common.lwc, diskbios_common.lwh, diskbios_common.lwp + diskbios_common.lwb + 1,
-				diskbios_common.lwe - diskbios_common.lwb, diskbios_common.wcache + diskbios_common.lwb * SIZE_BLOCK))
+					diskbios_common.lwc, diskbios_common.lwh, diskbios_common.lwp + diskbios_common.lwb + 1,
+					diskbios_common.lwe - diskbios_common.lwb, wcache + diskbios_common.lwb * SIZE_BLOCK))
 				return -EIO;
 
 			/* Mark cache empty */
@@ -284,9 +279,8 @@ static ssize_t diskbios_write(unsigned int minor, addr_t offs, const void *buff,
 		}
 
 		/* Write data to cache */
-		size = (sb == eb) ? len - l : SIZE_BLOCK - offs % SIZE_BLOCK;
-		hal_memcpy(diskbios_common.wcache + b * SIZE_BLOCK + offs % SIZE_BLOCK, buff, size);
-		buff += size;
+		size = (sb == eb) ? len - l : SIZE_BLOCK - (offs % SIZE_BLOCK);
+		hal_memcpy(wcache + b * SIZE_BLOCK + (offs % SIZE_BLOCK), (const char *)buff + l, size);
 		offs += size;
 		l += size;
 
@@ -321,8 +315,8 @@ static int diskbios_sync(unsigned int minor)
 
 	if ((diskbios_common.lwb != diskbios_common.lwe) && (disk->dn == diskbios_common.lwdn)) {
 		if (diskbios_access(disk, DISK_WRITE,
-			diskbios_common.lwc, diskbios_common.lwh, diskbios_common.lwp + diskbios_common.lwb + 1,
-			diskbios_common.lwe - diskbios_common.lwb, diskbios_common.wcache + diskbios_common.lwb * SIZE_BLOCK))
+				diskbios_common.lwc, diskbios_common.lwh, diskbios_common.lwp + diskbios_common.lwb + 1,
+				diskbios_common.lwe - diskbios_common.lwb, wcache + diskbios_common.lwb * SIZE_BLOCK))
 			return -EIO;
 
 		/* Mark cache empty */
@@ -371,7 +365,7 @@ static int diskbios_init(unsigned int minor)
 	if (diskbios_geometry(disk)) {
 		/* Mark disk not available */
 		disk->dn = -1;
-		return -ENOENT;
+		return -ENODEV;
 	}
 
 	return EOK;
@@ -388,6 +382,12 @@ __attribute__((constructor)) static void ttydisk_register(void)
 		.done = diskbios_done,
 		.init = diskbios_init,
 	};
+
+	if (!diskbios_common.init) {
+		diskbios_common.lrdn = -1;
+		diskbios_common.lwdn = -1;
+		diskbios_common.init = 1;
+	}
 
 	devs_register(DEV_DISK, DISKBIOS_MAX_CNT, &h);
 }

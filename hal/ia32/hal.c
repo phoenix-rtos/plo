@@ -24,7 +24,7 @@ extern void hal_consoleInit(void);
 /* Exceptions */
 extern void hal_exceptionsInit(void);
 
-/* Interrutps */
+/* Interrupts */
 extern void hal_interruptsInit(void);
 
 /* Memory */

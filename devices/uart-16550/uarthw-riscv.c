@@ -20,7 +20,7 @@
 
 
 typedef struct {
-	void *base;
+	volatile u8 *base;
 	unsigned int irq;
 } uarthw_context_t;
 
@@ -32,17 +32,13 @@ static const uarthw_context_t uarts[] = {
 
 unsigned char uarthw_read(void *hwctx, unsigned int reg)
 {
-	unsigned int addr = (unsigned int)((uarthw_context_t *)hwctx)->base;
-
-	return *(volatile unsigned char *)(addr + reg);
+	return *(((uarthw_context_t *)hwctx)->base + reg);
 }
 
 
 void uarthw_write(void *hwctx, unsigned int reg, unsigned char val)
 {
-	unsigned int addr = (unsigned int)((uarthw_context_t *)hwctx)->base;
-
-	*(volatile unsigned char *)(addr + reg) = val;
+	*(((uarthw_context_t *)hwctx)->base + reg) = val;
 }
 
 
@@ -55,14 +51,14 @@ unsigned int uarthw_irq(void *hwctx)
 int uarthw_init(unsigned int n, void *hwctx, unsigned int *baud)
 {
 	if (n >= sizeof(uarts) / sizeof(uarts[0]))
-		return -ENOENT;
+		return -EINVAL;
 
 	/* Set UART hardware context */
 	*(uarthw_context_t *)hwctx = uarts[n];
 
 	/* Set preferred baudrate */
 	if (baud != NULL)
-		*baud = BPS_115200;
+		*baud = bps_115200;
 
 	return EOK;
 }

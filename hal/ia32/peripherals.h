@@ -19,8 +19,8 @@
 
 /* DISK-BIOS configuration (floppy, hd0, hd1, hd2, hd3) */
 #define DISKBIOS_FLOPPY_CNT 1
-#define DISKBIOS_HD_CNT 4
-#define DISKBIOS_MAX_CNT (DISKBIOS_FLOPPY_CNT + DISKBIOS_HD_CNT)
+#define DISKBIOS_HD_CNT     4
+#define DISKBIOS_MAX_CNT    (DISKBIOS_FLOPPY_CNT + DISKBIOS_HD_CNT)
 
 
 /* TTY-BIOS configuration (VGA and keyboard based terminal) */
@@ -28,7 +28,7 @@
 
 
 /* UARTs configuration (COM1, COM2, GALILEO1) */
-#define UART_MAX_CNT 3
+#define UART_MAX_CNT  3
 #define UART_BAUDRATE 115200
 
 /* Standard PC COMs */
@@ -46,11 +46,11 @@
 /* #define UART_COM4_IRQ 3 */
 
 /* Intel Galileo UARTs */
-#define UART_GALILEO1 0x9000f000
+#define UART_GALILEO1     0x9000f000
 #define UART_GALILEO1_IRQ 17
 
 /* Don't use GALILEO2 (no shared IRQs support) */
-/* #define UART_GALILEO2 0x9000b000 */
+/* #define UART_GALILEO2     0x9000b000 */
 /* #define UART_GALILEO2_IRQ 17 */
 
 

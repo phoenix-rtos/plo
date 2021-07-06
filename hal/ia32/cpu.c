@@ -24,10 +24,7 @@ extern int hal_memoryGetEntry(unsigned int *offs, mem_entry_t *entry);
 __attribute__((noreturn)) void hal_cpuJump(addr_t addr)
 {
 	/* FIXME: temporary HAL syspage usage, should be removed after new syspage implementation is added */
-	void *syspage = (void *)syspage_getAddress();
-	unsigned short *mmsz = syspage + 300;
-	mem_entry_t *mm = (mem_entry_t *)(mmsz + 1);
-	unsigned short *progssz = (unsigned short *)(mm + 64);
+	syspage_hal_t *syspage = (syspage_hal_t *)syspage_getAddress();
 	unsigned int offs = 0;
 
 	/* Copy HAL syspage data */
@@ -35,23 +32,21 @@ __attribute__((noreturn)) void hal_cpuJump(addr_t addr)
 	syspage_save();
 
 	/* Add memory map entries */
-	*mmsz = 0;
+	syspage->mmsize = 0;
 	do {
-		if (hal_memoryGetEntry(&offs, mm))
+		if (hal_memoryGetEntry(&offs, (mem_entry_t *)(syspage->mm + syspage->mmsize)))
 			break;
-		(*mmsz)++;
-		mm++;
+		syspage->mmsize++;
 	} while (offs);
-	hal_memset(mm, 0, (64 - *mmsz) * sizeof(mem_entry_t));
 
 	/* Add program entries */
-	*progssz = 0;
+	syspage->progssz = 0;
 
 	/* Generate fake syspage data - required for current kernel syspage compatibility */
-	*(unsigned int *)(syspage + 0x20) = *(unsigned int *)(syspage + sizeof(syspage_hal_t)); /* Kernel */
-	*(unsigned int *)(syspage + 0x24) = 0xc0000;                                            /* Kernel size */
-	*(unsigned int *)(syspage + 0x28) = 0x0;                                                /* Console */
-	*(char *)(syspage + 0x2c) = '\0';                                                       /* Args */
+	syspage->kernel = *(unsigned int *)((char *)syspage + sizeof(syspage_hal_t)); /* Kernel */
+	syspage->kernelsz = 0xc0000;                                                  /* Kernel size */
+	syspage->console = 0;                                                         /* Console */
+	syspage->arg[0] = '\0';                                                       /* Args */
 
 	hal_done();
 

@@ -25,28 +25,48 @@
 
 /* UART 16550 registers */
 enum {
-	RBR = 0, /* Receiver Buffer Register */
-	THR = 0, /* Transmitter Holding Register */
-	DLL = 0, /* Divisor Latch LSB */
-	IER = 1, /* Interrupt Enable Register */
-	DLM = 1, /* Divisor Latch MSB */
-	IIR = 2, /* Interrupt Identification Register */
-	FCR = 2, /* FIFO Control Register */
-	LCR = 3, /* Line Control Register */
-	MCR = 4, /* Modem Control Register */
-	LSR = 5, /* Line Status Register */
-	MSR = 6, /* Modem Status Register */
-	SPR = 7, /* Scratch Pad Register */
+	rbr = 0, /* Receiver Buffer Register */
+	thr = 0, /* Transmitter Holding Register */
+	dll = 0, /* Divisor Latch LSB */
+	ier = 1, /* Interrupt Enable Register */
+	dlm = 1, /* Divisor Latch MSB */
+	iir = 2, /* Interrupt Identification Register */
+	fcr = 2, /* FIFO Control Register */
+	lcr = 3, /* Line Control Register */
+	mcr = 4, /* Modem Control Register */
+	lsr = 5, /* Line Status Register */
+	msr = 6, /* Modem Status Register */
+	spr = 7, /* Scratch Pad Register */
 };
 
 
 /* Baudrates (index to bauds table) */
 enum {
-	BPS_50,     BPS_75,     BPS_110,    BPS_135,    BPS_150,
-	BPS_300,    BPS_600,    BPS_1200,   BPS_1800,   BPS_2000,
-	BPS_2400,   BPS_3600,   BPS_4800,   BPS_7200,   BPS_9600,
-	BPS_19200,  BPS_28800,  BPS_31250,  BPS_38400,  BPS_57600,
-	BPS_115200, BPS_230400, BPS_460800, BPS_921600, BPS_1500000
+	bps_50,
+	bps_75,
+	bps_110,
+	bps_135,
+	bps_150,
+	bps_300,
+	bps_600,
+	bps_1200,
+	bps_1800,
+	bps_2000,
+	bps_2400,
+	bps_3600,
+	bps_4800,
+	bps_7200,
+	bps_9600,
+	bps_19200,
+	bps_28800,
+	bps_31250,
+	bps_38400,
+	bps_57600,
+	bps_115200,
+	bps_230400,
+	bps_460800,
+	bps_921600,
+	bps_1500000
 };
 
 

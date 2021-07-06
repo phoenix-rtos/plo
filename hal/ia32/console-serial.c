@@ -18,64 +18,51 @@
 
 /* UART registers */
 enum {
-	RBR = 0, /* Receiver Buffer Register */
-	THR = 0, /* Transmitter Holding Register */
-	DLL = 0, /* Divisor Latch LSB */
-	IER = 1, /* Interrupt Enable Register */
-	DLM = 1, /* Divisor Latch MSB */
-	IIR = 2, /* Interrupt Identification Register */
-	FCR = 2, /* FIFO Control Register */
-	LCR = 3, /* Line Control Register */
-	MCR = 4, /* Modem Control Register */
-	LSR = 5, /* Line Status Register */
-	MSR = 6, /* Modem Status Register */
-	SPR = 7, /* Scratch Pad Register */
+	rbr = 0, /* Receiver Buffer Register */
+	thr = 0, /* Transmitter Holding Register */
+	dll = 0, /* Divisor Latch LSB */
+	ier = 1, /* Interrupt Enable Register */
+	dlm = 1, /* Divisor Latch MSB */
+	iir = 2, /* Interrupt Identification Register */
+	fcr = 2, /* FIFO Control Register */
+	lcr = 3, /* Line Control Register */
+	mcr = 4, /* Modem Control Register */
+	lsr = 5, /* Line Status Register */
+	msr = 6, /* Modem Status Register */
+	spr = 7, /* Scratch Pad Register */
 };
 
 
 struct {
-	void *base;
+	volatile u8 *base;
 } halconsole_common;
 
 
-static unsigned char console_read(void *base, unsigned int reg)
+static unsigned char console_read(unsigned int reg)
 {
-	unsigned int addr = (unsigned int)base;
+	unsigned int addr = (unsigned int)halconsole_common.base;
 
 	/* Read from IO-port */
-	if (addr & 0x1) {
-		addr &= ~0x3;
-		addr += reg;
-
-		return hal_inb((void *)addr);
-	}
+	if (addr & 0x1)
+		return hal_inb((void *)((addr & ~0x3) + reg));
 
 	/* Read from memory */
-	addr &= ~0xf;
-	addr += reg;
-
-	return *(volatile unsigned char *)addr;
+	return *(halconsole_common.base + reg);
 }
 
 
-static void console_write(void *base, unsigned int reg, unsigned char val)
+static void console_write(unsigned int reg, unsigned char val)
 {
-	unsigned int addr = (unsigned int)base;
+	unsigned int addr = (unsigned int)halconsole_common.base;
 
 	/* Write to IO-port */
 	if (addr & 0x1) {
-		addr &= ~0x3;
-		addr += reg;
-
-		hal_outb((void *)addr, val);
+		hal_outb((void *)((addr & ~0x3) + reg), val);
 		return;
 	}
 
 	/* Write to memory */
-	addr &= ~0xf;
-	addr += reg;
-
-	*(volatile unsigned char *)addr = val;
+	*(halconsole_common.base + reg) = val;
 }
 
 
@@ -83,8 +70,9 @@ void hal_consolePrint(const char *s)
 {
 	for (; *s; s++) {
 		/* Wait until TX fifo is empty */
-		while (!(console_read(halconsole_common.base, LSR) & 0x20));
-		console_write(halconsole_common.base, THR, *s);
+		while (!(console_read(lsr) & 0x20))
+			;
+		console_write(thr, *s);
 	}
 }
 
@@ -96,19 +84,19 @@ void hal_consoleInit(void)
 	halconsole_common.base = (void *)(UART_COM1 | 0x1);
 
 	/* Set speed */
-	console_write(halconsole_common.base, LCR, 0x80);
-	console_write(halconsole_common.base, DLL, divisor);
-	console_write(halconsole_common.base, DLM, divisor >> 8);
+	console_write(lcr, 0x80);
+	console_write(dll, divisor);
+	console_write(dlm, divisor >> 8);
 
 	/* Set data format */
-	console_write(halconsole_common.base, LCR, 0x03);
+	console_write(lcr, 0x03);
 
 	/* Set DTR and RTS */
-	console_write(halconsole_common.base, MCR, 0x03);
+	console_write(mcr, 0x03);
 
 	/* Enable and configure FIFOs */
-	console_write(halconsole_common.base, FCR, 0xa7);
+	console_write(fcr, 0xa7);
 
 	/* Disable interrupts */
-	console_write(halconsole_common.base, IER, 0x00);
+	console_write(ier, 0x00);
 }

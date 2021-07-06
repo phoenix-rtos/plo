@@ -19,20 +19,16 @@
 
 void *hal_memcpy(void *dst, const void *src, size_t n)
 {
+	void *d = dst;
+
 	__asm__ volatile(
 		"cld; "
-		"movl %0, %%ecx; "
-		"movl %%ecx, %%edx; "
-		"andl $3, %%edx; "
-		"shrl $2, %%ecx; "
-		"movl %1, %%edi; "
-		"movl %2, %%esi; "
 		"rep; movsl; "
 		"movl %%edx, %%ecx; "
 		"rep; movsb; "
-	:
-	: "g" (n), "g" (dst), "g" (src)
-	: "ecx", "edx", "esi", "edi", "memory", "cc");
+	: "+D" (d)
+	: "c" (n >> 2), "d" (n & 3), "S" (src)
+	: "memory", "cc");
 
 	return dst;
 }
@@ -40,27 +36,22 @@ void *hal_memcpy(void *dst, const void *src, size_t n)
 
 void *hal_memset(void *dst, int v, size_t n)
 {
+	void *d = dst;
+
 	__asm__ volatile(
 		"cld; "
-		"movl %0, %%ecx; "
-		"movl %%ecx, %%edx; "
-		"andl $3, %%edx; "
-		"shrl $2, %%ecx; "
-		"xorl %%eax, %%eax; "
-		"movb %1, %%al; "
 		"movl %%eax, %%ebx; "
-		"shll $8, %%ebx; "
+		"shll $0x8, %%ebx; "
 		"orl %%ebx, %%eax; "
 		"movl %%eax, %%ebx; "
-		"shll $16, %%ebx; "
+		"shll $0x10, %%ebx; "
 		"orl %%ebx, %%eax; "
-		"movl %2, %%edi; "
 		"rep; stosl; "
 		"movl %%edx, %%ecx; "
 		"rep; stosb; "
-	: "+d" (n)
-	: "m" (v), "m" (dst)
-	: "eax", "ebx", "ecx", "edi" ,"memory", "cc");
+	: "+D" (d)
+	: "a" (v & 0xff), "c" (n >> 2), "d" (n & 3)
+	: "ebx", "memory", "cc");
 
 	return dst;
 }
@@ -70,7 +61,8 @@ size_t hal_strlen(const char *s)
 {
 	size_t i;
 
-	for (i = 0; *s; s++, i++);
+	for (i = 0; *s; s++, i++)
+		;
 
 	return i;
 }
@@ -99,7 +91,8 @@ int hal_strncmp(const char *s1, const char *s2, size_t n)
 {
 	size_t i;
 
-	for (i = 0; (i < n) && *s1 && *s2 && (*s1 == *s2); i++, s1++, s2++);
+	for (i = 0; (i < n) && *s1 && *s2 && (*s1 == *s2); i++, s1++, s2++)
+		;
 
 	if ((i == n) || (!*s1 && !*s2))
 		return 0;
@@ -114,7 +107,7 @@ char *hal_strcpy(char *dst, const char *src)
 
 	do {
 		dst[i] = src[i];
-	} while(src[i++]);
+	} while (src[i++]);
 
 	return dst;
 }

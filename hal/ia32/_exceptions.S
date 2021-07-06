@@ -102,7 +102,7 @@ _exceptions_init:
 	ret
 
 
-/* Restores CPU context and returnes from exception */
+/* Restores CPU context and returns from exception */
 _exceptions_done:
 	popl %eax
 	movl %eax, %dr0

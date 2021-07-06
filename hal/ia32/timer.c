@@ -20,26 +20,26 @@
 
 struct {
 	/* Number of CPU cycles per 1ms */
-	volatile unsigned long long ratio;
+	volatile u64 ratio;
 } timer_common;
 
 
-static unsigned long long timer_cycles(void)
+static u64 timer_cycles(void)
 {
-	unsigned int lo, hi;
+	u32 lo, hi;
 
 	__asm__ volatile(
 		"rdtsc; "
 	: "=a" (lo), "=d" (hi));
 
-	return ((unsigned long long)hi << 32) | lo;
+	return ((u64)hi << 32) | lo;
 }
 
 
 static int timer_isr(unsigned int n, void *arg)
 {
-	static unsigned long long start = 0;
-	unsigned long long t;
+	static u64 start;
+	u64 t;
 
 	t = timer_cycles();
 
@@ -63,7 +63,8 @@ void hal_timerInit(void)
 	hal_interruptsSet(0, timer_isr, &timer_common);
 
 	/* Calculate cycles to ms ratio */
-	while (!timer_common.ratio);
+	while (!timer_common.ratio)
+		;
 
 	hal_interruptsSet(0, NULL, NULL);
 }

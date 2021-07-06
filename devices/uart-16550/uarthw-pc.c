@@ -20,7 +20,7 @@
 
 
 typedef struct {
-	void *base;
+	volatile u8 *base;
 	unsigned int irq;
 } uarthw_context_t;
 
@@ -34,42 +34,31 @@ static const uarthw_context_t uarts[] = {
 
 unsigned char uarthw_read(void *hwctx, unsigned int reg)
 {
-	unsigned int addr = (unsigned int)((uarthw_context_t *)hwctx)->base;
+	uarthw_context_t *ctx = (uarthw_context_t *)hwctx;
+	unsigned int addr = (unsigned int)ctx->base;
 
 	/* Read from IO-port */
-	if (addr & 0x1) {
-		addr &= ~0x3;
-		addr += reg;
-
-		return hal_inb((void *)addr);
-	}
+	if (addr & 0x1)
+		return hal_inb((void *)((addr & ~0x3) + reg));
 
 	/* Read from memory */
-	addr &= ~0xf;
-	addr += reg;
-
-	return *(volatile unsigned char *)addr;
+	return *(ctx->base + reg);
 }
 
 
 void uarthw_write(void *hwctx, unsigned int reg, unsigned char val)
 {
-	unsigned int addr = (unsigned int)((uarthw_context_t *)hwctx)->base;
+	uarthw_context_t *ctx = (uarthw_context_t *)hwctx;
+	unsigned int addr = (unsigned int)ctx->base;
 
 	/* Write to IO-port */
 	if (addr & 0x1) {
-		addr &= ~0x3;
-		addr += reg;
-
-		hal_outb((void *)addr, val);
+		hal_outb((void *)((addr & ~0x3) + reg), val);
 		return;
 	}
 
 	/* Write to memory */
-	addr &= ~0xf;
-	addr += reg;
-
-	*(volatile unsigned char *)addr = val;
+	*(ctx->base + reg) = val;
 }
 
 
@@ -106,9 +95,9 @@ static int uarthw_SCH311Xdetect(void *base)
 		/* SCH3116 */
 		case 0x7f:
 			break;
-		
+
 		default:
-			ret = -ENOENT;
+			ret = -ENODEV;
 	}
 
 	/* Exit configuration mode */
@@ -152,12 +141,12 @@ int uarthw_init(unsigned int n, void *hwctx, unsigned int *baud)
 	/* Set preferred baudrate */
 	if (baud != NULL) {
 		/* SCH311X Super IO controller has at least 2 high speed UARTS */
-		if ((n < 2) && uarthw_SCH311Xdetect((void *)0x2e) >= 0) {
-			*baud = BPS_460800;
+		if ((n < 2) && (uarthw_SCH311Xdetect((void *)0x2e) >= 0)) {
+			*baud = bps_460800;
 			uarthw_SCH311Xmode((void *)0x2e, 0x04 + n, bauds[*baud].mode);
 		}
 		else {
-			*baud = BPS_115200;
+			*baud = bps_115200;
 		}
 	}
 

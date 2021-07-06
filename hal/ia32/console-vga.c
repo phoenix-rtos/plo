@@ -19,10 +19,10 @@
 
 /* ANSI escape sequence states */
 enum {
-	ESC_INIT, /* normal */
-	ESC_ESC,  /* ESC */
-	ESC_CSI,  /* ESC [ */
-	ESC_CSIQM /* ESC [ ? */
+	esc_init, /* normal */
+	esc_esc,  /* esc */
+	esc_csi,  /* esc [ */
+	esc_csiqm /* esc [ ? */
 };
 
 
@@ -120,7 +120,7 @@ void hal_consolePrint(const char *s)
 					for (i = 0; i < sizeof(halconsole_common.parms); i++)
 						halconsole_common.parms[i] = 0;
 					halconsole_common.parmi = 0;
-					halconsole_common.esc = ESC_ESC;
+					halconsole_common.esc = esc_esc;
 					break;
 
 				default:
@@ -131,26 +131,26 @@ void hal_consolePrint(const char *s)
 		/* Process character according to escape sequence state */
 		else {
 			switch (halconsole_common.esc) {
-				case ESC_INIT:
+				case esc_init:
 					console_write(halconsole_common.attr, c);
 					break;
 
-				case ESC_ESC:
+				case esc_esc:
 					switch (c) {
 						case '[':
 							for (i = 0; i < sizeof(halconsole_common.parms); i++)
 								halconsole_common.parms[i] = 0;
 							halconsole_common.parmi = 0;
-							halconsole_common.esc = ESC_CSI;
+							halconsole_common.esc = esc_csi;
 							break;
 
 						default:
-							halconsole_common.esc = ESC_INIT;
+							halconsole_common.esc = esc_init;
 							break;
 					}
 					break;
 
-				case ESC_CSI:
+				case esc_csi:
 					switch (c) {
 						case '0':
 						case '1':
@@ -167,11 +167,12 @@ void hal_consolePrint(const char *s)
 							break;
 
 						case ';':
-							halconsole_common.parmi++;
+							if (halconsole_common.parmi + 1 < sizeof(halconsole_common.parms))
+								halconsole_common.parmi++;
 							break;
 
 						case '?':
-							halconsole_common.esc = ESC_CSIQM;
+							halconsole_common.esc = esc_csiqm;
 							break;
 
 						case 'H':
@@ -186,7 +187,7 @@ void hal_consolePrint(const char *s)
 								halconsole_common.parms[1] = halconsole_common.cols;
 
 							console_setCursor(halconsole_common.parms[0] - 1, halconsole_common.parms[1] - 1);
-							halconsole_common.esc = ESC_INIT;
+							halconsole_common.esc = esc_init;
 							break;
 
 						case 'J':
@@ -210,7 +211,7 @@ void hal_consolePrint(const char *s)
 
 								console_setCursor(row, col);
 							}
-							halconsole_common.esc = ESC_INIT;
+							halconsole_common.esc = esc_init;
 							break;
 
 						case 'm':
@@ -250,12 +251,12 @@ void hal_consolePrint(const char *s)
 							} while (i++ < halconsole_common.parmi);
 
 						default:
-							halconsole_common.esc = ESC_INIT;
+							halconsole_common.esc = esc_init;
 							break;
 					}
 					break;
 
-				case ESC_CSIQM:
+				case esc_csiqm:
 					switch (c) {
 						case '0':
 						case '1':
@@ -271,11 +272,12 @@ void hal_consolePrint(const char *s)
 							halconsole_common.parms[halconsole_common.parmi] += c - '0';
 
 						case ';':
-							halconsole_common.parmi++;
+							if (halconsole_common.parmi + 1 < sizeof(halconsole_common.parms))
+								halconsole_common.parmi++;
 							break;
 
 						default:
-							halconsole_common.esc = ESC_INIT;
+							halconsole_common.esc = esc_init;
 							break;
 					}
 					break;

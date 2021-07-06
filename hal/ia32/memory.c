@@ -82,27 +82,29 @@ int hal_memoryInit(void)
 	syspage_init();
 	syspage_setAddress(ADDR_SYSPAGE);
 
+#if 0
 	/* FIXME: add correct memory entries after new syspage implementation is added */
 	/* Add loader entries */
-	// syspage_addEntries(0x0, 0x1000);
-	// syspage_addEntries(ADDR_GDT, ADDR_SYSPAGE - ADDR_GDT);
-	// syspage_addEntries(ADDR_PDIR, ADDR_STACK - ADDR_PDIR);
-	// syspage_addEntries(ADDR_PLO, (addr_t)_end - ADDR_PLO);
-	// syspage_addEntries(ADDR_RCACHE, SIZE_RCACHE + SIZE_WCACHE);
+	syspage_addEntries(0x0, 0x1000);
+	syspage_addEntries(ADDR_GDT, ADDR_SYSPAGE - ADDR_GDT);
+	syspage_addEntries(ADDR_PDIR, ADDR_STACK - ADDR_PDIR);
+	syspage_addEntries(ADDR_PLO, (addr_t)_end - ADDR_PLO);
+	syspage_addEntries(ADDR_RCACHE, SIZE_RCACHE + SIZE_WCACHE);
 
 	/* Create system memory map */
-	// for (;;) {
-	// 	if (memory_getEntry(&offs, &entry))
-	// 		return -EFAULT;
+	for (;;) {
+		if (memory_getEntry(&offs, &entry))
+			return -EFAULT;
 
-	// 	/* Add reserved entries */
-	// 	/* TODO: fix max addr overflow (addr + len) */
-	// 	if (entry.type != 0x1)
-	// 		syspage_addEntries(entry.addr, (entry.addr + entry.len <= 0xffffffff) ? entry.len : entry.len - 1);
+		/* Add reserved entries */
+		/* TODO: fix max addr overflow (addr + len) */
+		if (entry.type != 0x1)
+			syspage_addEntries(entry.addr, (entry.addr + entry.len <= 0xffffffff) ? entry.len : entry.len - 1);
 
-	// 	if (!offs)
-	// 		break;
-	// }
+		if (!offs)
+			break;
+	}
+#endif
 
 	return EOK;
 }
