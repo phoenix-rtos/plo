@@ -304,7 +304,7 @@ void syspage_setAddress(addr_t addr)
 
 	/* Assign syspage to the map */
 	syspage_common.syspage = (void *)addr;
-	sz = (size_t)(MAX_SYSPAGE_SIZE / PAGE_SIZE) * PAGE_SIZE + (MAX_SYSPAGE_SIZE % PAGE_SIZE ? PAGE_SIZE : 0); /* allign to PAGE_SIZE */
+	sz = (size_t)(MAX_SYSPAGE_SIZE / SIZE_PAGE) * SIZE_PAGE + (MAX_SYSPAGE_SIZE % SIZE_PAGE ? SIZE_PAGE : 0); /* align to SIZE_PAGE */
 
 	syspage_addEntries(addr, sz);
 
@@ -601,7 +601,7 @@ int syspage_alignMapTop(const char *map)
 	}
 
 	ploMap = &syspage_common.maps[id];
-	newTop = (ploMap->top + PAGE_SIZE - 1) & ~(PAGE_SIZE - 1);
+	newTop = (ploMap->top + SIZE_PAGE - 1) & ~(SIZE_PAGE - 1);
 
 	if (newTop > ploMap->map.end) {
 		log_error("\nsyspage:  %s is full!\n", map);

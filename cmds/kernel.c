@@ -51,7 +51,7 @@ static int cmd_kernel(int argc, char *argv[])
 		return -EINVAL;
 	}
 
-	kname = (argc == 3) ? argv[2] : KERNEL_PATH;
+	kname = (argc == 3) ? argv[2] : PATH_KERNEL;
 
 	if ((res = phfs_open(argv[1], kname, 0, &handler)) < 0) {
 		log_error("\nCannot open %s, on %s", kname, argv[1]);

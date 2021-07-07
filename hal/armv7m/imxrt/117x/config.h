@@ -24,16 +24,12 @@
 #include "../../string.h"
 
 
-#define KERNEL_PATH "phoenix-armv7m7-imxrt117x.elf"
+#define PATH_KERNEL "phoenix-armv7m7-imxrt117x.elf"
 
 /* Addresses descriptions */
-#define DISK_IMAGE_BEGIN 0x70000000
-#define DISK_IMAGE_SIZE  0x0013f000
+#define ADDR_SYSPAGE 0x202c0000
 
-#define DISK_KERNEL_OFFS 0x00011000
-#define SYSPAGE_ADDRESS  0x202c0000
-
-#define STACK_SIZE 5 * 1024
-#define PAGE_SIZE  0x200
+#define SIZE_STACK 5 * 1024
+#define SIZE_PAGE  0x200
 
 #endif

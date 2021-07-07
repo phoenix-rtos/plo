@@ -49,12 +49,12 @@ void hal_init(void)
 	console_init();
 
 	syspage_init();
-	syspage_setAddress(SYSPAGE_ADDRESS);
+	syspage_setAddress(ADDR_SYSPAGE);
 
 	_imxrt_scbSetPriorityGrouping(3);
 
 	/* Add entries related to plo image */
-	syspage_addEntries((addr_t)_plo_bss, (addr_t)_end - (addr_t)_plo_bss + STACK_SIZE);
+	syspage_addEntries((addr_t)_plo_bss, (addr_t)_end - (addr_t)_plo_bss + SIZE_STACK);
 }
 
 
