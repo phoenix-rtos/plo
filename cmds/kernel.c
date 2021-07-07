@@ -30,15 +30,16 @@ static void cmd_kernelInfo(void)
 static int cmd_kernel(int argc, char *argv[])
 {
 	ssize_t res;
-	u8 buff[384];
+	u8 buff[384], strtab[128];
 	const char *kname;
 	void *loffs;
 	handler_t handler;
 	addr_t minaddr = 0xffffffff, maxaddr = 0, offs = 0;
 
 	Elf32_Ehdr hdr;
-	Elf32_Shdr shdr;
 	Elf32_Phdr phdr;
+	Elf32_Shdr shstrtab;
+	Elf32_Shdr shdr;
 	Elf32_Word i = 0, k = 0, size = 0;
 
 	/* Parse arguments */
@@ -112,7 +113,30 @@ static int cmd_kernel(int argc, char *argv[])
 		}
 	}
 
-	/* TODO: find sections based on name */
+	/* Read string table section header */
+	offs = hdr.e_shoff + hdr.e_shstrndx * sizeof(Elf32_Shdr);
+	if ((res = phfs_read(handler, offs, (u8 *)&shstrtab, (u32)sizeof(Elf32_Shdr))) < 0) {
+		log_error("\nCan't read %s, on %s", kname, argv[1]);
+		return res;
+	}
+
+	if (shstrtab.sh_size > sizeof(strtab)) {
+		log_error("\nCan't read %s, on %s", kname, argv[1]);
+		return -ENOMEM;
+	}
+
+	/* Read string table */
+	offs = shstrtab.sh_offset;
+	if ((res = phfs_read(handler, offs, strtab, shstrtab.sh_size)) < 0) {
+		log_error("\nCan't read %s, on %s", kname, argv[1]);
+		return res;
+	}
+
+	/* Set syspage kernel entry and .text section */
+	syspage_setKernelEntry(hal_kernelGetAddress(hdr.e_entry));
+	syspage_setKernelText(hal_kernelGetAddress(minaddr), maxaddr - minaddr);
+
+	/* Set syspage kernel .data and .bss sections */
 	for (k = 0; k < hdr.e_shnum; k++) {
 		offs = hdr.e_shoff + k * sizeof(Elf32_Shdr);
 
@@ -121,16 +145,11 @@ static int cmd_kernel(int argc, char *argv[])
 			return res;
 		}
 
-		/* Find .bss section header */
-		if (shdr.sh_type == SHT_NOBITS && shdr.sh_flags == (SHF_WRITE | SHF_ALLOC))
-			syspage_setKernelBss(hal_kernelGetAddress(shdr.sh_addr), (addr_t)shdr.sh_size);
+		if (!hal_strcmp((const char *)strtab + shdr.sh_name, ".data"))
+			syspage_setKernelData(hal_kernelGetAddress(shdr.sh_addr), shdr.sh_size);
+		else if (!hal_strcmp((const char *)strtab + shdr.sh_name, ".bss"))
+			syspage_setKernelBss(hal_kernelGetAddress(shdr.sh_addr), shdr.sh_size);
 	}
-
-	/* TODO: it is temporary solution. It should be defined. */
-	syspage_setKernelData(0, 0);
-
-	syspage_setKernelText(hal_kernelGetAddress(minaddr), maxaddr - minaddr);
-	syspage_setKernelEntry(hal_kernelGetAddress(hdr.e_entry));
 
 	if ((res = phfs_close(handler)) < 0) {
 		log_error("\nCan't close %s, on %s", kname, argv[1]);
