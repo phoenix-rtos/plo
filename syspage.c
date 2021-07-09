@@ -55,6 +55,8 @@ typedef struct {
 
 
 typedef struct {
+	syspage_hal_t hal;
+
 	struct {
 		addr_t text;
 		size_t textsz;
@@ -75,8 +77,6 @@ typedef struct {
 
 	size_t mapssz;
 	syspage_map_t *maps;
-
-	syspage_hal_t hal;
 } syspage_t;
 
 #pragma pack(pop)
