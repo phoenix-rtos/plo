@@ -35,7 +35,7 @@ void console_puts(const char *s)
 		return;
 	}
 
-	devs_write(console_common.major, console_common.minor, 0, (const u8 *)s, hal_strlen(s));
+	devs_write(console_common.major, console_common.minor, 0, s, hal_strlen(s));
 }
 
 
@@ -48,11 +48,11 @@ void console_putc(char c)
 		return;
 	}
 
-	devs_write(console_common.major, console_common.minor, 0, (const u8 *)&data, 1);
+	devs_write(console_common.major, console_common.minor, 0, &data, 1);
 }
 
 
-int console_getc(char *c, unsigned int timeout)
+int console_getc(char *c, time_t timeout)
 {
 	if (!console_common.init) {
 		console_puts(CONSOLE_RED);
@@ -61,7 +61,7 @@ int console_getc(char *c, unsigned int timeout)
 		for (;;);
 	}
 
-	return devs_read(console_common.major, console_common.minor, 0, (u8 *)c, 1, timeout);
+	return devs_read(console_common.major, console_common.minor, 0, c, 1, timeout);
 }
 
 

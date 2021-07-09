@@ -66,7 +66,7 @@ static int msg_write(unsigned int major, unsigned int minor, msg_t *msg)
 }
 
 
-static int msg_read(unsigned int major, unsigned int minor, msg_t *msg, u16 timeout, int *state)
+static int msg_read(unsigned int major, unsigned int minor, msg_t *msg, time_t timeout, int *state)
 {
 	u8 c;
 	u8 buff[MSG_HDRSZ + MSG_MAXLEN];
@@ -74,7 +74,7 @@ static int msg_read(unsigned int major, unsigned int minor, msg_t *msg, u16 time
 	unsigned int l = 0;
 
 	for (;;) {
-		if ((res = devs_read(major, minor, 0, buff, sizeof(buff), MSGRECV_TIMEOUT)) < 0)
+		if ((res = devs_read(major, minor, 0, buff, sizeof(buff), timeout)) < 0)
 			break;
 
 		for (i = 0; i < res; ++i) {
