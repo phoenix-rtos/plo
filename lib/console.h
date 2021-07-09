@@ -44,7 +44,7 @@ extern void console_putc(char c);
 
 
 /* Function gets char */
-extern int console_getc(char *c, unsigned int timeout);
+extern int console_getc(char *c, time_t timeout);
 
 
 #endif
