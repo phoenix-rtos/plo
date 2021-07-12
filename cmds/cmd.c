@@ -21,9 +21,8 @@
 #include <lib/ctype.h>
 
 
-#define SIZE_HIST          8
-#define SIZE_CMDS          24
-#define TIMEOUT_CONSOLE_MS 200
+#define SIZE_HIST 8
+#define SIZE_CMDS 24
 
 #define PROMPT "(plo)% "
 
@@ -168,8 +167,7 @@ void cmd_prompt(void)
 
 	lib_printf("\n%s", PROMPT);
 	while (c != '#') {
-		while (console_getc(&c, TIMEOUT_CONSOLE_MS) <= 0)
-			;
+		console_getc(&c, -1);
 
 		sc = 0;
 		/* Translate backspace */
@@ -178,13 +176,11 @@ void cmd_prompt(void)
 		}
 		/* Simple parser for VT100 commands */
 		else if (c == 27) {
-			while (console_getc(&c, TIMEOUT_CONSOLE_MS) <= 0)
-				;
+			console_getc(&c, -1);
 
 			switch (c) {
 				case 91:
-					while (console_getc(&c, TIMEOUT_CONSOLE_MS) <= 0)
-						;
+					console_getc(&c, -1);
 
 					switch (c) {
 						case 'A': /* UP */
