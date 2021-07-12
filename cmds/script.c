@@ -50,7 +50,7 @@ static int cmd_script(int argc, char *argv[])
 		return res;
 	}
 
-	if ((res = phfs_read(h, offs, (u8 *)buff, SIZE_MAGIC_NB)) < 0) {
+	if ((res = phfs_read(h, offs, buff, SIZE_MAGIC_NB)) < 0) {
 		log_error("\nCan't read %s from %s", argv[2], argv[1]);
 		return res;
 	}
@@ -66,7 +66,7 @@ static int cmd_script(int argc, char *argv[])
 	lib_printf(CONSOLE_BOLD "\nScript - %s:", argv[2]);
 	lib_printf(CONSOLE_NORMAL);
 	do {
-		if ((res = phfs_read(h, offs, (u8 *)buff, SIZE_CMD_ARG_LINE)) < 0) {
+		if ((res = phfs_read(h, offs, buff, SIZE_CMD_ARG_LINE)) < 0) {
 			log_error("\nCan't read %s from %s", argv[2], argv[1]);
 			return res;
 		}

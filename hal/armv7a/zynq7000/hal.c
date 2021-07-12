@@ -44,7 +44,7 @@ void hal_init(void)
 	console_init();
 
 	syspage_init();
-	syspage_setAddress(SYSPAGE_ADDRESS);
+	syspage_setAddress(ADDR_SYSPAGE);
 }
 
 
@@ -83,6 +83,12 @@ addr_t hal_kernelGetAddress(addr_t addr)
 	}
 
 	return addr;
+}
+
+
+int hal_memAddMap(addr_t start, addr_t end, u32 attr, u32 mapId)
+{
+	return EOK;
 }
 
 

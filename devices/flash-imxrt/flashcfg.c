@@ -128,7 +128,7 @@ static int flashcfg_getMicronConfig(flash_context_t *ctx)
 			ctx->properties.sector_size = FLASH_DEFAULT_SECTOR_SIZE;
 			break;
 
-		case MICORN_MT25QL01GBBB:
+		case MICRON_MT25QL01GBBB:
 			ctx->properties.size = 0x8000000;
 			ctx->properties.page_size = 0x100;
 			ctx->properties.sector_size = FLASH_DEFAULT_SECTOR_SIZE;

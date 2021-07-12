@@ -61,7 +61,7 @@ static int cmd_loadApp(handler_t handler, size_t size, const char *imap, const c
 	unsigned int attr;
 
 	/* Check ELF header */
-	if ((res = phfs_read(handler, offs, (u8 *)&hdr, (u32)sizeof(Elf32_Ehdr))) < 0) {
+	if ((res = phfs_read(handler, offs, &hdr, sizeof(Elf32_Ehdr))) < 0) {
 		log_error("\nCan't read data");
 		return res;
 	}

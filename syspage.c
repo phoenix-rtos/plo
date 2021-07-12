@@ -304,7 +304,7 @@ void syspage_setAddress(addr_t addr)
 
 	/* Assign syspage to the map */
 	syspage_common.syspage = (void *)addr;
-	sz = (size_t)(MAX_SYSPAGE_SIZE / PAGE_SIZE) * PAGE_SIZE + (MAX_SYSPAGE_SIZE % PAGE_SIZE ? PAGE_SIZE : 0); /* allign to PAGE_SIZE */
+	sz = (size_t)(MAX_SYSPAGE_SIZE / SIZE_PAGE) * SIZE_PAGE + (MAX_SYSPAGE_SIZE % SIZE_PAGE ? SIZE_PAGE : 0); /* align to SIZE_PAGE */
 
 	syspage_addEntries(addr, sz);
 
@@ -337,7 +337,7 @@ addr_t syspage_getAddress(void)
 
 int syspage_save(void)
 {
-	int i;
+	size_t i;
 
 	if (syspage_common.syspage == NULL)
 		return -ENOMEM;
@@ -346,25 +346,25 @@ int syspage_save(void)
 	syspage_common.argCnt++; /* The last char is '\0' */
 	syspage_common.syspage->arg = (char *)((void *)syspage_common.syspage + syspage_common.syspage->syspagesz);
 	syspage_common.syspage->syspagesz += syspage_common.argCnt;
-	hal_memcpy((void *)(syspage_common.syspage->arg), syspage_common.args, syspage_common.argCnt);
+	hal_memcpy(syspage_common.syspage->arg, syspage_common.args, syspage_common.argCnt);
 
 	/* Save programs */
 	syspage_common.syspage->progs = (syspage_program_t *)((void *)syspage_common.syspage + syspage_common.syspage->syspagesz);
 	syspage_common.syspage->progssz = syspage_common.progsCnt;
 	syspage_common.syspage->syspagesz += (syspage_common.progsCnt * sizeof(syspage_program_t));
-	hal_memcpy((void *)(syspage_common.syspage->progs), syspage_common.progs, syspage_common.progsCnt * sizeof(syspage_program_t));
+	hal_memcpy(syspage_common.syspage->progs, syspage_common.progs, syspage_common.progsCnt * sizeof(syspage_program_t));
 
 	/* Save maps */
 	syspage_common.syspage->maps = (syspage_map_t *)((void *)syspage_common.syspage + syspage_common.syspage->syspagesz);
 	for (i = 0; i < syspage_common.mapsCnt; ++i)
-		hal_memcpy((void *)((void *)syspage_common.syspage->maps + i * sizeof(syspage_map_t)), &syspage_common.maps[i].map, sizeof(syspage_map_t));
+		hal_memcpy(&syspage_common.syspage->maps[i], &syspage_common.maps[i].map, sizeof(syspage_map_t));
 
 	syspage_common.syspage->syspagesz += (syspage_common.mapsCnt * sizeof(syspage_map_t));
 	syspage_common.syspage->mapssz = syspage_common.mapsCnt;
 
 	/* Save architecture dependent structure */
 	if (sizeof(syspage_hal_t) != 0) {
-		hal_memcpy((void *)&syspage_common.syspage->hal, (void *)&syspage_common.hal, sizeof(syspage_hal_t));
+		hal_memcpy(&syspage_common.syspage->hal, &syspage_common.hal, sizeof(syspage_hal_t));
 		syspage_common.syspage->syspagesz += sizeof(syspage_hal_t);
 	}
 
@@ -374,7 +374,7 @@ int syspage_save(void)
 
 void syspage_showMaps(void)
 {
-	int i;
+	size_t i;
 	char attr[33];
 	plo_map_t *pmap;
 
@@ -398,16 +398,20 @@ void syspage_showApps(void)
 {
 	int i;
 	syspage_program_t *prog;
+	const char *imap, *dmap;
+
 	if (syspage_common.progsCnt == 0) {
 		lib_printf("\nApps number: 0");
 		return;
 	}
 
-	lib_printf(CONSOLE_BOLD "\n%-16s %-14s %-14s %-14s %-14s\n", "NAME", "START", "END", "IMAP ID", "DMAP ID");
+	lib_printf(CONSOLE_BOLD "\n%-16s %-14s %-14s %-14s %-14s\n", "NAME", "START", "END", "IMAP NAME", "DMAP NAME");
 	lib_printf(CONSOLE_NORMAL);
 	for (i = 0; i < syspage_common.progsCnt; ++i) {
 		prog = &syspage_common.progs[i];
-		lib_printf("%-16s 0x%08x%4s 0x%08x%4s %d%13s %d\n", prog->name, prog->start, "", prog->end, "", prog->imap, "", prog->dmap);
+		imap = syspage_common.maps[prog->imap].map.name;
+		dmap = syspage_common.maps[prog->dmap].map.name;
+		lib_printf("%-16s 0x%08x%4s 0x%08x%4s %-14s %-14s\n", prog->name, prog->start, "", prog->end, "", imap, dmap);
 	}
 }
 
@@ -494,12 +498,11 @@ int syspage_validateKernel(addr_t *addr)
 
 int syspage_addmap(const char *name, addr_t start, addr_t end, const char *attr)
 {
-	int i;
-	size_t size;
+	size_t i, len, size, mapID = syspage_common.mapsCnt;
 	map_entry_t *entry;
 	syspage_map_t *map;
 	plo_map_t *ploMap;
-	u32 len, mapID = syspage_common.mapsCnt;
+	int res;
 
 	/* Check whether map exists and overlaps with other maps */
 	for (i = 0; i < syspage_common.mapsCnt; ++i) {
@@ -511,16 +514,18 @@ int syspage_addmap(const char *name, addr_t start, addr_t end, const char *attr)
 
 	ploMap = &syspage_common.maps[mapID];
 	map = &ploMap->map;
-
 	map->start = start;
 	map->end = end;
 	map->id = mapID;
-	if (syspage_strAttr2ui(attr, &map->attr) < 0)
-		return -EINVAL;
+
+	if ((res = syspage_strAttr2ui(attr, &map->attr)) < 0)
+		return res;
+
+	if ((res = hal_memAddMap(start, end, map->attr, mapID)) < 0)
+		return res;
 
 	len = hal_strlen(name);
 	size = min(len, SIZE_MAP_NAME - 1);
-
 	hal_memcpy(map->name, name, size);
 	map->name[size] = '\0';
 
@@ -553,6 +558,20 @@ int syspage_getMapTop(const char *map, addr_t *addr)
 }
 
 
+const char *syspage_getMapName(u32 id)
+{
+	plo_map_t *pmap = syspage_common.maps;
+	int i;
+
+	for (i = 0; i < syspage_common.mapsCnt; i++, pmap++) {
+		if (pmap->map.id == id)
+			return pmap->map.name;
+	}
+
+	return NULL;
+}
+
+
 int syspage_setMapTop(const char *map, addr_t addr)
 {
 	u8 id;
@@ -580,7 +599,7 @@ int syspage_alignMapTop(const char *map)
 	}
 
 	ploMap = &syspage_common.maps[id];
-	newTop = (ploMap->top + PAGE_SIZE - 1) & ~(PAGE_SIZE - 1);
+	newTop = (ploMap->top + SIZE_PAGE - 1) & ~(SIZE_PAGE - 1);
 
 	if (newTop > ploMap->map.end) {
 		log_error("\nsyspage:  %s is full!\n", map);
@@ -608,7 +627,7 @@ int syspage_getFreeSize(const char *map, size_t *sz)
 }
 
 
-int syspage_write2Map(const char *map, const u8 *buff, size_t len)
+int syspage_write2Map(const char *map, const void *buff, size_t len)
 {
 	u8 id;
 	size_t freesz;
@@ -680,7 +699,7 @@ int syspage_getMapAttr(const char *map, unsigned int *attr)
 int syspage_addProg(addr_t start, addr_t end, const char *imap, const char *dmap, const char *cmdline, u32 flags)
 {
 	u8 imapID, dmapID;
-	unsigned int pos, len;
+	size_t pos, len;
 	syspage_program_t *prog;
 	u32 progID = syspage_common.progsCnt;
 	const u32 isExec = (flags & flagSyspageExec) != 0;
@@ -716,7 +735,7 @@ int syspage_addProg(addr_t start, addr_t end, const char *imap, const char *dmap
 	if (isExec)
 		syspage_common.args[syspage_common.argCnt++] = 'X';
 
-	hal_memcpy((void *)&syspage_common.args[syspage_common.argCnt], cmdline, len);
+	hal_memcpy(&syspage_common.args[syspage_common.argCnt], cmdline, len);
 
 	syspage_common.argCnt += len;
 	syspage_common.args[syspage_common.argCnt++] = ' ';
@@ -774,5 +793,5 @@ void syspage_setKernelData(addr_t addr, size_t size)
 void syspage_setHalData(const syspage_hal_t *hal)
 {
 	if (sizeof(syspage_hal_t) != 0)
-		hal_memcpy((void *)&syspage_common.hal, (void *)hal, sizeof(syspage_hal_t));
+		hal_memcpy(&syspage_common.hal, hal, sizeof(syspage_hal_t));
 }

@@ -6,7 +6,7 @@
  * Hardware Abstraction Layer
  *
  * Copyright 2020-2021 Phoenix Systems
- * Author: Hubert Buczynski, Marcin Baran
+ * Author: Hubert Buczynski, Marcin Baran, Gerard Swiderski
  *
  * This file is part of Phoenix-RTOS.
  *
@@ -43,15 +43,16 @@ extern void console_init(void);
 void hal_init(void)
 {
 	_imxrt_init();
+	mpu_init();
 	timer_init();
 
 	console_init();
 
 	syspage_init();
-	syspage_setAddress(SYSPAGE_ADDRESS);
+	syspage_setAddress(ADDR_SYSPAGE);
 
 	/* Add entries related to plo image */
-	syspage_addEntries((addr_t)_plo_bss, (addr_t)_end - (addr_t)_plo_bss + STACK_SIZE);
+	syspage_addEntries((addr_t)_plo_bss, (addr_t)_end - (addr_t)_plo_bss + SIZE_STACK);
 }
 
 
@@ -88,8 +89,20 @@ addr_t hal_kernelGetAddress(addr_t addr)
 }
 
 
+int hal_memAddMap(addr_t start, addr_t end, u32 attr, u32 mapId)
+{
+	return mpu_regionAlloc(start, end, attr, mapId, 1);
+}
+
+
 int hal_cpuJump(addr_t addr)
 {
+	syspage_hal_t hal;
+
+	/* Store hal data into syspage */
+	mpu_getHalData(&hal);
+
+	syspage_setHalData(&hal);
 	syspage_save();
 
 	/* Tidy up */

@@ -20,16 +20,17 @@
 #include "imxrt.h"
 #include "peripherals.h"
 #include "../types.h"
+#include "../../mpu.h"
 #include "../../string.h"
 
 
 /* User interface */
-#define KERNEL_PATH "phoenix-armv7m7-imxrt106x.elf"
+#define PATH_KERNEL "phoenix-armv7m7-imxrt106x.elf"
 
 /* Addresses descriptions */
-#define SYSPAGE_ADDRESS 0x20200000
-#define STACK_SIZE      5 * 1024
-#define PAGE_SIZE       0x200
+#define ADDR_SYSPAGE 0x20200000
+#define SIZE_STACK   5 * 1024
+#define SIZE_PAGE    0x200
 
 
 #endif

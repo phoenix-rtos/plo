@@ -35,11 +35,11 @@ extern int usbclient_destroy(void);
 
 
 /* Send data on given endpoint - blocking */
-extern int usbclient_send(int endpt, const void *data, unsigned int len);
+extern ssize_t usbclient_send(int endpt, const void *data, size_t len);
 
 
 /* Receive data from given endpoint - blocking */
-extern int usbclient_receive(int endpt, void *data, unsigned int len);
+extern ssize_t usbclient_receive(int endpt, void *data, size_t len);
 
 
 #endif /* _USBCLIENT_H_ */
