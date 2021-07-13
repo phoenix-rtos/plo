@@ -28,14 +28,19 @@ include cmds/Makefile
 OBJS += $(addprefix $(PREFIX_O), _startc.o plo.o syspage.o)
 
 
-all: $(PREFIX_PROG_STRIPPED)plo-$(TARGET_FAMILY)-$(TARGET_SUBFAMILY).elf  $(PREFIX_PROG_STRIPPED)plo-$(TARGET_FAMILY)-$(TARGET_SUBFAMILY).img\
-     $(PREFIX_PROG_STRIPPED)plo-ram-$(TARGET_FAMILY)-$(TARGET_SUBFAMILY).elf $(PREFIX_PROG_STRIPPED)plo-ram-$(TARGET_FAMILY)-$(TARGET_SUBFAMILY).img
+all: base ram
 
+
+base: $(PREFIX_PROG_STRIPPED)plo-$(TARGET_FAMILY)-$(TARGET_SUBFAMILY).elf  $(PREFIX_PROG_STRIPPED)plo-$(TARGET_FAMILY)-$(TARGET_SUBFAMILY).img
+
+
+ram: $(PREFIX_PROG_STRIPPED)plo-ram-$(TARGET_FAMILY)-$(TARGET_SUBFAMILY).elf $(PREFIX_PROG_STRIPPED)plo-ram-$(TARGET_FAMILY)-$(TARGET_SUBFAMILY).img
 
 
 $(BUILD_DIR)/script.plo:
 	@printf "TOUCH script.plo\n"
 	$(SIL)touch $(BUILD_DIR)/script.plo
+
 
 $(PREFIX_O)/script.o.plo: $(PREFIX_O)cmds/cmd.o $(BUILD_DIR)/script.plo
 	@mkdir -p $(@D)
@@ -47,20 +52,17 @@ $(BUILD_DIR)/ramscript.plo:
 	@printf "TOUCH script.plo\n"
 	$(SIL)touch $(BUILD_DIR)/ramscript.plo
 
+
 $(PREFIX_O)/ramscript.o.plo: $(PREFIX_O)cmds/cmd.o $(BUILD_DIR)/ramscript.plo
 	@mkdir -p $(@D)
 	@printf "EMBED ramscript.plo\n"
 	$(SIL)$(OBJCOPY) --update-section .data=$(BUILD_DIR)/ramscript.plo $(PREFIX_O)cmds/cmd.o --add-symbol script=.data:0 $(PREFIX_O)ramscript.o.plo
 
 
-
-
 $(PREFIX_PROG)plo-$(TARGET_FAMILY)-$(TARGET_SUBFAMILY).elf: $(OBJS) $(PREFIX_O)/script.o.plo
 	@mkdir -p $(@D)
 	@(printf "LD  %-24s\n" "$(@F)");
 	$(SIL)$(LD) $(LDFLAGS) -e _start --section-start .init=$(INIT_FLASH) $(BSS) -o $(PREFIX_PROG)plo-$(TARGET_FAMILY)-$(TARGET_SUBFAMILY).elf $(OBJS) $(PREFIX_O)/script.o.plo $(GCCLIB)
-
-
 
 
 $(PREFIX_PROG)plo-ram-$(TARGET_FAMILY)-$(TARGET_SUBFAMILY).elf: $(OBJS) $(PREFIX_O)/ramscript.o.plo
