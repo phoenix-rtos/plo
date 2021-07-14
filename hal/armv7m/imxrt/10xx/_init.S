@@ -188,7 +188,7 @@ _start:
 	ldr r9, =0x00200007
 	str r9, [r8, #0x40]
 
-	ldr r9, =0xaabfffff
+	ldr r9, =0xaaaaabff
 	str r9, [r8, #0x44]
 
 _plo:
