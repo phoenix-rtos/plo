@@ -33,7 +33,7 @@ static int cmd_alias(int argc, char *argv[])
 	unsigned int i;
 
 	if (argc == 1) {
-		phfs_showFiles();
+		phfs_showAliases();
 		return EOK;
 	}
 	else if (argc != 4) {
@@ -54,7 +54,7 @@ static int cmd_alias(int argc, char *argv[])
 		}
 	}
 
-	if (phfs_regFile(argv[1], addr, sz) < 0) {
+	if (phfs_regAlias(argv[1], addr, sz) < 0) {
 		log_error("\nCan't register file %s", argv[1]);
 		return -EINVAL;
 	}

@@ -39,18 +39,18 @@ extern int phfs_regDev(const char *alias, unsigned int major, unsigned int minor
 
 
 /* Register alias to file located in non-volatile memory */
-extern int phfs_regFile(const char *alias, addr_t addr, size_t size);
+extern int phfs_regAlias(const char *alias, addr_t addr, size_t size);
 
 
 /* Get file's address based on the given handler */
-extern int phfs_getFileAddr(handler_t h, addr_t *addr);
+extern int phfs_getAliasAddr(handler_t h, addr_t *addr);
 
 
 /* Show devices registered in phfs */
 extern void phfs_showDevs(void);
 
 /* Show files registered in phfs */
-extern void phfs_showFiles(void);
+extern void phfs_showAliases(void);
 
 
 /* Operations on files */
