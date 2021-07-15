@@ -3,7 +3,7 @@
  *
  * Operating system loader
  *
- * Doubly-linked list
+ * Circular doubly-linked list
  *
  * Copyright 2017, 2018, 2021 Phoenix Systems
  * Author: Pawel Pisarczyk, Jan Sikorski, Aleksander Kaminski, Hubert Buczynski
