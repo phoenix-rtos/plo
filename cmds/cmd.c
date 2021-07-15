@@ -1,13 +1,13 @@
 /*
  * Phoenix-RTOS
  *
- * plo - perating system loader
+ * Operating system loader
  *
  * Loader commands
  *
  * Copyright 2012, 2017, 2020-2021 Phoenix Systems
  * Copyright 2001, 2005 Pawel Pisarczyk
- * Author: Pawel Pisarczyk, Pawel Kolodziej, Hubert Buczynski, Gerard Swiderski
+ * Author: Pawel Pisarczyk, Pawel Kolodziej, Hubert Buczynski, Gerard Swiderski, Lukasz Kosinski
  *
  * This file is part of Phoenix-RTOS.
  *
@@ -17,8 +17,7 @@
 #include "cmd.h"
 
 #include <hal/hal.h>
-#include <lib/console.h>
-#include <lib/ctype.h>
+#include <lib/lib.h>
 
 
 #define SIZE_HIST 8
@@ -47,8 +46,8 @@ static int cmd_parseArgLine(const char **lines, char *buf, size_t bufsz, char *a
 		return -1; /* EOF */
 
 	while (**lines != '\0') {
-		if (isspace(**lines)) {
-			if (isblank(*(*lines)++))
+		if (lib_isspace(**lines)) {
+			if (lib_isblank(*(*lines)++))
 				continue;
 			else
 				break;
@@ -62,7 +61,7 @@ static int cmd_parseArgLine(const char **lines, char *buf, size_t bufsz, char *a
 
 		argv[argc++] = buf;
 
-		while (isgraph(**lines) && buf < end)
+		while (lib_isgraph(**lines) && buf < end)
 			*buf++ = *(*lines)++;
 
 		if (buf >= end) {
@@ -167,7 +166,7 @@ void cmd_prompt(void)
 
 	lib_printf("\n%s", PROMPT);
 	while (c != '#') {
-		console_getc(&c, -1);
+		lib_consoleGetc(&c, -1);
 
 		sc = 0;
 		/* Translate backspace */
@@ -176,11 +175,11 @@ void cmd_prompt(void)
 		}
 		/* Simple parser for VT100 commands */
 		else if (c == 27) {
-			console_getc(&c, -1);
+			lib_consoleGetc(&c, -1);
 
 			switch (c) {
 				case 91:
-					console_getc(&c, -1);
+					lib_consoleGetc(&c, -1);
 
 					switch (c) {
 						case 'A': /* UP */
@@ -211,7 +210,7 @@ void cmd_prompt(void)
 
 			/* If character isn't backspace add it to line buffer */
 			if ((c != 8) && (pos < SIZE_CMD_ARG_LINE - 1)) {
-				console_putc(c);
+				lib_consolePutc(c);
 				cmd_common.lines[cmd_common.ll][pos++] = c;
 				cmd_common.lines[cmd_common.ll][pos] = 0;
 			}

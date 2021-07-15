@@ -1,9 +1,9 @@
 /*
  * Phoenix-RTOS
  *
- * plo - perating system loader
+ * Operating system loader
  *
- * Load application command
+ * Create file alias
  *
  * Copyright 2021 Phoenix Systems
  * Author: Hubert Buczynski

@@ -1,20 +1,23 @@
 /*
  * Phoenix-RTOS
  *
- * phoenix-rtos-loader
+ * Operating system loader
  *
  * Console
  *
  * Copyright 2021 Phoenix Systems
- * Authors: Hubert Buczynski
+ * Authors: Hubert Buczynski, Lukasz Kosinski
  *
  * This file is part of Phoenix-RTOS.
  *
  * %LICENSE%
  */
 
-#ifndef _CONSOLE_H_
-#define _CONSOLE_H_
+#ifndef _LIB_CONSOLE_H_
+#define _LIB_CONSOLE_H_
+
+#include <hal/hal.h>
+
 
 #define CONSOLE_CURSOR_HIDE "\033[?25l"
 #define CONSOLE_CURSOR_SHOW "\033[?25h"
@@ -31,20 +34,20 @@
 #define CONSOLE_WHITE   "\033[37m"
 
 
-/* Function sets device's major and minor number on which console should has output */
-extern void console_set(unsigned major, unsigned minor);
+/* Sets console device */
+extern void lib_consoleSet(unsigned major, unsigned minor);
 
 
-/* Function prints string */
-extern void console_puts(const char *s);
+/* Prints string */
+extern void lib_consolePuts(const char *s);
 
 
-/* Function prints char */
-extern void console_putc(char c);
+/* Prints character */
+extern void lib_consolePutc(char c);
 
 
-/* Function gets char */
-extern int console_getc(char *c, time_t timeout);
+/* Gets character */
+extern int lib_consoleGetc(char *c, time_t timeout);
 
 
 #endif

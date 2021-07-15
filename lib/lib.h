@@ -1,37 +1,53 @@
 /*
  * Phoenix-RTOS
  *
- * phoenix-rtos loader
+ * Operating system loader
  *
- * Standard loader library
+ * Loader library routines
  *
  * Copyright 2021 Phoenix Systems
- * Author: Hubert Buczynski
+ * Author: Hubert Buczynski, Lukasz Kosinski
  *
  * This file is part of Phoenix-RTOS.
  *
  * %LICENSE%
  */
 
-#ifndef _LIB_PLO_H_
-#define _LIB_PLO_H_
+#ifndef _LIB_LIB_H_
+#define _LIB_LIB_H_
 
-#include <hal/hal.h>
+#include "console.h"
+#include "ctype.h"
+#include "errno.h"
+#include "list.h"
+#include "log.h"
+#include "stdarg.h"
 
 
-#define min(a, b) ((a > b) ? b : a)
+#define min(a, b) ({ \
+	__typeof__(a) _a = (a); \
+	__typeof__(b) _b = (b); \
+	_a > _b ? _b : _a; \
+})
+
+
+#define max(a, b) ({ \
+	__typeof__(a) _a = (a); \
+	__typeof__(b) _b = (b); \
+	_a > _b ? _a : _b; \
+})
 
 
 extern int lib_printf(const char *fmt, ...);
 
 
-extern void lib_putch(char c);
+extern int lib_sprintf(char *str, const char *fmt, ...);
 
 
-extern unsigned int lib_strtoul(char *nptr, char **endptr, int base);
+extern unsigned long lib_strtoul(char *nptr, char **endptr, int base);
 
 
-extern int lib_strtol(char *nptr, char **endptr, int base);
+extern long lib_strtol(char *nptr, char **endptr, int base);
 
 
 #endif

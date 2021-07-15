@@ -1,13 +1,13 @@
 /*
  * Phoenix-RTOS
  *
- * plo - operating system loader
+ * Operating system loader
  *
- * Generic loader commands
+ * Loader commands
  *
  * Copyright 2012, 2020 Phoenix Systems
  * Copyright 2001, 2005 Pawel Pisarczyk
- * Author: Pawel Pisarczyk, Hubert Buczynski
+ * Author: Pawel Pisarczyk, Hubert Buczynski, Lukasz Kosinski
  *
  * This file is part of Phoenix-RTOS.
  *
@@ -18,8 +18,6 @@
 #define _CMD_H_
 
 #include <lib/lib.h>
-#include <lib/log.h>
-#include <lib/errno.h>
 
 
 #define SIZE_CMD_ARG_LINE 81

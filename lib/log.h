@@ -1,36 +1,41 @@
 /*
  * Phoenix-RTOS
  *
- * phoenix-rtos loader
+ * Operating system loader
  *
- * logger
+ * Logger
  *
  * Copyright 2021 Phoenix Systems
- * Author: Hubert Buczynski
+ * Author: Hubert Buczynski, Lukasz Kosinski
  *
  * This file is part of Phoenix-RTOS.
  *
  * %LICENSE%
  */
 
-#ifndef _LOG_PLO_H_
-#define _LOG_PLO_H_
+#ifndef _LIB_LOG_H_
+#define _LIB_LOG_H_
 
-#include "log.h"
 #include "lib.h"
-#include "console.h"
-
-#define log_info(fmt, ...) \
-	if (log_getEcho()) \
-	lib_printf(fmt, ##__VA_ARGS__)
-
-#define log_error(fmt, ...) lib_printf(CONSOLE_RED fmt CONSOLE_NORMAL, ##__VA_ARGS__)
 
 
 extern int log_getEcho(void);
 
 
 extern void log_setEcho(int val);
+
+
+#define log_info(fmt, ...) \
+	do { \
+		if (log_getEcho()) \
+			lib_printf(fmt, ##__VA_ARGS__); \
+	} while (0)
+
+
+#define log_error(fmt, ...) \
+	do { \
+		lib_printf(CONSOLE_RED fmt CONSOLE_NORMAL, ##__VA_ARGS__); \
+	} while (0)
 
 
 #endif

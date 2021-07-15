@@ -1,12 +1,12 @@
 /*
  * Phoenix-RTOS
  *
- * phoenix-rtos-loader
+ * Operating system loader
  *
  * Console
  *
  * Copyright 2021 Phoenix Systems
- * Author: Hubert Buczynski
+ * Author: Hubert Buczynski, Lukasz Kosinski
  *
  * This file is part of Phoenix-RTOS.
  *
@@ -14,8 +14,6 @@
  */
 
 #include "lib.h"
-#include "errno.h"
-#include "console.h"
 
 #include <hal/hal.h>
 #include <devices/devs.h>
@@ -28,7 +26,7 @@ struct {
 } console_common;
 
 
-void console_puts(const char *s)
+void lib_consolePuts(const char *s)
 {
 	if (!console_common.init) {
 		hal_consolePrint(s);
@@ -39,7 +37,7 @@ void console_puts(const char *s)
 }
 
 
-void console_putc(char c)
+void lib_consolePutc(char c)
 {
 	const char data[] = { c, '\0' };
 
@@ -52,12 +50,12 @@ void console_putc(char c)
 }
 
 
-int console_getc(char *c, time_t timeout)
+int lib_consoleGetc(char *c, time_t timeout)
 {
 	if (!console_common.init) {
-		console_puts(CONSOLE_RED);
-		console_puts("\rCan't get data from console.");
-		console_puts("\nPlease reset plo and set console to device.");
+		lib_consolePuts(CONSOLE_RED);
+		lib_consolePuts("\rCan't get data from console.");
+		lib_consolePuts("\nPlease reset plo and set console to device.");
 		for (;;);
 	}
 
@@ -65,7 +63,7 @@ int console_getc(char *c, time_t timeout)
 }
 
 
-void console_set(unsigned major, unsigned minor)
+void lib_consoleSet(unsigned major, unsigned minor)
 {
 	console_common.major = major;
 	console_common.minor = minor;
