@@ -15,6 +15,8 @@
 
 #define __ASSEMBLY__
 
+#include "config.h"
+
 .syntax unified
 .cpu cortex-m7
 
@@ -25,8 +27,6 @@
 #define ADDR_ITCM 0x00000000
 #define ADDR_DTCM 0x20000000
 #define ADDR_SCB  0xe000ed00
-#define SWAP(x)   (((x >> 24) & 0xff) | ((x << 8) & (0xff << 16)) | ((x >> 8) & (0xff << 8)) | ((x << 24) & (0xff << 24)))
-
 
 .section .init, "x"
 
@@ -151,7 +151,7 @@ ivt_end:
 .globl _init_vectors
 .type _init_vectors, %object
 _init_vectors:
-.word _end + 5 * 1024
+.word ADDR_STACK
 .word _start
 
 /* TODO: define exception_dispatch */

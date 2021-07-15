@@ -1,7 +1,7 @@
 /*
  * Phoenix-RTOS
  *
- * plo - operating system loader
+ * Operating system loader
  *
  * Syspage
  *
@@ -19,112 +19,99 @@
 #include <hal/hal.h>
 
 
-#define SIZE_APP_NAME 31
-#define SIZE_MAP_NAME 7
+enum { flagSyspageExec = 0x01 };
 
 
-/* TODO: Make it compatible with Phoenix-RTOS kernel;
- *       take into account map's attributes while data is written to them */
 enum { mAttrRead = 0x01, mAttrWrite = 0x02, mAttrExec = 0x04, mAttrShareable = 0x08,
 	   mAttrCacheable = 0x10, mAttrBufferable = 0x20 };
 
 
-/* syspage_addProg bitflags */
-enum { flagSyspageExec = 0x01 };
+enum { console_default = 0, console_com0, console_com1, console_com2, console_com3, console_com4, console_com5, console_com6,
+	   console_com7, console_com8, console_com9, console_com10, console_com11, console_com12, console_com13, console_com14,
+	   console_com15, console_vga0 };
 
 
-/* syspage_validateAddrMap type of validation bitflags */
-enum { flagValidateTop = 0x01, flagValidateMap = 0x02, flagValidateAttr = 0x04 };
+#pragma pack(push, 1)
+
+typedef struct _syspage_prog_t {
+	struct _syspage_prog_t *next, *prev;
+
+	addr_t start;
+	addr_t end;
+
+	char *argv;
+
+	size_t imapSz;
+	u8 *imaps;
+
+	size_t dmapSz;
+	u8 *dmaps;
+} syspage_prog_t;
 
 
-/* Initialization function */
-extern void syspage_init(void);
+typedef struct _syspage_map_t {
+	struct _syspage_map_t *next, *prev;
+
+	mapent_t *entries;
+
+	addr_t start;
+	addr_t end;
+
+	u32 attr;
+	u8 id;
+
+	char *name;
+} syspage_map_t;
 
 
-/* Syspage's location functions */
+typedef struct {
+	hal_syspage_t hs;
 
-extern void syspage_setAddress(addr_t addr);
+	syspage_map_t *maps;
+	syspage_prog_t *progs;
 
+	size_t size;
+	unsigned int console;
+} syspage_t;
 
-extern addr_t syspage_getAddress(void);
+#pragma pack(pop)
 
 
 /* General functions */
-
-extern int syspage_save(void);
-
-
-extern void syspage_showAddr(void);
+extern void syspage_init(void);
 
 
-extern void syspage_showMaps(void);
-
-
-extern void syspage_showApps(void);
-
-
-extern void syspage_showKernel(void);
-
-
-/* Validation */
-
-extern int syspage_validateAddrMap(unsigned int ftype, addr_t addr, u8 id, unsigned int attr);
-
-
-extern int syspage_validateKernel(addr_t *addr);
+extern void *syspage_alloc(size_t size);
 
 
 /* Map's functions */
-
-extern int syspage_addmap(const char *name, addr_t start, addr_t end, const char *attr);
-
-
-extern int syspage_getMapTop(const char *map, addr_t *addr);
+extern int syspage_mapAdd(const char *name, addr_t start, addr_t end, const char *attr);
 
 
-extern int syspage_setMapTop(const char *map, addr_t addr);
+extern int syspage_mapAttrResolve(const char *name, unsigned int *attr);
 
 
-extern int syspage_alignMapTop(const char *map);
+extern int syspage_mapNameResolve(const char *name, u8 *id);
 
 
-extern int syspage_getFreeSize(const char *map, size_t *sz);
+extern const char *syspage_mapName(u8 id);
 
 
-extern int syspage_write2Map(const char *map, const void *buff, size_t len);
+extern void syspage_mapShow(void);
 
 
-extern void syspage_addEntries(addr_t start, size_t sz);
-
-
-extern int syspage_getMapAttr(const char *map, unsigned int *attr);
-
-
-extern const char *syspage_getMapName(u32 id);
+extern mapent_t *syspage_entryAdd(const char *mapName, addr_t start, size_t size, unsigned int align);
 
 
 /* Program's functions */
-
-extern int syspage_addProg(addr_t start, addr_t end, const char *imap, const char *dmap, const char *name, u32 flags);
-
-
-/* Setting kernel's data */
-
-extern void syspage_setKernelEntry(addr_t addr);
+extern syspage_prog_t *syspage_progAdd(const char *argv, u32 flags);
 
 
-extern void syspage_setKernelText(addr_t addr, size_t size);
+extern void syspage_progShow(void);
 
 
-extern void syspage_setKernelBss(addr_t addr, size_t size);
-
-
-extern void syspage_setKernelData(addr_t addr, size_t size);
-
-
-/* Add specific hal data */
-
-extern void syspage_setHalData(const syspage_hal_t *hal);
+/* Console */
+extern void syspage_consoleSet(unsigned int id);
 
 
 #endif

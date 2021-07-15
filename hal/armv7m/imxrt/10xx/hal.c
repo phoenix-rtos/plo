@@ -13,9 +13,7 @@
  * %LICENSE%
  */
 
-#include <syspage.h>
 #include <hal/hal.h>
-#include <lib/errno.h>
 
 typedef struct {
 	void *data;
@@ -25,12 +23,15 @@ typedef struct {
 
 struct{
 	intr_handler_t irqs[SIZE_INTERRUPTS];
+	hal_syspage_t *hs;
+
+	addr_t entry;
 } hal_common;
 
 
 /* Linker symbols */
-extern void _end(void);
 extern void _plo_bss(void);
+extern void _end(void);
 
 /* Timer */
 extern void timer_init(void);
@@ -43,18 +44,13 @@ extern void console_init(void);
 void hal_init(void)
 {
 	_imxrt_init();
-	mpu_init();
-	timer_init();
-
-	console_init();
-
-	syspage_init();
-	syspage_setAddress(ADDR_SYSPAGE);
-
 	_imxrt_scbSetPriorityGrouping(3);
 
-	/* Add entries related to plo image */
-	syspage_addEntries((addr_t)_plo_bss, (addr_t)_end - (addr_t)_plo_bss + SIZE_STACK);
+	mpu_init();
+	timer_init();
+	console_init();
+
+	hal_common.entry = (addr_t)-1;
 }
 
 
@@ -63,6 +59,12 @@ void hal_done(void)
 	timer_done();
 
 	_imxrt_cleanDCache();
+}
+
+
+void hal_syspageSet(hal_syspage_t *hs)
+{
+	hal_common.hs = hs;
 }
 
 
@@ -96,32 +98,89 @@ addr_t hal_kernelGetAddress(addr_t addr)
 }
 
 
-int hal_memAddMap(addr_t start, addr_t end, u32 attr, u32 mapId)
+void hal_kernelEntryPoint(addr_t addr)
+{
+	hal_common.entry = addr;
+}
+
+
+int hal_memoryAddMap(addr_t start, addr_t end, u32 attr, u32 mapId)
 {
 	return mpu_regionAlloc(start, end, attr, mapId, 1);
 }
 
 
-void hal_cpuJump(addr_t addr)
+static void hal_getMinOverlappedRange(addr_t start, addr_t end, mapent_t *entry, mapent_t *minEntry)
 {
-	syspage_hal_t hal;
+	if ((start < entry->end) && (end > entry->start)) {
+		if (start > entry->start)
+			entry->start = start;
 
-	/* Store hal data into syspage */
-	mpu_getHalData(&hal);
+		if (end < entry->end)
+			entry->end = end;
 
-	syspage_setHalData(&hal);
-	syspage_save();
+		if (entry->start < minEntry->start) {
+			minEntry->start = entry->start;
+			minEntry->end = entry->end;
+			minEntry->type = entry->type;
+		}
+	}
+}
 
-	/* Tidy up */
-	hal_done();
+
+int hal_memoryGetNextEntry(addr_t start, addr_t end, mapent_t *entry)
+{
+	mapent_t tempEntry = { 0 };
+	mapent_t minEntry = { .start = (addr_t)-1, .end = 0 };
+
+	if (start == end)
+		return -1;
+
+	/* plo: .bss */
+	tempEntry.start = (addr_t)_plo_bss;
+	tempEntry.end = (addr_t)_end;
+	tempEntry.type = hal_entryTemp;
+	hal_getMinOverlappedRange(start, end, &tempEntry, &minEntry);
+
+	/* syspage */
+	tempEntry.start = (addr_t)hal_common.hs;
+	tempEntry.end = tempEntry.start + SIZE_SYSPAGE;
+	tempEntry.type = hal_entryReserved;
+	hal_getMinOverlappedRange(start, end, &tempEntry, &minEntry);
+
+	/* plo: .stack */
+	tempEntry.start = (addr_t)ADDR_STACK;
+	tempEntry.end = tempEntry.start + SIZE_STACK;
+	tempEntry.type = hal_entryTemp;
+	hal_getMinOverlappedRange(start, end, &tempEntry, &minEntry);
+
+	if (minEntry.start != (addr_t)-1) {
+		entry->start = minEntry.start;
+		entry->end = minEntry.end;
+		entry->type = minEntry.type;
+
+		return 0;
+	}
+
+	return -1;
+}
+
+
+int hal_cpuJump(void)
+{
+	if (hal_common.entry == (addr_t)-1)
+		return -1;
 
 	hal_interruptsDisable();
+
+	mpu_getHalData(hal_common.hs);
+
 	__asm__ volatile("mov r9, %1; \
 		 blx %0"
-		 :
-		 : "r"(addr), "r"(syspage_getAddress()));
+		:
+		: "r"(hal_common.entry), "r"((addr_t)hal_common.hs));
 
-	__builtin_unreachable();
+	return 0;
 }
 
 
@@ -140,7 +199,7 @@ void hal_interruptsDisable(void)
 int hal_interruptsSet(unsigned int irq, int (*isr)(unsigned int, void *), void *data)
 {
 	if (irq >= SIZE_INTERRUPTS)
-		return -EINVAL;
+		return -1;
 
 	hal_interruptsDisable();
 	hal_common.irqs[irq].isr = isr;
@@ -155,16 +214,16 @@ int hal_interruptsSet(unsigned int irq, int (*isr)(unsigned int, void *), void *
 	}
 	hal_interruptsEnable();
 
-	return EOK;
+	return 0;
 }
 
 
 int hal_irqdispatch(unsigned int irq)
 {
 	if (hal_common.irqs[irq].isr == NULL)
-		return -EINTR;
+		return -1;
 
 	hal_common.irqs[irq].isr(irq, hal_common.irqs[irq].data);
 
-	return EOK;
+	return 0;
 }
