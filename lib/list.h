@@ -1,9 +1,9 @@
 /*
  * Phoenix-RTOS
  *
- * phoenix-rtos-loader
+ * Operating system loader
  *
- * Standard routines - doubly-linked list
+ * Doubly-linked list
  *
  * Copyright 2017, 2018, 2021 Phoenix Systems
  * Author: Pawel Pisarczyk, Jan Sikorski, Aleksander Kaminski, Hubert Buczynski

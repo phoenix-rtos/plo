@@ -1,9 +1,9 @@
 /*
  * Phoenix-RTOS
  *
- * plo - perating system loader
+ * Operating system loader
  *
- * phfs command
+ * Register phfs device
  *
  * Copyright 2021 Phoenix Systems
  * Author: Hubert Buczynski

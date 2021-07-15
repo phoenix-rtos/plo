@@ -1,12 +1,12 @@
 /*
  * Phoenix-RTOS
  *
- * phoenix-rtos loader
+ * Operating system loader
  *
- * logger
+ * Logger
  *
  * Copyright 2021 Phoenix Systems
- * Author: Hubert Buczynski
+ * Author: Hubert Buczynski, Lukasz Kosinski
  *
  * This file is part of Phoenix-RTOS.
  *
@@ -14,6 +14,7 @@
  */
 
 #include "log.h"
+
 
 struct {
 	int mode;

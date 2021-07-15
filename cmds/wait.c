@@ -1,12 +1,12 @@
 /*
  * Phoenix-RTOS
  *
- * phoenix-rtos loader
+ * Operating loader
  *
- * wait command
+ * Wait timer
  *
  * Copyright 2021 Phoenix Systems
- * Author: Hubert Buczynski
+ * Author: Hubert Buczynski, Lukasz Kosinski
  *
  * This file is part of Phoenix-RTOS.
  *
@@ -16,7 +16,7 @@
 #include "cmd.h"
 
 #include <hal/hal.h>
-#include <lib/console.h>
+#include <lib/lib.h>
 
 
 static void cmd_waitInfo(void)
@@ -40,7 +40,7 @@ static int cmd_wait(int argc, char *argv[])
 			lib_printf("\r%*s \r%s ", sizeof(prompt) + 4, "", prompt);
 			for (i = 0; i < 3; ++i) {
 				lib_printf(".");
-				if (console_getc(&c, 500) > 0)
+				if (lib_consoleGetc(&c, 500) > 0)
 					return -1;
 			}
 		}
@@ -57,7 +57,7 @@ static int cmd_wait(int argc, char *argv[])
 		step = time >= 100 ? 100 : time;
 		time -= step;
 		lib_printf("\r%*s \r%s, %5d [ms]", sizeof(prompt) + 14, "", prompt, time);
-		if (console_getc(&c, step) > 0)
+		if (lib_consoleGetc(&c, step) > 0)
 			return -1;
 	}
 	lib_printf("\r%*s \r%s, %5d [ms]", sizeof(prompt) + 14, "", prompt, 0);

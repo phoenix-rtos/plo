@@ -1,64 +1,64 @@
 /*
  * Phoenix-RTOS
  *
- * phoenix-rtos loader
+ * Operating system loader
  *
- * ctype - code derived from libphoenix
+ * Character type - code derived from libphoenix
  *
  * Copyright 2017, 2021 Phoenix Systems
- * Author: Adrian Kepka, Hubert Buczynski, Gerard Swiderski
+ * Author: Adrian Kepka, Hubert Buczynski, Gerard Swiderski, Lukasz Kosinski
  *
  * This file is part of Phoenix-RTOS.
  *
  * %LICENSE%
  */
 
-#include "lib.h"
+#include "ctype.h"
 
 
-int islower(int c)
+int lib_islower(int c)
 {
-	return c >= 'a' && c <= 'z';
+	return (c >= 'a') && (c <= 'z');
 }
 
 
-int isupper(int c)
+int lib_isupper(int c)
 {
-	return c >= 'A' && c <= 'Z';
+	return (c >= 'A') && (c <= 'Z');
 }
 
 
-int isalpha(int c)
+int lib_isalpha(int c)
 {
-	return islower(c) || isupper(c);
+	return lib_islower(c) || lib_isupper(c);
 }
 
 
-int isdigit(int c)
+int lib_isdigit(int c)
 {
-	return c >= '0' && c <= '9';
+	return (c >= '0') && (c <= '9');
 }
 
 
-int isblank(int c)
+int lib_isblank(int c)
 {
-	return c == '\t' || c == ' ';
+	return (c == ' ') || (c == '\t');
 }
 
 
-int isspace(int c)
+int lib_isspace(int c)
 {
-	return isblank(c) || (c >= '\n' && c <= '\r');
+	return lib_isblank(c) || ((c >= '\n') && (c <= '\r'));
 }
 
 
-int isgraph(int c)
+int lib_isgraph(int c)
 {
-	return c > ' ' && c < 0x7f;
+	return (c > ' ') && (c < 0x7f);
 }
 
 
-int isprint(int c)
+int lib_isprint(int c)
 {
-	return c >= ' ' && c < 0x7f;
+	return (c >= ' ') && (c < 0x7f);
 }

@@ -1,12 +1,12 @@
 /*
  * Phoenix-RTOS
  *
- * phoenix-rtos loader
+ * Operating system loader
  *
- * format - code derived from libphoenix
+ * Data format conversion
  *
  * Copyright 2017, 2021 Phoenix Systems
- * Author: Adrian Kepka, Hubert Buczynski
+ * Author: Adrian Kepka, Hubert Buczynski, Lukasz Kosinski
  *
  * This file is part of Phoenix-RTOS.
  *
@@ -14,7 +14,6 @@
  */
 
 #include "lib.h"
-#include "format.h"
 
 #include <hal/hal.h>
 
@@ -37,7 +36,7 @@
 
 #define GET_UNSIGNED(number, flags, args) \
 	do { \
-		if ((flags)&FLAG_64BIT) \
+		if ((flags) & FLAG_64BIT) \
 			(number) = va_arg((args), u64); \
 		else \
 			(number) = va_arg((args), u32); \
@@ -46,60 +45,56 @@
 
 #define GET_SIGNED(number, flags, args) \
 	do { \
-		if ((flags)&FLAG_64BIT) \
+		if ((flags) & FLAG_64BIT) \
 			(number) = va_arg((args), s64); \
 		else \
 			(number) = va_arg((args), s32); \
 	} while (0)
 
 
-union float_u32 {
+typedef union {
 	float f;
 	u32 u;
-};
+} float_u32;
 
-union double_u64 {
+
+typedef union {
 	double d;
 	u64 u;
-};
+} double_u64;
 
-static inline double format_doubleFromU64(u64 ui)
+
+static inline double lib_formatDoubleFromU64(u64 ui)
 {
-	union double_u64 u;
-
-	u.u = ui;
+	double_u64 u = { .u = ui };
 	return u.d;
 }
 
-static inline u64 format_u64FromDouble(double d)
-{
-	union double_u64 u;
 
-	u.d = d;
+static inline u64 lib_formatU64FromDouble(double d)
+{
+	double_u64 u = { .d = d };
 	return u.u;
 }
 
-static inline float format_floatFromU32(u32 ui)
-{
-	union float_u32 u;
 
-	u.u = ui;
+static inline float lib_formatFloatFromU32(u32 ui)
+{
+	float_u32 u = { .u = ui };
 	return u.f;
 }
 
 
-static inline u32 format_u32FromFloat(float f)
+static inline u32 lib_formatU32FromFloat(float f)
 {
-	union float_u32 u;
-
-	u.f = f;
+	float_u32 u = { .f = f };
 	return u.u;
 }
 
 
-static void *format_memchr(const void *s, int c, size_t n)
+static void *lib_formatMemchr(const void *s, int c, size_t n)
 {
-	int i;
+	size_t i;
 
 	for (i = 0; i < n; ++i, ++s) {
 		if (*(char *)s == c)
@@ -109,13 +104,13 @@ static void *format_memchr(const void *s, int c, size_t n)
 	return NULL;
 }
 
-static inline float format_modff(float x, float *integral_out)
+
+static float lib_formatModff(float x, float *integral_out)
 {
-	int h;
 	float high_int, low, low_int, frac;
+	int h;
 
 	if (x > 1048576.0f) {
-
 		h = (int)(x / 1048576.0f);
 		high_int = (float)h * 1048576.0f;
 		low = x - high_int;
@@ -123,6 +118,7 @@ static inline float format_modff(float x, float *integral_out)
 		low_int = (float)(int)low;
 		frac = low - low_int;
 		*integral_out = high_int * 1048576.0f + low_int;
+
 		return frac;
 	}
 
@@ -134,55 +130,57 @@ static inline float format_modff(float x, float *integral_out)
 }
 
 
-static inline u32 format_fracToU32(float frac, int float_frac_len, float *overflow)
+static u32 lib_formatFracToU32(float frac, int float_frac_len, float *overflow)
 {
-	const u32 s_powers10[] = { 1, 10, 100, 1000, 10000, 100000, 1000000, 10000000, 100000000, 1000000000, };
+	const u32 s_powers10[] = { 1, 10, 100, 1000, 10000, 100000, 1000000, 10000000, 100000000, 1000000000 };
 	const u32 mult = s_powers10[float_frac_len];
+	u32 ret;
 
 	frac *= (float)mult;
 
 	/* Ensure proper rounding */
 	frac += 0.5f;
-	u32 ret = (u32)(s32)frac;
+	ret = (u32)(s32)frac;
 
 	if (ret >= mult) {
 		*overflow += 1;
 		ret -= mult;
 	}
+
 	return ret;
 }
 
 
-static void format_sprintf_num(void *ctx, feedfunc feed, u64 num64, u32 flags, int min_number_len, int float_frac_len)
+static void lib_formatSprintfNum(void *ctx, void (*feed)(void *, char), u64 num64, u32 flags, int min_number_len, int float_frac_len)
 {
-	const char *digits = (flags & FLAG_LARGE_DIGITS) ? "0123456789ABCDEF" : "0123456789abcdef",
-			   *prefix = (flags & FLAG_LARGE_DIGITS) ? "X0" : "x0";
-	char tmp_buf[32];
-	char sign = 0;
-	char *tmp = tmp_buf;
+	const char *digits = (flags & FLAG_LARGE_DIGITS) ? "0123456789ABCDEF" : "0123456789abcdef";
+	const char *prefix = (flags & FLAG_LARGE_DIGITS) ? "X0" : "x0", *s;
+	u32 num32, num_high, frac32, frac_left, higher_part, lower_part;
+	int pad_len, frac_len, int_len, temp, exp = 0, exps = 0, tz = 1;
+	char tmp_buf[32], sign = 0, *tmp = tmp_buf;
+	float f, integral, fracf, higher_part_f;
+	long long frac, temp1, temp2;
+	double d, exp_val;
+	unsigned int i;
 
-	if ((flags & FLAG_NULLMARK) && num64 == 0) {
-		const char *s = "(nil)";
-		int i;
-		for (i = 0; i < hal_strlen(s); i++)
+	if ((flags & FLAG_NULLMARK) && !num64) {
+		s = "(nil)";
+
+		for (i = 0; i < hal_strlen(s); ++i)
 			feed(ctx, s[i]);
 	}
 
 	if (flags & FLAG_DOUBLE) {
-		double d = format_doubleFromU64(num64), exp_val;
-		/* exponent, exponent sign, trailing zeros, fraction length, integer length, temp */
-		int exp = 0, exps = 0, tz = 1, frac_len, int_len, temp, i;
-		/* fraction, temporary vars */
-		long long frac, temp1, temp2;
+		d = lib_formatDoubleFromU64(num64);
 
-		/* check sign */
+		/* Check sign */
 		if ((num64 >> 63) & 1) {
 			sign = '-';
 			d = -d;
 		}
-		num64 = format_u64FromDouble(d);
+		num64 = lib_formatU64FromDouble(d);
 
-		/* check zero */
+		/* Check zero */
 		if (!(num64 & 0x7fffffffffffffff)) {
 			if (sign)
 				feed(ctx, sign);
@@ -191,20 +189,19 @@ static void format_sprintf_num(void *ctx, feedfunc feed, u64 num64, u32 flags, i
 			return;
 		}
 
-		/* check special cases */
+		/* Check special cases */
 		if (((num64 >> 52) & 0x7ff) == 0x7ff) {
-			const char *s;
-			int i;
 			if (!(num64 & 0xfffffffffffff)) {
-				/* infinity */
+				/* Infinity */
 				s = "inf";
 				if (sign)
 					feed(ctx, sign);
 			}
-			else
+			else {
 				s = "NaN";
+			}
 
-			for (i = 0; i < hal_strlen(s); i++)
+			for (i = 0; i < hal_strlen(s); ++i)
 				feed(ctx, s[i]);
 			sign = 0;
 			return;
@@ -214,52 +211,47 @@ static void format_sprintf_num(void *ctx, feedfunc feed, u64 num64, u32 flags, i
 		int_len = 1;
 
 		if ((num64 >> 52) < 0x3ff) {
-
 			temp = ((int)((num64 >> 52) & 0x7ff) - 1023) / -4;
-
 			exp_val = 10;
 
-			for (i = 0; i < 9; i++) {
+			for (i = 0; i < 9; ++i) {
 				if ((temp >> i) & 1)
 					d *= exp_val;
 				exp_val *= exp_val;
 			}
-
 			temp1 = d;
 
-			num64 = format_u64FromDouble(d);
-			/* shift fraction left until it's >= 1*/
+			num64 = lib_formatU64FromDouble(d);
+			/* Shift fraction left until it's >= 1*/
 			while ((num64 >> 52) < 0x3ff) {
-				exp++;
+				++exp;
 				d *= 10;
-				num64 = format_u64FromDouble(d);
+				num64 = lib_formatU64FromDouble(d);
 			}
 			exp = temp + exp;
 		}
 
-		if (exp == 0) {
-			/* no shifting - number is larger than 1 */
+		if (!exp) {
+			/* No shifting - number is larger than 1 */
 			exps = 1;
-
 			temp = ((int)((num64 >> 52) & 0x7ff) - 1023) / 4;
-
 			exp_val = 10;
 
-			for (i = 0; i < 9; i++) {
+			for (i = 0; i < 9; ++i) {
 				if ((temp >> i) & 1)
 					d /= exp_val;
 				exp_val *= exp_val;
 			}
 
-			num64 = format_u64FromDouble(d);
+			num64 = lib_formatU64FromDouble(d);
 			while ((num64 >> 52) >= 0x3ff) {
-				exp++;
+				++exp;
 				d /= 10;
-				num64 = format_u64FromDouble(d);
+				num64 = lib_formatU64FromDouble(d);
 			}
 
 			d *= 10;
-			exp--;
+			--exp;
 			exp = temp + exp;
 			if (exp < float_frac_len) {
 				int_len += exp;
@@ -279,7 +271,7 @@ static void format_sprintf_num(void *ctx, feedfunc feed, u64 num64, u32 flags, i
 		frac = d;
 		temp1 = frac / 10;
 
-		/* rounding */
+		/* Rounding */
 		frac += 5;
 		frac /= 10;
 		temp2 = frac;
@@ -300,16 +292,17 @@ static void format_sprintf_num(void *ctx, feedfunc feed, u64 num64, u32 flags, i
 		if (temp2 > temp1) {
 			frac /= 10;
 			if (exps == 1)
-				exp++;
+				++exp;
 			else
-				exp--;
+				--exp;
 		}
 
-		if (exp > frac_len || (!exps & (exp >= 5))) {
+		if ((exp > frac_len) || (!exps & (exp >= 5))) {
 			*tmp++ = digits[exp % 10];
 			exp /= 10;
-			if (!exp)
+			if (!exp) {
 				*tmp++ = '0';
+			}
 			else {
 				while (exp) {
 					*tmp++ = digits[exp % 10];
@@ -317,7 +310,7 @@ static void format_sprintf_num(void *ctx, feedfunc feed, u64 num64, u32 flags, i
 				}
 			}
 
-			/* check exp sign */
+			/* Check exp sign */
 			if (exps)
 				*tmp++ = '+';
 			else
@@ -348,55 +341,51 @@ static void format_sprintf_num(void *ctx, feedfunc feed, u64 num64, u32 flags, i
 			*tmp++ = digits[frac % 10];
 			frac /= 10;
 		}
-		/* we need num32 to be 0 and num64 to not be 0 so the rest of the function won't mess our conversion */
+		/* We need num32 to be 0 and num64 to not be 0 so the rest of the function won't mess our conversion */
 		num64 = 0x100000000;
 	}
 
 	if (flags & FLAG_FLOAT) {
-		float f = format_floatFromU32((u32)num64);
+		f = lib_formatFloatFromU32((u32)num64);
 
 		if (f < 0) {
 			sign = '-';
 			f = -f;
 		}
+		fracf = lib_formatModff(f, &integral);
 
-		float integral;
-		float frac = format_modff(f, &integral);
-
-		/* max decimal digits to fit into uint32 : 9 */
+		/* Max decimal digits to fit into uint32 : 9 */
 		if (float_frac_len > 9)
 			float_frac_len = 9;
 
-		u32 frac32 = format_fracToU32(frac, float_frac_len, &integral);
-		int frac_left = float_frac_len;
+		frac32 = lib_formatFracToU32(fracf, float_frac_len, &integral);
+		frac_left = float_frac_len;
 
 		while (frac_left-- > 0) {
 			*tmp++ = digits[frac32 % 10];
 			frac32 /= 10;
 		}
 
-		if (float_frac_len > 0 || (flags & FLAG_ALTERNATE))
+		if ((float_frac_len > 0) || (flags & FLAG_ALTERNATE))
 			*tmp++ = '.';
 
-		if (integral < 4294967296.0f)
+		if (integral < 4294967296.0f) {
 			num64 = (u32)integral;
+		}
 		else {
-			float higher_part_f = (integral / 4294967296.0f);
-			u32 higher_part = (u32)higher_part_f;
-			u32 lower_part = (u32)(integral - (higher_part * 4294967296.0f));
-
+			higher_part_f = (integral / 4294967296.0f);
+			higher_part = (u32)higher_part_f;
+			lower_part = (u32)(integral - (higher_part * 4294967296.0f));
 			num64 = (((u64)higher_part) << 32) | lower_part;
 			flags |= FLAG_64BIT;
 		}
 	}
 
-	u32 num32 = (u32)num64;
-	u32 num_high = (u32)(num64 >> 32);
+	num32 = (u32)num64;
+	num_high = (u32)(num64 >> 32);
 
 	if (flags & FLAG_SIGNED) {
-
 		if (flags & FLAG_64BIT) {
-
 			if ((s32)num_high < 0) {
 				num64 = -(s64)num64;
 				num32 = (u32)num64;
@@ -411,36 +400,33 @@ static void format_sprintf_num(void *ctx, feedfunc feed, u64 num64, u32 flags, i
 			}
 		}
 
-		if (sign == 0) {
-			if (flags & FLAG_SPACE) {
+		if (!sign) {
+			if (flags & FLAG_SPACE)
 				sign = ' ';
-			}
-			else if (flags & FLAG_PLUS) {
+			else if (flags & FLAG_PLUS)
 				sign = '+';
-			}
 		}
 	}
 
-	if ((flags & FLAG_64BIT) && num_high == 0x0)
+	if ((flags & FLAG_64BIT) && !num_high)
 		flags &= ~FLAG_64BIT;
 
-	if (num64 == 0) {
+	if (!num64) {
 		*tmp++ = '0';
 	}
 	else if (flags & FLAG_HEX) {
 		if (flags & FLAG_64BIT) {
-			int i;
 			for (i = 0; i < 8; ++i) {
 				*tmp++ = digits[num32 & 0x0f];
 				num32 >>= 4;
 			}
-			while (num_high != 0) {
+			while (num_high) {
 				*tmp++ = digits[num_high & 0x0f];
 				num_high >>= 4;
 			}
 		}
 		else {
-			while (num32 != 0) {
+			while (num32) {
 				*tmp++ = digits[num32 & 0x0f];
 				num32 >>= 4;
 			}
@@ -452,7 +438,6 @@ static void format_sprintf_num(void *ctx, feedfunc feed, u64 num64, u32 flags, i
 	}
 	else if (flags & FLAG_OCT) {
 		if (flags & FLAG_64BIT) {
-			int i;
 			// 30 bits
 			for (i = 0; i < 10; ++i) {
 				*tmp++ = digits[num32 & 0x07];
@@ -463,41 +448,38 @@ static void format_sprintf_num(void *ctx, feedfunc feed, u64 num64, u32 flags, i
 			*tmp++ = digits[num32 & 0x07];
 			num_high >>= 1;
 
-			while (num_high != 0) {
+			while (num_high) {
 				*tmp++ = digits[num_high & 0x07];
 				num_high >>= 3;
 			}
 		}
 		else {
-			while (num32 != 0) {
+			while (num32) {
 				*tmp++ = digits[num32 & 0x07];
 				num32 >>= 3;
 			}
 		}
-		if (flags & FLAG_ALTERNATE) {
+		if (flags & FLAG_ALTERNATE)
 			*tmp++ = '0';
-		}
 	}
 	else {
 		if (flags & FLAG_64BIT) { /* TODO: optimize */
-			while (num64 != 0) {
+			while (num64) {
 				*tmp++ = digits[num64 % 10];
 				num64 /= 10;
 			}
 		}
 		else {
-			while (num32 != 0) {
+			while (num32) {
 				*tmp++ = digits[num32 % 10];
 				num32 /= 10;
 			}
 		}
 	}
+	pad_len = min_number_len - (tmp - tmp_buf) - !!sign;
 
-	const int digits_cnt = tmp - tmp_buf;
-	int pad_len = min_number_len - digits_cnt - (sign ? 1 : 0);
-
-	/* pad, if needed */
-	if (pad_len > 0 && !(flags & FLAG_ZERO)) {
+	/* Pad, if needed */
+	if ((pad_len > 0) && !(flags & FLAG_ZERO)) {
 		while (pad_len-- > 0)
 			feed(ctx, ' ');
 	}
@@ -505,22 +487,29 @@ static void format_sprintf_num(void *ctx, feedfunc feed, u64 num64, u32 flags, i
 	if (sign)
 		feed(ctx, sign);
 
-	/* pad, if needed */
-	if (pad_len > 0 && (flags & FLAG_ZERO)) {
+	/* Pad, if needed */
+	if ((pad_len > 0) && (flags & FLAG_ZERO)) {
 		while (pad_len-- > 0)
 			feed(ctx, '0');
 	}
 
-	/* copy reversed */
+	/* Copy reversed */
 	while ((--tmp) >= tmp_buf)
 		feed(ctx, *tmp);
 }
 
 
-void format_parse(void *ctx, feedfunc feed, const char *format, va_list args)
+void lib_formatParse(void *ctx, void (*feed)(void *, char), const char *format, va_list args)
 {
+	const char *s;
+	u32 flags, min_number_len;
+	int float_frac_len;
+	unsigned int i, l;
+	char *p, c, fmt;
+	u64 number;
+
 	for (;;) {
-		char fmt = *format++;
+		fmt = *format++;
 
 		if (!fmt)
 			break;
@@ -531,14 +520,15 @@ void format_parse(void *ctx, feedfunc feed, const char *format, va_list args)
 		}
 
 		fmt = *format++;
-		if (fmt == 0) {
+		if (!fmt) {
 			feed(ctx, '%');
 			break;
 		}
 
-		/* precision, padding (set default to 6 digits) */
-		u32 flags = 0, min_number_len = 0;
-		int float_frac_len = -1;
+		/* Precision, padding (set default to 6 digits) */
+		flags = 0;
+		min_number_len = 0;
+		float_frac_len = -1;
 
 		for (;;) {
 			if (fmt == ' ')
@@ -558,11 +548,11 @@ void format_parse(void *ctx, feedfunc feed, const char *format, va_list args)
 
 			fmt = *format++;
 		}
-		if (fmt == 0)
+		if (!fmt)
 			break;
 
-		/* leading number digits-cnt */
-		while (fmt >= '0' && fmt <= '9') {
+		/* Leading number digits-cnt */
+		while ((fmt >= '0') && (fmt <= '9')) {
 			min_number_len = min_number_len * 10 + fmt - '0';
 			fmt = *format++;
 		}
@@ -570,26 +560,26 @@ void format_parse(void *ctx, feedfunc feed, const char *format, va_list args)
 		if (flags & FLAG_FIELD_WIDTH_STAR)
 			min_number_len = va_arg(args, int);
 
-		if (fmt == 0)
+		if (!fmt)
 			break;
 
-		/* fractional number digits-cnt (only a single digit is acceptable in this impl.) */
+		/* Fractional number digits-cnt (only a single digit is acceptable in this impl.) */
 		if (fmt == '.') {
 			float_frac_len = 0;
 			fmt = *format++;
-			while (fmt >= '0' && fmt <= '9') {
+			while ((fmt >= '0') && (fmt <= '9')) {
 				float_frac_len = float_frac_len * 10 + fmt - '0';
 				fmt = *format++;
 			}
 		}
-		if (fmt == 0)
+		if (!fmt)
 			break;
 
 		if (fmt == '*') {
 			float_frac_len = va_arg(args, int);
 			fmt = *format++;
 
-			if (fmt == 0)
+			if (!fmt)
 				break;
 		}
 
@@ -601,7 +591,7 @@ void format_parse(void *ctx, feedfunc feed, const char *format, va_list args)
 				fmt = *format++;
 			}
 		}
-		if (fmt == 0)
+		if (!fmt)
 			break;
 
 		if (fmt == 'z') {
@@ -609,19 +599,18 @@ void format_parse(void *ctx, feedfunc feed, const char *format, va_list args)
 			if (sizeof(size_t) == sizeof(u64))
 				flags |= FLAG_64BIT;
 		}
-		if (fmt == 0)
+		if (!fmt)
 			break;
 
-		u64 number = 0;
+		number = 0;
 		switch (fmt) {
-			case 's': {
-				const char *s = va_arg(args, char *);
+			case 's':
+				s = va_arg(args, char *);
 				if (s == NULL)
 					s = "(null)";
 
-				int i, l;
 				if (min_number_len > 0) {
-					char *p = format_memchr(s, 0, min_number_len);
+					p = lib_formatMemchr(s, 0, min_number_len);
 					if (p != NULL)
 						l = p - s;
 					else
@@ -634,69 +623,74 @@ void format_parse(void *ctx, feedfunc feed, const char *format, va_list args)
 				if (float_frac_len >= 0)
 					l = min(l, float_frac_len);
 
-				if (l < min_number_len && !(flags & FLAG_MINUS)) {
-					for (i = 0; i < (min_number_len - l); i++)
+				if ((l < min_number_len) && !(flags & FLAG_MINUS)) {
+					for (i = 0; i < (min_number_len - l); ++i)
 						feed(ctx, ' ');
 				}
 
-				for (i = 0; i < l; i++)
+				for (i = 0; i < l; ++i)
 					feed(ctx, s[i]);
 
-				if (l < min_number_len && (flags & FLAG_MINUS)) {
-					for (i = 0; i < (min_number_len - l); i++)
+				if ((l < min_number_len) && (flags & FLAG_MINUS)) {
+					for (i = 0; i < (min_number_len - l); ++i)
 						feed(ctx, ' ');
 				}
-
 				break;
-			}
-			case 'c': {
-				const char c = (char)va_arg(args, int);
+
+			case 'c':
+				c = (char)va_arg(args, int);
 				feed(ctx, c);
-
 				break;
-			}
+
 			case 'p':
 				flags |= (FLAG_HEX | FLAG_NULLMARK | FLAG_ZERO);
 				if (sizeof(void *) == sizeof(u64))
 					flags |= FLAG_64BIT;
 				min_number_len = sizeof(void *) * 2;
 				GET_UNSIGNED(number, flags, args);
-				format_sprintf_num(ctx, feed, number, flags, min_number_len, float_frac_len);
+				lib_formatSprintfNum(ctx, feed, number, flags, min_number_len, float_frac_len);
 				break;
+
 			case 'o':
 				flags |= FLAG_OCT;
 				GET_UNSIGNED(number, flags, args);
-				format_sprintf_num(ctx, feed, number, flags, min_number_len, float_frac_len);
+				lib_formatSprintfNum(ctx, feed, number, flags, min_number_len, float_frac_len);
 				break;
+
 			case 'X':
 				flags |= FLAG_LARGE_DIGITS;
 			case 'x':
 				flags |= FLAG_HEX;
 			case 'u':
 				GET_UNSIGNED(number, flags, args);
-				format_sprintf_num(ctx, feed, number, flags, min_number_len, float_frac_len);
+				lib_formatSprintfNum(ctx, feed, number, flags, min_number_len, float_frac_len);
 				break;
+
 			case 'd':
 			case 'i':
 				flags |= FLAG_SIGNED;
 				GET_SIGNED(number, flags, args);
-				format_sprintf_num(ctx, feed, number, flags, min_number_len, float_frac_len);
+				lib_formatSprintfNum(ctx, feed, number, flags, min_number_len, float_frac_len);
 				break;
+
 			case 'g':
 				flags |= FLAG_DOUBLE;
 				float_frac_len = float_frac_len >= 0 ? float_frac_len : 6;
-				number = format_u64FromDouble((double)va_arg(args, double));
-				format_sprintf_num(ctx, feed, number, flags, min_number_len, float_frac_len);
+				number = lib_formatU64FromDouble((double)va_arg(args, double));
+				lib_formatSprintfNum(ctx, feed, number, flags, min_number_len, float_frac_len);
 				break;
+
 			case 'f':
 				flags |= FLAG_FLOAT;
 				float_frac_len = (float_frac_len >= 0) ? float_frac_len : 6;
-				number = format_u32FromFloat((float)va_arg(args, double));
-				format_sprintf_num(ctx, feed, number, flags, min_number_len, float_frac_len);
+				number = lib_formatU32FromFloat((float)va_arg(args, double));
+				lib_formatSprintfNum(ctx, feed, number, flags, min_number_len, float_frac_len);
 				break;
+
 			case '%':
 				feed(ctx, '%');
 				break;
+
 			default:
 				feed(ctx, '%');
 				feed(ctx, fmt);

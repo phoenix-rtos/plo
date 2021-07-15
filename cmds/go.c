@@ -1,12 +1,12 @@
 /*
  * Phoenix-RTOS
  *
- * plo - perating system loader
+ * Operating system loader
  *
- * go command
+ * Start kernel
  *
  * Copyright 2021 Phoenix Systems
- * Author: Hubert Buczynski
+ * Author: Hubert Buczynski, Lukasz Kosinski
  *
  * This file is part of Phoenix-RTOS.
  *
@@ -18,8 +18,7 @@
 #include <devices/devs.h>
 #include <syspage.h>
 #include <hal/hal.h>
-#include <lib/log.h>
-#include <lib/console.h>
+#include <lib/lib.h>
 
 
 static void cmd_goInfo(void)

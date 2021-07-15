@@ -1,9 +1,9 @@
 /*
  * Phoenix-RTOS
  *
- * Phoenix-RTOS loader
+ * Operating system loader
  *
- * mpu command
+ * Print MPU regions
  *
  * Copyright 2021 Phoenix Systems
  * Author: Gerard Swiderski

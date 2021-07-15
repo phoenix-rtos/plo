@@ -1,9 +1,9 @@
 /*
  * Phoenix-RTOS
  *
- * plo - perating system loader
+ * Operating system loader
  *
- * Call command
+ * Call loader script
  *
  * Copyright 2021 Phoenix Systems
  * Author: Hubert Buczynski

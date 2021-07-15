@@ -1,12 +1,12 @@
 /*
  * Phoenix-RTOS
  *
- * plo - perating system loader
+ * Operating system loader
  *
- * Console command
+ * Set console device
  *
  * Copyright 2021 Phoenix Systems
- * Author: Hubert Buczynski
+ * Author: Hubert Buczynski, Lukasz Kosinski
  *
  * This file is part of Phoenix-RTOS.
  *
@@ -16,8 +16,7 @@
 #include "cmd.h"
 
 #include <hal/hal.h>
-#include <lib/log.h>
-#include <lib/console.h>
+#include <lib/lib.h>
 
 
 static void cmd_consoleInfo(void)
@@ -54,7 +53,7 @@ static int cmd_console(int argc, char *argv[])
 		return -EINVAL;
 	}
 
-	console_set(major, minor);
+	lib_consoleSet(major, minor);
 	return EOK;
 }
 

@@ -1,9 +1,9 @@
 /*
  * Phoenix-RTOS
  *
- * plo - perating system loader
+ * Operating system loader
  *
- * copy command
+ * Copy data between devices
  *
  * Copyright 2021 Phoenix Systems
  * Author: Hubert Buczynski

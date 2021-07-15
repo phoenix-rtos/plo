@@ -1,9 +1,9 @@
 /*
  * Phoenix-RTOS
  *
- * plo - perating system loader
+ * Operating system loader
  *
- * Echo command
+ * Toggle printing loader logs
  *
  * Copyright 2021 Phoenix Systems
  * Author: Hubert Buczynski

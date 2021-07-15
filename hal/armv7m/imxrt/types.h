@@ -38,15 +38,6 @@ typedef vu8 *reg8;
 typedef vu16 *reg16;
 typedef vu32 *reg32;
 
-
-/* stdarg definitions */
-typedef u8 *va_list;
-
-#define va_start(ap, parmN) ((void)((ap) = (va_list)((char *)(&parmN) + sizeof(parmN))))
-#define va_arg(ap, type)    (*(type *)(((*(u8 **)&(ap)) += sizeof(type)) - (sizeof(type))))
-#define va_end(ap)          ((void)0)
-
-
 typedef unsigned int addr_t;
 typedef unsigned int size_t;
 typedef int ssize_t;

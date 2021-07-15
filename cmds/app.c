@@ -1,9 +1,9 @@
 /*
  * Phoenix-RTOS
  *
- * plo - perating system loader
+ * Operating system loader
  *
- * Load application command
+ * Load application
  *
  * Copyright 2020-2021 Phoenix Systems
  * Author: Hubert Buczynski, Gerard Swiderski

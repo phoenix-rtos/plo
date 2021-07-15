@@ -1,12 +1,12 @@
 /*
  * Phoenix-RTOS
  *
- * phoenix-rtos loader
+ * Operating system loader
  *
- * printf - code derived from libphoenix
+ * Send formatted data to console - code derived from libphoenix
  *
  * Copyright 2017, 2021 Phoenix Systems
- * Author: Adrian Kepka, Hubert Buczynski
+ * Author: Adrian Kepka, Hubert Buczynski, Lukasz Kosinski
  *
  * This file is part of Phoenix-RTOS.
  *
@@ -14,15 +14,18 @@
  */
 
 #include "lib.h"
-#include "format.h"
-#include "console.h"
+
+#include <hal/hal.h>
+
+
+/* Format parser */
+extern void lib_formatParse(void *ctx, void (*feed)(void *, char), const char *format, va_list args);
 
 
 static void lib_printfFeed(void *context, char c)
 {
-	size_t *n = context;
-	*n = *n + 1;
-	console_putc(c);
+	(*(size_t *)context)++;
+	lib_consolePutc(c);
 }
 
 
@@ -32,7 +35,7 @@ int lib_printf(const char *format, ...)
 	size_t n = 0;
 
 	va_start(arg, format);
-	format_parse(&n, lib_printfFeed, format, arg);
+	lib_formatParse(&n, lib_printfFeed, format, arg);
 	va_end(arg);
 
 	return n;
