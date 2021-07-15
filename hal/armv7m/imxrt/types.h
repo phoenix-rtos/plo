@@ -43,7 +43,7 @@ typedef unsigned int size_t;
 typedef int ssize_t;
 typedef unsigned long long time_t;
 
-
+#pragma pack(push, 1)
 typedef struct {
 	struct {
 		u32 type;
@@ -54,7 +54,7 @@ typedef struct {
 		} table[16] __attribute__((aligned(8)));
 		u32 map[16]; /* ((u32)-1) = map is not assigned */
 	} mpu;
-} syspage_hal_t;
-
+} hal_syspage_t;
+#pragma pack(pop)
 
 #endif

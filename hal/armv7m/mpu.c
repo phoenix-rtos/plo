@@ -203,7 +203,7 @@ int mpu_regionAlloc(addr_t addr, addr_t end, u32 attr, u32 mapId, unsigned int e
 }
 
 
-void mpu_getHalData(syspage_hal_t *hal)
+void mpu_getHalData(hal_syspage_t *hal)
 {
 	unsigned int i;
 

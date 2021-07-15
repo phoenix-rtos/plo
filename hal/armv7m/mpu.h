@@ -45,8 +45,8 @@ extern void mpu_init(void);
 extern int mpu_regionAlloc(addr_t addr, addr_t end, u32 attr, u32 mapId, unsigned int enable);
 
 
-/* Get MPU regions setup into syspage_hal_t structure */
-extern void mpu_getHalData(syspage_hal_t *hal);
+/* Get MPU regions setup into hal_syspage_t structure */
+extern void mpu_getHalData(hal_syspage_t *hal);
 
 
 #endif
