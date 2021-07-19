@@ -27,8 +27,8 @@
 #define TTYBIOS_MAX_CNT 1
 
 
-/* UARTs configuration (COM1, COM2, GALILEO1) */
-#define UART_MAX_CNT  3
+/* UARTs configuration (COM1, COM2) */
+#define UART_MAX_CNT  2
 #define UART_BAUDRATE 115200
 
 /* Standard PC COMs */

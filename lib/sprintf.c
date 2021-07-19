@@ -1,7 +1,7 @@
 /*
  * Phoenix-RTOS
  *
- * Operating system kernel
+ * Operating system loader
  *
  * Send formatted data to string buffer
  *
