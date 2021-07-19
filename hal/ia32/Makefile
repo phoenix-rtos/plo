@@ -7,6 +7,7 @@
 #
 
 CFLAGS += -DVADDR_KERNEL_BASE=$(VADDR_KERNEL_BASE)
+CFLAGS += -I../plo/hal/ia32
 LDFLAGS += --defsym _plo_bss=__bss_start
 
 INIT_FLASH := 0x7c00

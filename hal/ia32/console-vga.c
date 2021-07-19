@@ -117,8 +117,7 @@ void hal_consolePrint(const char *s)
 					break;
 
 				case '\e':
-					for (i = 0; i < sizeof(halconsole_common.parms); i++)
-						halconsole_common.parms[i] = 0;
+					hal_memset(halconsole_common.parms, 0, sizeof(halconsole_common.parms));
 					halconsole_common.parmi = 0;
 					halconsole_common.esc = esc_esc;
 					break;
@@ -138,8 +137,7 @@ void hal_consolePrint(const char *s)
 				case esc_esc:
 					switch (c) {
 						case '[':
-							for (i = 0; i < sizeof(halconsole_common.parms); i++)
-								halconsole_common.parms[i] = 0;
+							hal_memset(halconsole_common.parms, 0, sizeof(halconsole_common.parms));
 							halconsole_common.parmi = 0;
 							halconsole_common.esc = esc_csi;
 							break;

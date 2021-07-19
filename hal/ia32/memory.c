@@ -20,7 +20,7 @@
 
 
 /* Flushes 8042 keyboard controller buffers */
-static inline void memory_empty8042(void)
+static void memory_empty8042(void)
 {
 	unsigned char status;
 
@@ -71,6 +71,12 @@ int hal_memoryGetEntry(unsigned int *offs, mem_entry_t *entry)
 	*offs = next;
 
 	return ret;
+}
+
+
+int hal_memAddMap(addr_t start, addr_t end, u32 attr, u32 mapId)
+{
+	return EOK;
 }
 
 
