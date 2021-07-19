@@ -21,7 +21,7 @@
 extern int hal_memoryGetEntry(unsigned int *offs, mem_entry_t *entry);
 
 
-__attribute__((noreturn)) void hal_cpuJump(addr_t addr)
+void hal_cpuJump(addr_t addr)
 {
 	/* FIXME: temporary HAL syspage usage, should be removed after new syspage implementation is added */
 	syspage_hal_t *syspage = (syspage_hal_t *)syspage_getAddress();

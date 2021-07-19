@@ -27,6 +27,7 @@ enum { hal_cpuICache = 0, hal_cpuDCache };
 /* Function initializes clocks, peripherals and basic controllers */
 extern void hal_init(void);
 
+
 /* Function resets basic controllers */
 extern void hal_done(void);
 
@@ -34,11 +35,13 @@ extern void hal_done(void);
 /* Function returns information about CPU */
 extern const char *hal_cpuInfo(void);
 
+
 /* Function invalidates data or instruction cache */
 extern void hal_cpuInvCache(unsigned int type, addr_t addr, size_t sz);
 
+
 /* Function starts kernel loaded into memory */
-extern int hal_cpuJump(addr_t addr);
+extern void hal_cpuJump(addr_t addr) __attribute__((noreturn));
 
 
 /* Function translates virtual address into physical */
@@ -52,8 +55,10 @@ extern int hal_memAddMap(addr_t start, addr_t end, u32 attr, u32 mapId);
 /* Function enables interrupts */
 extern void hal_interruptsEnable(void);
 
+
 /* Function disables interrupts */
 extern void hal_interruptsDisable(void);
+
 
 /* Function registers interrupts in controller */
 extern int hal_interruptsSet(unsigned int irq, int (*isr)(unsigned int, void *), void *data);

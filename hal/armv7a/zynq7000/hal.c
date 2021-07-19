@@ -92,7 +92,7 @@ int hal_memAddMap(addr_t start, addr_t end, u32 attr, u32 mapId)
 }
 
 
-int hal_cpuJump(addr_t addr)
+void hal_cpuJump(addr_t addr)
 {
 	syspage_save();
 
@@ -105,9 +105,7 @@ int hal_cpuJump(addr_t addr)
 		 :
 		 : "r"(addr), "r"(syspage_getAddress()));
 
-	hal_interruptsEnable();
-
-	return -1;
+	__builtin_unreachable();
 }
 
 
