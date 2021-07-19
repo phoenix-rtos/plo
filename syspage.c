@@ -446,9 +446,11 @@ int syspage_validateAddrMap(unsigned int opt, addr_t addr, u8 id, unsigned int a
 		pmap = &syspage_common.maps[i];
 
 		if (addr >= pmap->map.start && addr < pmap->map.end) {
+#if 0
 			/* optional check if addr is below map top */
 			if ((opt & flagValidateTop) != 0 && addr >= pmap->top)
 				break;
+#endif
 
 			/* optional check of map id */
 			if ((opt & flagValidateMap) != 0 && id != i)
