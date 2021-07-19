@@ -328,7 +328,7 @@ static int flashdrv_init(unsigned int minor)
 	if (flashcfg_getCfg(ctx) != 0)
 		return -EINVAL;
 
-	lib_printf("\ndev/flash: Initializing flash(%d.%d)", DEV_FLASH, minor);
+	lib_printf("\ndev/flash: Initializing flash(%d.%d)", DEV_STORAGE, minor);
 
 	return res;
 }
@@ -345,5 +345,5 @@ __attribute__((constructor)) static void flashdrv_reg(void)
 		.map = flashdrv_map
 	};
 
-	devs_register(DEV_FLASH, FLASH_NO, &h);
+	devs_register(DEV_STORAGE, FLASH_NO, &h);
 }

@@ -18,9 +18,10 @@
 
 #include <hal/hal.h>
 
-#define DEV_UART  0
-#define DEV_USB   1
-#define DEV_FLASH 2
+#define DEV_UART    0
+#define DEV_USB     1
+#define DEV_STORAGE 2
+#define DEV_TTY     3
 
 
 enum { dev_isMappable = 0, dev_isNotMappable };
