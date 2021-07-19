@@ -56,7 +56,6 @@ static char *const wcache = (char *const)ADDR_WCACHE;
 struct {
 	/* Disks info */
 	diskbios_t disks[DISKBIOS_MAX_CNT];
-	unsigned char init; /* Cache handling initialized? */
 
 	/* Read cache handling */
 	unsigned char lrdn; /* Last read disk */
@@ -202,7 +201,7 @@ static ssize_t diskbios_read(unsigned int minor, addr_t offs, void *buff, size_t
 	diskbios_t *disk;
 	unsigned long long sb, eb;
 	unsigned int c, h, s, p;
-	size_t size, l = 0;
+	size_t size, n = 0;
 
 	if ((disk = diskbios_get(minor)) == NULL)
 		return -EINVAL;
@@ -232,13 +231,13 @@ static ssize_t diskbios_read(unsigned int minor, addr_t offs, void *buff, size_t
 		}
 
 		/* Read data from cache */
-		size = (sb == eb) ? len - l : SIZE_BLOCK - (offs % SIZE_BLOCK);
-		hal_memcpy((char *)buff + l, rcache + (s % BLOCKS_RCACHE) * SIZE_BLOCK + (offs % SIZE_BLOCK), size);
+		size = (sb == eb) ? len - n : SIZE_BLOCK - (offs % SIZE_BLOCK);
+		hal_memcpy((char *)buff + n, rcache + (s % BLOCKS_RCACHE) * SIZE_BLOCK + (offs % SIZE_BLOCK), size);
 		offs += size;
-		l += size;
+		n += size;
 	}
 
-	return l;
+	return n;
 }
 
 
@@ -247,7 +246,7 @@ static ssize_t diskbios_write(unsigned int minor, addr_t offs, const void *buff,
 	diskbios_t *disk;
 	unsigned long long sb, eb;
 	unsigned int c, h, s, b, p;
-	size_t size, l = 0;
+	size_t size, n = 0;
 
 	if ((disk = diskbios_get(minor)) == NULL)
 		return -EINVAL;
@@ -279,10 +278,10 @@ static ssize_t diskbios_write(unsigned int minor, addr_t offs, const void *buff,
 		}
 
 		/* Write data to cache */
-		size = (sb == eb) ? len - l : SIZE_BLOCK - (offs % SIZE_BLOCK);
-		hal_memcpy(wcache + b * SIZE_BLOCK + (offs % SIZE_BLOCK), (const char *)buff + l, size);
+		size = (sb == eb) ? len - n : SIZE_BLOCK - (offs % SIZE_BLOCK);
+		hal_memcpy(wcache + b * SIZE_BLOCK + (offs % SIZE_BLOCK), (const char *)buff + n, size);
 		offs += size;
-		l += size;
+		n += size;
 
 		/* Update cache info */
 		diskbios_common.lwdn = disk->dn;
@@ -302,7 +301,7 @@ static ssize_t diskbios_write(unsigned int minor, addr_t offs, const void *buff,
 		}
 	}
 
-	return l;
+	return n;
 }
 
 
@@ -383,11 +382,9 @@ __attribute__((constructor)) static void ttydisk_register(void)
 		.init = diskbios_init,
 	};
 
-	if (!diskbios_common.init) {
-		diskbios_common.lrdn = -1;
-		diskbios_common.lwdn = -1;
-		diskbios_common.init = 1;
-	}
+	/* Mark caches not used */
+	diskbios_common.lrdn = -1;
+	diskbios_common.lwdn = -1;
 
-	devs_register(DEV_DISK, DISKBIOS_MAX_CNT, &h);
+	devs_register(DEV_STORAGE, DISKBIOS_MAX_CNT, &h);
 }

@@ -188,9 +188,9 @@ static ttybios_t *ttybios_get(unsigned int minor)
 static ssize_t ttybios_read(unsigned int minor, addr_t offs, void *buff, size_t len, time_t timeout)
 {
 	ttybios_t *tty;
-	unsigned int l;
-	char sc, c;
 	time_t start;
+	char sc, c;
+	size_t n;
 
 	if ((tty = ttybios_get(minor)) == NULL)
 		return -EINVAL;
@@ -203,7 +203,7 @@ static ssize_t ttybios_read(unsigned int minor, addr_t offs, void *buff, size_t 
 		}
 	}
 
-	for (l = 0; l < len; l++) {
+	for (n = 0; n < len; n++) {
 		/* Complete extended key code */
 		if (tty->ekey != NULL) {
 			c = *tty->ekey++;
@@ -231,10 +231,10 @@ static ssize_t ttybios_read(unsigned int minor, addr_t offs, void *buff, size_t 
 			}
 		}
 
-		*(char *)buff++ = c;
+		*((char *)buff + n) = c;
 	}
 
-	return l;
+	return n;
 }
 
 
@@ -243,14 +243,14 @@ static ssize_t ttybios_write(unsigned int minor, addr_t offs, const void *buff, 
 {
 	ttybios_t *tty;
 	unsigned char row, col;
-	unsigned int l, i, n;
+	size_t i, j, n;
 	char c;
 
 	if ((tty = ttybios_get(minor)) == NULL)
 		return -EINVAL;
 
-	for (l = 0; l < len; l++) {
-		c = *(char *)buff++;
+	for (n = 0; n < len; n++) {
+		c = *((char *)buff + n);
 
 		/* Control character */
 		if ((c < 0x20) || (c == '\177')) {
@@ -261,8 +261,7 @@ static ssize_t ttybios_write(unsigned int minor, addr_t offs, const void *buff, 
 					break;
 
 				case '\e':
-					for (i = 0; i < sizeof(tty->parms); i++)
-						tty->parms[i] = 0;
+					hal_memset(tty->parms, 0, sizeof(tty->parms));
 					tty->parmi = 0;
 					tty->esc = esc_esc;
 					break;
@@ -282,8 +281,7 @@ static ssize_t ttybios_write(unsigned int minor, addr_t offs, const void *buff, 
 				case esc_esc:
 					switch (c) {
 						case '[':
-							for (i = 0; i < sizeof(tty->parms); i++)
-								tty->parms[i] = 0;
+							hal_memset(tty->parms, 0, sizeof(tty->parms));
 							tty->parmi = 0;
 							tty->esc = esc_csi;
 							break;
@@ -339,18 +337,18 @@ static ssize_t ttybios_write(unsigned int minor, addr_t offs, const void *buff, 
 								ttybios_getCursor(&row, &col);
 
 								if (!tty->parms[0]) {
-									n = (tty->rows - row - 1) * tty->cols + tty->cols - col - 1;
+									j = (tty->rows - row - 1) * tty->cols + tty->cols - col - 1;
 								}
 								else {
 									ttybios_setCursor(0, 0);
 
 									if (tty->parms[0] == 1)
-										n = row * tty->cols + col + 1;
+										j = row * tty->cols + col + 1;
 									else
-										n = tty->rows * tty->cols;
+										j = tty->rows * tty->cols;
 								}
 
-								for (i = 0; i < n; i++)
+								for (i = 0; i < j; i++)
 									ttybios_putc(tty->attr, ' ');
 
 								ttybios_setCursor(row, col);
