@@ -330,9 +330,6 @@ mapent_t *syspage_entryAdd(const char *mapName, addr_t start, size_t size, unsig
 	newEntry->end = start + size;
 	newEntry->type = hal_entryAllocated;
 
-
-	lib_printf("\nEntry: 0x%x\n", newEntry);
-
 	/* Add entry in ascending order to circular list */
 	syspage_sortedInsert((syspage_map_t *)map, newEntry);
 
@@ -365,6 +362,22 @@ int syspage_mapNameResolve(const char *name, u8 *id)
 	}
 
 	*id = map->id;
+
+	return EOK;
+}
+
+
+int syspage_mapRangeResolve(const char *name, addr_t *start, addr_t *end)
+{
+	const syspage_map_t *map;
+
+	if ((map = syspage_mapGet(name)) == NULL) {
+		log_error("\nsyspage: %s does not exist", name);
+		return -EINVAL;
+	}
+
+	*start = map->start;
+	*end = map->end;
 
 	return EOK;
 }

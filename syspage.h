@@ -94,6 +94,9 @@ extern int syspage_mapAttrResolve(const char *name, unsigned int *attr);
 extern int syspage_mapNameResolve(const char *name, u8 *id);
 
 
+extern int syspage_mapRangeResolve(const char *name, addr_t *start, addr_t *end);
+
+
 extern const char *syspage_mapName(u8 id);
 
 
