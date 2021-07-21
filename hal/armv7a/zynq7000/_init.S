@@ -121,6 +121,7 @@ set_loop:
 
 	/* Setup initial SP */
 	ldr r0, =ADDR_STACK
+	bic r0, #7
 
 	/* FIQ mode stack */
 	msr CPSR_c, #(FIQ_MODE | NO_INT)
