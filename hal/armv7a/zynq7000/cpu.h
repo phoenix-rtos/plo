@@ -17,6 +17,7 @@
 #ifndef _CPU_H_
 #define _CPU_H_
 
+#include "config.h"
 
 /* ARMv7 processor modes */
 #define USR_MODE 0x10 /* unprivileged mode in which most applications run                           */
@@ -35,10 +36,6 @@
 #define NO_FIQ      0x40              /* mask to disable FIQ             */
 #define NO_INT      (NO_IRQ | NO_FIQ) /* mask to disable IRQ and FIQ     */
 #define THUMB_STATE 0x20
-
-/* Stack definition */
-#define ADDR_STACK 0xfffffff0 /* Hihgh address of OCRAM */
-#define SIZE_STACK 5 * 1024
 
 
 /* Zynq-7000 System Address Map */
