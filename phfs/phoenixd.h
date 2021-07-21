@@ -1,11 +1,11 @@
 /*
  * Phoenix-RTOS
  *
- * plo - operating system loader
+ * Operating system loader
  *
  * phoenixd communication
  *
- * Copyright 2012 Phoenix Systems
+ * Copyright 2012, 2021 Phoenix Systems
  * Copyright 2005 Pawel Pisarczyk
  *
  * This file is part of Phoenix-RTOS.

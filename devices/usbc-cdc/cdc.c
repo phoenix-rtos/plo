@@ -1,9 +1,9 @@
 /*
  * Phoenix-RTOS
  *
- * phoenix-rtos-loader
+ * Operating system loader
  *
- * cdc - USB Communication Device Class
+ * CDC - USB Communication Device Class
  *
  * Copyright 2019, 2021 Phoenix Systems
  * Author: Hubert Buczynski
@@ -18,9 +18,7 @@
 
 #include <devices/devs.h>
 #include <hal/hal.h>
-#include <lib/list.h>
 #include <lib/lib.h>
-#include <lib/errno.h>
 
 
 #define SIZE_USB_ENDPTS 2 * PHFS_ACM_PORTS_NB + 1 /* Add control endpoint */

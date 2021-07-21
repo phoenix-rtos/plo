@@ -1,7 +1,7 @@
 /*
  * Phoenix-RTOS
  *
- * Phoenix-RTOS loader
+ * Operating system loader
  *
  * MPU region allocation routines
  *

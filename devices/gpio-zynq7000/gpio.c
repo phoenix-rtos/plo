@@ -1,7 +1,7 @@
 /*
  * Phoenix-RTOS
  *
- * plo - operating system loader
+ * Operating system loader
  *
  * GPIO controller
  *
@@ -15,7 +15,6 @@
 
 #include "gpio.h"
 
-#include <hal/hal.h>
 #include <lib/errno.h>
 
 

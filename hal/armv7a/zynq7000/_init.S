@@ -1,7 +1,7 @@
 /*
  * Phoenix-RTOS
  *
- * plo - operating system loader
+ * Operating system loader
  *
  * Low-level initialization for Cortex-A9 (ARMv7) architecture
  *

@@ -1,7 +1,7 @@
 /*
  * Phoenix-RTOS
  *
- * plo - operating system loader
+ * Operating system loader
  *
  * ARMv7 Cortex - A9 related routines for Zynq - 7000
  *

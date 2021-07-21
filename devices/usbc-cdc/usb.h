@@ -1,9 +1,9 @@
 /*
  * Phoenix-RTOS
  *
- * phoenix-rtos-loader
+ * Operating system loader
  *
- * USB Data
+ * USB basic structures
  *
  * Copyright 2018-2020 Phoenix Systems
  * Author: Jan Sikorski, Kamil Amanowicz, Hubert Buczynski
