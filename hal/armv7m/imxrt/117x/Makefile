@@ -20,7 +20,7 @@ CFLAGS+= -mfloat-abi=soft
 
 GCCLIB := $(shell $(CC) $(CFLAGS) -print-libgcc-file-name)
 
-PLO_COMMANDS = alias app call console copy devs dump echo go help kernel map mpu phfs script syspage wait
+PLO_COMMANDS = alias app call console copy dump echo go help kernel map mpu phfs script wait
 
 include devices/uart-imxrt117x/Makefile
 include devices/flash-imxrt/Makefile

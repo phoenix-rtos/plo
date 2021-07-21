@@ -32,7 +32,7 @@ static int cmd_phfs(int argc, char *argv[])
 	unsigned int major, minor;
 
 	if (argc == 1) {
-		phfs_showDevs();
+		phfs_devsShow();
 		return EOK;
 	}
 	else if (argc < 3 || argc > 4) {
@@ -53,7 +53,7 @@ static int cmd_phfs(int argc, char *argv[])
 		return -EINVAL;
 	}
 
-	if ((res = phfs_regDev(argv[1], major, minor, (argc == 3) ? NULL : argv[3])) < 0) {
+	if ((res = phfs_devReg(argv[1], major, minor, (argc == 3) ? NULL : argv[3])) < 0) {
 		log_error("\nCan't register %s in phfs", argv[0]);
 		return res;
 	}
