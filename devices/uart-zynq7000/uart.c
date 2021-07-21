@@ -14,7 +14,6 @@
  */
 
 #include <hal/hal.h>
-#include <lib/errno.h>
 #include <lib/lib.h>
 #include <devices/devs.h>
 

@@ -1,9 +1,9 @@
 /*
  * Phoenix-RTOS
  *
- * phoenix-rtos-loader
+ * Operating system loader
  *
- * usb client
+ * USB client
  *
  * Copyright 2019-2021 Phoenix Systems
  * Author: Kamil Amanowicz, Hubert Buczynski

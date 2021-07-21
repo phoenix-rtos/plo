@@ -1,7 +1,7 @@
 /*
  * Phoenix-RTOS
  *
- * Operating system kernel
+ * Operating system loader
  *
  * iMXRT basic peripherals control functions
  *

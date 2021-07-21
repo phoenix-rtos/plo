@@ -1,9 +1,9 @@
 /*
  * Phoenix-RTOS
  *
- * plo - operating system loader
+ * Operating system loader
  *
- * Loader console
+ * Initial loader's routines
  *
  * Copyright 2012, 2017, 2020-2021 Phoenix Systems
  * Copyright 2001, 2005 Pawel Pisarczyk
@@ -18,7 +18,6 @@
 #include <lib/lib.h>
 #include <cmds/cmd.h>
 #include <devices/devs.h>
-#include <lib/console.h>
 
 
 int main(void)
