@@ -98,7 +98,7 @@ static int phfs_getHandlerId(const char *alias)
 }
 
 
-int phfs_regDev(const char *alias, unsigned int major, unsigned int minor, const char *prot)
+int phfs_devReg(const char *alias, unsigned int major, unsigned int minor, const char *prot)
 {
 	size_t sz;
 	phfs_device_t *pd;
@@ -142,7 +142,7 @@ int phfs_regDev(const char *alias, unsigned int major, unsigned int minor, const
 }
 
 
-int phfs_getAliasAddr(handler_t h, addr_t *addr)
+int phfs_aliasAddrResolve(handler_t h, addr_t *addr)
 {
 	if (h.id >= SIZE_PHFS_ALIASES || h.id >= phfs_common.fCnt)
 		return -EINVAL;
@@ -153,7 +153,7 @@ int phfs_getAliasAddr(handler_t h, addr_t *addr)
 }
 
 
-void phfs_showDevs(void)
+void phfs_devsShow(void)
 {
 	int i;
 	phfs_device_t *pd;
@@ -171,7 +171,7 @@ void phfs_showDevs(void)
 }
 
 
-void phfs_showAliases(void)
+void phfs_aliasesShow(void)
 {
 	int i;
 	phfs_file_t *f;
@@ -204,7 +204,7 @@ static int phfs_getAliasId(const char *alias)
 }
 
 
-int phfs_regAlias(const char *alias, addr_t addr, size_t size)
+int phfs_aliasReg(const char *alias, addr_t addr, size_t size)
 {
 	size_t sz;
 	phfs_file_t *file;
