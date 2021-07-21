@@ -66,7 +66,7 @@ static ssize_t cmd_cpphfs2phfs(handler_t srcHandler, addr_t srcAddr, size_t srcS
 }
 
 
-static int cmd_parseDev(handler_t *h, addr_t *offs, size_t *sz, unsigned int argc, char *argv[], unsigned int *argvID, const char **file)
+static int cmd_devParse(handler_t *h, addr_t *offs, size_t *sz, unsigned int argc, char *argv[], unsigned int *argvID, const char **file)
 {
 	int res;
 	const char *alias;
@@ -130,10 +130,10 @@ static int cmd_copy(int argc, char *argv[])
 		return -EINVAL;
 	}
 
-	if ((res = cmd_parseDev(&h[0], &offs[0], &sz[0], argc, argv, &argvID, &file[0])) < 0)
+	if ((res = cmd_devParse(&h[0], &offs[0], &sz[0], argc, argv, &argvID, &file[0])) < 0)
 		return res;
 
-	if ((res = cmd_parseDev(&h[1], &offs[1], &sz[1], argc, argv, &argvID, &file[1])) < 0)
+	if ((res = cmd_devParse(&h[1], &offs[1], &sz[1], argc, argv, &argvID, &file[1])) < 0)
 		return res;
 
 	/* Copy data between devices */
@@ -150,7 +150,7 @@ static int cmd_copy(int argc, char *argv[])
 
 	log_info("\nFinished copying");
 
-	if ((res = phfs_regFile((file[1] == NULL) ? file[0] : file[1], offs[1], res)) < 0)
+	if ((res = phfs_aliasReg((file[1] == NULL) ? file[0] : file[1], offs[1], res)) < 0)
 		return res;
 
 	return EOK;

@@ -31,23 +31,14 @@ static int cmd_map(int argc, char *argv[])
 	char *endptr;
 	addr_t start, end;
 
-	size_t namesz;
-	char mapname[SIZE_MAP_NAME + 1];
-
 	if (argc == 1) {
-		syspage_showMaps();
+		syspage_mapShow();
 		return EOK;
 	}
 	else if (argc != 5) {
 		log_error("\n%s: Wrong argument count", argv[0]);
 		return -EINVAL;
 	}
-
-	namesz = hal_strlen(argv[1]);
-	if (namesz >= sizeof(mapname))
-		namesz = sizeof(mapname) - 1;
-	hal_memcpy(mapname, argv[1], namesz);
-	mapname[namesz] = '\0';
 
 	start = lib_strtoul(argv[2], &endptr, 0);
 	if (*endptr) {
@@ -61,12 +52,13 @@ static int cmd_map(int argc, char *argv[])
 		return -EINVAL;
 	}
 
-	if ((res = syspage_addmap(mapname, start, end, argv[4])) < 0) {
-		log_error("\nCan't create map %s", mapname);
+
+	if ((res = syspage_mapAdd(argv[1], start, end, argv[4])) < 0) {
+		log_error("\nCan't create map %s", argv[1]);
 		return res;
 	}
 
-	log_info("\nCreating map %s", mapname);
+	log_info("\nCreated map %s", argv[1]);
 
 	return EOK;
 }

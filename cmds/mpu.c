@@ -109,7 +109,7 @@ static int cmd_mpu(int argc, char *argv[])
 		return -EINVAL;
 	}
 
-	if (mpu_common->regMax != sizeof(((syspage_hal_t *)0)->mpu.table) / sizeof(((syspage_hal_t *)0)->mpu.table[0])) {
+	if (mpu_common->regMax != sizeof(((hal_syspage_t *)0)->mpu.table) / sizeof(((hal_syspage_t *)0)->mpu.table[0])) {
 		log_error("\n%s: MPU hal is not initialized or unsupported type was detected", argv[0]);
 		return -EFAULT;
 	}
@@ -119,7 +119,7 @@ static int cmd_mpu(int argc, char *argv[])
 
 	for (i = 0; i < regCnt; i++) {
 		region = &mpu_common->region[i];
-		if ((name = syspage_getMapName(mpu_common->mapId[i])) == NULL)
+		if ((name = syspage_mapName(mpu_common->mapId[i])) == NULL)
 			name = "<none>";
 
 		mpu_regionPrint(name, region->rbar, region->rasr);
