@@ -15,6 +15,8 @@
 
 #define __ASSEMBLY__
 
+#include "config.h"
+
 #define FLEXSPI1_BASE 0x30000000
 #define IOMUXC_GPR    0x400e4000
 #define ADDR_DTCM     0x20000000
@@ -151,7 +153,7 @@ ivt_end:
 .globl _init_vectors
 .type _init_vectors, %object
 _init_vectors:
-.word _end + 5 * 1024
+.word ADDR_STACK
 .word _start
 
 .word _exceptions_dispatch  /* NMI */
