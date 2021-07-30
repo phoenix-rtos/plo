@@ -41,8 +41,10 @@ static const unsigned char ansi2bg[] = {
 
 
 struct {
-	unsigned char rows;      /* Console height */
-	unsigned char cols;      /* Console width */
+	volatile u16 *vram;      /* Video memory */
+	void *crtc;              /* CRT controller register */
+	unsigned int rows;       /* Console height */
+	unsigned int cols;       /* Console width */
 	unsigned char attr;      /* Character attribute */
 	unsigned char esc;       /* Escape sequence state */
 	unsigned char parmi;     /* Escape sequence parameter index */
@@ -50,70 +52,62 @@ struct {
 } halconsole_common;
 
 
-/* Retrieves cursor position */
-static void console_getCursor(unsigned char *row, unsigned char *col)
+static void console_memset(volatile u16 *vram, u16 val, unsigned int n)
 {
-	unsigned short pos;
+	unsigned int i;
 
-	__asm__ volatile(
-		"xorb %%bh, %%bh; "
-		"movb $0x3, %%ah; "
-		"pushl $0x10; "
-		"pushl $0x0; "
-		"pushl $0x0; "
-		"call _interrupts_bios; "
-		"addl $0xc, %%esp; "
-	: "=d" (pos)
-	:: "eax", "ebx", "ecx", "memory", "cc");
-
-	*row = pos >> 8;
-	*col = pos;
+	for (i = 0; i < n; i++)
+		*(vram + i) = val;
 }
 
 
-/* Sets cursor position */
-static void console_setCursor(unsigned char row, unsigned char col)
+static void console_memmove(volatile u16 *dst, volatile u16 *src, unsigned int n)
 {
-	__asm__ volatile(
-		"xorb %%bh, %%bh; "
-		"movb $0x2, %%ah; "
-		"pushl $0x10; "
-		"pushl $0x0; "
-		"pushl $0x0; "
-		"call _interrupts_bios; "
-		"addl $0xc, %%esp; "
-	:: "d" (((unsigned short)row << 8) | col)
-	: "eax", "ebx", "memory", "cc");
-}
+	unsigned int i;
 
-
-/* Writes character on screen */
-static void console_write(unsigned char attr, char c)
-{
-	__asm__ volatile(
-		"pushl $0x10; "
-		"pushl $0x0; "
-		"pushl $0x0; "
-		"call _interrupts_bios; "
-		"addl $0xc, %%esp; "
-	:: "a" (0xe00 | c), "b" (attr)
-	: "memory", "cc");
+	if (dst < src) {
+		for (i = 0; i < n; i++)
+			dst[i] = src[i];
+	}
+	else {
+		for (i = n; i--;)
+			dst[i] = src[i];
+	}
 }
 
 
 void hal_consolePrint(const char *s)
 {
-	unsigned char row, col;
-	unsigned int i, n;
+	unsigned int i, row, col, curs;
 	char c;
+
+	/* Print from current cursor position */
+	hal_outb(halconsole_common.crtc, 0x0f);
+	curs = hal_inb((void *)((addr_t)halconsole_common.crtc + 1));
+	hal_outb(halconsole_common.crtc, 0x0e);
+	curs |= (u16)hal_inb((void *)((addr_t)halconsole_common.crtc + 1)) << 8;
+	row = curs / halconsole_common.cols;
+	col = curs % halconsole_common.cols;
 
 	while ((c = *s++)) {
 		/* Control character */
-		if ((c < 0x20) || (c == '\177')) {
+		if ((c < ' ') || (c == '\177')) {
 			switch (c) {
+				case '\b':
+				case '\177':
+					if (col) {
+						col--;
+					}
+					else if (row) {
+						row--;
+						col = halconsole_common.cols - 1;
+					}
+					break;
+
 				case '\n':
-					console_write(halconsole_common.attr, '\r');
-					console_write(halconsole_common.attr, c);
+					row++;
+				case '\r':
+					col = 0;
 					break;
 
 				case '\e':
@@ -121,17 +115,14 @@ void hal_consolePrint(const char *s)
 					halconsole_common.parmi = 0;
 					halconsole_common.esc = esc_esc;
 					break;
-
-				default:
-					console_write(halconsole_common.attr, c);
-					break;
 			}
 		}
 		/* Process character according to escape sequence state */
 		else {
 			switch (halconsole_common.esc) {
 				case esc_init:
-					console_write(halconsole_common.attr, c);
+					*(halconsole_common.vram + row * halconsole_common.cols + col) = (u16)halconsole_common.attr << 8 | c;
+					col++;
 					break;
 
 				case esc_esc:
@@ -184,30 +175,24 @@ void hal_consolePrint(const char *s)
 							else if (halconsole_common.parms[1] > halconsole_common.cols)
 								halconsole_common.parms[1] = halconsole_common.cols;
 
-							console_setCursor(halconsole_common.parms[0] - 1, halconsole_common.parms[1] - 1);
+							row = halconsole_common.parms[0] - 1;
+							col = halconsole_common.parms[1] - 1;
 							halconsole_common.esc = esc_init;
 							break;
 
 						case 'J':
-							if (halconsole_common.parms[0] < 3) {
-								console_getCursor(&row, &col);
+							switch (halconsole_common.parms[0]) {
+								case 0:
+									console_memset(halconsole_common.vram + row * halconsole_common.cols + col, (u16)halconsole_common.attr << 8 | ' ', halconsole_common.cols * (halconsole_common.rows - row) - col);
+									break;
 
-								if (!halconsole_common.parms[0]) {
-									n = (halconsole_common.rows - row - 1) * halconsole_common.cols + halconsole_common.cols - col - 1;
-								}
-								else {
-									console_setCursor(0, 0);
+								case 1:
+									console_memset(halconsole_common.vram, (u16)halconsole_common.attr << 8 | ' ', row * halconsole_common.cols + col + 1);
+									break;
 
-									if (halconsole_common.parms[0] == 1)
-										n = row * halconsole_common.cols + col + 1;
-									else
-										n = halconsole_common.rows * halconsole_common.cols;
-								}
-
-								for (i = 0; i < n; i++)
-									console_write(halconsole_common.attr, ' ');
-
-								console_setCursor(row, col);
+								case 2:
+									console_memset(halconsole_common.vram, (u16)halconsole_common.attr << 8 | ' ', halconsole_common.rows * halconsole_common.cols);
+									break;
 							}
 							halconsole_common.esc = esc_init;
 							break;
@@ -268,10 +253,31 @@ void hal_consolePrint(const char *s)
 						case '9':
 							halconsole_common.parms[halconsole_common.parmi] *= 10;
 							halconsole_common.parms[halconsole_common.parmi] += c - '0';
+							break;
 
 						case ';':
 							if (halconsole_common.parmi + 1 < sizeof(halconsole_common.parms))
 								halconsole_common.parmi++;
+							break;
+
+						case 'h':
+							switch (halconsole_common.parms[0]) {
+								case 25:
+									hal_outb(halconsole_common.crtc, 0x0a);
+									hal_outb((void *)((addr_t)halconsole_common.crtc + 1), hal_inb((void *)((addr_t)halconsole_common.crtc + 1)) & ~0x20);
+									break;
+							}
+							halconsole_common.esc = esc_init;
+							break;
+
+						case 'l':
+							switch (halconsole_common.parms[0]) {
+								case 25:
+									hal_outb(halconsole_common.crtc, 0x0a);
+									hal_outb((void *)((addr_t)halconsole_common.crtc + 1), hal_inb((void *)((addr_t)halconsole_common.crtc + 1)) | 0x20);
+									break;
+							}
+							halconsole_common.esc = esc_init;
 							break;
 
 						default:
@@ -281,14 +287,46 @@ void hal_consolePrint(const char *s)
 					break;
 			}
 		}
+
+		/* End of line */
+		if (col == halconsole_common.cols) {
+			row++;
+			col = 0;
+		}
+
+		/* Scroll down */
+		if (row == halconsole_common.rows) {
+			i = halconsole_common.cols * (halconsole_common.rows - 1);
+			console_memmove(halconsole_common.vram, halconsole_common.vram + halconsole_common.cols, i);
+			console_memset(halconsole_common.vram + i, (u16)halconsole_common.attr << 8 | ' ', halconsole_common.cols);
+			row--;
+			col = 0;
+		}
+
+		/* Update cursor */
+		i = row * halconsole_common.cols + col;
+		hal_outb(halconsole_common.crtc, 0x0e);
+		hal_outb((void *)((addr_t)halconsole_common.crtc + 1), i >> 8);
+		hal_outb(halconsole_common.crtc, 0x0f);
+		hal_outb((void *)((addr_t)halconsole_common.crtc + 1), i);
+		*((u8 *)(halconsole_common.vram + i) + 1) = halconsole_common.attr;
 	}
 }
 
 
 void hal_consoleInit(void)
 {
-	/* Default 80x30 graphics mode with magenta color attribute */
-	halconsole_common.rows = 30;
+	unsigned char color;
+
+	/* Check color support */
+	color = hal_inb((void *)0x3cc) & 0x01;
+
+	/* Initialize VGA */
+	halconsole_common.vram = (u16 *)(color ? 0xb8000 : 0xb0000);
+	halconsole_common.crtc = (void *)(color ? 0x3d4 : 0x3b4);
+
+	/* Default 80x25 text mode with magenta color attribute */
+	halconsole_common.rows = 25;
 	halconsole_common.cols = 80;
 	halconsole_common.attr = 0x05;
 }

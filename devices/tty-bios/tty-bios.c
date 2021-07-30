@@ -3,7 +3,7 @@
  *
  * Operating system loader
  *
- * Terminal emulator (based on BIOS interrupt calls)
+ * Terminal emulator (based on BIOS 0x16 interrupt for data input)
  *
  * Copyright 2012, 2020, 2021 Phoenix Systems
  * Copyright 2001, 2005 Pawel Pisarczyk
@@ -63,8 +63,10 @@ static const unsigned char ansi2bg[] = {
 
 
 typedef struct {
-	unsigned char rows;      /* Terminal height */
-	unsigned char cols;      /* Terminal width */
+	volatile u16 *vram;      /* Video memory */
+	void *crtc;              /* CRT controller register */
+	unsigned int rows;       /* Terminal height */
+	unsigned int cols;       /* Terminal width */
 	unsigned char attr;      /* Character attribute */
 	unsigned char esc;       /* Escape sequence state */
 	unsigned char parmi;     /* Escape sequence parameter index */
@@ -78,40 +80,27 @@ struct {
 } ttybios_common;
 
 
-/* Retrieves cursor position */
-static void ttybios_getCursor(unsigned char *row, unsigned char *col)
+static void ttybios_memset(volatile u16 *vram, u16 val, unsigned int n)
 {
-	unsigned short pos;
+	unsigned int i;
 
-	__asm__ volatile(
-		"xorb %%bh, %%bh; "
-		"movb $0x3, %%ah; "
-		"pushl $0x10; "
-		"pushl $0x0; "
-		"pushl $0x0; "
-		"call _interrupts_bios; "
-		"addl $0xc, %%esp; "
-	: "=d" (pos)
-	:: "eax", "ebx", "ecx", "memory", "cc");
-
-	*row = pos >> 8;
-	*col = pos;
+	for (i = 0; i < n; i++)
+		*(vram + i) = val;
 }
 
 
-/* Sets cursor position */
-static void ttybios_setCursor(unsigned char row, unsigned char col)
+static void ttybios_memmove(volatile u16 *dst, volatile u16 *src, unsigned int n)
 {
-	__asm__ volatile(
-		"xorb %%bh, %%bh; "
-		"movb $0x2, %%ah; "
-		"pushl $0x10; "
-		"pushl $0x0; "
-		"pushl $0x0; "
-		"call _interrupts_bios; "
-		"addl $0xc, %%esp; "
-	:: "d" (((unsigned short)row << 8) | col)
-	: "eax", "ebx", "memory", "cc");
+	unsigned int i;
+
+	if (dst < src) {
+		for (i = 0; i < n; i++)
+			dst[i] = src[i];
+	}
+	else {
+		for (i = n; i--;)
+			dst[i] = src[i];
+	}
 }
 
 
@@ -128,10 +117,7 @@ static int ttybios_checkc(void)
 		"call _interrupts_bios; "
 		"jnz 0f; "
 		"xorl %%eax, %%eax; "
-		"jmp 1f; "
 		"0: "
-		"movl $0x1, %%eax; "
-		"1: "
 		"addl $0xc, %%esp; "
 	: "=a" (ret)
 	:: "memory", "cc");
@@ -157,20 +143,6 @@ static void ttybios_getc(char *sc, char *c)
 
 	*sc = key >> 8;
 	*c = key;
-}
-
-
-/* Writes character to terminal output */
-static void ttybios_putc(unsigned char attr, char c)
-{
-	__asm__ volatile(
-		"pushl $0x10; "
-		"pushl $0x0; "
-		"pushl $0x0; "
-		"call _interrupts_bios; "
-		"addl $0xc, %%esp; "
-	:: "a" (0xe00 | c), "b" (attr)
-	: "memory", "cc");
 }
 
 
@@ -242,22 +214,42 @@ static ssize_t ttybios_read(unsigned int minor, addr_t offs, void *buff, size_t 
 static ssize_t ttybios_write(unsigned int minor, addr_t offs, const void *buff, size_t len)
 {
 	ttybios_t *tty;
-	unsigned char row, col;
-	size_t i, j, n;
+	unsigned int i, row, col, curs;
+	size_t n;
 	char c;
 
 	if ((tty = ttybios_get(minor)) == NULL)
 		return -EINVAL;
 
+	/* Print from current cursor position */
+	hal_outb(tty->crtc, 0x0f);
+	curs = hal_inb((void *)((addr_t)tty->crtc + 1));
+	hal_outb(tty->crtc, 0x0e);
+	curs |= (u16)hal_inb((void *)((addr_t)tty->crtc + 1)) << 8;
+	row = curs / tty->cols;
+	col = curs % tty->cols;
+
 	for (n = 0; n < len; n++) {
 		c = *((char *)buff + n);
 
 		/* Control character */
-		if ((c < 0x20) || (c == '\177')) {
+		if ((c < ' ') || (c == '\177')) {
 			switch (c) {
+				case '\b':
+				case '\177':
+					if (col) {
+						col--;
+					}
+					else if (row) {
+						row--;
+						col = tty->cols;
+					}
+					break;
+
 				case '\n':
-					ttybios_putc(tty->attr, '\r');
-					ttybios_putc(tty->attr, c);
+					row++;
+				case '\r':
+					col = 0;
 					break;
 
 				case '\e':
@@ -265,17 +257,14 @@ static ssize_t ttybios_write(unsigned int minor, addr_t offs, const void *buff, 
 					tty->parmi = 0;
 					tty->esc = esc_esc;
 					break;
-
-				default:
-					ttybios_putc(tty->attr, c);
-					break;
 			}
 		}
 		/* Process character according to escape sequence state */
 		else {
 			switch (tty->esc) {
 				case esc_init:
-					ttybios_putc(tty->attr, c);
+					*(tty->vram + row * tty->cols + col) = (u16)tty->attr << 8 | c;
+					col++;
 					break;
 
 				case esc_esc:
@@ -328,30 +317,24 @@ static ssize_t ttybios_write(unsigned int minor, addr_t offs, const void *buff, 
 							else if (tty->parms[1] > tty->cols)
 								tty->parms[1] = tty->cols;
 
-							ttybios_setCursor(tty->parms[0] - 1, tty->parms[1] - 1);
+							row = tty->parms[0] - 1;
+							col = tty->parms[1] - 1;
 							tty->esc = esc_init;
 							break;
 
 						case 'J':
-							if (tty->parms[0] < 3) {
-								ttybios_getCursor(&row, &col);
+							switch (tty->parms[0]) {
+								case 0:
+									ttybios_memset(tty->vram + row * tty->cols + col, (u16)tty->attr << 8 | ' ', tty->cols * (tty->rows - row) - col);
+									break;
 
-								if (!tty->parms[0]) {
-									j = (tty->rows - row - 1) * tty->cols + tty->cols - col - 1;
-								}
-								else {
-									ttybios_setCursor(0, 0);
+								case 1:
+									ttybios_memset(tty->vram, (u16)tty->attr << 8 | ' ', row * tty->cols + col + 1);
+									break;
 
-									if (tty->parms[0] == 1)
-										j = row * tty->cols + col + 1;
-									else
-										j = tty->rows * tty->cols;
-								}
-
-								for (i = 0; i < j; i++)
-									ttybios_putc(tty->attr, ' ');
-
-								ttybios_setCursor(row, col);
+								case 2:
+									ttybios_memset(tty->vram, (u16)tty->attr << 8 | ' ', tty->rows * tty->cols);
+									break;
 							}
 							tty->esc = esc_init;
 							break;
@@ -412,10 +395,31 @@ static ssize_t ttybios_write(unsigned int minor, addr_t offs, const void *buff, 
 						case '9':
 							tty->parms[tty->parmi] *= 10;
 							tty->parms[tty->parmi] += c - '0';
+							break;
 
 						case ';':
 							if (tty->parmi + 1 < sizeof(tty->parms))
 								tty->parmi++;
+							break;
+
+						case 'h':
+							switch (tty->parms[0]) {
+								case 25:
+									hal_outb(tty->crtc, 0x0a);
+									hal_outb((void *)((addr_t)tty->crtc + 1), hal_inb((void *)((addr_t)tty->crtc + 1)) & ~0x20);
+									break;
+							}
+							tty->esc = esc_init;
+							break;
+
+						case 'l':
+							switch (tty->parms[0]) {
+								case 25:
+									hal_outb(tty->crtc, 0x0a);
+									hal_outb((void *)((addr_t)tty->crtc + 1), hal_inb((void *)((addr_t)tty->crtc + 1)) | 0x20);
+									break;
+							}
+							tty->esc = esc_init;
 							break;
 
 						default:
@@ -425,6 +429,29 @@ static ssize_t ttybios_write(unsigned int minor, addr_t offs, const void *buff, 
 					break;
 			}
 		}
+
+		/* End of line */
+		if (col == tty->cols) {
+			row++;
+			col = 0;
+		}
+
+		/* Scroll down */
+		if (row == tty->rows) {
+			i = tty->cols * (tty->rows - 1);
+			ttybios_memmove(tty->vram, tty->vram + tty->cols, i);
+			ttybios_memset(tty->vram + i, (u16)tty->attr << 8 | ' ', tty->cols);
+			row--;
+			col = 0;
+		}
+
+		/* Update cursor */
+		i = row * tty->cols + col;
+		hal_outb(tty->crtc, 0x0e);
+		hal_outb((void *)((addr_t)tty->crtc + 1), i >> 8);
+		hal_outb(tty->crtc, 0x0f);
+		hal_outb((void *)((addr_t)tty->crtc + 1), i);
+		*((u8 *)(tty->vram + i) + 1) = tty->attr;
 	}
 
 	return len;
@@ -466,12 +493,20 @@ static int ttybios_done(unsigned int minor)
 static int ttybios_init(unsigned int minor)
 {
 	ttybios_t *tty;
+	unsigned char color;
 
 	if ((tty = ttybios_get(minor)) == NULL)
 		return -EINVAL;
 
-	/* Default 80x30 graphics mode with magenta color attribute */
-	tty->rows = 30;
+	/* Check color support */
+	color = hal_inb((void *)0x3cc) & 0x01;
+
+	/* Initialize VGA */
+	tty->vram = (u16 *)(color ? 0xb8000 : 0xb0000);
+	tty->crtc = (void *)(color ? 0x3d4 : 0x3b4);
+
+	/* Default 80x25 text mode with magenta color attribute */
+	tty->rows = 25;
 	tty->cols = 80;
 	tty->attr = 0x05;
 	tty->ekey = NULL;
