@@ -3,7 +3,7 @@
  *
  * Operating system loader
  *
- * Terminal emulator (based on BIOS 0x16 interrupt for data input)
+ * Terminal emulator (based on BIOS 0x16 interrupt call for data input)
  *
  * Copyright 2012, 2020, 2021 Phoenix Systems
  * Copyright 2001, 2005 Pawel Pisarczyk
@@ -214,7 +214,7 @@ static ssize_t ttybios_read(unsigned int minor, addr_t offs, void *buff, size_t 
 static ssize_t ttybios_write(unsigned int minor, addr_t offs, const void *buff, size_t len)
 {
 	ttybios_t *tty;
-	unsigned int i, row, col, curs;
+	unsigned int i, row, col, pos;
 	size_t n;
 	char c;
 
@@ -223,11 +223,11 @@ static ssize_t ttybios_write(unsigned int minor, addr_t offs, const void *buff, 
 
 	/* Print from current cursor position */
 	hal_outb(tty->crtc, 0x0f);
-	curs = hal_inb((void *)((addr_t)tty->crtc + 1));
+	pos = hal_inb((void *)((addr_t)tty->crtc + 1));
 	hal_outb(tty->crtc, 0x0e);
-	curs |= (u16)hal_inb((void *)((addr_t)tty->crtc + 1)) << 8;
-	row = curs / tty->cols;
-	col = curs % tty->cols;
+	pos |= (u16)hal_inb((void *)((addr_t)tty->crtc + 1)) << 8;
+	row = pos / tty->cols;
+	col = pos % tty->cols;
 
 	for (n = 0; n < len; n++) {
 		c = *((char *)buff + n);
@@ -242,7 +242,7 @@ static ssize_t ttybios_write(unsigned int minor, addr_t offs, const void *buff, 
 					}
 					else if (row) {
 						row--;
-						col = tty->cols;
+						col = tty->cols - 1;
 					}
 					break;
 
