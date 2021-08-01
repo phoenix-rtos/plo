@@ -70,8 +70,10 @@ static void console_memmove(volatile u16 *dst, volatile u16 *src, unsigned int n
 			dst[i] = src[i];
 	}
 	else {
-		for (i = n; i--;)
-			dst[i] = src[i];
+		while (n) {
+			n--;
+			dst[n] = src[n];
+		}
 	}
 }
 
