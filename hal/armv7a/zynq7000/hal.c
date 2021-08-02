@@ -69,19 +69,6 @@ const char *hal_cpuInfo(void)
 }
 
 
-void hal_cpuInvCache(unsigned int type, addr_t addr, size_t sz)
-{
-	switch (type) {
-		case hal_cpuDCache:
-			/* TODO */
-		case hal_cpuICache:
-			/* TODO */
-		default:
-			break;
-	}
-}
-
-
 addr_t hal_kernelGetAddress(addr_t addr)
 {
 	addr_t offs;
@@ -176,16 +163,4 @@ int hal_cpuJump(void)
 		: "r"(hal_common.entry), "r"((addr_t)hal_common.hs));
 
 	return 0;
-}
-
-
-void hal_interruptsDisable(void)
-{
-	__asm__ volatile("cpsid if");
-}
-
-
-void hal_interruptsEnable(void)
-{
-	__asm__ volatile("cpsie if");
 }

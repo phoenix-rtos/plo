@@ -17,7 +17,6 @@
 #define _ZYNQ_H_
 
 
-#include "cpu.h"
 #include "types.h"
 
 
