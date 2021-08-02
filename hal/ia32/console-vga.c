@@ -78,16 +78,16 @@ static void console_memmove(volatile u16 *dst, volatile u16 *src, unsigned int n
 
 void hal_consolePrint(const char *s)
 {
-	unsigned int i, row, col, curs;
+	unsigned int i, row, col, pos;
 	char c;
 
 	/* Print from current cursor position */
 	hal_outb(halconsole_common.crtc, 0x0f);
-	curs = hal_inb((void *)((addr_t)halconsole_common.crtc + 1));
+	pos = hal_inb((void *)((addr_t)halconsole_common.crtc + 1));
 	hal_outb(halconsole_common.crtc, 0x0e);
-	curs |= (u16)hal_inb((void *)((addr_t)halconsole_common.crtc + 1)) << 8;
-	row = curs / halconsole_common.cols;
-	col = curs % halconsole_common.cols;
+	pos |= (u16)hal_inb((void *)((addr_t)halconsole_common.crtc + 1)) << 8;
+	row = pos / halconsole_common.cols;
+	col = pos % halconsole_common.cols;
 
 	while ((c = *s++)) {
 		/* Control character */
