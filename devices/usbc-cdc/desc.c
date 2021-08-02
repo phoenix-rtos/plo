@@ -1,9 +1,9 @@
 /*
  * Phoenix-RTOS
  *
- * phoenix-rtos-loader
+ * Operating system loader
  *
- * descriptor manager
+ * Descriptors handler
  *
  * Copyright 2019-2021 Phoenix Systems
  * Author: Kamil Amanowicz, Hubert Buczynski

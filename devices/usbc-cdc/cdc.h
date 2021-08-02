@@ -1,9 +1,9 @@
 /*
  * Phoenix-RTOS
  *
- * phoenix-rtos-loader
+ * Operating system loader
  *
- * USB Communications Device Class definitions
+ * CDC - USB Communication Device Class
  *
  * Copyright 2018, 2020-2021 Phoenix Systems
  * Author: Hubert Buczynski

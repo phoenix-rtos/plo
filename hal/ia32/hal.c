@@ -40,24 +40,9 @@ addr_t hal_kernelGetAddress(addr_t addr)
 }
 
 
-/* Sets video mode */
-static void hal_setMode(unsigned char mode)
-{
-	__asm__ volatile(
-		"pushl $0x10; "
-		"pushl $0x0; "
-		"pushl $0x0; "
-		"call _interrupts_bios; "
-		"addl $0xc, %%esp; "
-	:: "a" (mode)
-	: "memory", "cc");
-}
-
-
 void hal_done(void)
 {
-	/* Restore default text mode */
-	hal_setMode(0x3);
+	return;
 }
 
 
@@ -68,7 +53,4 @@ void hal_init(void)
 	hal_interruptsInit();
 	hal_memoryInit();
 	hal_timerInit();
-
-	/* Set graphics video mode (required for writing characters with color attribute via BIOS 0x10 interrupt) */
-	hal_setMode(0x12);
 }

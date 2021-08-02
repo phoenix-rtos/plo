@@ -1,7 +1,7 @@
 /*
  * Phoenix-RTOS
  *
- * plo - operating system loader
+ * Operating system loader
  *
  * Peripherals definitions for zynq-7000
  *

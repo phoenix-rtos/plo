@@ -1,9 +1,9 @@
 /*
  * Phoenix-RTOS
  *
- * phoenix-rtos-loader
+ * Operating system loader
  *
- * usb physical layer controller
+ * USB physical layer controller
  *
  * Copyright 2021 Phoenix Systems
  * Author: Hubert Buczynski
