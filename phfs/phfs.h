@@ -1,14 +1,12 @@
 /*
  * Phoenix-RTOS
  *
- * plo - operating system loader
+ * Operating system loader
  *
- * PHoenix FileSystem
+ * Phoenix FileSystem
  *
- * Copyright 2012, 2021 Phoenix Systems
- * Copyright 2005 Pawel Pisarczyk
- *
- * Authors: Hubert Buczynski
+ * Copyright 2020-2021 Phoenix Systems
+ * Author: Hubert Buczynski
  *
  * This file is part of Phoenix-RTOS.
  *

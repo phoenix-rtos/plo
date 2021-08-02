@@ -1,7 +1,7 @@
 /*
  * Phoenix-RTOS
  *
- * plo - operating system loader
+ * Operating system loader
  *
  * Zynq-7000 basic peripherals control functions
  * based on: Zynq-7000 SoC TRM (Technical Reference Manual UG585 v1.12.2)

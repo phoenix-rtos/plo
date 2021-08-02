@@ -1,7 +1,7 @@
 /*
  * Phoenix-RTOS
  *
- * phoenix-rtos loader
+ * Operating system loader
  *
  * HAL basic routines
  *

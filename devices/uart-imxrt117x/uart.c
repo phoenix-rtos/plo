@@ -1,7 +1,7 @@
 /*
  * Phoenix-RTOS
  *
- * plo - operating system loader
+ * Operating system loader
  *
  * i.MXRT1176 Serial driver
  *
@@ -14,7 +14,6 @@
  */
 
 #include <hal/hal.h>
-#include <lib/errno.h>
 #include <lib/lib.h>
 #include <devices/devs.h>
 

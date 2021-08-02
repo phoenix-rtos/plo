@@ -1,7 +1,7 @@
 /*
  * Phoenix-RTOS
  *
- * plo - operating system loader
+ * Operating system loader
  *
  * phoenixd communication
  *
@@ -15,9 +15,9 @@
 
 #include "phoenixd.h"
 #include "msg.h"
+
 #include <hal/hal.h>
 #include <lib/lib.h>
-#include <lib/errno.h>
 
 
 /* Message types */

@@ -1,11 +1,11 @@
 /*
  * Phoenix-RTOS
  *
- * plo - operating system loader
+ * Operating system loader
  *
  * Phoenix FileSystem
  *
- * Copyright 2020 Phoenix Systems
+ * Copyright 2020-2021 Phoenix Systems
  * Author: Hubert Buczynski
  *
  * This file is part of Phoenix-RTOS.
@@ -13,14 +13,10 @@
  * %LICENSE%
  */
 
-#include <hal/hal.h>
-#include <lib/lib.h>
-#include <lib/log.h>
 #include "phfs.h"
-#include <lib/console.h>
 #include "phoenixd.h"
-#include <lib/errno.h>
 
+#include <lib/lib.h>
 
 #define SIZE_PHFS_HANDLERS 8
 #define SIZE_PHFS_ALIASES  20
