@@ -39,11 +39,12 @@ void syspage_init(void)
 
 	syspage_common.syspage->maps = NULL;
 	syspage_common.syspage->progs = NULL;
-	syspage_common.syspage->size = sizeof(syspage_t);
 	syspage_common.syspage->console = console_default;
 
-	syspage_common.heapTop = (char *)syspage_common.syspage + sizeof(syspage_t);
+	syspage_common.heapTop = (void *)ALIGN_ADDR((addr_t)syspage_common.syspage + sizeof(syspage_t), sizeof(long long));
 	syspage_common.heapEnd = (char *)syspage_common.syspage + SIZE_SYSPAGE;
+
+	syspage_common.syspage->size = (size_t)(syspage_common.heapTop - (void *)syspage_common.syspage);
 
 	hal_syspageSet(&syspage_common.syspage->hs);
 }
@@ -51,15 +52,17 @@ void syspage_init(void)
 
 void *syspage_alloc(size_t size)
 {
-	void *addr;
+	void *addr, *newTop;
 
-	if ((void *)((char *)syspage_common.heapTop + size) >= syspage_common.heapEnd)
+	newTop = (void *)ALIGN_ADDR((addr_t)syspage_common.heapTop + size, sizeof(long long));
+
+	if (newTop >= syspage_common.heapEnd)
 		return NULL;
 
 	addr = syspage_common.heapTop;
 
-	syspage_common.heapTop = (char *)syspage_common.heapTop + size;
-	syspage_common.syspage->size += size;
+	syspage_common.heapTop = newTop;
+	syspage_common.syspage->size = (size_t)(newTop - (void *)syspage_common.syspage);
 
 	return addr;
 }
@@ -166,7 +169,9 @@ static void syspage_sortedInsert(syspage_map_t *map, mapent_t *newEntry)
 	mapent_t *e;
 
 	if ((e = map->entries) == NULL) {
-		LIST_ADD(&map->entries, newEntry);
+		newEntry->next = newEntry;
+		newEntry->prev = newEntry;
+		map->entries = newEntry;
 		return;
 	}
 
@@ -187,8 +192,12 @@ static void syspage_sortedInsert(syspage_map_t *map, mapent_t *newEntry)
 	} while ((e = e->next) != map->entries);
 
 	/* Add entry at the end of the list */
-	if (e == map->entries)
-		LIST_ADD(&map->entries, newEntry);
+	if (e == map->entries) {
+		newEntry->prev = e->prev;
+		e->prev->next = newEntry;
+		newEntry->next = e;
+		e->prev = newEntry;
+	}
 }
 
 
@@ -225,7 +234,19 @@ int syspage_mapAdd(const char *name, addr_t start, addr_t end, const char *attr)
 	hal_memcpy(map->name, name, len);
 	map->name[len] = '\0';
 
-	LIST_ADD(&syspage_common.syspage->maps, map);
+
+	if (syspage_common.syspage->maps == NULL) {
+		map->next = map;
+		map->prev = map;
+		syspage_common.syspage->maps = map;
+	}
+	else {
+		map->prev = syspage_common.syspage->maps->prev;
+		syspage_common.syspage->maps->prev->next = map;
+		map->next = syspage_common.syspage->maps;
+		syspage_common.syspage->maps->prev = map;
+	}
+
 	map->id = (map == syspage_common.syspage->maps) ? 0 : map->prev->id + 1;
 
 	/* Get entries from hal */
@@ -421,7 +442,18 @@ syspage_prog_t *syspage_progAdd(const char *argv, u32 flags)
 	prog->dmaps = NULL;
 	prog->imaps = NULL;
 
-	LIST_ADD(&syspage_common.syspage->progs, prog);
+
+	if (syspage_common.syspage->progs == NULL) {
+		prog->next = prog;
+		prog->prev = prog;
+		syspage_common.syspage->progs = prog;
+	}
+	else {
+		prog->prev = syspage_common.syspage->progs->prev;
+		syspage_common.syspage->progs->prev->next = prog;
+		prog->next = syspage_common.syspage->progs;
+		syspage_common.syspage->progs->prev = prog;
+	}
 
 	return prog;
 }
@@ -432,7 +464,7 @@ syspage_prog_t *syspage_progAdd(const char *argv, u32 flags)
 
 void syspage_consoleSet(unsigned int id)
 {
-
+	syspage_common.syspage->console = id;
 }
 
 
