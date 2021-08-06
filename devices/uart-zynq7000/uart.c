@@ -26,18 +26,11 @@ typedef struct {
 	unsigned int irq;
 	u16 clk;
 
-	u16 rxFifoSz;
-	u16 txFifoSz;
+	u8 dataRx[BUFFER_SIZE];
+	cbuffer_t cbuffRx;
 
-	u8 rxBuff[BUFFER_SIZE];
-	volatile u16 rxHead;
-	volatile u16 rxTail;
-
-	u8 txBuff[BUFFER_SIZE];
-	volatile u16 txHead;
-	volatile u16 txTail;
-
-	volatile u8 tFull;
+	u8 dataTx[BUFFER_SIZE];
+	cbuffer_t cbuffTx;
 } uart_t;
 
 
@@ -69,32 +62,30 @@ const struct {
 
 static inline void uart_rxData(uart_t *uart)
 {
+	char c;
 	/* Keep getting data until fifo is not empty */
 	while (!(*(uart->base + sr) & (0x1 << 1))) {
-		uart->rxBuff[uart->rxHead] = *(uart->base + fifo);
-		uart->rxHead = (uart->rxHead + 1) % BUFFER_SIZE;
-
-		if (uart->rxHead == uart->rxTail)
-			uart->rxTail = (uart->rxTail + 1) % BUFFER_SIZE;
+		c = *(uart->base + fifo) & 0xff;
+		lib_cbufWrite(&uart->cbuffRx, &c, 1);
 	}
+
+	*(uart->base + isr) = 0x1;
 }
 
 
 static inline void uart_txData(uart_t *uart)
 {
+	char c;
+
 	/* Keep filling until fifo is not full */
-	while (!(*(uart->base + sr) & (0x1 << 4))) {
-		uart->txHead = (uart->txHead + 1) % BUFFER_SIZE;
-		if (uart->txHead != uart->txTail) {
-			*(uart->base + fifo) = uart->txBuff[uart->txHead];
-			uart->tFull = 0;
-		}
-		else {
-			/* Transfer is finished, disable irq */
-			*(uart->base + idr) |= 1 << 3;
-			break;
+	while (!lib_cbufEmpty(&uart->cbuffTx)) {
+		if (!(*(uart->base + sr) & (0x1 << 4))) {
+			lib_cbufRead(&uart->cbuffTx, &c, 1);
+			*(uart->base + fifo) = c;
 		}
 	}
+
+	*(uart->base + idr) |= 1 << 3;
 }
 
 
@@ -106,7 +97,7 @@ static int uart_irqHandler(unsigned int n, void *data)
 	if (uart == NULL)
 		return 0;
 
-	st = *(uart->base + isr) & *(uart->base + imr);
+	st = *(uart->base + isr);
 
 	/* RX FIFO trigger irq */
 	if (st & 0x1)
@@ -115,9 +106,6 @@ static int uart_irqHandler(unsigned int n, void *data)
 	/* TX FIFO empty irq   */
 	if (st & (1 << 3))
 		uart_txData(uart);
-
-	/* Clear irq status    */
-	*(uart->base + isr) = st;
 
 	return 0;
 }
@@ -216,7 +204,7 @@ static void uart_initCtrlClock(void)
 
 static ssize_t uart_read(unsigned int minor, addr_t offs, void *buff, size_t len, time_t timeout)
 {
-	size_t l, cnt = 0;
+	size_t res;
 	uart_t *uart;
 	time_t start;
 
@@ -226,35 +214,22 @@ static ssize_t uart_read(unsigned int minor, addr_t offs, void *buff, size_t len
 	uart = &uart_common.uarts[minor];
 
 	start = hal_timerGet();
-	while (uart->rxHead == uart->rxTail) {
+	while (lib_cbufEmpty(&uart->cbuffRx)) {
 		if ((hal_timerGet() - start) >= timeout)
 			return -ETIME;
 	}
 
 	hal_interruptsDisable();
-
-	if (uart->rxHead > uart->rxTail)
-		l = min(uart->rxHead - uart->rxTail, len);
-	else
-		l = min(BUFFER_SIZE - uart->rxTail, len);
-
-	hal_memcpy(buff, &uart->rxBuff[uart->rxTail], l);
-	cnt = l;
-	if ((len > l) && (uart->rxHead < uart->rxTail)) {
-		hal_memcpy((char *)buff + l, &uart->rxBuff[0], min(len - l, uart->rxHead));
-		cnt += min(len - l, uart->rxHead);
-	}
-	uart->rxTail = ((uart->rxTail + cnt) % BUFFER_SIZE);
-
+	res = lib_cbufRead(&uart->cbuffRx, buff, len);
 	hal_interruptsEnable();
 
-	return cnt;
+	return res;
 }
 
 
 static ssize_t uart_write(unsigned int minor, const void *buff, size_t len)
 {
-	size_t l, cnt = 0;
+	size_t res;
 	uart_t *uart;
 
 	if (minor >= UARTS_MAX_CNT)
@@ -262,36 +237,17 @@ static ssize_t uart_write(unsigned int minor, const void *buff, size_t len)
 
 	uart = &uart_common.uarts[minor];
 
-	while (uart->txHead == uart->txTail && uart->tFull)
+	while (uart->cbuffTx.full)
 		;
 
 	hal_interruptsDisable();
-	if (uart->txHead > uart->txTail)
-		l = min(uart->txHead - uart->txTail, len);
-	else
-		l = min(BUFFER_SIZE - uart->txTail, len);
-
-	hal_memcpy(&uart->txBuff[uart->txTail], buff, l);
-	cnt = l;
-	if ((len > l) && (uart->txTail >= uart->txHead)) {
-		hal_memcpy(uart->txBuff, (const char *)buff + l, min(len - l, uart->txHead));
-		cnt += min(len - l, uart->txHead);
-	}
-
-	/* Initialize sending */
-	if (uart->txTail == uart->txHead)
-		*(uart->base + fifo) = uart->txBuff[uart->txHead];
-
-	uart->txTail = ((uart->txTail + cnt) % BUFFER_SIZE);
-
-	if (uart->txTail == uart->txHead)
-		uart->tFull = 1;
+	res = lib_cbufWrite(&uart->cbuffTx, buff, len);
 
 	/* Enable TX FIFO empty irq */
 	*(uart->base + ier) |= 1 << 3;
 	hal_interruptsEnable();
 
-	return cnt;
+	return res;
 }
 
 
@@ -311,10 +267,26 @@ static ssize_t uart_safeWrite(unsigned int minor, addr_t offs, const void *buff,
 
 static int uart_sync(unsigned int minor)
 {
+	uart_t *uart;
+	time_t start;
+
 	if (minor >= UARTS_MAX_CNT)
 		return -EINVAL;
 
-	/* TBD */
+	uart = &uart_common.uarts[minor];
+
+	while (!lib_cbufEmpty(&uart->cbuffTx))
+		;
+
+	/* Wait until TxFIFO is empty */
+	while (!(*(uart->base + sr) & (0x1 << 3)))
+		;
+
+	/* Although status register indicates that TxFIFO is empty, data is transmitted.
+	 * To not lose any data, wait 3 ms to clean up the fifo */
+	start = hal_timerGet();
+	while (hal_timerGet() - start < 3)
+		;
 
 	return EOK;
 }
@@ -322,22 +294,21 @@ static int uart_sync(unsigned int minor)
 
 static int uart_done(unsigned int minor)
 {
+	int res;
 	uart_t *uart;
 
-	if (minor >= UARTS_MAX_CNT)
-		return -EINVAL;
+	if ((res = uart_sync(minor)) < 0)
+		return res;
 
 	uart = &uart_common.uarts[minor];
-
-	/* TODO: wait for end of transmission */
 
 	/* Disable interrupts */
 	*(uart->base + idr) = 0xfff;
 
 	/* Disable RX & TX */
-	*(uart->base + cr) = (1 << 5) | (1 << 3);
+	*(uart->base + cr) |= (1 << 5) | (1 << 3);
 	/* Reset RX & TX */
-	*(uart->base + cr) = 0x3;
+	*(uart->base + cr) |= 0x3;
 
 	/* Clear status flags */
 	*(uart->base + isr) = 0xfff;
@@ -376,21 +347,23 @@ static int uart_init(unsigned int minor)
 		uart_common.clkInit = 1;
 	}
 
-
-	if (_zynq_setAmbaClk(info[minor].clk, clk_enable) < 0)
-		return -EINVAL;
-
-	if (uart_setPin(info[minor].rxPin) < 0 || uart_setPin(info[minor].txPin) < 0)
-		return -EINVAL;
-
 	uart = &uart_common.uarts[minor];
 
 	uart->irq = info[minor].irq;
 	uart->clk = info[minor].clk;
 	uart->base = info[minor].base;
 
+	lib_cbufInit(&uart->cbuffTx, uart->dataTx, BUFFER_SIZE);
+	lib_cbufInit(&uart->cbuffRx, uart->dataRx, BUFFER_SIZE);
+
 	/* Skip controller initialization if it has been already done by hal */
 	if (!(*(uart->base + cr) & (1 << 4 | 1 << 2))) {
+		if (_zynq_setAmbaClk(info[minor].clk, clk_enable) < 0)
+			return -EINVAL;
+
+		if (uart_setPin(info[minor].rxPin) < 0 || uart_setPin(info[minor].txPin) < 0)
+			return -EINVAL;
+
 		/* Reset RX & TX */
 		*(uart->base + cr) = 0x3;
 
