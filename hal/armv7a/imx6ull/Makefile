@@ -20,7 +20,7 @@ CFLAGS += -DVADDR_KERNEL_INIT=$(VADDR_KERNEL_INIT)
 
 GCCLIB := $(shell $(CC) $(CFLAGS) -print-libgcc-file-name)
 
-PLO_COMMANDS = alias app call console copy dump echo go help kernel map phfs script wait
+PLO_COMMANDS = alias app call console copy dump echo go help kernel map phfs script test-ddr wait
 
 include devices/uart-imx6ull/Makefile
 include devices/usbc-cdc/Makefile
