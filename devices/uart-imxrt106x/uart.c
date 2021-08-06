@@ -22,7 +22,7 @@
 #define PIN2PAD(x)        CONCATENATE(pctl_pad_gpio_, x)
 
 
-#define BUFFER_SIZE 0x200
+#define BUFFER_SIZE 0x20
 
 typedef struct {
 	volatile u32 *base;
@@ -31,14 +31,11 @@ typedef struct {
 	u16 rxFifoSz;
 	u16 txFifoSz;
 
-	u8 rxBuff[BUFFER_SIZE];
-	volatile u16 rxHead;
-	volatile u16 rxTail;
+	u8 dataRx[BUFFER_SIZE];
+	cbuffer_t cbuffRx;
 
-	u8 txBuff[BUFFER_SIZE];
-	volatile u16 txHead;
-	volatile u16 txTail;
-	volatile u8 tFull;
+	u8 dataTx[BUFFER_SIZE];
+	cbuffer_t cbuffTx;
 } uart_t;
 
 
@@ -101,6 +98,7 @@ static uart_t *uart_getInstance(unsigned int minor)
 
 static int uart_handleIntr(unsigned int irq, void *buff)
 {
+	char c;
 	u32 flags;
 	uart_t *uart = (uart_t *)buff;
 
@@ -118,19 +116,15 @@ static int uart_handleIntr(unsigned int irq, void *buff)
 
 	/* Receive */
 	while (uart_getRXcount(uart)) {
-		uart->rxBuff[uart->rxHead] = *(uart->base + datar);
-		uart->rxHead = (uart->rxHead + 1) % BUFFER_SIZE;
-		if (uart->rxHead == uart->rxTail) {
-			uart->rxTail = (uart->rxTail + 1) % BUFFER_SIZE;
-		}
+		c = *(uart->base + datar);
+		lib_cbufWrite(&uart->cbuffRx, &c, 1);
 	}
 
 	/* Transmit */
 	while (uart_getTXcount(uart) < uart->txFifoSz) {
-		if ((uart->txHead + 1) % BUFFER_SIZE != uart->txTail) {
-			uart->txHead = (uart->txHead + 1) % BUFFER_SIZE;
-			*(uart->base + datar) = uart->txBuff[uart->txHead];
-			uart->tFull = 0;
+		if (!lib_cbufEmpty(&uart->cbuffTx)) {
+			lib_cbufRead(&uart->cbuffTx, &c, 1);
+			*(uart->base + datar) = c;
 		}
 		else {
 			*(uart->base + ctrlr) &= ~(1 << 23);
@@ -435,7 +429,7 @@ static void uart_initPins(void)
 
 static ssize_t uart_read(unsigned int minor, addr_t offs, void *buff, size_t len, time_t timeout)
 {
-	size_t l, cnt;
+	size_t res;
 	uart_t *uart;
 	time_t start;
 
@@ -443,70 +437,37 @@ static ssize_t uart_read(unsigned int minor, addr_t offs, void *buff, size_t len
 		return -EINVAL;
 
 	start = hal_timerGet();
-	while (uart->rxHead == uart->rxTail) {
+	while (lib_cbufEmpty(&uart->cbuffRx)) {
 		if ((hal_timerGet() - start) >= timeout)
 			return -ETIME;
 	}
 
 	hal_interruptsDisable();
-
-	if (uart->rxHead > uart->rxTail)
-		l = min(uart->rxHead - uart->rxTail, len);
-	else
-		l = min(BUFFER_SIZE - uart->rxTail, len);
-
-	hal_memcpy(buff, &uart->rxBuff[uart->rxTail], l);
-	cnt = l;
-	if ((len > l) && (uart->rxHead < uart->rxTail)) {
-		hal_memcpy((char *)buff + l, &uart->rxBuff[0], min(len - l, uart->rxHead));
-		cnt += min(len - l, uart->rxHead);
-	}
-	uart->rxTail = ((uart->rxTail + cnt) % BUFFER_SIZE);
-
+	res = lib_cbufRead(&uart->cbuffRx, buff, len);
 	hal_interruptsEnable();
 
-	return cnt;
+	return res;
 }
 
 
 static ssize_t uart_write(unsigned int minor, const void *buff, size_t len)
 {
-	size_t l, cnt = 0;
+	size_t res;
 	uart_t *uart;
 
 	if ((uart = uart_getInstance(minor)) == NULL)
 		return -EINVAL;
 
-	while (uart->txHead == uart->txTail && uart->tFull)
+	while (uart->cbuffTx.full)
 		;
 
 	hal_interruptsDisable();
-	if (uart->txHead > uart->txTail)
-		l = min(uart->txHead - uart->txTail, len);
-	else
-		l = min(BUFFER_SIZE - uart->txTail, len);
-
-	hal_memcpy(&uart->txBuff[uart->txTail], buff, l);
-	cnt = l;
-	if ((len > l) && (uart->txTail >= uart->txHead)) {
-		hal_memcpy(uart->txBuff, (const char *)buff + l, min(len - l, uart->txHead));
-		cnt += min(len - l, uart->txHead);
-	}
-
-	/* Initialize sending */
-	if (uart->txTail == uart->txHead)
-		*(uart->base + datar) = uart->txBuff[uart->txHead];
-
-	uart->txTail = ((uart->txTail + cnt) % BUFFER_SIZE);
-
-	if (uart->txTail == uart->txHead)
-		uart->tFull = 1;
-
+	res = lib_cbufWrite(&uart->cbuffTx, buff, len);
 	*(uart->base + ctrlr) |= 1 << 23;
 
 	hal_interruptsEnable();
 
-	return cnt;
+	return res;
 }
 
 
@@ -531,7 +492,12 @@ static int uart_sync(unsigned int minor)
 	if ((uart = uart_getInstance(minor)) == NULL)
 		return -EINVAL;
 
-	/* TBD */
+	while (!lib_cbufEmpty(&uart->cbuffTx))
+		;
+
+	/* Wait for transmission activity complete */
+	while ((*(uart->base + statr) & (1 << 22)) == 0)
+		;
 
 	return EOK;
 }
@@ -544,9 +510,7 @@ static int uart_done(unsigned int minor)
 	if ((uart = uart_getInstance(minor)) == NULL)
 		return -EINVAL;
 
-	/* Wait for transmission activity complete */
-	while ((*(uart->base + statr) & (1 << 22)) == 0)
-		;
+	uart_sync(minor);
 
 	/* Disable TX and RX */
 	*(uart->base + ctrlr) &= ~((1 << 19) | (1 << 18));
@@ -601,6 +565,8 @@ static int uart_init(unsigned int minor)
 	}
 
 	uart->base = info[minor].base;
+	lib_cbufInit(&uart->cbuffTx, uart->dataTx, BUFFER_SIZE);
+	lib_cbufInit(&uart->cbuffRx, uart->dataRx, BUFFER_SIZE);
 
 	_imxrt_ccmControlGate(info[minor].dev, clk_state_run_wait);
 
