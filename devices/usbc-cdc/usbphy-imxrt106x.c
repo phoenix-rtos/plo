@@ -17,10 +17,6 @@
 #include "usbphy.h"
 
 
-/* Memory size for endpoints and setup data */
-#define BUFF_SIZE (ENDPOINTS_DIR_NB * ENDPOINTS_NUMBER + 1) * USB_BUFFER_SIZE
-
-
 enum {
 	/* Power-Down Register */
 	usbphy_pwd, usbphy_pwd_set, usbphy_pwd_clr, usbphy_pwd_tog,
@@ -41,7 +37,7 @@ enum {
 
 
 struct {
-	__attribute__((aligned(USB_BUFFER_SIZE))) u8 data[BUFF_SIZE];
+	__attribute__((aligned(USB_BUFFER_SIZE))) u8 data[SIZE_PHY_BUFF];
 	u32 buffCounter;
 } phyusb_common;
 
@@ -50,7 +46,7 @@ void *usbclient_allocBuff(u32 size)
 {
 	void *mem;
 
-	if ((size % USB_BUFFER_SIZE) || (USB_BUFFER_SIZE * phyusb_common.buffCounter + size) > BUFF_SIZE)
+	if ((size % USB_BUFFER_SIZE) || (USB_BUFFER_SIZE * phyusb_common.buffCounter + size) > SIZE_PHY_BUFF)
 		return NULL;
 
 	mem = (void *)(&phyusb_common.data[USB_BUFFER_SIZE * phyusb_common.buffCounter]);
