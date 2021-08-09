@@ -22,6 +22,7 @@
 #include "imxrt.h"
 #include "peripherals.h"
 #include "../types.h"
+#include "../../cpu.h"
 #include "../../mpu.h"
 #include "../../string.h"
 
@@ -29,6 +30,7 @@
 
 
 #define PATH_KERNEL "phoenix-armv7m7-imxrt117x.elf"
+#define CPU_INFO    "Cortex-M i.MX RT117x"
 
 #define SIZE_PAGE    0x200
 #define SIZE_STACK   (8 * SIZE_PAGE)
