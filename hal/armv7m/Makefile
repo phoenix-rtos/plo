@@ -8,5 +8,5 @@
 
 ifneq (, $(findstring imxrt, $(TARGET_SUBFAMILY)))
 	include hal/armv7m/imxrt/Makefile
-	OBJS += $(addprefix $(PREFIX_O)hal/$(TARGET_SUFF)/, mpu.o)
+	OBJS += $(addprefix $(PREFIX_O)hal/$(TARGET_SUFF)/, mpu.o string.o)
 endif
