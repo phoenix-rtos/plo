@@ -611,9 +611,9 @@ static int uart_init(unsigned int minor)
 
 		/* Reset all internal logic and registers, except the Global Register */
 		*(uart->base + globalr) |= 1 << 1;
-		imxrt_dataBarrier();
+		hal_cpuDataMemoryBarrier();
 		*(uart->base + globalr) &= ~(1 << 1);
-		imxrt_dataBarrier();
+		hal_cpuDataMemoryBarrier();
 
 		/* Disable input trigger */
 		*(uart->base + pincfgr) &= ~3;

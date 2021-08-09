@@ -514,7 +514,7 @@ static int uart_done(unsigned int minor)
 
 	/* Disable TX and RX */
 	*(uart->base + ctrlr) &= ~((1 << 19) | (1 << 18));
-	imxrt_dataBarrier();
+	hal_cpuDataMemoryBarrier();
 
 	/* Disable overrun, noise, framing error, TX and RX interrupts */
 	*(uart->base + ctrlr) &= ~((1 << 27) | (1 << 26) | (1 << 25) | (1 << 23) | (1 << 21));
@@ -524,9 +524,9 @@ static int uart_done(unsigned int minor)
 
 	/* Safely perform LPUART software reset procedure */
 	*(uart->base + globalr) |= (1 << 1);
-	imxrt_dataBarrier();
+	hal_cpuDataMemoryBarrier();
 	*(uart->base + globalr) &= ~(1 << 1);
-	imxrt_dataBarrier();
+	hal_cpuDataMemoryBarrier();
 
 	hal_interruptsSet(uart->irq, NULL, NULL);
 
@@ -577,9 +577,9 @@ static int uart_init(unsigned int minor)
 
 		/* Reset all internal logic and registers, except the Global Register */
 		*(uart->base + globalr) |= 1 << 1;
-		imxrt_dataBarrier();
+		hal_cpuDataMemoryBarrier();
 		*(uart->base + globalr) &= ~(1 << 1);
-		imxrt_dataBarrier();
+		hal_cpuDataMemoryBarrier();
 
 		/* Disable input trigger */
 		*(uart->base + pincfgr) &= ~3;
