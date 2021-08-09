@@ -17,3 +17,5 @@ else ifneq (, $(findstring imxrt105x, $(TARGET_SUBFAMILY)))
 	include hal/armv7m/imxrt/10xx/Makefile
 	CFLAGS += -I../plo/hal/armv7m/imxrt/10xx
 endif
+
+OBJS += $(addprefix $(PREFIX_O)hal/$(TARGET_SUFF)/imxrt/, hal.o)
