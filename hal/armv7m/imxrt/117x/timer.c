@@ -33,7 +33,7 @@ static int timer_isr(unsigned int irq, void *data)
 		++timer_common.time;
 	}
 
-	imxrt_dataSyncBarrier();
+	hal_cpuDataSyncBarrier();
 
 	return 0;
 }

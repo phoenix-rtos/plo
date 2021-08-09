@@ -14,6 +14,7 @@
  */
 
 #include "imxrt.h"
+#include "../../cpu.h"
 
 enum { stk_ctrl = 0, stk_load, stk_val, stk_calib };
 
@@ -21,23 +22,8 @@ enum { stk_ctrl = 0, stk_load, stk_val, stk_calib };
 enum { aipstz_mpr = 0, aipstz_opacr = 16, aipstz_opacr1, aipstz_opacr2, aipstz_opacr3, aipstz_opacr4 };
 
 
-enum { scb_cpuid = 0, scb_icsr, scb_vtor, scb_aircr, scb_scr, scb_ccr, scb_shp0, scb_shp1,
-	scb_shp2, scb_shcsr, scb_cfsr, scb_hfsr, scb_dfsr, scb_mmfar, scb_bfar, scb_afsr, scb_pfr0,
-	scb_pfr1, scb_dfr, scb_afr, scb_mmfr0, scb_mmfr1, scb_mmfr2, scb_mmf3, scb_isar0, scb_isar1,
-	scb_isar2, scb_isar3, scb_isar4, /* reserved */ scb_clidr = 30, scb_ctr, scb_ccsidr, scb_csselr,
-	scb_cpacr, /* 93 reserved */ scb_stir = 128, /* 15 reserved */ scb_mvfr0 = 144, scb_mvfr1,
-	scb_mvfr2, /* reserved */ scb_iciallu = 148, /* reserved */ scb_icimvau = 150, scb_scimvac,
-	scb_dcisw, scb_dccmvau, scb_dccmvac, scb_dccsw, scb_dccimvac, scb_dccisw, /* 6 reserved */
-	scb_itcmcr = 164, scb_dtcmcr, scb_ahbpcr, scb_cacr, scb_ahbscr, /* reserved */ scb_abfsr = 170 };
-
-
 enum { src_scr = 0, src_sbmr1, src_srsr, src_sbmr2 = 7, src_gpr1, src_gpr2, src_gpr3, src_gpr4,
 	src_gpr5, src_gpr6, src_gpr7, src_gpr8, src_gpr9, src_gpr10 };
-
-
-enum { nvic_iser = 0, nvic_icer = 32, nvic_ispr = 64, nvic_icpr = 96, nvic_iabr = 128,
-	nvic_ip = 256, nvic_stir = 896 };
-
 
 enum { wdog_wcr = 0, wdog_wsr, wdog_wrsr, wdog_wicr, wdog_wmcr };
 
@@ -47,9 +33,7 @@ enum { rtwdog_cs = 0, rtwdog_cnt, rtwdog_total, rtwdog_win };
 
 struct {
 	volatile u32 *aips[4];
-	volatile u32 *nvic;
 	volatile u32 *stk;
-	volatile u32 *scb;
 	volatile u32 *src;
 	volatile u16 *wdog1;
 	volatile u16 *wdog2;
@@ -63,16 +47,6 @@ struct {
 	u32 cpuclk;
 } imxrt_common;
 
-
-unsigned int _imxrt_cpuid(void)
-{
-	return *(imxrt_common.scb + scb_cpuid);
-}
-
-
-void _imxrt_wdgReload(void)
-{
-}
 
 
 /* IOMUX */
@@ -234,250 +208,6 @@ int _imxrt_setIOisel(int isel, char daisy)
 }
 
 
-/* SCB */
-
-
-void _imxrt_scbSetPriorityGrouping(u32 group)
-{
-	u32 t;
-
-	/* Get register value and clear bits to set */
-	t = *(imxrt_common.scb + scb_aircr) & ~0xffff0700;
-
-	/* Store new value */
-	*(imxrt_common.scb + scb_aircr) = t | 0x5fa0000 | ((group & 7) << 8);
-}
-
-
-u32 _imxrt_scbGetPriorityGrouping(void)
-{
-	return (*(imxrt_common.scb + scb_aircr) & 0x700) >> 8;
-}
-
-
-void _imxrt_scbSetPriority(s8 excpn, u32 priority)
-{
-	volatile u8 *ptr;
-
-	ptr = &((u8 *)(imxrt_common.scb + scb_shp0))[excpn - 4];
-
-	*ptr = (priority << 4) & 0x0ff;
-}
-
-
-u32 _imxrt_scbGetPriority(s8 excpn)
-{
-	volatile u8 *ptr;
-
-	ptr = &((u8 *)(imxrt_common.scb + scb_shp0))[excpn - 4];
-
-	return *ptr >> 4;
-}
-
-
-/* NVIC (Nested Vectored Interrupt Controller */
-
-
-void _imxrt_nvicSetIRQ(s8 irqn, u8 state)
-{
-	volatile u32 *ptr = imxrt_common.nvic + ((u8)irqn >> 5) + (state ? nvic_iser : nvic_icer);
-	*ptr = 1 << (irqn & 0x1F);
-
-	imxrt_dataSyncBarrier();
-	imxrt_dataInstrBarrier();
-}
-
-
-u32 _imxrt_nvicGetPendingIRQ(s8 irqn)
-{
-	volatile u32 *ptr = imxrt_common.nvic + ((u8)irqn >> 5) + nvic_ispr;
-	return !!(*ptr & (1 << (irqn & 0x1F)));
-}
-
-
-void _imxrt_nvicSetPendingIRQ(s8 irqn, u8 state)
-{
-	volatile u32 *ptr = imxrt_common.nvic + ((u8)irqn >> 5) + (state ? nvic_ispr : nvic_icpr);
-	*ptr = 1 << (irqn & 0x1F);
-}
-
-
-u32 _imxrt_nvicGetActive(s8 irqn)
-{
-	volatile u32 *ptr = imxrt_common.nvic + ((u8)irqn >> 5) + nvic_iabr;
-	return !!(*ptr & (1 << (irqn & 0x1F)));
-}
-
-
-void _imxrt_nvicSetPriority(s8 irqn, u32 priority)
-{
-	volatile u8 *ptr;
-
-	ptr = (u8 *)(imxrt_common.nvic + irqn + nvic_ip);
-
-	*ptr = (priority << 4) & 0x0ff;
-}
-
-
-u8 _imxrt_nvicGetPriority(s8 irqn)
-{
-	volatile u8 *ptr;
-
-	ptr = (u8 *)(imxrt_common.nvic + irqn + nvic_ip);
-
-	return *ptr >> 4;
-}
-
-
-void _imxrt_nvicSystemReset(void)
-{
-	*(imxrt_common.scb + scb_aircr) = ((0x5fa << 16) | (*(imxrt_common.scb + scb_aircr) & (0x700)) | (1 << 0x02));
-
-	__asm__ volatile ("dsb");
-
-	for(;;);
-}
-
-
-/* SysTick */
-
-
-int _imxrt_systickInit(u32 interval)
-{
-	u64 load = ((u64)interval * imxrt_common.cpuclk) / 1000000;
-	if (load > 0x00ffffff)
-		return -1;
-
-	*(imxrt_common.stk + stk_load) = (u32)load;
-	*(imxrt_common.stk + stk_ctrl) = 0x7;
-
-	return 0;
-}
-
-
-void _imxrt_systickSet(u8 state)
-{
-	state = !state;
-	*(imxrt_common.stk + stk_ctrl) &= ~state;
-	state = !state;
-	*(imxrt_common.stk + stk_ctrl) |= state;
-}
-
-
-u32 _imxrt_systickGet(void)
-{
-	u32 cb;
-
-	cb = ((*(imxrt_common.stk + stk_load) - *(imxrt_common.stk + stk_val)) * 1000) / *(imxrt_common.stk + stk_load);
-
-	/* Add 1000 us if there's systick pending */
-	if (*(imxrt_common.scb + scb_icsr) & (1 << 26))
-		cb += 1000;
-
-	return cb;
-}
-
-
-/* Cache */
-
-
-void _imxrt_enableDCache(void)
-{
-	u32 ccsidr, sets, ways;
-
-	*(imxrt_common.scb + scb_csselr) = 0;
-	imxrt_dataSyncBarrier();
-
-	ccsidr = *(imxrt_common.scb + scb_ccsidr);
-
-	/* Invalidate D$ */
-	sets = (ccsidr >> 13) & 0x7fff;
-	do {
-		ways = (ccsidr >> 3) & 0x3ff;
-		do {
-			*(imxrt_common.scb + scb_dcisw) = ((sets & 0x1ff) << 5) | ((ways & 0x3) << 30);
-		} while (ways-- != 0);
-	} while (sets-- != 0);
-	imxrt_dataSyncBarrier();
-
-	*(imxrt_common.scb + scb_ccr) |= 1 << 16;
-
-	imxrt_dataSyncBarrier();
-	imxrt_dataInstrBarrier();
-}
-
-
-void _imxrt_disableDCache(void)
-{
-	register u32 ccsidr, sets, ways;
-
-	*(imxrt_common.scb + scb_csselr) = 0;
-	imxrt_dataSyncBarrier();
-
-	*(imxrt_common.scb + scb_ccr) &= ~(1 << 16);
-	imxrt_dataSyncBarrier();
-
-	ccsidr = *(imxrt_common.scb + scb_ccsidr);
-
-	sets = (ccsidr >> 13) & 0x7fff;
-	do {
-		ways = (ccsidr >> 3) & 0x3ff;
-		do {
-			*(imxrt_common.scb + scb_dcisw) = ((sets & 0x1ff) << 5) | ((ways & 0x3) << 30);
-		} while (ways-- != 0);
-	} while (sets-- != 0);
-
-	imxrt_dataSyncBarrier();
-	imxrt_dataInstrBarrier();
-}
-
-
-void _imxrt_cleanDCache(void)
-{
-	register u32 ccsidr, sets, ways;
-
-	*(imxrt_common.scb + scb_csselr) = 0;
-
-	imxrt_dataSyncBarrier();
-	ccsidr = *(imxrt_common.scb + scb_ccsidr);
-
-	/* Clean D$ */
-	sets = (ccsidr >> 13) & 0x7fff;
-	do {
-		ways = (ccsidr >> 3) & 0x3ff;
-		do {
-			*(imxrt_common.scb + scb_dccsw) = ((sets & 0x1ff) << 5) | ((ways & 0x3) << 30);
-		} while (ways-- != 0);
-	} while (sets-- != 0);
-
-	imxrt_dataSyncBarrier();
-	imxrt_dataInstrBarrier();
-}
-
-
-void _imxrt_enableICache(void)
-{
-	imxrt_dataSyncBarrier();
-	imxrt_dataInstrBarrier();
-	*(imxrt_common.scb + scb_iciallu) = 0; /* Invalidate I$ */
-	imxrt_dataSyncBarrier();
-	imxrt_dataInstrBarrier();
-	*(imxrt_common.scb + scb_ccr) |= 1 << 17;
-	imxrt_dataSyncBarrier();
-	imxrt_dataInstrBarrier();
-}
-
-
-void _imxrt_disableICache(void)
-{
-	imxrt_dataSyncBarrier();
-	imxrt_dataInstrBarrier();
-	*(imxrt_common.scb + scb_ccr) &= ~(1 << 17);
-	*(imxrt_common.scb + scb_iciallu) = 0;
-	imxrt_dataSyncBarrier();
-	imxrt_dataInstrBarrier();
-}
-
 /* CCM */
 
 int _imxrt_setDevClock(int clock, int div, int mux, int mfd, int mfn, int state)
@@ -491,8 +221,8 @@ int _imxrt_setDevClock(int clock, int div, int mux, int mfd, int mfn, int state)
 	t = *reg & ~0x01ff07ffu;
 	*reg = t | (!state << 24) | ((mfn & 0xf) << 20) | ((mfd & 0xf) << 16) | ((mux & 0x7) << 8) | (div & 0xff);
 
-	imxrt_dataSyncBarrier();
-	imxrt_dataInstrBarrier();
+	hal_cpuDataSyncBarrier();
+	hal_cpuInstrBarrier();
 
 	return 0;
 }
@@ -507,8 +237,6 @@ void _imxrt_init(void)
 	imxrt_common.aips[1] = (void *)0x40400000;
 	imxrt_common.aips[2] = (void *)0x40800000;
 	imxrt_common.aips[3] = (void *)0x40c00000;
-	imxrt_common.nvic = (void *)0xe000e100;
-	imxrt_common.scb = (void *)0xe000ed00;
 	imxrt_common.stk = (void *)0xe000e010;
 	imxrt_common.wdog1 = (void *)0x40030000;
 	imxrt_common.wdog2 = (void *)0x40034000;
@@ -540,9 +268,6 @@ void _imxrt_init(void)
 	if (*(imxrt_common.stk + stk_ctrl) & 1)
 		*(imxrt_common.stk + stk_ctrl) &= ~1;
 
-	/* Configure cache */
-	_imxrt_enableDCache();
-	_imxrt_enableICache();
 
 	/* Reconfigure all IO pads as slow slew-rate and low drive strength */
 	for (i = pctl_pad_gpio_emc_b1_00; i <= pctl_pad_gpio_disp_b2_15; ++i) {

@@ -283,42 +283,6 @@ enum { cti0_err_irq = 17 + 16, cti1_err_irq, core_irq, lpuart1_irq, lpuart2_irq,
 	enet_pmt_irq };
 
 
-static inline void imxrt_dataSyncBarrier(void)
-{
-	__asm__ volatile ("dsb");
-}
-
-
-static inline void imxrt_dataInstrBarrier(void)
-{
-	__asm__ volatile ("isb");
-}
-
-
-static inline void imxrt_dataBarrier(void)
-{
-	__asm__ volatile ("dmb");
-}
-
-
-extern unsigned int _imxrt_cpuid(void);
-
-
-extern void _imxrt_nvicSetIRQ(s8 irqn, u8 state);
-
-
-extern void _imxrt_nvicSetPriority(s8 irqn, u32 priority);
-
-
-extern void _imxrt_scbSetPriorityGrouping(u32 group);
-
-
-extern void _imxrt_scbSetPriority(s8 excpn, u32 priority);
-
-
-extern void _imxrt_wdgReload(void);
-
-
 extern int _imxrt_setIOmux(int mux, char sion, char mode);
 
 
@@ -328,28 +292,10 @@ extern int _imxrt_setIOpad(int pad, char sre, char dse, char pue, char pus, char
 extern int _imxrt_setIOisel(int isel, char daisy);
 
 
-extern void _imxrt_cleanDCache(void);
+extern int _imxrt_setDevClock(int clock, int div, int mux, int mfd, int mfn, int state);
 
 
 extern void _imxrt_init(void);
-
-
-extern int _imxrt_systickInit(u32 interval);
-
-
-extern void _imxrt_systickSet(u8 state);
-
-
-extern u32 _imxrt_systickGet(void);
-
-
-extern void _imxrt_nvicSetIRQ(s8 irqn, u8 state);
-
-
-extern void _imxrt_nvicSystemReset(void);
-
-
-extern int _imxrt_setDevClock(int clock, int div, int mux, int mfd, int mfn, int state);
 
 
 #endif
