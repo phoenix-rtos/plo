@@ -211,7 +211,7 @@ _plo:
 _interrupts_dispatch:
 	mrs r0, ipsr
 	stmdb sp!, {r0, r4-r11, lr}
-	bl hal_irqdispatch
+	bl hal_interruptDispatch
 	ldmia sp!, {r0, r4-r11, lr}
 	dmb
 

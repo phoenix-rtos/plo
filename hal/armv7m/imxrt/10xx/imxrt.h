@@ -415,24 +415,6 @@ enum { cti0_err_irq = 17 + 16, cti1_err_irq, core_irq, lpuart1_irq, lpuart2_irq,
     pwm4_3_irq, pwm4_fault_irq };
 
 
-static inline void imxrt_dataSyncBarrier(void)
-{
-    __asm__ volatile ("dsb");
-}
-
-
-static inline void imxrt_dataInstrBarrier(void)
-{
-    __asm__ volatile ("isb");
-}
-
-
-static inline void imxrt_dataBarrier(void)
-{
-    __asm__ volatile ("dmb");
-}
-
-
 extern int _imxrt_setDevClock(int dev, unsigned int state);
 
 
@@ -550,48 +532,6 @@ extern void _imxrt_ccmControlGate(int dev, int state);
 extern void _imxrt_ccmSetMode(int mode);
 
 
-extern void _imxrt_scbSetPriorityGrouping(u32 group);
-
-
-extern u32 _imxrt_scbGetPriorityGrouping(void);
-
-
-extern void _imxrt_scbSetPriority(s8 excpn, u32 priority);
-
-
-extern u32 _imxrt_scbGetPriority(s8 excpn);
-
-
-extern void _imxrt_nvicSetIRQ(s8 irqn, u8 state);
-
-
-extern u32 _imxrt_nvicGetPendingIRQ(s8 irqn);
-
-
-extern void _imxrt_nvicSetPendingIRQ(s8 irqn, u8 state);
-
-
-extern u32 _imxrt_nvicGetActive(s8 irqn);
-
-
-extern void _imxrt_nvicSetPriority(s8 irqn, u32 priority);
-
-
-extern u8 _imxrt_nvicGetPriority(s8 irqn);
-
-
-extern void _imxrt_nvicSystemReset(void);
-
-
-extern int _imxrt_systickInit(u32 interval);
-
-
-extern void _imxrt_systickSet(u8 state);
-
-
-extern u32 _imxrt_systickGet(void);
-
-
 extern int _imxrt_gpioConfig(unsigned int d, u8 pin, u8 dir);
 
 
@@ -616,33 +556,7 @@ extern int _imxrt_setIOpad(int pad, char hys, char pus, char pue, char pke, char
 extern int _imxrt_setIOisel(int isel, char daisy);
 
 
-extern void _imxrt_enableDCache(void);
-
-
-extern void _imxrt_disableDCache(void);
-
-
-extern void  _imxrt_cleanDCache(void);
-
-
-extern void _imxrt_enableICache(void);
-
-
-extern void _imxrt_invalDCacheAll(void);
-
-
-extern void _imxrt_invalDCacheAddr(void *addr, u32 sz);
-
-
-extern void _imxrt_disableICache(void);
-
-
-extern unsigned int _imxrt_cpuid(void);
-
-
-extern void _imxrt_platformInit(void);
-
-
 extern void _imxrt_init(void);
+
 
 #endif

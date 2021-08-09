@@ -22,11 +22,12 @@
 #include "imxrt.h"
 #include "peripherals.h"
 #include "../types.h"
+#include "../../cpu.h"
 #include "../../mpu.h"
 #include "../../string.h"
 
-/* User interface */
 #define PATH_KERNEL "phoenix-armv7m7-imxrt106x.elf"
+#define CPU_INFO    "Cortex-M i.MX RT106x"
 
 #endif
 
