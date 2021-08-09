@@ -67,9 +67,9 @@ void console_init(void)
 
 	/* Reset all internal logic and registers, except the Global Register */
 	*(halconsole_common.uart + uart_global) |= 1 << 1;
-	imxrt_dataBarrier();
+	hal_cpuDataMemoryBarrier();
 	*(halconsole_common.uart + uart_global) &= ~(1 << 1);
-	imxrt_dataBarrier();
+	hal_cpuDataMemoryBarrier();
 
 	/* Set 115200 baudrate */
 	t = *(halconsole_common.uart + uart_baud);
