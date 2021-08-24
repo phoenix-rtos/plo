@@ -46,7 +46,7 @@ void hal_cpuJump(addr_t addr)
 	syspage->kernel = *(unsigned int *)((char *)syspage + sizeof(syspage_hal_t)); /* Kernel */
 	syspage->kernelsz = 0xc0000;                                                  /* Kernel size */
 	syspage->console = 0;                                                         /* Console */
-	syspage->arg[0] = '\0';                                                       /* Args */
+	hal_strcpy(syspage->arg, "Xpc-tty Xpc-ata Xpsh;-i;/etc/rc.psh");              /* Args */
 
 	hal_done();
 
