@@ -22,6 +22,7 @@ GCCLIB := $(shell $(CC) $(CFLAGS) -print-libgcc-file-name)
 
 PLO_COMMANDS = alias app call console copy devs dump echo go help kernel map mpu phfs script syspage wait
 
+include devices/usbc-cdc/Makefile
 include devices/uart-imxrt117x/Makefile
 include devices/flash-imxrt/Makefile
 

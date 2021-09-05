@@ -498,6 +498,28 @@ int _imxrt_setDevClock(int clock, int div, int mux, int mfd, int mfn, int state)
 }
 
 
+int _imxrt_setDirectLPCG(int clock, int state)
+{
+	u32 t;
+	volatile u32 *reg;
+
+	if (clock < pctl_lpcg_m7 || clock > pctl_lpcg_uniq_edt_i)
+		return -1;
+
+	reg = imxrt_common.ccm + 0x1800 + clock * 0x8;
+
+	if (((*reg ^ state) & 1) != 0) {
+		t = *reg & ~1u;
+		*reg = t | (state & 1);
+
+		imxrt_dataSyncBarrier();
+		imxrt_dataInstrBarrier();
+	}
+
+	return 0;
+}
+
+
 void _imxrt_init(void)
 {
 	int i;
