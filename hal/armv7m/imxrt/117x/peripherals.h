@@ -251,6 +251,10 @@
 
 /* USB */
 
+#define USB0_BASE_ADDR     ((void *)0x40430000)
+#define USB0_PHY_BASE_ADDR ((void *)0x40434000)
+#define USB0_IRQ           usb_otg1_irq
+
 #define PHFS_ACM_PORTS_NB 1 /* Number of ports define by CDC driver; min = 1, max = 2 */
 
 
