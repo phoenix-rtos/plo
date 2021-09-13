@@ -3,7 +3,7 @@
  *
  * Operating system loader
  *
- * USB physical layer controller
+ * Zynq 7000 USB physical layer controller
  *
  * Copyright 2021 Phoenix Systems
  * Author: Hubert Buczynski
@@ -18,39 +18,38 @@
 #include <devices/gpio-zynq7000/gpio.h>
 
 
-/* Memory size for endpoints and setup data */
-#define BUFF_SIZE (ENDPOINTS_DIR_NB * ENDPOINTS_NUMBER + 1) * USB_BUFFER_SIZE
+/* Size of memory pool aligned to USB_BUFFER_SIZE, used by USB descriptors */
+#define USB_POOL_SIZE (ENDPOINTS_DIR_NB * ENDPOINTS_NUMBER + 1) * USB_BUFFER_SIZE
 
 
 struct {
-	__attribute__((aligned(USB_BUFFER_SIZE))) u8 data[BUFF_SIZE];
-	u32 buffCounter;
+	u8 pool[USB_POOL_SIZE] __attribute__((aligned(USB_BUFFER_SIZE)));
+	size_t usedPools;
 } phyusb_common;
 
 
 void *usbclient_allocBuff(u32 size)
 {
-	void *mem;
+	size_t org = USB_BUFFER_SIZE * phyusb_common.usedPools;
 
-	if ((size % USB_BUFFER_SIZE) || (USB_BUFFER_SIZE * phyusb_common.buffCounter + size) >= BUFF_SIZE)
+	if ((size % USB_BUFFER_SIZE) != 0 || org + size > USB_POOL_SIZE)
 		return NULL;
 
-	mem = (void *)(&phyusb_common.data[USB_BUFFER_SIZE * phyusb_common.buffCounter]);
-	phyusb_common.buffCounter += size / USB_BUFFER_SIZE;
+	phyusb_common.usedPools += size / USB_BUFFER_SIZE;
 
-	return mem;
+	return &phyusb_common.pool[org];
 }
 
 
 void usbclient_buffReset(void)
 {
-	phyusb_common.buffCounter = 0;
+	phyusb_common.usedPools = 0;
 }
 
 
 void *phy_getBase(void)
 {
-	return (void *)USB0_BASE_ADDR;
+	return USB0_BASE_ADDR;
 }
 
 
@@ -124,7 +123,7 @@ static void phy_setPins(void)
 
 void phy_init(void)
 {
-	phyusb_common.buffCounter = 0;
+	phyusb_common.usedPools = 0;
 
 	phy_setPins();
 	phy_reset();
@@ -139,6 +138,6 @@ void phy_reset(void)
 	gpio_writePin(mio_pin_07, 0);
 	gpio_writePin(mio_pin_07, 1);
 
-	phyusb_common.buffCounter = 0;
+	phyusb_common.usedPools = 0;
 	_zynq_setAmbaClk(amba_usb0_clk, clk_disable);
 }
