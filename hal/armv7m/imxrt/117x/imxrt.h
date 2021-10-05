@@ -380,4 +380,7 @@ extern int _imxrt_setDevClock(int clock, int div, int mux, int mfd, int mfn, int
 extern int _imxrt_setDirectLPCG(int clock, int state);
 
 
+extern int _imxrt_setLevelLPCG(int clock, int level);
+
+
 #endif

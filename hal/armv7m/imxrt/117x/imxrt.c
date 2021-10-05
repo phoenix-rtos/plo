@@ -56,10 +56,10 @@ struct {
 	volatile u32 *wdog3;
 	volatile u32 *iomux_snvs;
 	volatile u32 *iomux_lpsr;
+	volatile u32 *iomuxc_gpr;
 	volatile u32 *iomuxc;
 	volatile u32 *ccm;
 
-	u32 resetFlags;
 	u32 cpuclk;
 } imxrt_common;
 
@@ -101,6 +101,7 @@ int _imxrt_setIOmux(int mux, char sion, char mode)
 		return -1;
 
 	(*reg) = (!!sion << 4) | (mode & 0xf);
+	imxrt_dataBarrier();
 
 	return 0;
 }
@@ -161,6 +162,7 @@ int _imxrt_setIOpad(int pad, char sre, char dse, char pue, char pus, char ode, c
 	//t |= (apc & 0xf) << 28;
 
 	(*reg) = t;
+	imxrt_dataBarrier();
 
 	return 0;
 }
@@ -229,6 +231,7 @@ int _imxrt_setIOisel(int isel, char daisy)
 		return -1;
 
 	(*reg) = daisy & mask;
+	imxrt_dataBarrier();
 
 	return 0;
 }
@@ -243,9 +246,11 @@ void _imxrt_scbSetPriorityGrouping(u32 group)
 
 	/* Get register value and clear bits to set */
 	t = *(imxrt_common.scb + scb_aircr) & ~0xffff0700;
+	imxrt_dataBarrier();
 
 	/* Store new value */
 	*(imxrt_common.scb + scb_aircr) = t | 0x5fa0000 | ((group & 7) << 8);
+	imxrt_dataBarrier();
 }
 
 
@@ -262,6 +267,7 @@ void _imxrt_scbSetPriority(s8 excpn, u32 priority)
 	ptr = &((u8 *)(imxrt_common.scb + scb_shp0))[excpn - 4];
 
 	*ptr = (priority << 4) & 0x0ff;
+	imxrt_dataBarrier();
 }
 
 
@@ -299,6 +305,7 @@ void _imxrt_nvicSetPendingIRQ(s8 irqn, u8 state)
 {
 	volatile u32 *ptr = imxrt_common.nvic + ((u8)irqn >> 5) + (state ? nvic_ispr : nvic_icpr);
 	*ptr = 1 << (irqn & 0x1F);
+	imxrt_dataBarrier();
 }
 
 
@@ -316,6 +323,7 @@ void _imxrt_nvicSetPriority(s8 irqn, u32 priority)
 	ptr = (u8 *)(imxrt_common.nvic + irqn + nvic_ip);
 
 	*ptr = (priority << 4) & 0x0ff;
+	imxrt_dataBarrier();
 }
 
 
@@ -331,9 +339,9 @@ u8 _imxrt_nvicGetPriority(s8 irqn)
 
 void _imxrt_nvicSystemReset(void)
 {
+	imxrt_dataSyncBarrier();
 	*(imxrt_common.scb + scb_aircr) = ((0x5fa << 16) | (*(imxrt_common.scb + scb_aircr) & (0x700)) | (1 << 0x02));
-
-	__asm__ volatile ("dsb");
+	imxrt_dataBarrier();
 
 	for(;;);
 }
@@ -350,6 +358,7 @@ int _imxrt_systickInit(u32 interval)
 
 	*(imxrt_common.stk + stk_load) = (u32)load;
 	*(imxrt_common.stk + stk_ctrl) = 0x7;
+	imxrt_dataBarrier();
 
 	return 0;
 }
@@ -361,6 +370,7 @@ void _imxrt_systickSet(u8 state)
 	*(imxrt_common.stk + stk_ctrl) &= ~state;
 	state = !state;
 	*(imxrt_common.stk + stk_ctrl) |= state;
+	imxrt_dataBarrier();
 }
 
 
@@ -385,25 +395,27 @@ void _imxrt_enableDCache(void)
 {
 	u32 ccsidr, sets, ways;
 
-	*(imxrt_common.scb + scb_csselr) = 0;
-	imxrt_dataSyncBarrier();
+	if (!(*(imxrt_common.scb + scb_ccr) & (1 << 16))) {
+		*(imxrt_common.scb + scb_csselr) = 0;
+		imxrt_dataSyncBarrier();
 
-	ccsidr = *(imxrt_common.scb + scb_ccsidr);
+		ccsidr = *(imxrt_common.scb + scb_ccsidr);
 
-	/* Invalidate D$ */
-	sets = (ccsidr >> 13) & 0x7fff;
-	do {
-		ways = (ccsidr >> 3) & 0x3ff;
+		/* Invalidate D$ */
+		sets = (ccsidr >> 13) & 0x7fff;
 		do {
-			*(imxrt_common.scb + scb_dcisw) = ((sets & 0x1ff) << 5) | ((ways & 0x3) << 30);
-		} while (ways-- != 0);
-	} while (sets-- != 0);
-	imxrt_dataSyncBarrier();
+			ways = (ccsidr >> 3) & 0x3ff;
+			do {
+				*(imxrt_common.scb + scb_dcisw) = ((sets & 0x1ff) << 5) | ((ways & 0x3) << 30);
+			} while (ways-- != 0);
+		} while (sets-- != 0);
+		imxrt_dataSyncBarrier();
 
-	*(imxrt_common.scb + scb_ccr) |= 1 << 16;
+		*(imxrt_common.scb + scb_ccr) |= 1 << 16;
 
-	imxrt_dataSyncBarrier();
-	imxrt_dataInstrBarrier();
+		imxrt_dataSyncBarrier();
+		imxrt_dataInstrBarrier();
+	}
 }
 
 
@@ -411,24 +423,26 @@ void _imxrt_disableDCache(void)
 {
 	register u32 ccsidr, sets, ways;
 
-	*(imxrt_common.scb + scb_csselr) = 0;
-	imxrt_dataSyncBarrier();
+	if (*(imxrt_common.scb + scb_ccr) & (1 << 16)) {
+		*(imxrt_common.scb + scb_csselr) = 0;
+		imxrt_dataSyncBarrier();
 
-	*(imxrt_common.scb + scb_ccr) &= ~(1 << 16);
-	imxrt_dataSyncBarrier();
+		*(imxrt_common.scb + scb_ccr) &= ~(1 << 16);
+		imxrt_dataSyncBarrier();
 
-	ccsidr = *(imxrt_common.scb + scb_ccsidr);
+		ccsidr = *(imxrt_common.scb + scb_ccsidr);
 
-	sets = (ccsidr >> 13) & 0x7fff;
-	do {
-		ways = (ccsidr >> 3) & 0x3ff;
+		sets = (ccsidr >> 13) & 0x7fff;
 		do {
-			*(imxrt_common.scb + scb_dcisw) = ((sets & 0x1ff) << 5) | ((ways & 0x3) << 30);
-		} while (ways-- != 0);
-	} while (sets-- != 0);
+			ways = (ccsidr >> 3) & 0x3ff;
+			do {
+				*(imxrt_common.scb + scb_dcisw) = ((sets & 0x1ff) << 5) | ((ways & 0x3) << 30);
+			} while (ways-- != 0);
+		} while (sets-- != 0);
 
-	imxrt_dataSyncBarrier();
-	imxrt_dataInstrBarrier();
+		imxrt_dataSyncBarrier();
+		imxrt_dataInstrBarrier();
+	}
 }
 
 
@@ -457,25 +471,29 @@ void _imxrt_cleanDCache(void)
 
 void _imxrt_enableICache(void)
 {
-	imxrt_dataSyncBarrier();
-	imxrt_dataInstrBarrier();
-	*(imxrt_common.scb + scb_iciallu) = 0; /* Invalidate I$ */
-	imxrt_dataSyncBarrier();
-	imxrt_dataInstrBarrier();
-	*(imxrt_common.scb + scb_ccr) |= 1 << 17;
-	imxrt_dataSyncBarrier();
-	imxrt_dataInstrBarrier();
+	if (!(*(imxrt_common.scb + scb_ccr) & (1 << 17))) {
+		imxrt_dataSyncBarrier();
+		imxrt_dataInstrBarrier();
+		*(imxrt_common.scb + scb_iciallu) = 0; /* Invalidate I$ */
+		imxrt_dataSyncBarrier();
+		imxrt_dataInstrBarrier();
+		*(imxrt_common.scb + scb_ccr) |= 1 << 17;
+		imxrt_dataSyncBarrier();
+		imxrt_dataInstrBarrier();
+	}
 }
 
 
 void _imxrt_disableICache(void)
 {
-	imxrt_dataSyncBarrier();
-	imxrt_dataInstrBarrier();
-	*(imxrt_common.scb + scb_ccr) &= ~(1 << 17);
-	*(imxrt_common.scb + scb_iciallu) = 0;
-	imxrt_dataSyncBarrier();
-	imxrt_dataInstrBarrier();
+	if (*(imxrt_common.scb + scb_ccr) & (1 << 17)) {
+		imxrt_dataSyncBarrier();
+		imxrt_dataInstrBarrier();
+		*(imxrt_common.scb + scb_ccr) &= ~(1 << 17);
+		*(imxrt_common.scb + scb_iciallu) = 0;
+		imxrt_dataSyncBarrier();
+		imxrt_dataInstrBarrier();
+	}
 }
 
 /* CCM */
@@ -508,13 +526,31 @@ int _imxrt_setDirectLPCG(int clock, int state)
 
 	reg = imxrt_common.ccm + 0x1800 + clock * 0x8;
 
-	if (((*reg ^ state) & 1) != 0) {
-		t = *reg & ~1u;
-		*reg = t | (state & 1);
+	t = *reg & ~1u;
+	*reg = t | (state & 1);
 
-		imxrt_dataSyncBarrier();
-		imxrt_dataInstrBarrier();
-	}
+	imxrt_dataBarrier();
+	imxrt_dataInstrBarrier();
+
+	return 0;
+}
+
+
+int _imxrt_setLevelLPCG(int clock, int level)
+{
+	volatile u32 *reg;
+
+	if (clock < pctl_lpcg_m7 || clock > pctl_lpcg_uniq_edt_i)
+		return -1;
+
+	if (level < 0 || level > 4)
+		return -1;
+
+	reg = imxrt_common.ccm + 0x1801 + clock * 0x8;
+	*reg = (level << 28) | (level << 24) | (level << 20) | (level << 16) | level;
+
+	imxrt_dataBarrier();
+	imxrt_dataInstrBarrier();
 
 	return 0;
 }
@@ -538,14 +574,11 @@ void _imxrt_init(void)
 	imxrt_common.src = (void *)0x40c04000;
 	imxrt_common.iomux_snvs = (void *)0x40c94000;
 	imxrt_common.iomux_lpsr = (void *)0x40c08000;
+	imxrt_common.iomuxc_gpr = (void *)0x400e4000;
 	imxrt_common.iomuxc = (void *)0x400e8000;
 	imxrt_common.ccm = (void *)0x40cc0000;
 
 	imxrt_common.cpuclk = 640000000;
-
-	/* Store reset flags and then clean them */
-	imxrt_common.resetFlags = *(imxrt_common.src + src_srsr) & 0x1f;
-	*(imxrt_common.src + src_srsr) |= 0x1f;
 
 	/* Disable watchdogs */
 	if (*(imxrt_common.wdog1 + wdog_wcr) & (1 << 2))
@@ -562,6 +595,20 @@ void _imxrt_init(void)
 	if (*(imxrt_common.stk + stk_ctrl) & 1)
 		*(imxrt_common.stk + stk_ctrl) &= ~1;
 
+	/* Disable deep sleep */
+	*(imxrt_common.scb + scb_scr) &= ~(1 << 2);
+	imxrt_dataBarrier();
+
+	/* HACK - temporary fix for crash when booting from FlexSPI */
+	_imxrt_setDirectLPCG(pctl_lpcg_semc, 0);
+
+	/* Disable USB cache (set by bootrom) */
+	*(imxrt_common.iomuxc_gpr + 28) &= ~(1 << 13);
+	imxrt_dataBarrier();
+
+	/* Clear SRSR */
+	*(imxrt_common.src + src_srsr) = 0xffffffffu;
+
 	/* Configure cache */
 	_imxrt_enableDCache();
 	_imxrt_enableICache();
@@ -572,6 +619,7 @@ void _imxrt_init(void)
 			continue;
 
 		*reg |= 1 << 1;
+		imxrt_dataBarrier();
 	}
 
 	for (; i <= pctl_pad_gpio_lpsr_15; ++i) {
@@ -579,16 +627,10 @@ void _imxrt_init(void)
 			continue;
 
 		*reg &= ~0x3;
+		imxrt_dataBarrier();
 	}
 
-	/* Allow userspace applications to access hardware registers */
-	/*
-	for (i = 0; i < sizeof(imxrt_common.aips) / sizeof(imxrt_common.aips[0]); ++i) {
-		*(imxrt_common.aips[i] + aipstz_opacr) &= ~0x44444444;
-		*(imxrt_common.aips[i] + aipstz_opacr1) &= ~0x44444444;
-		*(imxrt_common.aips[i] + aipstz_opacr2) &= ~0x44444444;
-		*(imxrt_common.aips[i] + aipstz_opacr3) &= ~0x44444444;
-		*(imxrt_common.aips[i] + aipstz_opacr4) &= ~0x44444444;
-	}
-*/
+	/* Enable UsageFault, BusFault and MemManage exceptions */
+	*(imxrt_common.scb + scb_shcsr) |= (1 << 16) | (1 << 17) | (1 << 18);
+	imxrt_dataBarrier();
 }
