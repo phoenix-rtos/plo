@@ -40,6 +40,10 @@ extern const char *hal_cpuInfo(void);
 extern void hal_cpuInvCache(unsigned int type, addr_t addr, size_t sz);
 
 
+/* Function reboots system (final state may depend on latched bootloader config) */
+extern void hal_cpuReboot(void) __attribute__((noreturn));
+
+
 /* Function starts kernel loaded into memory */
 extern void hal_cpuJump(addr_t addr) __attribute__((noreturn));
 
