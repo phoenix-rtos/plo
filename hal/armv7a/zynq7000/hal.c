@@ -92,6 +92,16 @@ int hal_memAddMap(addr_t start, addr_t end, u32 attr, u32 mapId)
 }
 
 
+void hal_cpuReboot(void)
+{
+	/* TODO: implement system reset on Zynq */
+	for (;;)
+		;
+
+	__builtin_unreachable();
+}
+
+
 void hal_cpuJump(addr_t addr)
 {
 	syspage_save();

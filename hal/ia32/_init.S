@@ -300,6 +300,7 @@ _plo_chs_sec:
 
 
 /* Empty IDT descriptor */
+.globl _plo_idtr_empty
 _plo_idtr_empty:
 	.word 0
 	.long 0
