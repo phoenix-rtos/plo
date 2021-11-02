@@ -6,7 +6,7 @@
  * Console
  *
  * Copyright 2021 Phoenix Systems
- * Authors: Hubert Buczynski
+ * Authors: Hubert Buczynski, Gerard Swiderski
  *
  * This file is part of Phoenix-RTOS.
  *
@@ -14,6 +14,23 @@
  */
 
 #include <hal/hal.h>
+
+#define CONCAT(a, b)         a##b
+#define CONCAT2(a, b)        CONCAT(a, b)
+#define UART_PIN(n, pin)     CONCAT(UART, n##_##pin)
+#define CONSOLE_BASE(n)      (UART_PIN(n, BASE))
+#define CONSOLE_CLK(n)       (UART_PIN(n, CLK))
+#define CONSOLE_MUX(n, pin)  (CONCAT2(pctl_mux_gpio_, UART_PIN(n, pin)))
+#define CONSOLE_PAD(n, pin)  (CONCAT2(pctl_pad_gpio_, UART_PIN(n, pin)))
+#define CONSOLE_ISEL(n, pin) (CONCAT2(pctl_isel_lpuart, CONCAT(n, _##pin)))
+#define CONSOLE_BAUD(n)      (UART_PIN(n, BAUDRATE))
+
+#if CONSOLE_BAUD(UART_CONSOLE)
+#define CONSOLE_BAUDRATE CONSOLE_BAUD(UART_CONSOLE)
+#else
+#define CONSOLE_BAUDRATE (UART_BAUDRATE)
+#endif
+
 
 struct {
 	volatile u32 *uart;
@@ -38,28 +55,21 @@ void console_init(void)
 {
 	u32 t;
 
-#if UART_CONSOLE == 3
-	halconsole_common.uart = (void *)0x4018c000;
+	halconsole_common.uart = CONSOLE_BASE(UART_CONSOLE);
 
-	_imxrt_ccmControlGate(pctl_clk_lpuart3, clk_state_run_wait);
+	_imxrt_ccmControlGate(CONSOLE_CLK(UART_CONSOLE), clk_state_run_wait);
 
-	_imxrt_setIOmux(pctl_mux_gpio_emc_13, 0, 2);
-	_imxrt_setIOmux(pctl_mux_gpio_emc_14, 0, 2);
+	/* tx */
+	_imxrt_setIOmux(CONSOLE_MUX(UART_CONSOLE, TX_PIN), 0, 2);
+	_imxrt_setIOpad(CONSOLE_PAD(UART_CONSOLE, TX_PIN), 0, 0, 0, 1, 0, 2, 6, 0);
 
-	_imxrt_setIOisel(pctl_isel_lpuart3_tx, 1);
-	_imxrt_setIOisel(pctl_isel_lpuart3_rx, 1);
+	/* rx */
+	_imxrt_setIOmux(CONSOLE_MUX(UART_CONSOLE, RX_PIN), 0, 2);
+	_imxrt_setIOpad(CONSOLE_PAD(UART_CONSOLE, RX_PIN), 0, 0, 0, 1, 0, 2, 6, 0);
 
-	_imxrt_setIOpad(pctl_pad_gpio_emc_13, 0, 0, 0, 1, 0, 2, 6, 0);
-	_imxrt_setIOpad(pctl_pad_gpio_emc_14, 0, 0, 0, 1, 0, 2, 6, 0);
-#else
-	halconsole_common.uart = (void *)0x40184000;
-
-	_imxrt_ccmControlGate(pctl_clk_lpuart1, clk_state_run_wait);
-
-	_imxrt_setIOmux(pctl_mux_gpio_ad_b0_12, 0, 2);
-	_imxrt_setIOmux(pctl_mux_gpio_ad_b0_13, 0, 2);
-	_imxrt_setIOpad(pctl_pad_gpio_ad_b0_12, 0, 0, 0, 1, 0, 2, 6, 0);
-	_imxrt_setIOpad(pctl_pad_gpio_ad_b0_13, 0, 0, 0, 1, 0, 2, 6, 0);
+#if (UART_CONSOLE >= 2) && (UART_CONSOLE <= 8)
+	_imxrt_setIOisel(CONSOLE_ISEL(UART_CONSOLE, rx), 1);
+	_imxrt_setIOisel(CONSOLE_ISEL(UART_CONSOLE, tx), 1);
 #endif
 
 	_imxrt_ccmSetMux(clk_mux_uart, 0);
@@ -71,11 +81,22 @@ void console_init(void)
 	*(halconsole_common.uart + uart_global) &= ~(1 << 1);
 	imxrt_dataBarrier();
 
-	/* Set 115200 baudrate */
-	t = *(halconsole_common.uart + uart_baud);
-	t = (t & ~(0x1f << 24)) | (0x4 << 24);
-	*(halconsole_common.uart + uart_baud) = (t & ~0x1fff) | 0x8b;
-	*(halconsole_common.uart + uart_baud) &= ~(1 << 29);
+	/* Set baud rate */
+	t = *(halconsole_common.uart + uart_baud) & ~((0x1f << 24) | (1 << 17) | 0x1fff);
+
+	/* For baud rate calculation, default UART_CLK=80MHz was assumed */
+	switch (CONSOLE_BAUDRATE) {
+		case 9600: t |= 0x0c000281; break;
+		case 19200: t |= 0x080001cf; break;
+		case 38400: t |= 0x03020209; break;
+		case 57600: t |= 0x0302015b; break;
+		case 115200: t |= 0x0402008b; break;
+		case 230400: t |= 0x1c00000c; break;
+		case 460800: t |= 0x1c000006; break;
+		/* As fallback use default 115200 */
+		default: t |= 0x0402008b; break;
+	}
+	*(halconsole_common.uart + uart_baud) = t;
 
 	/* Set 8 bit and no parity mode */
 	*(halconsole_common.uart + uart_ctrl) &= ~0x117;
