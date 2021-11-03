@@ -21,7 +21,8 @@
 /* Temporary solution which works fine only for CDC. If the new device's class is added, SIZE_PHY_BUFF should be changed.
  * Memory size for endpoints and setup data for CDC Device:
  * - 2x Control endpoints + 2x setup data + IRQ endpoint + Bulk endpoint = 8 */
-#define SIZE_PHY_BUFF (8 * USB_BUFFER_SIZE)
+/* Size of memory pool aligned to USB_BUFFER_SIZE, used by USB descriptors */
+#define USB_POOL_SIZE (8 * USB_BUFFER_SIZE)
 
 
 /* Function returns buffer which is a multiple of USB_BUFFER_SIZE.

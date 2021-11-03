@@ -17,6 +17,8 @@ jobs:
   build:
     name: build image
     runs-on: ubuntu-latest
+    outputs:
+      build_result: ${{ steps.build.outcome }}
     strategy:
       matrix:
         target: ['armv7a7-imx6ull', 'armv7a9-zynq7000', 'armv7m7-imxrt106x', 'armv7m7-imxrt117x', 'armv7m4-stm32l4x6', 'host-pc', 'ia32-generic', 'riscv64-spike', 'riscv64-virt']
@@ -35,8 +37,8 @@ jobs:
       - name: Update submodule ${{ github.event.repository.name }}
         working-directory: ${{ github.event.repository.name }}
         run: |
-          git fetch --recurse-submodules=no --force ${{ github.event.repository.git_url }} "+refs/heads/*:refs/remotes/origin/*"
-          git fetch --recurse-submodules=no --force ${{ github.event.repository.git_url }} "+refs/pull/*/head:refs/remotes/origin/pr/*"
+          git fetch --recurse-submodules=no --force ${{ github.event.repository.clone_url }} "+refs/heads/*:refs/remotes/origin/*"
+          git fetch --recurse-submodules=no --force ${{ github.event.repository.clone_url }} "+refs/pull/*/head:refs/remotes/origin/pr/*"
           git checkout ${{ github.sha }} || git checkout ${{ github.event.pull_request.head.sha }}
 
       # attach GCC problem matcher... might not work because of submodules... just trying
@@ -44,6 +46,7 @@ jobs:
 
       # step 3: use our custom action to build the project
       - name: Build
+        id: build
         uses: ./.github/actions/phoenix-build
         with:
           target: ${{ matrix.target }}
@@ -68,10 +71,12 @@ jobs:
             _boot
             rootfs-${{ matrix.target }}.tar
 
-  test:
+  test-emu:
     needs: build
-    name: run tests
+    name: run tests on emulators
     runs-on: ubuntu-latest
+    outputs:
+      runner_result: ${{ steps.runner.outcome }}
     strategy:
       matrix:
         target: ['host-pc', 'ia32-generic']
@@ -83,12 +88,11 @@ jobs:
           repository: phoenix-rtos/phoenix-rtos-project
           submodules: recursive
 
-      # step 2: update the submodule
       - name: Update submodule ${{ github.event.repository.name }}
         working-directory: ${{ github.event.repository.name }}
         run: |
-          git fetch --recurse-submodules=no --force ${{ github.event.repository.git_url }} "+refs/heads/*:refs/remotes/origin/*"
-          git fetch --recurse-submodules=no --force ${{ github.event.repository.git_url }} "+refs/pull/*/head:refs/remotes/origin/pr/*"
+          git fetch --recurse-submodules=no --force ${{ github.event.repository.clone_url }} "+refs/heads/*:refs/remotes/origin/*"
+          git fetch --recurse-submodules=no --force ${{ github.event.repository.clone_url }} "+refs/pull/*/head:refs/remotes/origin/pr/*"
           git checkout ${{ github.sha }} || git checkout ${{ github.event.pull_request.head.sha }}
 
       - name: Download build artifacts
@@ -101,6 +105,71 @@ jobs:
         run: tar -xvf ../rootfs-${{ matrix.target }}.tar
 
       - name: Test runner
+        id: runner
         uses: ./.github/actions/phoenix-runner
         with:
           target: ${{ matrix.target }}
+
+  test-hw:
+    needs: build
+    name: run tests on hardware
+    runs-on: ${{ matrix.target }}
+    outputs:
+      runner_result: ${{ steps.runner.outcome }}
+    strategy:
+      matrix:
+        target: ['armv7m7-imxrt106x']
+
+    steps:
+      - name: Checkout phoenix-rtos-project
+        uses: actions/checkout@v2
+        with:
+          repository: phoenix-rtos/phoenix-rtos-project
+          submodules: recursive
+
+      - name: Update submodule ${{ github.event.repository.name }}
+        working-directory: ${{ github.event.repository.name }}
+        run: |
+          git fetch --recurse-submodules=no --force ${{ github.event.repository.clone_url }} "+refs/heads/*:refs/remotes/origin/*"
+          git fetch --recurse-submodules=no --force ${{ github.event.repository.clone_url }} "+refs/pull/*/head:refs/remotes/origin/pr/*"
+          git checkout ${{ github.sha }} || git checkout ${{ github.event.pull_request.head.sha }}
+
+      - name: Download build artifacts
+        uses: actions/download-artifact@v2
+        with:
+          name: phoenix-rtos-${{ matrix.target }}
+
+      - name: Untar rootfs
+        working-directory: _fs
+        run: tar -xvf ../rootfs-${{ matrix.target }}.tar
+
+      - name: Test runner
+        id: runner
+        run: |
+          python3 ./phoenix-rtos-tests/runner.py -T${{ matrix.target }}
+
+  mail-notification:
+    if: ${{ failure() }}
+    needs: ['build', 'test-emu', 'test-hw']
+    name: notify ci team using e-mail
+    runs-on: ubuntu-latest
+    steps:
+      - name: Send mail
+        # If there is some failure, not caused by build step or test runner step send mail
+        if: >-
+          ${{ needs.build.outputs.build_result != 'failure'
+          && needs.test-emu.outputs.runner_result != 'failure'
+          && needs.test-hw.outputs.runner_result != 'failure' }}
+        uses: dawidd6/action-send-mail@v3
+        with:
+          server_address: smtp.gmail.com
+          server_port: 465
+          username: ${{ secrets.CI_BOT_EMAIL_USERNAME }}
+          password: ${{ secrets.CI_BOT_EMAIL_PASSWORD }}
+          subject: Github Actions Warning
+          to: ci@phoenix-rtos.com
+          # Required sender full name (address can be skipped):
+          from: Continuous Integration Bot
+          # Optional whether this connection use TLS (default is true if server_port is 465)
+          secure: true
+          body: There is some problem with GH Actions. https://github.com/${{github.repository}}/actions/runs/${{github.run_id}}

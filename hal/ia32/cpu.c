@@ -61,6 +61,36 @@ void hal_cpuJump(addr_t addr)
 }
 
 
+void hal_cpuReboot(void)
+{
+	u8 status;
+
+	hal_interruptsDisable();
+
+	/* 1. Try to reboot using keyboard controller (8042) */
+	do {
+		status = hal_inb((void *)0x64);
+		if (status & 1)
+			(void)hal_inb((void *)0x60);
+	} while (status & 2);
+	hal_outb((void *)0x64, 0xfe);
+
+	/* 2. Try to reboot by PCI reset */
+	hal_outb((void *)0xcf9, 0xe);
+
+	/* 3. Triple fault (interrupt with null idt) */
+	__asm__ volatile(
+		"lidt _plo_idtr_empty; "
+		"int3; ");
+
+	/* 4. Nothing worked, halt */
+	for (;;)
+		hal_cpuHalt();
+
+	__builtin_unreachable();
+}
+
+
 void hal_cpuHalt(void)
 {
 	__asm__ volatile("hlt":);

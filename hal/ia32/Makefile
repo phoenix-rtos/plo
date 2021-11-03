@@ -11,7 +11,7 @@ CFLAGS += -I../plo/hal/ia32
 LDFLAGS += --defsym _plo_bss=__bss_start
 
 INIT_FLASH := 0x7c00
-PLO_COMMANDS := alias app call console copy dump echo go help kernel map phfs script syspage wait
+PLO_COMMANDS := alias app call console copy dump echo go help kernel map phfs script reboot syspage wait
 
 include devices/disk-bios/Makefile
 include devices/tty-bios/Makefile
