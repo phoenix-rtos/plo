@@ -18,12 +18,7 @@
 #include <lib/errno.h>
 
 
-#define MANUFACTURER_ID_SPANSION 0x1
-#define SPANSION_MEM256          0x19
-#define SPANSION_MEM128          0x18
-
-
-static void flashcfg_spansionCmds(flash_info_t *info)
+static void flashcfg_defaultCmds(flash_info_t *info)
 {
 	info->cmds[flash_cmd_rdid].opCode = FLASH_CMD_RDID;
 	info->cmds[flash_cmd_rdid].size = 1;
@@ -91,9 +86,35 @@ int flashcfg_infoResolve(flash_info_t *info)
 {
 	int res = EOK;
 
-	if (info->cfi.vendorData[0] == MANUFACTURER_ID_SPANSION && info->cfi.vendorData[2] == SPANSION_MEM256) {
+	/* Spansion s25fl256s1 */
+	if (info->cfi.vendorData[0] == 0x1 && info->cfi.vendorData[2] == 0x19) {
 		info->name = "Spansion s25fl256s1";
-		flashcfg_spansionCmds(info);
+		flashcfg_defaultCmds(info);
+	}
+	/* Micron n25q128 */
+	else if (info->cfi.vendorData[0] == 0x20 && info->cfi.vendorData[1] == 0xbb && info->cfi.vendorData[2] == 0x18) {
+		info->name = "Micron n25q128";
+
+		/* Lack of CFI support, filled based on specification */
+		info->cfi.timeoutTypical.byteWrite = 0x6;
+		info->cfi.timeoutTypical.pageWrite = 0x9;
+		info->cfi.timeoutTypical.sectorErase = 0x8;
+		info->cfi.timeoutTypical.chipErase = 0xf;
+		info->cfi.timeoutMax.byteWrite = 0x2;
+		info->cfi.timeoutMax.pageWrite = 0x2;
+		info->cfi.timeoutMax.sectorErase = 0x3;
+		info->cfi.timeoutMax.chipErase = 0x3;
+		info->cfi.chipSize = 0x18;
+		info->cfi.fdiDesc = 0x0102;
+		info->cfi.pageSize = 0x08;
+		info->cfi.regsCount = 1;
+		info->cfi.regs[0].count = 0xFFF;
+		info->cfi.regs[0].size = 0x10;
+
+		flashcfg_defaultCmds(info);
+		/* Specific configuration */
+		info->cmds[flash_cmd_dior].dummyCyc = 16;
+		info->cmds[flash_cmd_qior].dummyCyc = 32;
 	}
 	else {
 		info->name = "Unknown";
