@@ -223,32 +223,32 @@ static int qspi_initCtrlClk(void)
 static int qspi_linearMode(void)
 {
 	/* Disable QSPI */
-	*(flashdrv_common.base + er) &= ~0x1;
+	*(qspi_common.base + er) &= ~0x1;
 	hal_cpuDataMemoryBarrier();
 
 	/* Disable IRQs */
-	*(flashdrv_common.base + idr) = 0x7d;
+	*(qspi_common.base + idr) = 0x7d;
 
 	/* Disable linear mode */
-	*(flashdrv_common.base + lqspi_cr) = 0;
+	*(qspi_common.base + lqspi_cr) = 0;
 
-	*(flashdrv_common.base + cr) = (1 << 14);
-	*(flashdrv_common.base + cr) = (1 << 10);
+	*(qspi_common.base + cr) = (1 << 14);
+	*(qspi_common.base + cr) = (1 << 10);
 
-	*(flashdrv_common.base + cr) &= ~(0x7 << 3);
-	*(flashdrv_common.base + cr) |= (0x3 << 3);
+	*(qspi_common.base + cr) &= ~(0x7 << 3);
+	*(qspi_common.base + cr) |= (0x3 << 3);
 
-	*(flashdrv_common.base + cr) |= 0x1;
-	*(flashdrv_common.base + cr) |= (1 << 31);
-	*(flashdrv_common.base + cr) &= ~(1 << 26);
+	*(qspi_common.base + cr) |= 0x1;
+	*(qspi_common.base + cr) |= (1 << 31);
+	*(qspi_common.base + cr) &= ~(1 << 26);
 
-	*(flashdrv_common.base + cr) |= (0x3 << 6);
-	*(flashdrv_common.base + cr) &= ~(0x3 << 1);
-	*(flashdrv_common.base + cr) |= (0x1 << 19);
+	*(qspi_common.base + cr) |= (0x3 << 6);
+	*(qspi_common.base + cr) &= ~(0x3 << 1);
+	*(qspi_common.base + cr) |= (0x1 << 19);
 
-	*(flashdrv_common.base + lqspi_cr) =  0x80000003;
+	*(qspi_common.base + lqspi_cr) =  0x80000003;
 
-	*(flashdrv_common.base + er) = 0x1;
+	*(qspi_common.base + er) = 0x1;
 	hal_cpuDataMemoryBarrier();
 
 	return EOK;
