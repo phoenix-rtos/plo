@@ -247,7 +247,7 @@ static ssize_t flashdrv_pageProgram(addr_t offs, const void *buff, size_t len)
 static ssize_t flashdrv_read(unsigned int minor, addr_t offs, void *buff, size_t len, time_t timeout)
 {
 	ssize_t res;
-	size_t cmdSz, dataSz;
+	size_t cmdSz, dataSz, transferSz;
 	const flash_cmd_t *cmd = &fdrv_common.info.cmds[flash_cmd_qior];
 
 	if (len == 0)
@@ -266,7 +266,8 @@ static ssize_t flashdrv_read(unsigned int minor, addr_t offs, void *buff, size_t
 	cmdSz = (cmd->size + cmd->dummyCyc / 8 + 0x3) & ~0x3;
 
 	/* Size of the data which is received during cmd transfer */
-	dataSz = cmdSz - cmd->size - cmd->dummyCyc / 8;
+	transferSz = cmdSz - cmd->size - cmd->dummyCyc / 8;
+	dataSz = (transferSz > len) ? len : transferSz;
 
 	qspi_start();
 	if ((res = qspi_polledTransfer(fdrv_common.cmdTx, fdrv_common.cmdRx, cmdSz, TIMEOUT_CMD_MS)) < 0) {
