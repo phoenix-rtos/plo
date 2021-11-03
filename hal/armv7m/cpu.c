@@ -36,9 +36,11 @@ void hal_scbSetPriorityGrouping(u32 group)
 
 	/* Get register value and clear bits to set */
 	t = *(cpu_common.scb + scb_aircr) & ~0xffff0700;
+	hal_cpuDataMemoryBarrier();
 
 	/* Store new value */
 	*(cpu_common.scb + scb_aircr) = t | 0x5fa0000 | ((group & 7) << 8);
+	hal_cpuDataMemoryBarrier();
 }
 
 
@@ -55,6 +57,7 @@ void hal_scbSetPriority(s8 excpn, u32 priority)
 	ptr = &((u8 *)(cpu_common.scb + scb_shp0))[excpn - 4];
 
 	*ptr = (priority << 4) & 0x0ff;
+	hal_cpuDataMemoryBarrier();
 }
 
 
@@ -72,25 +75,27 @@ void hal_enableDCache(void)
 {
 	u32 ccsidr, sets, ways;
 
-	*(cpu_common.scb + scb_csselr) = 0;
-	hal_cpuDataSyncBarrier();
+	if (!(*(cpu_common.scb + scb_ccr) & (1 << 16))) {
+		*(cpu_common.scb + scb_csselr) = 0;
+		hal_cpuDataSyncBarrier();
 
-	ccsidr = *(cpu_common.scb + scb_ccsidr);
+		ccsidr = *(cpu_common.scb + scb_ccsidr);
 
-	/* Invalidate D$ */
-	sets = (ccsidr >> 13) & 0x7fff;
-	do {
-		ways = (ccsidr >> 3) & 0x3ff;
+		/* Invalidate D$ */
+		sets = (ccsidr >> 13) & 0x7fff;
 		do {
-			*(cpu_common.scb + scb_dcisw) = ((sets & 0x1ff) << 5) | ((ways & 0x3) << 30);
-		} while (ways-- != 0);
-	} while (sets-- != 0);
-	hal_cpuDataSyncBarrier();
+			ways = (ccsidr >> 3) & 0x3ff;
+			do {
+				*(cpu_common.scb + scb_dcisw) = ((sets & 0x1ff) << 5) | ((ways & 0x3) << 30);
+			} while (ways-- != 0);
+		} while (sets-- != 0);
+		hal_cpuDataSyncBarrier();
 
-	*(cpu_common.scb + scb_ccr) |= 1 << 16;
+		*(cpu_common.scb + scb_ccr) |= 1 << 16;
 
-	hal_cpuDataSyncBarrier();
-	hal_cpuInstrBarrier();
+		hal_cpuDataSyncBarrier();
+		hal_cpuInstrBarrier();
+	}
 }
 
 
@@ -98,24 +103,26 @@ void hal_disableDCache(void)
 {
 	register u32 ccsidr, sets, ways;
 
-	*(cpu_common.scb + scb_csselr) = 0;
-	hal_cpuDataSyncBarrier();
+	if (*(cpu_common.scb + scb_ccr) & (1 << 16)) {
+		*(cpu_common.scb + scb_csselr) = 0;
+		hal_cpuDataSyncBarrier();
 
-	*(cpu_common.scb + scb_ccr) &= ~(1 << 16);
-	hal_cpuDataSyncBarrier();
+		*(cpu_common.scb + scb_ccr) &= ~(1 << 16);
+		hal_cpuDataSyncBarrier();
 
-	ccsidr = *(cpu_common.scb + scb_ccsidr);
+		ccsidr = *(cpu_common.scb + scb_ccsidr);
 
-	sets = (ccsidr >> 13) & 0x7fff;
-	do {
-		ways = (ccsidr >> 3) & 0x3ff;
+		sets = (ccsidr >> 13) & 0x7fff;
 		do {
-			*(cpu_common.scb + scb_dcisw) = ((sets & 0x1ff) << 5) | ((ways & 0x3) << 30);
-		} while (ways-- != 0);
-	} while (sets-- != 0);
+			ways = (ccsidr >> 3) & 0x3ff;
+			do {
+				*(cpu_common.scb + scb_dcisw) = ((sets & 0x1ff) << 5) | ((ways & 0x3) << 30);
+			} while (ways-- != 0);
+		} while (sets-- != 0);
 
-	hal_cpuDataSyncBarrier();
-	hal_cpuInstrBarrier();
+		hal_cpuDataSyncBarrier();
+		hal_cpuInstrBarrier();
+	}
 }
 
 
@@ -190,25 +197,29 @@ void hal_invalDCacheAll(void)
 
 void hal_enableICache(void)
 {
-	hal_cpuDataSyncBarrier();
-	hal_cpuInstrBarrier();
-	*(cpu_common.scb + scb_iciallu) = 0; /* Invalidate I$ */
-	hal_cpuDataSyncBarrier();
-	hal_cpuInstrBarrier();
-	*(cpu_common.scb + scb_ccr) |= 1 << 17;
-	hal_cpuDataSyncBarrier();
-	hal_cpuInstrBarrier();
+	if (!(*(cpu_common.scb + scb_ccr) & (1 << 17))) {
+		hal_cpuDataSyncBarrier();
+		hal_cpuInstrBarrier();
+		*(cpu_common.scb + scb_iciallu) = 0; /* Invalidate I$ */
+		hal_cpuDataSyncBarrier();
+		hal_cpuInstrBarrier();
+		*(cpu_common.scb + scb_ccr) |= 1 << 17;
+		hal_cpuDataSyncBarrier();
+		hal_cpuInstrBarrier();
+	}
 }
 
 
 void hal_disableICache(void)
 {
-	hal_cpuDataSyncBarrier();
-	hal_cpuInstrBarrier();
-	*(cpu_common.scb + scb_ccr) &= ~(1 << 17);
-	*(cpu_common.scb + scb_iciallu) = 0;
-	hal_cpuDataSyncBarrier();
-	hal_cpuInstrBarrier();
+	if (*(cpu_common.scb + scb_ccr) & (1 << 17)) {
+		hal_cpuDataSyncBarrier();
+		hal_cpuInstrBarrier();
+		*(cpu_common.scb + scb_ccr) &= ~(1 << 17);
+		*(cpu_common.scb + scb_iciallu) = 0;
+		hal_cpuDataSyncBarrier();
+		hal_cpuInstrBarrier();
+	}
 }
 
 
@@ -236,6 +247,17 @@ unsigned int hal_cpuID(void)
 }
 
 
+void hal_cpuReset(void)
+{
+	hal_cpuDataSyncBarrier();
+	*(cpu_common.scb + scb_aircr) = ((0x5fa << 16) | (*(cpu_common.scb + scb_aircr) & (0x700)) | (1 << 0x02));
+	hal_cpuDataMemoryBarrier();
+
+	for (;;)
+		;
+}
+
+
 void hal_cpuInit(void)
 {
 	cpu_common.scb = (void *)0xe000ed00;
@@ -248,4 +270,8 @@ void hal_cpuInit(void)
 
 	/* Enable UsageFault, BusFault and MemManage exceptions */
 	*(cpu_common.scb + scb_shcsr) |= (1 << 16) | (1 << 17) | (1 << 18);
+
+	/* Disable deep sleep */
+	*(cpu_common.scb + scb_scr) &= ~(1 << 2);
+	hal_cpuDataSyncBarrier();
 }

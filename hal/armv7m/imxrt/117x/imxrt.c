@@ -40,10 +40,10 @@ struct {
 	volatile u32 *wdog3;
 	volatile u32 *iomux_snvs;
 	volatile u32 *iomux_lpsr;
+	volatile u32 *iomuxc_gpr;
 	volatile u32 *iomuxc;
 	volatile u32 *ccm;
 
-	u32 resetFlags;
 	u32 cpuclk;
 } imxrt_common;
 
@@ -75,6 +75,7 @@ int _imxrt_setIOmux(int mux, char sion, char mode)
 		return -1;
 
 	(*reg) = (!!sion << 4) | (mode & 0xf);
+	imxrt_dataBarrier();
 
 	return 0;
 }
@@ -135,6 +136,7 @@ int _imxrt_setIOpad(int pad, char sre, char dse, char pue, char pus, char ode, c
 	//t |= (apc & 0xf) << 28;
 
 	(*reg) = t;
+	imxrt_dataBarrier();
 
 	return 0;
 }
@@ -203,6 +205,7 @@ int _imxrt_setIOisel(int isel, char daisy)
 		return -1;
 
 	(*reg) = daisy & mask;
+	imxrt_dataBarrier();
 
 	return 0;
 }
@@ -228,6 +231,46 @@ int _imxrt_setDevClock(int clock, int div, int mux, int mfd, int mfn, int state)
 }
 
 
+int _imxrt_setDirectLPCG(int clock, int state)
+{
+	u32 t;
+	volatile u32 *reg;
+
+	if (clock < pctl_lpcg_m7 || clock > pctl_lpcg_uniq_edt_i)
+		return -1;
+
+	reg = imxrt_common.ccm + 0x1800 + clock * 0x8;
+
+	t = *reg & ~1u;
+	*reg = t | (state & 1);
+
+	imxrt_dataBarrier();
+	imxrt_dataInstrBarrier();
+
+	return 0;
+}
+
+
+int _imxrt_setLevelLPCG(int clock, int level)
+{
+	volatile u32 *reg;
+
+	if (clock < pctl_lpcg_m7 || clock > pctl_lpcg_uniq_edt_i)
+		return -1;
+
+	if (level < 0 || level > 4)
+		return -1;
+
+	reg = imxrt_common.ccm + 0x1801 + clock * 0x8;
+	*reg = (level << 28) | (level << 24) | (level << 20) | (level << 16) | level;
+
+	imxrt_dataBarrier();
+	imxrt_dataInstrBarrier();
+
+	return 0;
+}
+
+
 void _imxrt_init(void)
 {
 	int i;
@@ -244,14 +287,11 @@ void _imxrt_init(void)
 	imxrt_common.src = (void *)0x40c04000;
 	imxrt_common.iomux_snvs = (void *)0x40c94000;
 	imxrt_common.iomux_lpsr = (void *)0x40c08000;
+	imxrt_common.iomuxc_gpr = (void *)0x400e4000;
 	imxrt_common.iomuxc = (void *)0x400e8000;
 	imxrt_common.ccm = (void *)0x40cc0000;
 
 	imxrt_common.cpuclk = 640000000;
-
-	/* Store reset flags and then clean them */
-	imxrt_common.resetFlags = *(imxrt_common.src + src_srsr) & 0x1f;
-	*(imxrt_common.src + src_srsr) |= 0x1f;
 
 	/* Disable watchdogs */
 	if (*(imxrt_common.wdog1 + wdog_wcr) & (1 << 2))
@@ -268,6 +308,15 @@ void _imxrt_init(void)
 	if (*(imxrt_common.stk + stk_ctrl) & 1)
 		*(imxrt_common.stk + stk_ctrl) &= ~1;
 
+	/* HACK - temporary fix for crash when booting from FlexSPI */
+	_imxrt_setDirectLPCG(pctl_lpcg_semc, 0);
+
+	/* Disable USB cache (set by bootrom) */
+	*(imxrt_common.iomuxc_gpr + 28) &= ~(1 << 13);
+	imxrt_dataBarrier();
+
+	/* Clear SRSR */
+	*(imxrt_common.src + src_srsr) = 0xffffffffu;
 
 	/* Reconfigure all IO pads as slow slew-rate and low drive strength */
 	for (i = pctl_pad_gpio_emc_b1_00; i <= pctl_pad_gpio_disp_b2_15; ++i) {
@@ -275,6 +324,7 @@ void _imxrt_init(void)
 			continue;
 
 		*reg |= 1 << 1;
+		imxrt_dataBarrier();
 	}
 
 	for (; i <= pctl_pad_gpio_lpsr_15; ++i) {
@@ -282,16 +332,10 @@ void _imxrt_init(void)
 			continue;
 
 		*reg &= ~0x3;
+		imxrt_dataBarrier();
 	}
 
-	/* Allow userspace applications to access hardware registers */
-	/*
-	for (i = 0; i < sizeof(imxrt_common.aips) / sizeof(imxrt_common.aips[0]); ++i) {
-		*(imxrt_common.aips[i] + aipstz_opacr) &= ~0x44444444;
-		*(imxrt_common.aips[i] + aipstz_opacr1) &= ~0x44444444;
-		*(imxrt_common.aips[i] + aipstz_opacr2) &= ~0x44444444;
-		*(imxrt_common.aips[i] + aipstz_opacr3) &= ~0x44444444;
-		*(imxrt_common.aips[i] + aipstz_opacr4) &= ~0x44444444;
-	}
-*/
+	/* Enable UsageFault, BusFault and MemManage exceptions */
+	*(imxrt_common.scb + scb_shcsr) |= (1 << 16) | (1 << 17) | (1 << 18);
+	imxrt_dataBarrier();
 }

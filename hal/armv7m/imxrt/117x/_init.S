@@ -69,7 +69,7 @@ _fcfb:
 .byte 0x7        /* serialClkFreq */
 .byte 0x0        /* lutCustomSeqEnable */
 .word 0, 0
-.word 0x00800000 /* sflashA1Size */
+.word 0x00400000 /* sflashA1Size */
 .word 0          /* sflashA2Size */
 .word 0          /* sflashB1Size */
 .word 0          /* sflashB2Size */
@@ -183,34 +183,38 @@ _init_vectors:
 .type _start, %function
 _start:
 	cpsid if
-
+#if 0 /* No need to reconfigure FlexRAM, this is default anyway */
 	/* Configure FLEX RAM */
 	ldr r0, =IOMUXC_GPR
 
 	/* Low */
-	ldr r1, = 0xaaaa
+	ldr r1, =0xaaaa
 	str r1, [r0, #0x44]
+	dmb
 
 	/* HIGH */
 	ldr r1, =0xffff
 	str r1, [r0, #0x48]
+	dmb
 
 	/* Use provided FLEXRAM config */
 	ldr r1, [r0, #0x40]
 	orr r1, #(1 << 2)
 	str r1, [r0, #0x40]
-
+	dmb
+#endif
 	/* Init vector table and stack pointer */
 	ldr r0, =0xe000ed08
 	ldr r1, =_init_vectors
-
 	str r1, [r0]
+	dmb
+
 	ldr r0, [r1]
 	bic r0, 7
 	msr msp, r0
+	isb
 	ldr r8, =_startc
 	bx r8
-
 .size _start, .-_start
 .ltorg
 
