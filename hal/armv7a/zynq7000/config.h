@@ -19,11 +19,15 @@
 
 #ifndef __ASSEMBLY__
 
-#include "types.h"
 #include "zynq.h"
+#include "types.h"
 #include "peripherals.h"
-#include "../string.h"
+
+#include <phoenix/arch/syspage-zynq7000.h>
+#include <phoenix/syspage.h>
+
 #include "../cpu.h"
+#include "../string.h"
 
 #define PATH_KERNEL "phoenix-armv7a9-zynq7000.elf"
 

@@ -13,9 +13,7 @@
  * %LICENSE%
  */
 
-#include <hal/hal.h>
 #include <lib/errno.h>
-#include <syspage.h>
 #include "mpu.h"
 
 

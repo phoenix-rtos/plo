@@ -21,10 +21,16 @@
 
 #include "imxrt.h"
 #include "peripherals.h"
+
 #include "../types.h"
+
+#include <phoenix/arch/syspage-imxrt.h>
+#include <phoenix/syspage.h>
+
 #include "../../cpu.h"
 #include "../../mpu.h"
 #include "../../string.h"
+
 
 #endif
 

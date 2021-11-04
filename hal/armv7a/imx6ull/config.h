@@ -24,6 +24,9 @@
 #include "../string.h"
 #include "../cpu.h"
 
+#include <phoenix/arch/syspage-imx6ull.h>
+#include <phoenix/syspage.h>
+
 #define PATH_KERNEL "phoenix-armv7a7-imx6ull.elf"
 
 #define PHFS_ACM_PORTS_NB 1 /* Number of ports define by CDC driver; min = 1, max = 2 */

@@ -13,9 +13,8 @@
  * %LICENSE%
  */
 
-#include "syspage.h"
-
 #include <lib/lib.h>
+#include <syspage.h>
 
 
 #define ALIGN_ADDR(addr, align) (align ? ((addr + (align - 1)) & ~(align - 1)) : addr)
@@ -205,6 +204,7 @@ int syspage_mapAdd(const char *name, addr_t start, addr_t end, const char *attr)
 {
 	int res;
 	size_t len;
+	unsigned int iattr;
 
 	mapent_t *entry;
 	mapent_t tempEntry;
@@ -224,9 +224,10 @@ int syspage_mapAdd(const char *name, addr_t start, addr_t end, const char *attr)
 			(map->name = syspage_alloc(len + 1)) == NULL)
 		return -ENOMEM;
 
-	if ((res = syspage_strAttr2ui(attr, &map->attr)) < 0)
+	if ((res = syspage_strAttr2ui(attr, &iattr)) < 0)
 		return res;
 
+	map->attr = iattr;
 	map->entries = NULL;
 	map->start = start;
 	map->end = end;
