@@ -14,11 +14,11 @@
  * %LICENSE%
  */
 
-#include "syspage.h"
 #include <hal/hal.h>
 #include <lib/lib.h>
 #include <cmds/cmd.h>
 #include <devices/devs.h>
+#include <syspage.h>
 
 
 int main(void)

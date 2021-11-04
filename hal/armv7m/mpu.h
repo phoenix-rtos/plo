@@ -16,6 +16,7 @@
 #ifndef _MPU_HAL_H_
 #define _MPU_HAL_H_
 
+#include <hal/hal.h>
 
 typedef struct {
 	u32 rbar;

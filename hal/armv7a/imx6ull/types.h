@@ -43,11 +43,4 @@ typedef unsigned int size_t;
 typedef int ssize_t;
 typedef unsigned long long time_t;
 
-
-#pragma pack(push, 1)
-typedef struct {
-	/* Empty hal data */
-} hal_syspage_t;
-#pragma pack(pop)
-
 #endif

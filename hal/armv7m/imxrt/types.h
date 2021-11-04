@@ -16,7 +16,6 @@
 #ifndef _TYPES_H_
 #define _TYPES_H_
 
-
 #define NULL 0
 
 typedef unsigned char u8;
@@ -43,18 +42,5 @@ typedef unsigned int size_t;
 typedef int ssize_t;
 typedef unsigned long long time_t;
 
-#pragma pack(push, 1)
-typedef struct {
-	struct {
-		u32 type;
-		u32 allocCnt;
-		struct {
-			u32 rbar;
-			u32 rasr;
-		} table[16] __attribute__((aligned(8)));
-		u32 map[16]; /* ((u32)-1) = map is not assigned */
-	} mpu;
-} hal_syspage_t;
-#pragma pack(pop)
 
 #endif

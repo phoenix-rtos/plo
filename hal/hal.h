@@ -23,16 +23,6 @@
 
 enum { hal_cpuICache = 0, hal_cpuDCache };
 
-#pragma pack(push, 1)
-typedef struct _mapent_t {
-	struct _mapent_t *next, *prev;
-	enum { hal_entryReserved = 0, hal_entryTemp, hal_entryAllocated } type;
-
-	addr_t start;
-	addr_t end;
-} mapent_t;
-#pragma pack(pop)
-
 
 /* Function initializes clocks, peripherals and basic controllers */
 extern void hal_init(void);
