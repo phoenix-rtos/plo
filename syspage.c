@@ -311,13 +311,19 @@ static int syspage_bestFit(const syspage_map_t *map, size_t size, unsigned int a
 
 mapent_t *syspage_entryAdd(const char *mapName, addr_t start, size_t size, unsigned int align)
 {
-	const syspage_map_t *map;
+	const syspage_map_t *map = NULL, *iterMap;
 	mapent_t *entry, *newEntry;
 
 	if (mapName == NULL) {
-		for (map = syspage_common.syspage->maps; map != NULL; map = map->next) {
-			if (((map->start < start + size) && (map->end > start)))
-				break;
+		iterMap = syspage_common.syspage->maps;
+
+		if (iterMap != NULL) {
+			do {
+				if (((iterMap->start < start + size) && (iterMap->end > start))) {
+					map = iterMap;
+					break;
+				}
+			} while ((iterMap = iterMap->next) != syspage_common.syspage->maps);
 		}
 	}
 	else {
