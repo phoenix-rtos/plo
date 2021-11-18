@@ -21,7 +21,6 @@
 
 #include "cpu.h"
 #include "peripherals.h"
-#include "string.h"
 #include "types.h"
 
 /* Boot device number */

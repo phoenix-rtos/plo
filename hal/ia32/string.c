@@ -14,7 +14,7 @@
  * %LICENSE%
  */
 
-#include "string.h"
+#include <hal/string.h>
 
 
 void *hal_memcpy(void *dst, const void *src, size_t n)
@@ -31,6 +31,21 @@ void *hal_memcpy(void *dst, const void *src, size_t n)
 	: "memory", "cc");
 
 	return dst;
+}
+
+
+int hal_memcmp(const void *ptr1, const void *ptr2, size_t num)
+{
+	int res;
+	const char *p1 = ptr1;
+	const char *p2 = ptr2;
+
+	while (num--) {
+		if ((res = *(p1++) - *(p2++)) != 0)
+			return res < 0 ? -1 : 1;
+	}
+
+	return 0;
 }
 
 
@@ -123,32 +138,4 @@ char *hal_strncpy(char *dst, const char *src, size_t n)
 	} while ((i < n) && src[i - 1]);
 
 	return dst;
-}
-
-
-unsigned int hal_i2s(char *prefix, char *s, unsigned int n, unsigned char base, unsigned char zero)
-{
-	static const char digits[] = "0123456789abcdef";
-	unsigned int l, k, m = 0;
-	char c;
-
-	if (prefix != NULL) {
-		while (*prefix)
-			s[m++] = *prefix++;
-	}
-
-	for (k = m, l = (unsigned int)-1; l; n /= base, l /= base) {
-		if (!zero && !n)
-			break;
-		s[k++] = digits[n % base];
-	}
-	l = k--;
-
-	while (k > m) {
-		c = s[m];
-		s[m++] = s[k];
-		s[k--] = c;
-	}
-
-	return l;
 }
