@@ -95,6 +95,34 @@ extern void _exceptions_exc30(void);
 extern void _exceptions_exc31(void);
 
 
+static unsigned int hal_exceptionsi2s(char *prefix, char *s, unsigned int n, unsigned char base, unsigned char zero)
+{
+	static const char digits[] = "0123456789abcdef";
+	unsigned int l, k, m = 0;
+	char c;
+
+	if (prefix != NULL) {
+		while (*prefix)
+			s[m++] = *prefix++;
+	}
+
+	for (k = m, l = (unsigned int)-1; l; n /= base, l /= base) {
+		if (!zero && !n)
+			break;
+		s[k++] = digits[n % base];
+	}
+	l = k--;
+
+	while (k > m) {
+		c = s[m];
+		s[m++] = s[k];
+		s[k--] = c;
+	}
+
+	return l;
+}
+
+
 /* Dumps exception context to buffer */
 static void hal_exceptionsDumpContext(char *buff, unsigned int n, exc_context_t *ctx)
 {
@@ -116,34 +144,34 @@ static void hal_exceptionsDumpContext(char *buff, unsigned int n, exc_context_t 
 	hal_strcpy(buff += hal_strlen(buff), mnemonics[n]);
 	buff += hal_strlen(buff);
 
-	i += hal_i2s("\neax=", buff + i, ctx->eax, 16, 1);
-	i += hal_i2s("  cs=", buff + i, ctx->cs, 16, 1);
-	i += hal_i2s(" eip=", buff + i, ctx->eip, 16, 1);
-	i += hal_i2s(" eflgs=", buff + i, ctx->eflags, 16, 1);
+	i += hal_exceptionsi2s("\neax=", buff + i, ctx->eax, 16, 1);
+	i += hal_exceptionsi2s("  cs=", buff + i, ctx->cs, 16, 1);
+	i += hal_exceptionsi2s(" eip=", buff + i, ctx->eip, 16, 1);
+	i += hal_exceptionsi2s(" eflgs=", buff + i, ctx->eflags, 16, 1);
 
-	i += hal_i2s("\nebx=", buff + i, ctx->ebx, 16, 1);
-	i += hal_i2s("  ss=", buff + i, ctx->ss, 16, 1);
-	i += hal_i2s(" esp=", buff + i, ctx->esp, 16, 1);
-	i += hal_i2s(" ebp=", buff + i, ctx->ebp, 16, 1);
+	i += hal_exceptionsi2s("\nebx=", buff + i, ctx->ebx, 16, 1);
+	i += hal_exceptionsi2s("  ss=", buff + i, ctx->ss, 16, 1);
+	i += hal_exceptionsi2s(" esp=", buff + i, ctx->esp, 16, 1);
+	i += hal_exceptionsi2s(" ebp=", buff + i, ctx->ebp, 16, 1);
 
-	i += hal_i2s("\necx=", buff + i, ctx->ecx, 16, 1);
-	i += hal_i2s("  ds=", buff + i, ctx->ds, 16, 1);
-	i += hal_i2s(" esi=", buff + i, ctx->esi, 16, 1);
-	i += hal_i2s("  fs=", buff + i, ctx->fs, 16, 1);
+	i += hal_exceptionsi2s("\necx=", buff + i, ctx->ecx, 16, 1);
+	i += hal_exceptionsi2s("  ds=", buff + i, ctx->ds, 16, 1);
+	i += hal_exceptionsi2s(" esi=", buff + i, ctx->esi, 16, 1);
+	i += hal_exceptionsi2s("  fs=", buff + i, ctx->fs, 16, 1);
 
-	i += hal_i2s("\nedx=", buff + i, ctx->edx, 16, 1);
-	i += hal_i2s("  es=", buff + i, ctx->es, 16, 1);
-	i += hal_i2s(" edi=", buff + i, ctx->edi, 16, 1);
-	i += hal_i2s("  gs=", buff + i, ctx->gs, 16, 1);
+	i += hal_exceptionsi2s("\nedx=", buff + i, ctx->edx, 16, 1);
+	i += hal_exceptionsi2s("  es=", buff + i, ctx->es, 16, 1);
+	i += hal_exceptionsi2s(" edi=", buff + i, ctx->edi, 16, 1);
+	i += hal_exceptionsi2s("  gs=", buff + i, ctx->gs, 16, 1);
 
-	i += hal_i2s("\ndr0=", buff + i, ctx->dr0, 16, 1);
-	i += hal_i2s(" dr1=", buff + i, ctx->dr1, 16, 1);
-	i += hal_i2s(" dr2=", buff + i, ctx->dr2, 16, 1);
-	i += hal_i2s(" dr3=", buff + i, ctx->dr3, 16, 1);
+	i += hal_exceptionsi2s("\ndr0=", buff + i, ctx->dr0, 16, 1);
+	i += hal_exceptionsi2s(" dr1=", buff + i, ctx->dr1, 16, 1);
+	i += hal_exceptionsi2s(" dr2=", buff + i, ctx->dr2, 16, 1);
+	i += hal_exceptionsi2s(" dr3=", buff + i, ctx->dr3, 16, 1);
 
-	i += hal_i2s("\ndr4=", buff + i, ctx->dr4, 16, 1);
-	i += hal_i2s(" dr5=", buff + i, ctx->dr5, 16, 1);
-	i += hal_i2s(" cr2=", buff + i, cr2, 16, 1);
+	i += hal_exceptionsi2s("\ndr4=", buff + i, ctx->dr4, 16, 1);
+	i += hal_exceptionsi2s(" dr5=", buff + i, ctx->dr5, 16, 1);
+	i += hal_exceptionsi2s(" cr2=", buff + i, cr2, 16, 1);
 	buff[i] = '\0';
 }
 

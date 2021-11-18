@@ -27,7 +27,6 @@
 #include <phoenix/syspage.h>
 
 #include "../cpu.h"
-#include "../string.h"
 
 #define PATH_KERNEL "phoenix-armv7a9-zynq7000.elf"
 

@@ -21,7 +21,6 @@
 
 #include "types.h"
 #include "imx6ull.h"
-#include "../string.h"
 #include "../cpu.h"
 
 #include <phoenix/arch/syspage-imx6ull.h>

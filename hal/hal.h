@@ -19,6 +19,7 @@
 #define _HAL_H_
 
 #include <config.h>
+#include "string.h"
 
 
 enum { hal_cpuICache = 0, hal_cpuDCache };

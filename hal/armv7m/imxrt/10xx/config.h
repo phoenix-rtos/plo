@@ -29,7 +29,6 @@
 
 #include "../../cpu.h"
 #include "../../mpu.h"
-#include "../../string.h"
 
 
 #define PATH_KERNEL "phoenix-armv7m7-imxrt106x.elf"

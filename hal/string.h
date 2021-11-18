@@ -6,17 +6,17 @@
  * HAL basic routines
  *
  * Copyright 2017, 2018, 2021 Phoenix Systems
- * Author: Pawel Pisarczyk, Aleksander Kaminski, Hubert Buczynski
+ * Author: Pawel Pisarczyk, Aleksander Kaminski, Hubert Buczynski, Lukasz Kosinski
  *
  * This file is part of Phoenix-RTOS.
  *
  * %LICENSE%
  */
 
-#ifndef _HAL_BASE_H_
-#define _HAL_BASE_H_
+#ifndef _HAL_STRING_H_
+#define _HAL_STRING_H_
 
-#include <hal/hal.h>
+#include <config.h>
 
 
 extern void *hal_memcpy(void *dst, const void *src, size_t l);
