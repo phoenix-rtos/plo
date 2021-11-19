@@ -5,7 +5,7 @@
  *
  * i.MX RT Flash Configurator
  *
- * Copyright 2019, 2020 Phoenix Systems
+ * Copyright 2019-2021 Phoenix Systems
  * Author: Hubert Buczynski
  *
  * This file is part of Phoenix-RTOS.
@@ -24,7 +24,9 @@
 
 /* List of supported flash memories */
 #define WINDBOND_W25Q32JV_IQ 0x4016
+#define ISSI_DEV_IS25WP032A  0x7016
 #define ISSI_DEV_IS25WP064A  0x7017
+#define ISSI_DEV_IS25WP128A  0x7018
 #define MICRON_MT25QL512ABB  0xba20
 #define MICRON_MT25QL01GBBB  0xba21
 
