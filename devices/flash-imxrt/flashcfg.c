@@ -40,9 +40,9 @@ static int flashcfg_getWindbondConfig(flash_context_t *ctx)
 static void flashcfg_setWindbondLUT(flash_context_t *ctx)
 {
 	/* QUAD Fast Read */
-	ctx->config.mem.lut[4 * QUAD_FAST_READ_SEQ_ID] = LUT_INSTR(LUT_CMD_CMD, LUT_PAD1, FLASH_SPANSION_CMD_QIOR, LUT_CMD_ADDR, LUT_PAD4, 0x18); /* 0xa1804eb */
-	ctx->config.mem.lut[4 * QUAD_FAST_READ_SEQ_ID + 1] = LUT_INSTR(LUT_CMD_MODE8, LUT_PAD4, 0x04, LUT_CMD_DUMMY, LUT_PAD4, 0x04);             /* 0x32061ef4 */
-	ctx->config.mem.lut[4 * QUAD_FAST_READ_SEQ_ID + 2] = LUT_INSTR(LUT_CMD_READ, LUT_PAD4, 0x04, 0, 0, 0);                                    /* 0x2604 */
+	ctx->config.mem.lut[4 * QUAD_FAST_READ_SEQ_ID] = LUT_INSTR(LUT_CMD_CMD, LUT_PAD1, FLASH_SPANSION_CMD_QIOR, LUT_CMD_ADDR, LUT_PAD4, LUT_3B_ADDR); /* 0xa1804eb */
+	ctx->config.mem.lut[4 * QUAD_FAST_READ_SEQ_ID + 1] = LUT_INSTR(LUT_CMD_MODE8, LUT_PAD4, 0x04, LUT_CMD_DUMMY, LUT_PAD4, 0x04);                    /* 0x32041e04 */
+	ctx->config.mem.lut[4 * QUAD_FAST_READ_SEQ_ID + 2] = LUT_INSTR(LUT_CMD_READ, LUT_PAD4, 0x04, 0, 0, 0);                                           /* 0x2604 */
 	ctx->config.mem.lut[4 * QUAD_FAST_READ_SEQ_ID + 3] = 0;
 	flexspi_norFlashUpdateLUT(ctx->instance, QUAD_FAST_READ_SEQ_ID, (const u32 *)&ctx->config.mem.lut[4 * QUAD_FAST_READ_SEQ_ID], 1);
 
@@ -83,7 +83,7 @@ static void flashcfg_setWindbondLUT(flash_context_t *ctx)
 
 	/* Chip Erase */
 	ctx->config.mem.lut[4 * CHIP_ERASE_SEQ_ID] = LUT_INSTR(LUT_CMD_CMD, LUT_PAD1, FLASH_SPANSION_CMD_BE, 0, 0, 0); /* 0x0460 */
-	ctx->config.mem.lut[4 * CHIP_ERASE_SEQ_ID + 1] = LUT_INSTR(LUT_CMD_WRITE, LUT_PAD1, 0x04, 0, 0, 0);            /* 0x2004 */
+	ctx->config.mem.lut[4 * CHIP_ERASE_SEQ_ID + 1] = 0;
 	ctx->config.mem.lut[4 * CHIP_ERASE_SEQ_ID + 2] = 0;
 	ctx->config.mem.lut[4 * CHIP_ERASE_SEQ_ID + 3] = 0;
 
@@ -254,7 +254,7 @@ static void flashcfg_setMicronLUT(flash_context_t *ctx)
 
 	/* Chip Erase */
 	ctx->config.mem.lut[4 * CHIP_ERASE_SEQ_ID] = LUT_INSTR(LUT_CMD_CMD, LUT_PAD1, FLASH_SPANSION_CMD_BE, 0, 0, 0); /* 0x0460 */
-	ctx->config.mem.lut[4 * CHIP_ERASE_SEQ_ID + 1] = LUT_INSTR(LUT_CMD_WRITE, LUT_PAD1, 0x04, 0, 0, 0);            /* 0x2004 */
+	ctx->config.mem.lut[4 * CHIP_ERASE_SEQ_ID + 1] = 0;
 	ctx->config.mem.lut[4 * CHIP_ERASE_SEQ_ID + 2] = 0;
 	ctx->config.mem.lut[4 * CHIP_ERASE_SEQ_ID + 3] = 0;
 	flexspi_norFlashUpdateLUT(ctx->instance, CHIP_ERASE_SEQ_ID, (const u32 *)&ctx->config.mem.lut[4 * CHIP_ERASE_SEQ_ID], 1);
