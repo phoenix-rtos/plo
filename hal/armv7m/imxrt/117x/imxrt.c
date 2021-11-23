@@ -75,7 +75,7 @@ int _imxrt_setIOmux(int mux, char sion, char mode)
 		return -1;
 
 	(*reg) = (!!sion << 4) | (mode & 0xf);
-	imxrt_dataBarrier();
+	hal_cpuDataMemoryBarrier();
 
 	return 0;
 }
@@ -136,7 +136,7 @@ int _imxrt_setIOpad(int pad, char sre, char dse, char pue, char pus, char ode, c
 	//t |= (apc & 0xf) << 28;
 
 	(*reg) = t;
-	imxrt_dataBarrier();
+	hal_cpuDataMemoryBarrier();
 
 	return 0;
 }
@@ -205,7 +205,7 @@ int _imxrt_setIOisel(int isel, char daisy)
 		return -1;
 
 	(*reg) = daisy & mask;
-	imxrt_dataBarrier();
+	hal_cpuDataMemoryBarrier();
 
 	return 0;
 }
@@ -244,8 +244,8 @@ int _imxrt_setDirectLPCG(int clock, int state)
 	t = *reg & ~1u;
 	*reg = t | (state & 1);
 
-	imxrt_dataBarrier();
-	imxrt_dataInstrBarrier();
+	hal_cpuDataMemoryBarrier();
+	hal_cpuInstrBarrier();
 
 	return 0;
 }
@@ -264,8 +264,8 @@ int _imxrt_setLevelLPCG(int clock, int level)
 	reg = imxrt_common.ccm + 0x1801 + clock * 0x8;
 	*reg = (level << 28) | (level << 24) | (level << 20) | (level << 16) | level;
 
-	imxrt_dataBarrier();
-	imxrt_dataInstrBarrier();
+	hal_cpuDataMemoryBarrier();
+	hal_cpuInstrBarrier();
 
 	return 0;
 }
@@ -313,7 +313,7 @@ void _imxrt_init(void)
 
 	/* Disable USB cache (set by bootrom) */
 	*(imxrt_common.iomuxc_gpr + 28) &= ~(1 << 13);
-	imxrt_dataBarrier();
+	hal_cpuDataMemoryBarrier();
 
 	/* Clear SRSR */
 	*(imxrt_common.src + src_srsr) = 0xffffffffu;
@@ -324,7 +324,7 @@ void _imxrt_init(void)
 			continue;
 
 		*reg |= 1 << 1;
-		imxrt_dataBarrier();
+		hal_cpuDataMemoryBarrier();
 	}
 
 	for (; i <= pctl_pad_gpio_lpsr_15; ++i) {
@@ -332,10 +332,6 @@ void _imxrt_init(void)
 			continue;
 
 		*reg &= ~0x3;
-		imxrt_dataBarrier();
+		hal_cpuDataMemoryBarrier();
 	}
-
-	/* Enable UsageFault, BusFault and MemManage exceptions */
-	*(imxrt_common.scb + scb_shcsr) |= (1 << 16) | (1 << 17) | (1 << 18);
-	imxrt_dataBarrier();
 }
