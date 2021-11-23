@@ -270,6 +270,7 @@ void hal_cpuInit(void)
 
 	/* Enable UsageFault, BusFault and MemManage exceptions */
 	*(cpu_common.scb + scb_shcsr) |= (1 << 16) | (1 << 17) | (1 << 18);
+	hal_cpuDataMemoryBarrier();
 
 	/* Disable deep sleep */
 	*(cpu_common.scb + scb_scr) &= ~(1 << 2);
