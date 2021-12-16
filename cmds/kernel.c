@@ -32,6 +32,7 @@ static int cmd_kernel(int argc, char *argv[])
 {
 	u8 buff[SIZE_MSG_BUFF];
 	ssize_t res;
+	addr_t kernelPAddr = (addr_t)-1;
 	const char *kname;
 	handler_t handler;
 
@@ -81,6 +82,10 @@ static int cmd_kernel(int argc, char *argv[])
 				return -ENOMEM;
 			}
 
+			/* Save kernel's beginning address */
+			if (phdr.p_flags == (PHF_R | PHF_X))
+				kernelPAddr = entry->start;
+
 			elfOffs = phdr.p_offset;
 
 			for (segOffs = 0; segOffs < phdr.p_filesz; elfOffs += res, segOffs += res) {
@@ -94,7 +99,9 @@ static int cmd_kernel(int argc, char *argv[])
 		}
 	}
 
+
 	hal_kernelEntryPoint(hal_kernelGetAddress(hdr.e_entry));
+	syspage_kernelPAddrAdd(kernelPAddr);
 	phfs_close(handler);
 
 	log_info("\nLoaded %s", kname);
