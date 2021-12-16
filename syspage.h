@@ -29,6 +29,9 @@ extern void syspage_init(void);
 extern void *syspage_alloc(size_t size);
 
 
+extern void syspage_kernelPAddrAdd(addr_t address);
+
+
 /* Map's functions */
 extern int syspage_mapAdd(const char *name, addr_t start, addr_t end, const char *attr);
 

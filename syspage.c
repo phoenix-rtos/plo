@@ -67,6 +67,12 @@ void *syspage_alloc(size_t size)
 }
 
 
+void syspage_kernelPAddrAdd(addr_t address)
+{
+	syspage_common.syspage->pkernel = address;
+}
+
+
 /* Map's functions */
 
 static const syspage_map_t *syspage_mapGet(const char *name)
@@ -91,6 +97,7 @@ static const char *syspage_etype2str(unsigned int type)
 		case hal_entryReserved: return "reserved";
 		case hal_entryAllocated: return "allocated";
 		case hal_entryTemp: return "temp";
+		case hal_entryInvalid: return "invalid";
 		default: return NULL;
 	}
 }
