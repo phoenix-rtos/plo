@@ -17,47 +17,35 @@
 #include <syspage.h>
 
 
-/* FIXME: temporary usage until new syspage implementation */
-extern int hal_memoryGetEntry(unsigned int *offs, mem_entry_t *entry);
+struct {
+	addr_t entry;
+} cpu_common;
 
 
-void hal_cpuJump(addr_t addr)
+extern addr_t hal_memoryGetSyspageAddr(void);
+
+
+void hal_kernelEntryPoint(addr_t addr)
 {
-	/* FIXME: temporary HAL syspage usage, should be removed after new syspage implementation is added */
-	syspage_hal_t *syspage = (syspage_hal_t *)syspage_getAddress();
-	unsigned int offs = 0;
+	cpu_common.entry = addr;
+}
 
-	/* Copy HAL syspage data */
-	syspage_setHalData(&_plo_syspage);
-	syspage_save();
 
-	/* Add memory map entries */
-	syspage->mmsize = 0;
-	do {
-		if (hal_memoryGetEntry(&offs, (mem_entry_t *)(syspage->mm + syspage->mmsize)))
-			break;
-		syspage->mmsize++;
-	} while (offs);
+int hal_cpuJump(void)
+{
+	addr_t syspage = hal_memoryGetSyspageAddr();
 
-	/* Add program entries */
-	syspage->progssz = 0;
-
-	/* Generate fake syspage data - required for current kernel syspage compatibility */
-	syspage->kernel = *(unsigned int *)((char *)syspage + sizeof(syspage_hal_t)); /* Kernel */
-	syspage->kernelsz = 0xc0000;                                                  /* Kernel size */
-	syspage->console = 0;                                                         /* Console */
-	syspage->arg[0] = '\0';                                                       /* Args */
-
-	hal_done();
+	if (cpu_common.entry == (addr_t)-1)
+		return -1;
 
 	__asm__ volatile(
 		"cli; "
 		"movl 24(%0), %%esp; "
 		"pushl %0; "
 		"jmpl *%1; "
-	:: "g" (syspage), "r" (addr));
+	:: "g" (syspage), "r" (cpu_common.entry));
 
-	__builtin_unreachable();
+	return 0;
 }
 
 
