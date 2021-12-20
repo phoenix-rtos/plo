@@ -118,7 +118,7 @@ static int cmd_appLoad(handler_t handler, size_t size, const char *name, char *i
 		offs = 0;
 
 	/* Check whether map's range coincides with device's address space */
-	if ((res = phfs_map(handler, offs, size, mAttrRead | mAttrWrite, start, end - start, attr, &addr)) < 0) {
+	if ((res = phfs_map(handler, offs, size, mAttrRead | mAttrExec, start, end - start, attr, &addr)) < 0) {
 		log_error("\nDevice is not mappable in %s", imaps);
 		return res;
 	}
