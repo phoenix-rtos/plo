@@ -40,6 +40,13 @@ addr_t hal_kernelGetAddress(addr_t addr)
 }
 
 
+void hal_kernelGetEntryPointOffset(addr_t *off, int *indirect)
+{
+	*off = 0;
+	*indirect = 0;
+}
+
+
 void hal_done(void)
 {
 	return;
