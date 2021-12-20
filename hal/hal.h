@@ -59,6 +59,9 @@ extern addr_t hal_kernelGetAddress(addr_t addr);
 extern void hal_kernelEntryPoint(addr_t addr);
 
 
+extern void hal_kernelGetEntryPointOffset(addr_t *off, int *indirect);
+
+
 /* Function validates and add memory map at hal region level */
 extern int hal_memoryAddMap(addr_t start, addr_t end, u32 attr, u32 mapId);
 
