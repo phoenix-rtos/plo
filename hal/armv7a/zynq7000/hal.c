@@ -82,6 +82,13 @@ addr_t hal_kernelGetAddress(addr_t addr)
 }
 
 
+void hal_kernelGetEntryPointOffset(addr_t *off, int *indirect)
+{
+	*off = 0;
+	*indirect = 1;
+}
+
+
 void hal_kernelEntryPoint(addr_t addr)
 {
 	hal_common.entry = addr;
