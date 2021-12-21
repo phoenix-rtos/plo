@@ -24,7 +24,7 @@
 
 static void cmd_kernelimgInfo(void)
 {
-	lib_printf("loads Phoenix-RTOS binary image, usage: kernelimg [<dev> [name] <text begin> <text size> <data begin> <data size>]");
+	lib_printf("loads Phoenix-RTOS binary image, usage: kernelimg <dev> [name] <text begin> <text size> <data begin> <data size>");
 }
 
 

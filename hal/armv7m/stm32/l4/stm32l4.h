@@ -86,7 +86,7 @@ static inline void _stm32_dataBarrier(void)
 extern int _stm32_rccSetDevClock(unsigned int d, u32 hz);
 
 
-/* Sets CPU clock to the closest smaller MSI freqency */
+/* Sets CPU clock to the closest smaller MSI frequency */
 extern int _stm32_rccSetCPUClock(u32 hz);
 
 

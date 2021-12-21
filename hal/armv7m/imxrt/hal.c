@@ -116,11 +116,13 @@ static void hal_getMinOverlappedRange(addr_t start, addr_t end, mapent_t *entry,
 
 int hal_memoryGetNextEntry(addr_t start, addr_t end, mapent_t *entry)
 {
-	mapent_t tempEntry = { 0 };
+	mapent_t tempEntry;
 	mapent_t minEntry = { .start = (addr_t)-1, .end = 0 };
 
 	if (start == end)
 		return -1;
+
+	hal_memset(&tempEntry, 0, sizeof(tempEntry));
 
 	/* plo: .bss */
 	tempEntry.start = (addr_t)_plo_bss;
