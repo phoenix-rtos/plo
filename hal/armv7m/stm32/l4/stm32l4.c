@@ -634,7 +634,7 @@ void _stm32_wdgReload(void)
 
 void _stm32_init(void)
 {
-	u32 t, i;
+	u32 i;
 	static const int gpio2pctl[] = { pctl_gpioa, pctl_gpiob, pctl_gpioc,
 		pctl_gpiod, pctl_gpioe, pctl_gpiof, pctl_gpiog, pctl_gpioh, pctl_gpioi };
 
