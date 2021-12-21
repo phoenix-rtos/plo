@@ -19,7 +19,6 @@
 #define SYSTICK_IRQ 15
 
 struct {
-	volatile u32 *base;
 	volatile time_t time;
 	unsigned int interval;
 } timer_common;
@@ -31,7 +30,7 @@ static int timer_isr(unsigned int irq, void *data)
 	(void)data;
 
 	timer_common.time += (timer_common.interval + 500) / 1000;
-	_stm32_dataSyncBarrier();
+	hal_cpuDataSyncBarrier();
 	return 0;
 }
 

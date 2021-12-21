@@ -64,24 +64,6 @@ enum { wwdq_irq = 16, pvd_pvm_irq, rtc_tamper_stamp_irq, rtc_wkup_irq, flash_irq
 	can2_rx0_irq, can2_rx1_irq, can2_sce_irq, dma2d_irq };
 
 
-static inline void _stm32_dataSyncBarrier(void)
-{
-	__asm__ volatile ("dsb");
-}
-
-
-static inline void _stm32_dataInstrBarrier(void)
-{
-	__asm__ volatile ("isb");
-}
-
-
-static inline void _stm32_dataBarrier(void)
-{
-	__asm__ volatile ("dmb");
-}
-
-
 /* Sets peripheral clock */
 extern int _stm32_rccSetDevClock(unsigned int d, u32 hz);
 
@@ -133,76 +115,10 @@ extern void _stm32_rtcLockRegs(void);
 extern u32 _stm32_rtcGetms(void);
 
 
-extern void _stm32_scbSetPriorityGrouping(u32 group);
-
-
-extern u32 _stm32_scbGetPriorityGrouping(void);
-
-
-extern void _stm32_scbSetPriority(s8 excpn, u32 priority);
-
-
-extern u32 _stm32_scbGetPriority(s8 excpn);
-
-
-extern void _stm32_nvicSetIRQ(s8 irqn, u8 state);
-
-
-extern u32 _stm32_nvicGetPendingIRQ(s8 irqn);
-
-
-extern void _stm32_nvicSetPendingIRQ(s8 irqn, u8 state);
-
-
-extern u32 _stm32_nvicGetActive(s8 irqn);
-
-
-extern void _stm32_nvicSetPriority(s8 irqn, u32 priority);
-
-
-extern u8 _stm32_nvicGetPriority(s8 irqn);
-
-
-extern void _stm32_nvicSystemReset(void);
-
-
-extern int _stm32_extiMaskInterrupt(u32 line, u8 state);
-
-
-extern int _stm32_extiMaskEvent(u32 line, u8 state);
-
-
-extern int _stm32_extiSetTrigger(u32 line, u8 state, u8 edge);
-
-
-extern int _stm32_syscfgExtiLineConfig(u8 port, u8 pin);
-
-
-extern int _stm32_extiSoftInterrupt(u32 line);
-
-
-extern u32 _stm32_extiGetPending(void);
-
-
-extern int _stm32_extiClearPending(u32 line);
-
-
 extern int _stm32_systickInit(u32 interval);
 
 
 extern void _stm32_systickDone(void);
-
-
-extern void _stm32_systickSet(u8 state);
-
-
-extern u32 _stm32_systickGet(void);
-
-
-extern void _stm32_mpuEnableRegion(u8 region, u8 state);
-
-
-extern unsigned int _stm32_cpuid(void);
 
 
 extern void _stm32_wdgReload(void);

@@ -19,12 +19,9 @@
 static struct {
 	volatile u32 *rcc;
 	volatile u32 *gpio[9];
-	volatile u32 *pwr;
 	volatile u32 *scb;
+	volatile u32 *pwr;
 	volatile u32 *rtc;
-	volatile u32 *nvic;
-	volatile u32 *exti;
-	volatile u32 *mpu;
 	volatile u32 *syscfg;
 	volatile u32 *iwdg;
 	volatile u32 *flash;
@@ -65,14 +62,6 @@ enum { rtc_tr = 0, rtc_dr, rtc_cr, rtc_isr, rtc_prer, rtc_wutr, rtc_alrmar = rtc
 
 enum { scb_actlr = 2, scb_cpuid = 832, scb_icsr, scb_vtor, scb_aircr, scb_scr, scb_ccr, scb_shp1, scb_shp2,
 	scb_shp3, scb_shcsr, scb_cfsr, scb_mmsr, scb_bfsr, scb_ufsr, scb_hfsr, scb_mmar, scb_bfar, scb_afsr };
-
-
-enum { nvic_iser = 0, nvic_icer = 32, nvic_ispr = 64, nvic_icpr = 96, nvic_iabr = 128,
-	nvic_ip = 192, nvic_stir = 896 };
-
-
-enum { exti_imr1 = 0, exti_emr1, exti_rtsr1, exti_ftsr1, exti_swier1, exti_pr1, exti_imr2 = 8, exti_emr2,
-	exti_rtsr2, exti_ftsr2, exti_swier2, exti_pr2 };
 
 
 enum { syst_csr = 4, syst_rvr, syst_cvr, syst_calib };
@@ -133,7 +122,7 @@ int _stm32_rccSetDevClock(unsigned int d, u32 hz)
 	else
 		return -1;
 
-	_stm32_dataBarrier();
+	hal_cpuDataMemoryBarrier();
 
 	return 0;
 }
@@ -203,7 +192,7 @@ int _stm32_rccSetCPUClock(u32 hz)
 		range = 8;
 		hz = 16000 * 1000;
 	}
-/* TODO - we need to change flash wait states to handle below frequencies
+	/* TODO - we need to change flash wait states to handle below frequencies
 	else if (hz <= 24000 * 1000) {
 		range = 9;
 		hz = 24000 * 1000;
@@ -216,7 +205,7 @@ int _stm32_rccSetCPUClock(u32 hz)
 		range = 11;
 		hz = 48000 * 1000;
 	}
-*/
+	*/
 	else {
 		/* We can use HSI, if higher frequency is needed */
 		return -1;
@@ -230,7 +219,7 @@ int _stm32_rccSetCPUClock(u32 hz)
 
 	t = *(stm32_common.rcc + rcc_cr) & ~(0xf << 4);
 	*(stm32_common.rcc + rcc_cr) = t | range << 4 | (1 << 3);
-	_stm32_dataBarrier();
+	hal_cpuDataMemoryBarrier();
 
 	if (hz <= 6000 * 1000)
 		_stm32_pwrSetCPUVolt(2);
@@ -291,183 +280,8 @@ void _stm32_pwrSetCPUVolt(u8 range)
 	*(stm32_common.pwr + pwr_cr1) = t | (range << 9);
 
 	/* Wait for VOSF flag */
-	while (*(stm32_common.pwr + pwr_sr2) & (1 << 10));
-}
-
-
-/* SCB */
-
-
-void _stm32_scbSetPriorityGrouping(u32 group)
-{
-	u32 t;
-
-	/* Get register value and clear bits to set */
-	t = *(stm32_common.scb + scb_aircr) & ~0xffff0700;
-
-	/* Store new value */
-	*(stm32_common.scb + scb_aircr) = t | 0x5fa0000 | ((group & 7) << 8);
-}
-
-
-u32 _stm32_scbGetPriorityGrouping(void)
-{
-	return (*(stm32_common.scb + scb_aircr) & 0x700) >> 8;
-}
-
-
-void _stm32_scbSetPriority(s8 excpn, u32 priority)
-{
-	volatile u8 *ptr;
-
-	ptr = &((u8*)(stm32_common.scb + scb_shp1))[excpn - 4];
-
-	*ptr = (priority << 4) & 0xff;
-}
-
-
-u32 _stm32_scbGetPriority(s8 excpn)
-{
-	volatile u8 *ptr;
-
-	ptr = &((u8*)(stm32_common.scb + scb_shp1))[excpn - 4];
-
-	return *ptr >> 4;
-}
-
-
-/* NVIC (Nested Vectored Interrupt Controller */
-
-
-void _stm32_nvicSetIRQ(s8 irqn, u8 state)
-{
-	volatile u32 *ptr = stm32_common.nvic + ((u8)irqn >> 5) + (state ? nvic_iser: nvic_icer);
-	*ptr = 1 << (irqn & 0x1F);
-
-	_stm32_dataBarrier();
-	_stm32_dataInstrBarrier();
-}
-
-
-u32 _stm32_nvicGetPendingIRQ(s8 irqn)
-{
-	volatile u32 *ptr = stm32_common.nvic + ((u8)irqn >> 5) + nvic_ispr;
-	return !!(*ptr & (1 << (irqn & 0x1F)));
-}
-
-
-void _stm32_nvicSetPendingIRQ(s8 irqn, u8 state)
-{
-	volatile u32 *ptr = stm32_common.nvic + ((u8)irqn >> 5) + (state ? nvic_ispr: nvic_icpr);
-	*ptr = 1 << (irqn & 0x1F);
-}
-
-
-u32 _stm32_nvicGetActive(s8 irqn)
-{
-	volatile u32 *ptr = stm32_common.nvic + ((u8)irqn >> 5) + nvic_iabr;
-	return !!(*ptr & (1 << (irqn & 0x1F)));
-}
-
-
-void _stm32_nvicSetPriority(s8 irqn, u32 priority)
-{
-	volatile u8 *ptr;
-
-	ptr = ((u8*)(stm32_common.nvic + nvic_ip)) + irqn;
-
-	*ptr = (priority << 4) & 0xff;
-}
-
-
-u8 _stm32_nvicGetPriority(s8 irqn)
-{
-	volatile u8 *ptr;
-
-	ptr = ((u8*)(stm32_common.nvic + nvic_ip)) + irqn;
-
-	return *ptr >> 4;
-}
-
-
-void _stm32_nvicSystemReset(void)
-{
-	*(stm32_common.scb + scb_aircr) = ((0x5fa << 16) | (*(stm32_common.scb + scb_aircr) & (0x700)) | (1 << 0x02));
-
-	__asm__ volatile ("dsb");
-
-	for(;;);
-}
-
-
-/* EXTI */
-
-
-int _stm32_extiMaskInterrupt(u32 line, u8 state)
-{
-	u32 t;
-	volatile u32 *base = (line < 32) ? (stm32_common.exti + exti_imr1) : (stm32_common.exti + exti_imr2);
-
-	if (line > 40)
-		return -1;
-	else if (line >= 32)
-		line -= 32;
-
-	t = *base & ~(!state << line);
-	*base = t | !!state << line;
-
-	return 0;
-}
-
-
-int _stm32_extiMaskEvent(u32 line, u8 state)
-{
-	u32 t;
-	volatile u32 *reg = (line < 32) ? (stm32_common.exti + exti_emr1) : (stm32_common.exti + exti_emr2);
-
-	if (line > 40)
-		return -1;
-	else if (line >= 32)
-		line -= 32;
-
-	t = *reg & ~(!state << line);
-	*reg = t | !!state << line;
-
-	return 0;
-}
-
-
-int _stm32_extiSetTrigger(u32 line, u8 state, u8 edge)
-{
-	volatile u32 *p;
-	const int reglut[2][2] = { { exti_ftsr1, exti_rtsr1 }, { exti_ftsr2, exti_rtsr2 } };
-
-	if (line > 40)
-		return -1;
-
-	p = stm32_common.exti + reglut[line >= 32][!!edge];
-
-	if (line >= 32)
-		line -= 32;
-
-	*p &= ~(!state << line);
-	*p |= !!state << line;
-
-	return 0;
-}
-
-
-int _stm32_extiSoftInterrupt(u32 line)
-{
-	if (line > 40)
-		return -1;
-
-	if (line < 32)
-		*(stm32_common.exti + exti_swier1) |= 1 << line;
-	else
-		*(stm32_common.exti + exti_swier2) |= 1 << (line - 32);
-
-	return 0;
+	while (*(stm32_common.pwr + pwr_sr2) & (1 << 10))
+		;
 }
 
 
@@ -476,7 +290,7 @@ int _stm32_extiSoftInterrupt(u32 line)
 
 int _stm32_systickInit(u32 interval)
 {
-	u64 load = ((u64) interval * stm32_common.cpuclk) / 1000000;
+	u64 load = ((u64)interval * stm32_common.cpuclk) / 1000000;
 	if (load > 0x00ffffff)
 		return -1;
 
@@ -493,20 +307,6 @@ int _stm32_systickInit(u32 interval)
 void _stm32_systickDone(void)
 {
 	*(stm32_common.scb + syst_csr) = 0;
-}
-
-
-u32 _stm32_systickGet(void)
-{
-	u32 cb;
-
-	cb = ((*(stm32_common.scb + syst_rvr) - *(stm32_common.scb + syst_cvr)) * 1000) / *(stm32_common.scb + syst_rvr);
-
-	/* Add 1000 us if there's systick pending */
-	if (*(stm32_common.scb + scb_icsr) & (1 << 26))
-		cb += 1000;
-
-	return cb;
 }
 
 
@@ -612,15 +412,6 @@ int _stm32_gpioGetPort(unsigned int d, u16 *val)
 }
 
 
-/* CPU info */
-
-
-unsigned int _stm32_cpuid(void)
-{
-	return *(stm32_common.scb + scb_cpuid);
-}
-
-
 /* Watchdog */
 
 
@@ -643,9 +434,6 @@ void _stm32_init(void)
 	stm32_common.pwr = (void *)0x40007000;
 	stm32_common.scb = (void *)0xe000e000;
 	stm32_common.rtc = (void *)0x40002800;
-	stm32_common.nvic = (void *)0xe000e100;
-	stm32_common.exti = (void *)0x40010400;
-	stm32_common.mpu = (void *)0xe000ed90;
 	stm32_common.syscfg = (void *)0x40010000;
 	stm32_common.iwdg = (void *)0x40003000;
 	stm32_common.gpio[0] = (void *)0x48000000; /* GPIOA */
@@ -670,13 +458,13 @@ void _stm32_init(void)
 	/* Disable all interrupts */
 	*(stm32_common.rcc + rcc_cier) = 0;
 
-	_stm32_dataBarrier();
+	hal_cpuDataMemoryBarrier();
 
 	/* GPIO init */
 	for (i = 0; i < sizeof(stm32_common.gpio) / sizeof(stm32_common.gpio[0]); ++i)
 		_stm32_rccSetDevClock(gpio2pctl[i], 1);
 
-	_stm32_dataBarrier();
+	hal_cpuDataMemoryBarrier();
 
 #if defined(WATCHDOG) && defined(NDEBUG)
 	/* Init watchdog */
@@ -696,7 +484,4 @@ void _stm32_init(void)
 #ifdef NDEBUG
 	*(u32 *)0xE0042004 = 0;
 #endif
-
-	/* Enable UsageFault, BusFault and MemManage exceptions */
-	*(stm32_common.scb + scb_shcsr) |= (1 << 16) | (1 << 17) | (1 << 18);
 }

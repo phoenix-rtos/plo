@@ -40,7 +40,7 @@ static int uartLut[] = { UART1, UART2, UART3, UART4, UART5 };
 
 
 static const struct {
-	volatile unsigned int *base;
+	void *base;
 	int dev;
 	unsigned int irq;
 	int rxport;
@@ -50,11 +50,11 @@ static const struct {
 	unsigned char txpin;
 	unsigned char txaf;
 } uartInfo[] = {
-	{ (void *)0x40013800, pctl_usart1, usart1_irq, pctl_gpioa, 10, 7, pctl_gpioa, 9, 7 },
-	{ (void *)0x40004400, pctl_usart2, usart2_irq, pctl_gpiod, 6, 7, pctl_gpiod, 5, 7 },
-	{ (void *)0x40004800, pctl_usart3, usart3_irq, pctl_gpioc, 11, 7, pctl_gpioc, 10, 7 },
-	{ (void *)0x40004c00, pctl_uart4, uart4_irq, pctl_gpioc, 11, 8, pctl_gpioc, 10, 8},
-	{ (void *)0x40005000, pctl_uart5, uart5_irq, pctl_gpiod, 2, 8, pctl_gpioc, 12, 8 },
+	{ (void *)UART1_BASE, UART1_CLK, UART1_IRQ, pctl_gpioa, 10, 7, pctl_gpioa, 9, 7 },
+	{ (void *)UART2_BASE, UART2_CLK, UART2_IRQ, pctl_gpiod, 6, 7, pctl_gpiod, 5, 7 },
+	{ (void *)UART3_BASE, UART3_CLK, UART3_IRQ, pctl_gpioc, 11, 7, pctl_gpioc, 10, 7 },
+	{ (void *)UART4_BASE, UART4_CLK, UART4_IRQ, pctl_gpioc, 11, 8, pctl_gpioc, 10, 8 },
+	{ (void *)UART5_BASE, UART5_CLK, UART5_IRQ, pctl_gpiod, 2, 8, pctl_gpioc, 12, 8 },
 };
 
 
@@ -176,9 +176,9 @@ static int uart_done(unsigned int minor)
 	(void)uart_sync(minor);
 
 	*(uart->base + cr1) = 0;
-	_stm32_dataBarrier();
+	hal_cpuDataMemoryBarrier();
 	_stm32_rccSetDevClock(uartInfo[minor].dev, 0);
-	_stm32_dataBarrier();
+	hal_cpuDataMemoryBarrier();
 	_stm32_gpioConfig(uartInfo[minor].rxport, uartInfo[minor].rxpin, 0, 0, 0, 0, 0);
 	_stm32_gpioConfig(uartInfo[minor].txport, uartInfo[minor].txpin, 0, 0, 0, 0, 0);
 
@@ -211,7 +211,7 @@ static int uart_init(unsigned int minor)
 
 	_stm32_gpioConfig(uartInfo[minor].rxport, uartInfo[minor].rxpin, 2, uartInfo[minor].rxaf, 0, 0, 0);
 	_stm32_gpioConfig(uartInfo[minor].txport, uartInfo[minor].txpin, 2, uartInfo[minor].txaf, 0, 0, 0);
-	_stm32_dataBarrier();
+	hal_cpuDataMemoryBarrier();
 
 	uart->base = uartInfo[minor].base;
 	_stm32_rccSetDevClock(uartInfo[minor].dev, 1);
@@ -221,7 +221,7 @@ static int uart_init(unsigned int minor)
 	uart->rxflag = 0;
 
 	*(uart->base + cr1) = 0;
-	_stm32_dataBarrier();
+	hal_cpuDataMemoryBarrier();
 
 	*(uart->base + brr) = _stm32_rccGetCPUClock() / UART_BAUDRATE;
 
@@ -229,10 +229,10 @@ static int uart_init(unsigned int minor)
 	(void)*(uart->base + rdr);
 
 	*(uart->base + cr1) |= (1 << 5) | (1 << 3) | (1 << 2);
-	_stm32_dataBarrier();
+	hal_cpuDataMemoryBarrier();
 	*(uart->base + cr1) |= 1;
 
-	_stm32_dataBarrier();
+	hal_cpuDataMemoryBarrier();
 
 	hal_interruptsSet(uartInfo[minor].irq, uart_handleIntr, (void *)uart);
 

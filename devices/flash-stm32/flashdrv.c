@@ -25,7 +25,8 @@ static const struct {
 	u32 end;
 } flashParams[FLASH_NO] = {
 	{ FLASH_PROGRAM_1_ADDR, FLASH_PROGRAM_1_ADDR + FLASH_PROGRAM_BANK_SIZE },
-	{ FLASH_PROGRAM_2_ADDR, FLASH_PROGRAM_2_ADDR + FLASH_PROGRAM_BANK_SIZE } };
+	{ FLASH_PROGRAM_2_ADDR, FLASH_PROGRAM_2_ADDR + FLASH_PROGRAM_BANK_SIZE }
+};
 
 
 static int flashdrv_isValidAddress(unsigned int minor, u32 off, size_t size)
