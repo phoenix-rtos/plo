@@ -16,7 +16,7 @@
 #include <hal/hal.h>
 
 
-struct{
+struct {
 	hal_syspage_t *hs;
 	addr_t entry;
 } hal_common;
@@ -117,12 +117,14 @@ static void hal_getMinOverlappedRange(addr_t start, addr_t end, mapent_t *entry,
 int hal_memoryGetNextEntry(addr_t start, addr_t end, mapent_t *entry)
 {
 	mapent_t tempEntry;
-	mapent_t minEntry = { .start = (addr_t)-1, .end = 0 };
+	mapent_t minEntry;
 
 	if (start == end)
 		return -1;
 
 	hal_memset(&tempEntry, 0, sizeof(tempEntry));
+	hal_memset(&minEntry, 0, sizeof(minEntry));
+	minEntry.start = (addr_t)-1;
 
 	/* plo: .bss */
 	tempEntry.start = (addr_t)_plo_bss;

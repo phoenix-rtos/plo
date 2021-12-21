@@ -17,8 +17,6 @@
 
 #include "config.h"
 
-#define ADDR_SCB 0xe000ed00
-
 .syntax unified
 
 .section .init, "x"

@@ -116,8 +116,13 @@ static void hal_getMinOverlappedRange(addr_t start, addr_t end, mapent_t *entry,
 int hal_memoryGetNextEntry(addr_t start, addr_t end, mapent_t *entry)
 {
 	unsigned int i, offs, biosType;
-	mapent_t tempEntry = { 0 }, prevEntry = { 0 };
-	mapent_t minEntry = { .start = (addr_t)-1, .end = 0 };
+	mapent_t tempEntry, prevEntry, minEntry;
+
+	hal_memset(&tempEntry, 0, sizeof(tempEntry));
+	hal_memset(&prevEntry, 0, sizeof(prevEntry));
+	hal_memset(&minEntry, 0, sizeof(minEntry));
+
+	minEntry.start = (addr_t)-1;
 
 	/* The following entries are used only by plo - type = hal_entryTemp, kernel defines them by its own */
 	static const mapent_t entries[] = {
