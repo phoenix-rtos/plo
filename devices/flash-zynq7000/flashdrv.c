@@ -39,6 +39,38 @@ struct {
 } fdrv_common;
 
 
+static size_t flashdrv_regStart(int id)
+{
+	int i;
+	size_t regStart = 0;
+	const flash_cfi_t *cfi = &fdrv_common.info.cfi;
+
+	for (i = 0; i < id; ++i)
+		regStart += CFI_SIZE_REGION(cfi->regs[i].size, cfi->regs[i].count);
+
+	return regStart;
+}
+
+
+static int flashdrv_regionFind(addr_t offs)
+{
+	int i;
+	size_t sz;
+	addr_t start = 0;
+	const flash_cfi_t *cfi = &fdrv_common.info.cfi;
+
+	for (i = 0; i < cfi->regsCount; ++i) {
+		sz = CFI_SIZE_REGION(cfi->regs[i].size, cfi->regs[i].count);
+		if (offs >= start && offs < (start + sz))
+			return i;
+
+		start = sz;
+	}
+
+	return -EINVAL;
+}
+
+
 /* Auxiliary flash commands */
 
 static int flashdrv_cfiRead(flash_cfi_t *cfi)
@@ -128,25 +160,6 @@ static int flashdrv_welSet(unsigned int cmdID)
 	qspi_stop();
 
 	return res;
-}
-
-
-static int flashdrv_regionFind(addr_t offs)
-{
-	int i;
-	size_t sz;
-	addr_t start = 0;
-	const flash_cfi_t *cfi = &fdrv_common.info.cfi;
-
-	for (i = 0; i < cfi->regsCount; ++i) {
-		sz = CFI_SIZE_REGION(cfi->regs[i].size, cfi->regs[i].count);
-		if (offs >= start && offs < sz)
-			return i;
-
-		start = sz;
-	}
-
-	return -EINVAL;
 }
 
 
@@ -297,9 +310,7 @@ static int flashdrv_sync(unsigned int minor)
 	if (fdrv_common.buffPos == 0)
 		return EOK;
 
-	if (fdrv_common.regID)
-		regStart = CFI_SIZE_REGION(cfi->regs[fdrv_common.regID - 1].size, cfi->regs[fdrv_common.regID - 1].count);
-
+	regStart = flashdrv_regStart(fdrv_common.regID);
 	sectSz = CFI_SIZE_SECTION(cfi->regs[fdrv_common.regID].size);
 	pageSz = CFI_SIZE_PAGE(cfi->pageSize);
 	pgNb = sectSz / pageSz;
@@ -324,7 +335,7 @@ static ssize_t flashdrv_write(unsigned int minor, addr_t offs, const void *buff,
 {
 	ssize_t res;
 	time_t timeout;
-	size_t chunkSz, freeSz, saveSz = 0;
+	size_t chunkSz = 0, freeSz = 0, saveSz = 0;
 	static const u32 timeoutFactor = 0x100;
 
 	int regID, sectID;
@@ -339,12 +350,12 @@ static ssize_t flashdrv_write(unsigned int minor, addr_t offs, const void *buff,
 		return -EINVAL;
 
 	while (saveSz < len) {
-		offs += saveSz;
+		offs += chunkSz;
 
 		if ((regID = flashdrv_regionFind(offs)) < 0)
 			return -EINVAL;
 
-		regStart = regID ? CFI_SIZE_REGION(cfi->regs[regID - 1].size, cfi->regs[regID - 1].count) : 0;
+		regStart = flashdrv_regStart(regID);
 		sectSz = CFI_SIZE_SECTION(cfi->regs[regID].size);
 		sectID = (offs - regStart) / sectSz;
 
