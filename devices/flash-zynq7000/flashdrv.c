@@ -5,7 +5,7 @@
  *
  * Zynq-7000 nor flash driver
  *
- * Copyright 2020 Phoenix Systems
+ * Copyright 2021-2022 Phoenix Systems
  * Author: Hubert Buczynski
  *
  * This file is part of Phoenix-RTOS.
@@ -52,7 +52,7 @@ static size_t flashdrv_regStart(int id)
 }
 
 
-static int flashdrv_regionFind(addr_t offs)
+static int flashdrv_regionFind(addr_t offs, u32 *id)
 {
 	int i;
 	size_t sz;
@@ -61,13 +61,25 @@ static int flashdrv_regionFind(addr_t offs)
 
 	for (i = 0; i < cfi->regsCount; ++i) {
 		sz = CFI_SIZE_REGION(cfi->regs[i].size, cfi->regs[i].count);
-		if (offs >= start && offs < (start + sz))
-			return i;
+		if (offs >= start && offs < (start + sz)) {
+			*id = i;
+			return EOK;
+		}
 
 		start = sz;
 	}
 
 	return -EINVAL;
+}
+
+
+static inline void flashdrv_initCmdBuff(const flash_cmd_t *cmd, addr_t offs)
+{
+	hal_memset(fdrv_common.cmdTx, 0, cmd->size);
+	fdrv_common.cmdTx[0] = cmd->opCode;
+	fdrv_common.cmdTx[1] = (offs >> 16) & 0xff;
+	fdrv_common.cmdTx[2] = (offs >> 8) & 0xff;
+	fdrv_common.cmdTx[3] = offs & 0xff;
 }
 
 
@@ -77,25 +89,27 @@ static int flashdrv_cfiRead(flash_cfi_t *cfi)
 {
 	ssize_t res;
 	size_t cmdSz, dataSz;
-	/* RDID instruction is a generic for each flash memory */
-	const flash_cmd_t cmds = { .opCode = FLASH_CMD_RDID, .size = 1, .dummyCyc = 24 };
+	flash_cmd_t cmd;
+
+	flashcfg_jedecIDGet(&cmd);
 
 	/* Cmd size is rounded to 4 bytes, it includes dummy cycles [b]. */
-	cmdSz = (cmds.size + cmds.dummyCyc / 8 + 0x3) & ~0x3;
+	cmdSz = (cmd.size + cmd.dummyCyc / 8 + 0x3) & ~0x3;
 	/* Size of the data which is received during cmd transfer */
-	dataSz = cmds.dummyCyc / 8;
+	dataSz = cmdSz - cmd.size;
 
 	hal_memset(fdrv_common.cmdTx, 0, cmdSz);
-	fdrv_common.cmdTx[0] = cmds.opCode;
+	fdrv_common.cmdTx[0] = cmd.opCode;
 
 	qspi_start();
-	if ((res = qspi_polledTransfer(fdrv_common.cmdTx, fdrv_common.cmdRx, cmdSz, TIMEOUT_CMD_MS)) < 0) {
+	res = qspi_polledTransfer(fdrv_common.cmdTx, fdrv_common.cmdRx, cmdSz, TIMEOUT_CMD_MS);
+	if (res < 0) {
 		qspi_stop();
 		return res;
 	}
 
 	/* Copy data received after dummy bytes */
-	hal_memcpy(cfi, (fdrv_common.cmdRx + cmds.size), dataSz);
+	hal_memcpy(cfi, (fdrv_common.cmdRx + cmd.size), dataSz);
 	res = qspi_polledTransfer(NULL, (u8 *)cfi + dataSz, sizeof(flash_cfi_t) - dataSz, 5 * TIMEOUT_CMD_MS);
 	qspi_stop();
 
@@ -128,13 +142,14 @@ static int flashdrv_wipCheck(time_t timeout)
 {
 	int res;
 	unsigned int st;
-	time_t start = hal_timerGet();
+	const time_t stop = hal_timerGet() + timeout;
 
 	do {
-		if ((res = flashdrv_statusRegGet(&st)) < 0)
+		res = flashdrv_statusRegGet(&st);
+		if (res < 0)
 			return res;
 
-		if ((hal_timerGet() - start) >= timeout)
+		if (hal_timerGet() >= stop)
 			return -ETIME;
 	} while ((st >> 8) & 0x1);
 
@@ -165,7 +180,7 @@ static int flashdrv_welSet(unsigned int cmdID)
 
 static int flashdrv_sectorErase(addr_t offs)
 {
-	int i;
+	u32 id = 0;
 	ssize_t res;
 	time_t timeout;
 	const flash_cmd_t *cmd;
@@ -174,10 +189,11 @@ static int flashdrv_sectorErase(addr_t offs)
 	if (offs > CFI_SIZE_FLASH(cfi->chipSize))
 		return -EINVAL;
 
-	if ((i = flashdrv_regionFind(offs)) < 0)
-		return i;
+	res = flashdrv_regionFind(offs, &id);
+	if (res < 0)
+		return res;
 
-	switch (CFI_SIZE_SECTION(cfi->regs[i].size)) {
+	switch (CFI_SIZE_SECTION(cfi->regs[id].size)) {
 		case 0x1000:
 			cmd = &fdrv_common.info.cmds[flash_cmd_p4e];
 			break;
@@ -188,17 +204,15 @@ static int flashdrv_sectorErase(addr_t offs)
 			return -EINVAL;
 	}
 
-	if ((res = flashdrv_welSet(flash_cmd_wren)) < 0)
+	res = flashdrv_welSet(flash_cmd_wren);
+	if (res < 0)
 		return res;
 
-	hal_memset(fdrv_common.cmdTx, 0, cmd->size);
-	fdrv_common.cmdTx[0] = cmd->opCode;
-	fdrv_common.cmdTx[1] = (offs >> 16) & 0xff;
-	fdrv_common.cmdTx[2] = (offs >> 8) & 0xff;
-	fdrv_common.cmdTx[3] = offs & 0xff;
+	flashdrv_initCmdBuff(cmd, offs);
 
 	qspi_start();
-	if ((res = qspi_polledTransfer(fdrv_common.cmdTx, fdrv_common.cmdRx, cmd->size, TIMEOUT_CMD_MS)) < 0) {
+	res = qspi_polledTransfer(fdrv_common.cmdTx, fdrv_common.cmdRx, cmd->size, TIMEOUT_CMD_MS);
+	if (res < 0) {
 		qspi_stop();
 		return res;
 	}
@@ -223,23 +237,22 @@ static ssize_t flashdrv_pageProgram(addr_t offs, const void *buff, size_t len)
 	if (buff == NULL || len % CFI_SIZE_PAGE(cfi->pageSize))
 		return -EINVAL;
 
-	if ((res = flashdrv_welSet(flash_cmd_wren)) < 0)
+	res = flashdrv_welSet(flash_cmd_wren);
+	if (res < 0)
 		return res;
 
-	hal_memset(fdrv_common.cmdTx, 0, cmd->size);
-	fdrv_common.cmdTx[0] = cmd->opCode;
-	fdrv_common.cmdTx[1] = (offs >> 16) & 0xff;
-	fdrv_common.cmdTx[2] = (offs >> 8) & 0xff;
-	fdrv_common.cmdTx[3] = offs & 0xff;
+	flashdrv_initCmdBuff(cmd, offs);
 
 	qspi_start();
-	if ((res = qspi_polledTransfer(fdrv_common.cmdTx, fdrv_common.cmdRx, cmd->size, TIMEOUT_CMD_MS)) < 0) {
+	res = qspi_polledTransfer(fdrv_common.cmdTx, fdrv_common.cmdRx, cmd->size, TIMEOUT_CMD_MS);
+	if (res < 0) {
 		qspi_stop();
 		return res;
 	}
 
 	/* Transmit data to write */
-	if ((res = qspi_polledTransfer(buff, NULL, len, TIMEOUT_CMD_MS)) < 0) {
+	res = qspi_polledTransfer(buff, NULL, len, TIMEOUT_CMD_MS);
+	if (res < 0) {
 		qspi_stop();
 		return res;
 	}
@@ -248,7 +261,8 @@ static ssize_t flashdrv_pageProgram(addr_t offs, const void *buff, size_t len)
 	len = res;
 
 	timeout = CFI_TIMEOUT_MAX_PROGRAM(cfi->timeoutTypical.pageWrite, cfi->timeoutMax.pageWrite) + TIMEOUT_CMD_MS;
-	if ((res = flashdrv_wipCheck(timeout)) < 0)
+	res = flashdrv_wipCheck(timeout);
+	if (res < 0)
 		return res;
 
 	return len;
@@ -269,11 +283,7 @@ static ssize_t flashdrv_read(unsigned int minor, addr_t offs, void *buff, size_t
 	if (buff == NULL)
 		return -EINVAL;
 
-	hal_memset(fdrv_common.cmdTx, 0, cmd->size);
-	fdrv_common.cmdTx[0] = cmd->opCode;
-	fdrv_common.cmdTx[1] = (offs >> 16) & 0xff;
-	fdrv_common.cmdTx[2] = (offs >> 8) & 0xff;
-	fdrv_common.cmdTx[3] = offs & 0xff;
+	flashdrv_initCmdBuff(cmd, offs);
 
 	/* Cmd size is rounded to 4 bytes, it includes dummy cycles [b]. */
 	cmdSz = (cmd->size + cmd->dummyCyc / 8 + 0x3) & ~0x3;
@@ -283,7 +293,8 @@ static ssize_t flashdrv_read(unsigned int minor, addr_t offs, void *buff, size_t
 	dataSz = (transferSz > len) ? len : transferSz;
 
 	qspi_start();
-	if ((res = qspi_polledTransfer(fdrv_common.cmdTx, fdrv_common.cmdRx, cmdSz, TIMEOUT_CMD_MS)) < 0) {
+	res = qspi_polledTransfer(fdrv_common.cmdTx, fdrv_common.cmdRx, cmdSz, TIMEOUT_CMD_MS);
+	if (res < 0) {
 		qspi_stop();
 		return res;
 	}
@@ -319,12 +330,13 @@ static int flashdrv_sync(unsigned int minor)
 		dst = regStart + fdrv_common.sectID * sectSz + i * pageSz;
 		src = fdrv_common.buff + i * pageSz;
 
-		if ((res = flashdrv_pageProgram(dst, src, pageSz)) < 0)
+		res = flashdrv_pageProgram(dst, src, pageSz);
+		if (res < 0)
 			return res;
 	}
 
-	fdrv_common.regID = -1;
-	fdrv_common.sectID = -1;
+	fdrv_common.regID = (u32)-1;
+	fdrv_common.sectID = (u32)-1;
 	fdrv_common.buffPos = 0;
 
 	return EOK;
@@ -338,7 +350,7 @@ static ssize_t flashdrv_write(unsigned int minor, addr_t offs, const void *buff,
 	size_t chunkSz = 0, freeSz = 0, saveSz = 0;
 	static const u32 timeoutFactor = 0x100;
 
-	int regID, sectID;
+	u32 regID, sectID;
 	size_t sectSz, regStart;
 
 	const flash_cfi_t *cfi = &fdrv_common.info.cfi;
@@ -352,23 +364,27 @@ static ssize_t flashdrv_write(unsigned int minor, addr_t offs, const void *buff,
 	while (saveSz < len) {
 		offs += chunkSz;
 
-		if ((regID = flashdrv_regionFind(offs)) < 0)
-			return -EINVAL;
+		res = flashdrv_regionFind(offs, &regID);
+		if (res < 0)
+			return res;
 
 		regStart = flashdrv_regStart(regID);
 		sectSz = CFI_SIZE_SECTION(cfi->regs[regID].size);
 		sectID = (offs - regStart) / sectSz;
 
 		if (regID != fdrv_common.regID || sectID != fdrv_common.sectID) {
-			if ((res = flashdrv_sync(minor)) < 0)
+			res = flashdrv_sync(minor);
+			if (res < 0)
 				return res;
 
 			/* Read operation timeout depends on sector size. Factor value selected empirically. */
 			timeout = (sectSz * TIMEOUT_CMD_MS) / timeoutFactor;
-			if ((res = flashdrv_read(minor, regStart + (sectSz * sectID), fdrv_common.buff, sectSz, timeout)) < 0)
+			res = flashdrv_read(minor, regStart + (sectSz * sectID), fdrv_common.buff, sectSz, timeout);
+			if (res < 0)
 				return res;
 
-			if ((res = flashdrv_sectorErase(regStart + (sectSz * sectID))) < 0)
+			res = flashdrv_sectorErase(regStart + (sectSz * sectID));
+			if (res < 0)
 				return res;
 
 			fdrv_common.regID = regID;
@@ -386,7 +402,8 @@ static ssize_t flashdrv_write(unsigned int minor, addr_t offs, const void *buff,
 		if (fdrv_common.buffPos < sectSz)
 			continue;
 
-		if ((res = flashdrv_sync(minor)) < 0)
+		res = flashdrv_sync(minor);
+		if (res < 0)
 			return res;
 	}
 
@@ -398,10 +415,14 @@ static int flashdrv_done(unsigned int minor)
 {
 	int res;
 
-	if ((res = flashdrv_sync(minor)) < 0)
+	res = flashdrv_sync(minor);
+	if (res < 0) {
+		qspi_deinit();
 		return res;
+	}
 
-	if ((res = qspi_deinit()) < 0)
+	res = qspi_deinit();
+	if (res < 0)
 		return res;
 
 	return EOK;
@@ -425,20 +446,23 @@ static int flashdrv_init(unsigned int minor)
 	int i, res;
 	flash_info_t *info = &fdrv_common.info;
 
-	fdrv_common.regID = -1;
-	fdrv_common.sectID = -1;
+	fdrv_common.regID = (u32)-1;
+	fdrv_common.sectID = (u32)-1;
 	fdrv_common.buffPos = 0;
 
 	/* FIXME: temp solution to allocate buffer in high OCRAM (64KB) */
 	fdrv_common.buff = (void *)ADDR_OCRAM_HIGH;
 
-	if ((res = qspi_init()) < 0)
+	res = qspi_init();
+	if (res < 0)
 		return res;
 
-	if ((res = flashdrv_cfiRead(&info->cfi)) < 0)
+	res = flashdrv_cfiRead(&info->cfi);
+	if (res < 0)
 		return res;
 
-	if ((res = flashcfg_infoResolve(info)))
+	res = flashcfg_infoResolve(info);
+	if (res < 0)
 		return res;
 
 	for (i = 0; i < info->cfi.regsCount; ++i) {
