@@ -5,7 +5,7 @@
  *
  * Common Flash Interface for flash driver
  *
- * Copyright 2021 Phoenix Systems
+ * Copyright 2021-2022 Phoenix Systems
  * Author: Hubert Buczynski
  *
  * This file is part of Phoenix-RTOS.
@@ -27,25 +27,6 @@
 #define CFI_SIZE_SECTION(val)              (val * 0x100)
 #define CFI_SIZE_PAGE(val)                 (1 << val)
 #define CFI_SIZE_REGION(regSize, regCount) (CFI_SIZE_SECTION(regSize) * (regCount + 1))
-
-
-/* Generic flash commands */
-
-#define FLASH_CMD_RDID      0x9f /* Read JEDEC ID */
-#define FLASH_CMD_RDSR1     0x05 /* Read Status Register - 1 */
-#define FLASH_CMD_WRDI      0x04 /* Write enable */
-#define FLASH_CMD_WREN      0x06 /* Write disable */
-#define FLASH_CMD_READ      0x03 /* Read data */
-#define FLASH_CMD_FAST_READ 0x0b /* Fast read data */
-#define FLASH_CMD_DOR       0x3b /* Dual output fast read data */
-#define FLASH_CMD_QOR       0x6b /* Quad output read data */
-#define FLASH_CMD_DIOR      0xbb /* Dual input/output fast read data */
-#define FLASH_CMD_QIOR      0xeb /* Quad input/output fast read data */
-#define FLASH_CMD_PP        0x02 /* Page program */
-#define FLASH_CMD_QPP       0x32 /* Quad input fast program */
-#define FLASH_CMD_P4E       0x20 /* 4KB sector erase */
-#define FLASH_CMD_SE        0xd8 /* 64KB sector erase*/
-#define FLASH_CMD_BE        0x60 /* Chip erase */
 
 
 /* Order in command's table */
@@ -116,6 +97,9 @@ typedef struct {
 
 	const char *name;
 } flash_info_t;
+
+
+extern void flashcfg_jedecIDGet(flash_cmd_t *cmd);
 
 
 extern int flashcfg_infoResolve(flash_info_t *info);
