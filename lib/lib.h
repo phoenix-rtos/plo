@@ -16,6 +16,7 @@
 #ifndef _LIB_LIB_H_
 #define _LIB_LIB_H_
 
+#include "cbuffer.h"
 #include "console.h"
 #include "ctype.h"
 #include "errno.h"

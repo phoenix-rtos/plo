@@ -19,6 +19,7 @@
 #define _HAL_H_
 
 #include <config.h>
+#include "string.h"
 
 
 enum { hal_cpuICache = 0, hal_cpuDCache };
@@ -30,6 +31,9 @@ extern void hal_init(void);
 
 /* Function resets basic controllers */
 extern void hal_done(void);
+
+
+extern void hal_syspageSet(hal_syspage_t *hs);
 
 
 /* Function returns information about CPU */
@@ -45,15 +49,25 @@ extern void hal_cpuReboot(void) __attribute__((noreturn));
 
 
 /* Function starts kernel loaded into memory */
-extern void hal_cpuJump(addr_t addr) __attribute__((noreturn));
+extern int hal_cpuJump(void);
 
 
 /* Function translates virtual address into physical */
 extern addr_t hal_kernelGetAddress(addr_t addr);
 
 
+extern void hal_kernelEntryPoint(addr_t addr);
+
+
+extern void hal_kernelGetEntryPointOffset(addr_t *off, int *indirect);
+
+
 /* Function validates and add memory map at hal region level */
-extern int hal_memAddMap(addr_t start, addr_t end, u32 attr, u32 mapId);
+extern int hal_memoryAddMap(addr_t start, addr_t end, u32 attr, u32 mapId);
+
+
+/* Function returns entry located near the start of the declared memory */
+extern int hal_memoryGetNextEntry(addr_t start, addr_t end, mapent_t *entry);
 
 
 /* Function enables interrupts */

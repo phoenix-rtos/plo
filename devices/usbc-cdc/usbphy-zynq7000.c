@@ -18,10 +18,6 @@
 #include <devices/gpio-zynq7000/gpio.h>
 
 
-/* Size of memory pool aligned to USB_BUFFER_SIZE, used by USB descriptors */
-#define USB_POOL_SIZE (ENDPOINTS_DIR_NB * ENDPOINTS_NUMBER + 1) * USB_BUFFER_SIZE
-
-
 struct {
 	u8 pool[USB_POOL_SIZE] __attribute__((aligned(USB_BUFFER_SIZE)));
 	size_t usedPools;

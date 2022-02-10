@@ -5,7 +5,7 @@
  *
  * Quad-SPI Controller driver
  *
- * Copyright 2020 Phoenix Systems
+ * Copyright 2021-2022 Phoenix Systems
  * Author: Hubert Buczynski
  *
  * This file is part of Phoenix-RTOS.
@@ -34,8 +34,9 @@ void qspi_stop(void)
 		*(qspi_common.base + rxd);
 
 	*(qspi_common.base + cr) |= (1 << 10);
-	*(qspi_common.base + er) = 0;
+	hal_cpuDataMemoryBarrier();
 
+	*(qspi_common.base + er) = 0;
 	hal_cpuDataMemoryBarrier();
 }
 
@@ -44,8 +45,9 @@ void qspi_start(void)
 {
 	*(qspi_common.base + rxth) = 0x1;
 	*(qspi_common.base + cr) &= ~(1 << 10);
-	*(qspi_common.base + er) = 0x1;
+	hal_cpuDataMemoryBarrier();
 
+	*(qspi_common.base + er) = 0x1;
 	hal_cpuDataMemoryBarrier();
 }
 
@@ -90,7 +92,6 @@ static unsigned int qspi_rxData(u8 *rxBuff, size_t size)
 
 static unsigned int qspi_txData(const u8 *txBuff, size_t size)
 {
-	u32 data;
 	const u8 dummy[sizeof(u32)] = { 0 };
 	const u8 *buff = (txBuff == NULL) ? dummy : txBuff;
 
@@ -112,8 +113,7 @@ static unsigned int qspi_txData(const u8 *txBuff, size_t size)
 
 		case 4:
 		default:
-			hal_memcpy(&data, buff, sizeof(u32));
-			*(qspi_common.base + txd00) = data;
+			*(qspi_common.base + txd00) = buff[0] | (buff[1] << 8) | (buff[2] << 16) | (buff[3] << 24);
 			return 4;
 	}
 }
@@ -291,14 +291,9 @@ static void qspi_IOMode(void)
 
 int qspi_deinit(void)
 {
-	int res;
-
 	qspi_stop();
 
-	if ((res = _zynq_setAmbaClk(amba_lqspi_clk, clk_disable)) < 0)
-		return res;
-
-	return EOK;
+	return _zynq_setAmbaClk(amba_lqspi_clk, clk_disable);
 }
 
 
@@ -308,10 +303,12 @@ int qspi_init(void)
 
 	qspi_common.base = (void *)0xe000d000;
 
-	if ((res = _zynq_setAmbaClk(amba_lqspi_clk, clk_enable)) < 0)
+	res = _zynq_setAmbaClk(amba_lqspi_clk, clk_enable);
+	if (res < 0)
 		return res;
 
-	if ((res = qspi_initCtrlClk()) < 0)
+	res = qspi_initCtrlClk();
+	if (res < 0)
 		return res;
 
 	qspi_setPin(mio_pin_01); /* Chip Select */

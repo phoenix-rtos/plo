@@ -21,10 +21,10 @@ CFLAGS+= -mfloat-abi=soft
 
 GCCLIB := $(shell $(CC) $(CFLAGS) -print-libgcc-file-name)
 
-PLO_COMMANDS = alias app call console copy devs dump echo go help kernel map mpu phfs reboot script syspage wait
+PLO_COMMANDS = alias app call console copy dump echo go help kernel kernelimg map mpu phfs reboot script wait
 
 include devices/usbc-cdc/Makefile
 include devices/uart-imxrt106x/Makefile
 include devices/flash-imxrt/Makefile
 
-OBJS += $(addprefix $(PREFIX_O)hal/$(TARGET_SUFF)/imxrt/10xx/, _init.o hal.o imxrt.o timer.o console.o)
+OBJS += $(addprefix $(PREFIX_O)hal/$(TARGET_SUFF)/imxrt/10xx/, _init.o imxrt.o timer.o console.o)

@@ -21,15 +21,11 @@
 
 #include "cpu.h"
 #include "peripherals.h"
-#include "string.h"
 #include "types.h"
 
-/* Boot device number */
-extern unsigned char _plo_bdn;
+#include <phoenix/arch/syspage-ia32.h>
+#include <phoenix/syspage.h>
 
-/* TODO: temporary HAL syspage, should be replaced by new syspage implementation */
-/* Loader syspage */
-extern syspage_hal_t _plo_syspage;
 
 /* Executes BIOS interrupt calls */
 extern void _interrupts_bios(unsigned char intr, unsigned short ds, unsigned short es);
@@ -44,6 +40,7 @@ extern void _interrupts_bios(unsigned char intr, unsigned short ds, unsigned sho
 /* Kernel path */
 #define PATH_KERNEL "phoenix-ia32-generic.elf"
 
+#define SIZE_SYSPAGE SIZE_PAGE
 
 /* Low memory layout */
 #define ADDR_GDT 0x1000
@@ -51,10 +48,6 @@ extern void _interrupts_bios(unsigned char intr, unsigned short ds, unsigned sho
 
 #define ADDR_IDT 0x1800
 #define SIZE_IDT 0x800
-
-/* FIXME: temporary HAL syspage, should be replaced by new syspage implementation */
-#define ADDR_SYSPAGE 0x2000
-#define SIZE_SYSPAGE 0x1000
 
 #define ADDR_PDIR   0x3000
 #define ADDR_PTABLE 0x4000

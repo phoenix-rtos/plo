@@ -3,7 +3,7 @@
  *
  * Operating system loader
  *
- * ARMv7 Cortex - A9 related routines for Zynq - 7000
+ * ARMv7 Cortex-A
  *
  * Copyright 2021 Phoenix Systems
  * Author: Hubert Buczynski
@@ -36,18 +36,32 @@
 #define NO_INT      (NO_IRQ | NO_FIQ) /* mask to disable IRQ and FIQ     */
 #define THUMB_STATE 0x20
 
-/* Stack definition */
-#define ADDR_STACK 0xfffffff0 /* Hihgh address of OCRAM */
-#define SIZE_STACK 5 * 1024
+
+#ifndef __ASSEMBLY__
+
+static inline void hal_cpuDataMemoryBarrier(void)
+{
+	__asm__ volatile ("dmb");
+}
 
 
-/* Zynq-7000 System Address Map */
-#define ADDR_OCRAM_LOW  0x00000000
-#define SIZE_OCRAM_LOW  192 * 1024
-#define ADDR_OCRAM_HIGH 0xffff0000
-#define SIZE_OCRAM_HIGH 64 * 1024
+static inline void hal_cpuDataSyncBarrier(void)
+{
+	__asm__ volatile ("dsb");
+}
 
-#define ADDR_DDR 0x00100000
-#define SIZE_DDR 512 * 1024 * 1024
+
+static inline void hal_cpuInstrBarrier(void)
+{
+	__asm__ volatile ("isb");
+}
+
+
+static inline void hal_cpuHalt(void)
+{
+	__asm__ volatile ("wfi");
+}
+
+#endif
 
 #endif

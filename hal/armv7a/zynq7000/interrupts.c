@@ -14,7 +14,6 @@
  */
 
 #include <hal/hal.h>
-#include <lib/errno.h>
 
 
 #define MPCORE_BASE_ADDRESS 0xf8f00000
@@ -132,7 +131,7 @@ void interrupts_dispatch(void)
 int hal_interruptsSet(unsigned int n, int (*f)(unsigned int, void *), void *data)
 {
 	if (n >= SIZE_INTERRUPTS)
-		return -EINVAL;
+		return -1;
 
 	hal_interruptsDisable();
 	interrupts_common.handlers[n].data = data;
@@ -149,7 +148,7 @@ int hal_interruptsSet(unsigned int n, int (*f)(unsigned int, void *), void *data
 
 	hal_interruptsEnable();
 
-	return EOK;
+	return 0;
 }
 
 

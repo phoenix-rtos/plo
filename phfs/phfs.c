@@ -19,7 +19,7 @@
 #include <lib/lib.h>
 
 #define SIZE_PHFS_HANDLERS 8
-#define SIZE_PHFS_FILES    20
+#define SIZE_PHFS_ALIASES  20
 
 #define PHFS_TIMEOUT_MS 500
 
@@ -46,7 +46,7 @@ struct {
 	phfs_device_t devices[SIZE_PHFS_HANDLERS];
 	unsigned int dCnt;
 
-	phfs_file_t files[SIZE_PHFS_FILES];
+	phfs_file_t files[SIZE_PHFS_ALIASES];
 	unsigned int fCnt;
 } phfs_common;
 
@@ -94,7 +94,7 @@ static int phfs_getHandlerId(const char *alias)
 }
 
 
-int phfs_regDev(const char *alias, unsigned int major, unsigned int minor, const char *prot)
+int phfs_devReg(const char *alias, unsigned int major, unsigned int minor, const char *prot)
 {
 	size_t sz;
 	phfs_device_t *pd;
@@ -138,9 +138,9 @@ int phfs_regDev(const char *alias, unsigned int major, unsigned int minor, const
 }
 
 
-int phfs_getFileAddr(handler_t h, addr_t *addr)
+int phfs_aliasAddrResolve(handler_t h, addr_t *addr)
 {
-	if (h.id >= SIZE_PHFS_FILES)
+	if (h.id >= SIZE_PHFS_ALIASES || h.id >= phfs_common.fCnt)
 		return -EINVAL;
 
 	*addr = phfs_common.files[h.id].addr;
@@ -149,7 +149,7 @@ int phfs_getFileAddr(handler_t h, addr_t *addr)
 }
 
 
-void phfs_showDevs(void)
+void phfs_devsShow(void)
 {
 	int i;
 	phfs_device_t *pd;
@@ -167,7 +167,7 @@ void phfs_showDevs(void)
 }
 
 
-void phfs_showFiles(void)
+void phfs_aliasesShow(void)
 {
 	int i;
 	phfs_file_t *f;
@@ -185,7 +185,7 @@ void phfs_showFiles(void)
 }
 
 
-static int phfs_getFileId(const char *alias)
+static int phfs_getAliasId(const char *alias)
 {
 	int i;
 	phfs_file_t *file;
@@ -200,7 +200,7 @@ static int phfs_getFileId(const char *alias)
 }
 
 
-int phfs_regFile(const char *alias, addr_t addr, size_t size)
+int phfs_aliasReg(const char *alias, addr_t addr, size_t size)
 {
 	size_t sz;
 	phfs_file_t *file;
@@ -208,13 +208,13 @@ int phfs_regFile(const char *alias, addr_t addr, size_t size)
 	if (alias == NULL)
 		return -EINVAL;
 
-	if (phfs_common.fCnt >= SIZE_PHFS_FILES) {
+	if (phfs_common.fCnt >= SIZE_PHFS_ALIASES) {
 		log_error("\nphfs: Exceeded max number of files");
 		return -EINVAL;
 	}
 
 	/* Check if alias is already in use */
-	if (phfs_getFileId(alias) >= 0) {
+	if (phfs_getAliasId(alias) >= 0) {
 		log_error("\nphfs: %s - alias is already in use", alias);
 		return -EINVAL;
 	}
@@ -260,7 +260,7 @@ int phfs_open(const char *alias, const char *file, unsigned int flags, handler_t
 			if (file == NULL)
 				break;
 
-			if ((res = phfs_getFileId(file)) < 0)
+			if ((res = phfs_getAliasId(file)) < 0)
 				return res;
 			handler->id = res;
 			break;
@@ -293,7 +293,7 @@ ssize_t phfs_read(handler_t handler, addr_t offs, void *buff, size_t len)
 				return devs_read(pd->major, pd->minor, offs, buff, len, PHFS_TIMEOUT_MS);
 
 			/* Reading file defined by alias */
-			if (handler.id >= SIZE_PHFS_FILES)
+			if (handler.id >= SIZE_PHFS_ALIASES)
 				return -EINVAL;
 			file = &phfs_common.files[handler.id];
 
@@ -327,7 +327,7 @@ ssize_t phfs_write(handler_t handler, addr_t offs, const void *buff, size_t len)
 				return devs_write(pd->major, pd->minor, offs, buff, len);
 
 			/* Writing data to file defined by alias */
-			if (handler.id >= SIZE_PHFS_FILES)
+			if (handler.id >= SIZE_PHFS_ALIASES)
 				return -EINVAL;
 			file = &phfs_common.files[handler.id];
 
@@ -400,7 +400,7 @@ int phfs_stat(handler_t handler, phfs_stat_t *stat)
 			break;
 
 		case phfs_prot_raw:
-			if (handler.id == -1 || handler.id >= SIZE_PHFS_FILES)
+			if (handler.id == -1 || handler.id >= SIZE_PHFS_ALIASES)
 				return -EINVAL;
 
 			file = &phfs_common.files[handler.id];

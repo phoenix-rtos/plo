@@ -17,9 +17,6 @@
 #include "usbphy.h"
 
 
-/* Size of memory pool aligned to USB_BUFFER_SIZE, used by USB descriptors */
-#define USB_POOL_SIZE (ENDPOINTS_DIR_NB * ENDPOINTS_NUMBER + 1) * USB_BUFFER_SIZE
-
 
 enum {
 	/* Power-Down Register */

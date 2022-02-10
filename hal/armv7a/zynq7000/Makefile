@@ -20,11 +20,12 @@ CFLAGS += -DVADDR_KERNEL_INIT=$(VADDR_KERNEL_INIT)
 
 GCCLIB := $(shell $(CC) $(CFLAGS) -print-libgcc-file-name)
 
-PLO_COMMANDS = alias app bitstream call console copy devs dump echo go help kernel map phfs script syspage wait
+PLO_COMMANDS = alias app bitstream call console copy dump echo go help kernel map phfs script wait
 
 include devices/gpio-zynq7000/Makefile
 include devices/usbc-cdc/Makefile
 include devices/uart-zynq7000/Makefile
+include devices/flash-zynq7000/Makefile
 
 OBJS += $(addprefix $(PREFIX_O)hal/$(TARGET_SUFF)/$(TARGET_SUBFAMILY)/, _init.o hal.o zynq.o timer.o\
 		interrupts.o console.o)

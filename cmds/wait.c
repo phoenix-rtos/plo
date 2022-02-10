@@ -1,7 +1,7 @@
 /*
  * Phoenix-RTOS
  *
- * Operating loader
+ * Operating system loader
  *
  * Wait timer
  *
