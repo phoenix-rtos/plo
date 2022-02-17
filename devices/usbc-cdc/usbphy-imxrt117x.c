@@ -116,8 +116,9 @@ void phy_init(void)
 
 	phyusb_common.usedPools = 0;
 
-	/* Enable USB clock gate */
-	_imxrt_setDirectLPCG(pctl_lpcg_usb, 1);
+	/* Enable USB clock gate, that clock is needed in RUN level only */
+	_imxrt_setDirectLPCG(pctl_lpcg_usb, clk_state_run);
+	_imxrt_setLevelLPCG(pctl_lpcg_usb, clk_level_run);
 
 	/* Controller reset */
 	*usbcmd |= (1 << 1);
