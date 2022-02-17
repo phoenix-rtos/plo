@@ -63,6 +63,14 @@ enum { pctl_lpcg_m7 = 0, pctl_lpcg_m4, pctl_lpcg_sim_m7, pctl_lpcg_sim_m, pctl_l
 	pctl_lpcg_csi, pctl_lpcg_dcic_mipi, pctl_lpcg_dcic_lcd, pctl_lpcg_video_mux, pctl_lpcg_uniq_edt_i };
 
 
+/* Peripheral clock low power gate direct control */
+enum { clk_state_off = 0, clk_state_run };
+
+
+/* Peripheral clock run levels in clock domain */
+enum { clk_level_off = 0, clk_level_run, clk_level_run_wait, clk_level_run_wait_stop, clk_level_any };
+
+
 /* IOMUX - MUX */
 enum {
 	pctl_mux_gpio_emc_b1_00 = 0, pctl_mux_gpio_emc_b1_01, pctl_mux_gpio_emc_b1_02, pctl_mux_gpio_emc_b1_03,
