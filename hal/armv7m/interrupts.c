@@ -52,13 +52,13 @@ static void interrupts_nvicSetPriority(s8 irqn, u32 priority)
 }
 
 
-void hal_interruptsEnable(void)
+__attribute__((section(".noxip"))) void hal_interruptsEnable(void)
 {
 	__asm__ volatile("cpsie if");
 }
 
 
-void hal_interruptsDisable(void)
+__attribute__((section(".noxip"))) void hal_interruptsDisable(void)
 {
 	__asm__ volatile("cpsid if");
 }
