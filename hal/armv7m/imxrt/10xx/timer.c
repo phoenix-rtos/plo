@@ -25,7 +25,7 @@ struct {
 } timer_common;
 
 
-static int timer_isr(unsigned int irq, void *data)
+__attribute__((section(".noxip"))) static int timer_isr(unsigned int irq, void *data)
 {
 	/* Output Compare 1 Interrupt */
 	if (*(timer_common.base + gpt_sr) & 0x1) {
@@ -39,7 +39,7 @@ static int timer_isr(unsigned int irq, void *data)
 }
 
 
-time_t hal_timerGet(void)
+__attribute__((section(".noxip"))) time_t hal_timerGet(void)
 {
 	time_t val;
 
