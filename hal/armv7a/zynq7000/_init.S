@@ -121,7 +121,7 @@ set_loop:
 
 
 	/* Setup initial SP */
-	ldr r0, =ADDR_STACK
+	ldr r0, =_stack
 	bic r0, #7
 
 	/* FIQ mode stack */

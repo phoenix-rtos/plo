@@ -24,7 +24,7 @@
 .globl _init_vectors
 .type _init_vectors, %object
 _init_vectors:
-.word ADDR_STACK
+.word _stack
 .word _start
 
 .word _exceptions_dispatch  /* NMI */

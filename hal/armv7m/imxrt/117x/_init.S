@@ -38,7 +38,7 @@ ivt_ram:
 
 boot_data_ram:
 	.word ivt_ram                            /* load address */
-	.word _edata - ivt_ram                   /* size */
+	.word _plo_size                          /* size */
 	.word 0                                  /* plugin */
 	.word 0
 
@@ -142,7 +142,7 @@ ivt_flash:
 
 flash_boot_data:
 	.word FLEXSPI1_BASE                      /* load address */
-	.word _etext - ivt_ram                /* size */
+	.word _plo_size                          /* size */
 	.word 0                                  /* plugin */
 	.word 0                                  /* empty - extra data word */
 
@@ -153,7 +153,7 @@ ivt_end:
 .globl _init_vectors
 .type _init_vectors, %object
 _init_vectors:
-.word ADDR_STACK
+.word _stack
 .word _start
 
 .word _exceptions_dispatch  /* NMI */

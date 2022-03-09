@@ -1,7 +1,7 @@
 #
 # Makefile for plo (structured)
 #
-# Copyright 2020 Phoenix Systems
+# Copyright 2020-2022 Phoenix Systems
 #
 # %LICENSE%
 #
@@ -28,6 +28,9 @@ include cmds/Makefile
 OBJS += $(addprefix $(PREFIX_O), _startc.o plo.o syspage.o)
 
 
+.PHONY: all base ram clean
+
+
 all: base ram
 
 
@@ -37,51 +40,55 @@ base: $(PREFIX_PROG_STRIPPED)plo-$(TARGET_FAMILY)-$(TARGET_SUBFAMILY).elf  $(PRE
 ram: $(PREFIX_PROG_STRIPPED)plo-ram-$(TARGET_FAMILY)-$(TARGET_SUBFAMILY).elf $(PREFIX_PROG_STRIPPED)plo-ram-$(TARGET_FAMILY)-$(TARGET_SUBFAMILY).img
 
 
-$(BUILD_DIR)/script.plo:
-	@printf "TOUCH script.plo\n"
-	$(SIL)touch $(BUILD_DIR)/script.plo
+$(BUILD_DIR)/script.plo $(BUILD_DIR)/ramscript.plo:
+	@echo "TOUCH $(@F)"
+	$(SIL)touch $@
 
 
 $(PREFIX_O)/script.o.plo: $(PREFIX_O)cmds/cmd.o $(BUILD_DIR)/script.plo
 	@mkdir -p $(@D)
-	@printf "EMBED script.plo\n"
-	$(SIL)$(OBJCOPY) --update-section .data=$(BUILD_DIR)/script.plo $(PREFIX_O)cmds/cmd.o --add-symbol script=.data:0 $(PREFIX_O)script.o.plo
-
-
-$(BUILD_DIR)/ramscript.plo:
-	@printf "TOUCH script.plo\n"
-	$(SIL)touch $(BUILD_DIR)/ramscript.plo
+	@echo "EMBED script.plo"
+	$(SIL)$(OBJCOPY) --update-section .data=$(BUILD_DIR)/script.plo $(PREFIX_O)cmds/cmd.o --add-symbol script=.data:0 $@
 
 
 $(PREFIX_O)/ramscript.o.plo: $(PREFIX_O)cmds/cmd.o $(BUILD_DIR)/ramscript.plo
 	@mkdir -p $(@D)
-	@printf "EMBED ramscript.plo\n"
-	$(SIL)$(OBJCOPY) --update-section .data=$(BUILD_DIR)/ramscript.plo $(PREFIX_O)cmds/cmd.o --add-symbol script=.data:0 $(PREFIX_O)ramscript.o.plo
+	@echo "EMBED ramscript.plo"
+	$(SIL)$(OBJCOPY) --update-section .data=$(BUILD_DIR)/ramscript.plo $(PREFIX_O)cmds/cmd.o --add-symbol script=.data:0 $@
 
 
-$(PREFIX_PROG)plo-$(TARGET_FAMILY)-$(TARGET_SUBFAMILY).elf: $(OBJS) $(PREFIX_O)/script.o.plo
+$(PREFIX_PROG)plo-$(TARGET_FAMILY)-$(TARGET_SUBFAMILY).elf: $(PREFIX_O)/$(TARGET_FAMILY)-$(TARGET_SUBFAMILY).ld $(OBJS) $(PREFIX_O)/script.o.plo
 	@mkdir -p $(@D)
-	@(printf "LD  %-24s\n" "$(@F)");
-	$(SIL)$(LD) $(LDFLAGS) -e _start --section-start .init=$(INIT_FLASH) $(BSS) -o $(PREFIX_PROG)plo-$(TARGET_FAMILY)-$(TARGET_SUBFAMILY).elf $(OBJS) $(PREFIX_O)/script.o.plo $(GCCLIB)
+	@echo "LD  $(@F)"
+	$(SIL)$(LD) $(LDFLAGS) -Map=$<.map -o $@ -T $^ $(GCCLIB)
 
 
-$(PREFIX_PROG)plo-ram-$(TARGET_FAMILY)-$(TARGET_SUBFAMILY).elf: $(OBJS) $(PREFIX_O)/ramscript.o.plo
+$(PREFIX_PROG)plo-ram-$(TARGET_FAMILY)-$(TARGET_SUBFAMILY).elf: $(PREFIX_O)/$(TARGET_FAMILY)-$(TARGET_SUBFAMILY)-ram.ld $(OBJS) $(PREFIX_O)/ramscript.o.plo
 	@mkdir -p $(@D)
-	@(printf "LD  %-24s\n" "$(@F)");
-	$(SIL)$(LD) $(LDFLAGS) -e _start --section-start .init=$(INIT_RAM) $(BSS) -o $(PREFIX_PROG)plo-ram-$(TARGET_FAMILY)-$(TARGET_SUBFAMILY).elf $(OBJS) $(PREFIX_O)/ramscript.o.plo $(GCCLIB)
+	@echo "LD  $(@F)"
+	$(SIL)$(LD) $(LDFLAGS) -Map=$<.map -o $@ -T $^ $(GCCLIB)
 
 
 $(PREFIX_PROG_STRIPPED)%.hex: $(PREFIX_PROG_STRIPPED)%.elf
-	@(printf "HEX %s\n" "$(@F)");
+	@echo "HEX $(@F)"
 	$(SIL)$(OBJCOPY) -O ihex $< $@
 
 
 $(PREFIX_PROG_STRIPPED)%.img: $(PREFIX_PROG_STRIPPED)%.elf
-	@(printf "BIN %s\n" "$(@F)");
+	@echo "BIN $(@F)"
 	$(SIL)$(OBJCOPY) -O binary $< $@
 
 
-.PHONY: clean
+$(PREFIX_O)/$(TARGET_FAMILY)-$(TARGET_SUBFAMILY).ld:
+	@echo "GEN $(@F)"
+	$(SIL)$(CC) $(LDSFLAGS) -D__LINKER__ -undef -xc -E -P ld/$(TARGET_FAMILY)-$(TARGET_SUBFAMILY).ldt > $@
+
+
+$(PREFIX_O)/$(TARGET_FAMILY)-$(TARGET_SUBFAMILY)-%.ld:
+	@echo "GEN $(@F)"
+	$(SIL)$(CC) $(LDSFLAGS) -D__LINKER__ -D$* -undef -xc -E -P ld/$(TARGET_FAMILY)-$(TARGET_SUBFAMILY).ldt > $@
+
+
 clean:
 	@echo "rm -rf $(BUILD_DIR)"
 

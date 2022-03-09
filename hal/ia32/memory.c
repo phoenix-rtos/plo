@@ -5,7 +5,7 @@
  *
  * Memory map
  *
- * Copyright 2012, 2020, 2021 Phoenix Systems
+ * Copyright 2012, 2020-2022 Phoenix Systems
  * Copyright 2001, 2005 Pawel Pisarczyk
  * Author: Pawel Pisarczyk, Lukasz Kosinski
  *
@@ -22,8 +22,11 @@ struct {
 
 
 /* Linker symbols */
-extern void _plo_bss(void);
-extern void _end(void);
+extern char __ramtext_start[], __ramtext_end[];
+extern char __data_start[], __data_end[];
+extern char __bss_start[], __bss_end[];
+extern char __heap_base[], __heap_limit[];
+extern char __stack_top[], __stack_limit[];
 
 
 void hal_syspageSet(hal_syspage_t *hs)
@@ -38,9 +41,9 @@ void hal_syspageSet(hal_syspage_t *hs)
 
 	memory_common.hs->pdir = ADDR_PDIR;
 	memory_common.hs->ptable = ADDR_PTABLE;
-	memory_common.hs->stack = ADDR_STACK;
+	memory_common.hs->stack = (addr_t)__stack_top;
 
-	memory_common.hs->stacksz = SIZE_STACK;
+	memory_common.hs->stacksz = __stack_top - __stack_limit;
 }
 
 
@@ -118,18 +121,14 @@ int hal_memoryGetNextEntry(addr_t start, addr_t end, mapent_t *entry)
 	unsigned int i, offs, biosType;
 	mapent_t tempEntry, prevEntry, minEntry;
 
-	hal_memset(&tempEntry, 0, sizeof(tempEntry));
-	hal_memset(&prevEntry, 0, sizeof(prevEntry));
-	hal_memset(&minEntry, 0, sizeof(minEntry));
-
-	minEntry.start = (addr_t)-1;
-
 	/* The following entries are used only by plo - type = hal_entryTemp, kernel defines them by its own */
 	static const mapent_t entries[] = {
 		{ .start = 0x0, .end = 0x1000, .type = hal_entryTemp },
-		{ .start = (addr_t)_plo_bss, .end = (addr_t)_end, .type = hal_entryTemp },
-		{ .start = ADDR_STACK, .end = ADDR_STACK + SIZE_STACK, .type = hal_entryTemp },
-		{ .start = ADDR_STACK, .end = ADDR_STACK + SIZE_STACK, .type = hal_entryTemp },
+		{ .start = (addr_t)__ramtext_start, .end = (addr_t)__ramtext_end, .type = hal_entryTemp },
+		{ .start = (addr_t)__data_start, .end = (addr_t)__data_end, .type = hal_entryTemp },
+		{ .start = (addr_t)__bss_start, .end = (addr_t)__bss_end, .type = hal_entryTemp },
+		{ .start = (addr_t)__heap_base, .end = (addr_t)__heap_limit, .type = hal_entryTemp },
+		{ .start = (addr_t)__stack_limit, .end = (addr_t)__stack_top, .type = hal_entryTemp },
 		{ .start = ADDR_GDT, .end = ADDR_GDT + SIZE_GDT, .type = hal_entryTemp },
 		{ .start = ADDR_IDT, .end = ADDR_IDT + SIZE_IDT, .type = hal_entryTemp },
 		/* TODO: this entry should be removed after changes in disk-bios */
@@ -139,13 +138,20 @@ int hal_memoryGetNextEntry(addr_t start, addr_t end, mapent_t *entry)
 	if (start == end)
 		return -1;
 
+	hal_memset(&tempEntry, 0, sizeof(tempEntry));
+	hal_memset(&prevEntry, 0, sizeof(prevEntry));
+	hal_memset(&minEntry, 0, sizeof(minEntry));
+	minEntry.start = (addr_t)-1;
+
 	/* Syspage entry */
 	tempEntry.start = (addr_t)memory_common.hs;
-	tempEntry.end = tempEntry.start + SIZE_SYSPAGE;
+	tempEntry.end = (addr_t)__heap_limit;
 	tempEntry.type = hal_entryTemp;
 	hal_getMinOverlappedRange(start, end, &tempEntry, &minEntry);
 
-	for (i = 0; i < sizeof(entries) / sizeof(mapent_t); ++i) {
+	for (i = 0; i < sizeof(entries) / sizeof(entries[0]); ++i) {
+		if (entries[i].start >= entries[i].end)
+			continue;
 		hal_memcpy(&tempEntry, &entries[i], sizeof(mapent_t));
 		hal_getMinOverlappedRange(start, end, &tempEntry, &minEntry);
 	}

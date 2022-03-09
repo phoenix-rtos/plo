@@ -1,0 +1,53 @@
+/*
+ * Phoenix-RTOS
+ *
+ * Operating system loader
+ *
+ * Linker Template and Platform Config for STM32L4
+ *
+ * Copyright 2021-2022 Phoenix Systems
+ * Author: Gerard Swiderski
+ *
+ * This file is part of Phoenix-RTOS.
+ *
+ * %LICENSE%
+ */
+
+
+#ifndef ARMV7M4_STM32L4X6_LDT
+#define ARMV7M4_STM32L4X6_LDT
+
+
+/* Platform specific definitions */
+#define SIZE_PAGE   0x200
+#define SIZE_STACK  (8 * SIZE_PAGE)
+#define SIZE_HEAP   (8 * SIZE_PAGE)
+
+/* Space reserved for kernel data */
+#define AREA_KERNEL 0x10000
+
+
+#if defined(__LINKER__)
+
+/* Memory map setup */
+MEMORY
+{
+	m_sram    (rwx) : ORIGIN = 0x20000000 + AREA_KERNEL, LENGTH = 384k - AREA_KERNEL
+	m_flash2  (rx)  : ORIGIN = 0x08080000, LENGTH = 512k
+	m_flash1  (rx)  : ORIGIN = 0x08000000, LENGTH = 512k
+}
+
+/* FLASH image */
+REGION_ALIAS("PLO_IMAGE", m_flash1);
+REGION_ALIAS("TCM_TEXT", m_flash1);
+REGION_ALIAS("DATA", m_sram);
+REGION_ALIAS("BSS", m_sram);
+REGION_ALIAS("HEAP", m_sram);
+REGION_ALIAS("STACK", m_sram);
+
+#include "common/plo-arm.lds"
+
+#endif /* end of __LINKER__ */
+
+
+#endif /* end of ARMV7M4_STM32L4X6_LDT */

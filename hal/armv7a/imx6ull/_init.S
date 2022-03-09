@@ -55,9 +55,9 @@ ivt:
 	.word 0          /* reserved 2 */
 
 boot_data:
-	.word ADDR_OCRAM             /* load address */
-	.word _etext - _vector_table /* size - will be changed during image creation */
-	.word 0                      /* plugin */
+	.word ADDR_OCRAM /* load address */
+	.word _plo_size  /* size - will be changed during image creation */
+	.word 0          /* plugin */
 	.word 0
 
 
@@ -174,7 +174,7 @@ set_loop:
 
 
 	/* Setup initial SP */
-	ldr r0, =ADDR_STACK
+	ldr r0, =_stack
 	bic r0, #7
 
 	/* FIQ mode stack */

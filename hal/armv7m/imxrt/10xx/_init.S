@@ -120,7 +120,7 @@ ivt_flash:
 
 flash_boot_data:
 	.word FLEXSPI2_BASE                      /* load address */
-	.word _etext - _fcfb                     /* size */
+	.word _plo_size                          /* size */
 	.word 0                                  /* plugin */
 	.word 0xffffffff                         /* empty - extra data word */
 
@@ -140,7 +140,7 @@ ivt:
 
 boot_data:
 	.word ADDR_ITCM                          /* load address */
-	.word _etext - _fcfb                     /* size */
+	.word _plo_size                          /* size */
 	.word 0                                  /* plugin */
 	.word 0xffffffff
 
@@ -151,7 +151,7 @@ ivt_end:
 .globl _init_vectors
 .type _init_vectors, %object
 _init_vectors:
-.word ADDR_STACK
+.word _stack
 .word _start
 
 /* TODO: define exception_dispatch */
@@ -188,7 +188,7 @@ _start:
 	ldr r9, =0x00200007
 	str r9, [r8, #0x40]
 
-	ldr r9, =0xaaaaabff
+	ldr r9, =FLEXRAM_CONFIG
 	str r9, [r8, #0x44]
 
 _plo:
