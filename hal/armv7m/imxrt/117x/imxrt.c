@@ -213,6 +213,25 @@ int _imxrt_setIOisel(int isel, char daisy)
 
 /* CCM */
 
+int _imxrt_getDevClock(int clock, int *div, int *mux, int *mfd, int *mfn, int *state)
+{
+	unsigned int t;
+	volatile u32 *reg = imxrt_common.ccm + (clock * 0x20);
+
+	if (clock < pctl_clk_cm7 || clock > pctl_clk_ccm_clko2)
+		return -1;
+
+	t = *reg;
+
+	*div = t & 0xff;
+	*mux = (t >> 8) & 0x7;
+	*mfd = (t >> 16) & 0xf;
+	*mfn = (t >> 20) & 0xf;
+	*state = !(t & (1 << 24));
+
+	return 0;
+}
+
 int _imxrt_setDevClock(int clock, int div, int mux, int mfd, int mfn, int state)
 {
 	unsigned int t;
