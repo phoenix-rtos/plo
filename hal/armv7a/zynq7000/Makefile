@@ -6,12 +6,8 @@
 # %LICENSE%
 #
 
-INIT_RAM = 0x0
-INIT_FLASH = 0x0
-
 LDFLAGS:=$(filter-out -Tbss% , $(LDFLAGS))
 LDFLAGS:=$(filter-out -Tdata% , $(LDFLAGS))
-LDFLAGS+=--defsym _plo_bss=__bss_start
 
 CFLAGS:=$(filter-out -mfloat-abi% , $(CFLAGS))
 CFLAGS:=$(filter-out -mfpu% , $(CFLAGS))

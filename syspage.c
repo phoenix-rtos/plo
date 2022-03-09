@@ -19,7 +19,7 @@
 
 #define ALIGN_ADDR(addr, align) (align ? ((addr + (align - 1)) & ~(align - 1)) : addr)
 
-extern void _end(void);
+extern char __heap_base[], __heap_limit[];
 
 
 struct {
@@ -34,14 +34,14 @@ struct {
 
 void syspage_init(void)
 {
-	syspage_common.syspage = (syspage_t *)ALIGN_ADDR((addr_t)_end, SIZE_PAGE);
+	syspage_common.syspage = (syspage_t *)__heap_base;
 
 	syspage_common.syspage->maps = NULL;
 	syspage_common.syspage->progs = NULL;
 	syspage_common.syspage->console = console_default;
 
-	syspage_common.heapTop = (void *)ALIGN_ADDR((addr_t)syspage_common.syspage + sizeof(syspage_t), sizeof(long long));
-	syspage_common.heapEnd = (char *)syspage_common.syspage + SIZE_SYSPAGE;
+	syspage_common.heapTop = (void *)ALIGN_ADDR((addr_t)__heap_base + sizeof(syspage_t), sizeof(long long));
+	syspage_common.heapEnd = (char *)__heap_limit;
 
 	syspage_common.syspage->size = (size_t)(syspage_common.heapTop - (void *)syspage_common.syspage);
 

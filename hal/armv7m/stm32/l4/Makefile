@@ -6,12 +6,6 @@
 # %LICENSE%
 #
 
-INIT_RAM = 0x08000000
-INIT_FLASH = 0x08000000
-
-BSS=-Tbss=0x20010000
-LDFLAGS+=--defsym _plo_bss=0x20010000
-
 LDFLAGS:=$(filter-out -Tbss% , $(LDFLAGS))
 LDFLAGS:=$(filter-out -Tdata% , $(LDFLAGS))
 

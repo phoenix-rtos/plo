@@ -28,8 +28,8 @@
 .type _startc, @function
 
 
-/* Loader end address */
-.extern _plo_bss
+/* Loader size */
+.extern _plo_size
 
 
 /* Loader entry point */
@@ -46,7 +46,7 @@ _plo_start:
 	movw %ax, %ds
 	movw %ax, %es
 	movw %ax, %ss
-	movw $ADDR_STACK, %sp
+	movw $_stack, %sp
 
 	/* Store boot disk number */
 	movb %dl, _plo_bdn
@@ -88,8 +88,7 @@ _plo_start:
 
 _plo_load:
 	/* Load high level part into memory */
-	movl $_plo_bss, %ecx
-	subl $(ADDR_PLO + 1), %ecx
+	movl $_plo_size-1, %ecx
 	shrl $0x9, %ecx
 
 _plo_load1:
@@ -188,7 +187,7 @@ _plo_prot:
 	movw %ax, %fs
 	movw %ax, %gs
 	movw %ax, %ss
-	movl $ADDR_STACK, %esp
+	movl $_stack, %esp
 
 	/* Call high level part */
 	call _startc
@@ -231,10 +230,10 @@ _plo_syspage_ptable:
 	.long ADDR_PTABLE
 /* Kernel stack */
 _plo_syspage_stack:
-	.long ADDR_STACK
+	.long _stack
 /* Kernel stack size */
 _plo_syspage_stacksz:
-	.long SIZE_STACK
+	.long _stacksz
 
 
 /* Disk geometry packet */

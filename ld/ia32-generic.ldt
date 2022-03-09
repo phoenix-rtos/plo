@@ -1,0 +1,66 @@
+/*
+ * Phoenix-RTOS
+ *
+ * Operating system loader
+ *
+ * Linker Template and Platform Config for IA32 (generic)
+ *
+ * Copyright 2021-2022 Phoenix Systems
+ * Author: Gerard Swiderski
+ *
+ * This file is part of Phoenix-RTOS.
+ *
+ * %LICENSE%
+ */
+
+
+#ifndef IA32_GENERIC_LDT
+#define IA32_GENERIC_LDT
+
+
+/* Platform specific definitions */
+#define SIZE_PAGE  0x1000
+#define SIZE_STACK (SIZE_PAGE)
+#define SIZE_HEAP  (SIZE_PAGE)
+
+/* Low memory layout */
+#define ADDR_GDT 0x1000
+#define SIZE_GDT 0x800
+
+#define ADDR_IDT 0x1800
+#define SIZE_IDT 0x800
+
+#define ADDR_PDIR   0x3000
+#define ADDR_PTABLE 0x4000
+
+#define ADDR_PLO 0x7c00
+
+/* Disk caches (below upper memory starting at 0x80000) */
+#define ADDR_RCACHE 0x78000
+#define SIZE_RCACHE 0x4000
+
+#define ADDR_WCACHE 0x7c000
+#define SIZE_WCACHE 0x4000
+
+
+#if defined(__LINKER__)
+
+/* Memory map setup */
+MEMORY
+{
+	m_stack   (rw)  : ORIGIN = 0x00006000, LENGTH = SIZE_STACK
+	m_low_mem (rwx) : ORIGIN = 0x00007c00, LENGTH = 512k
+}
+
+REGION_ALIAS("PLO_IMAGE", m_low_mem);
+REGION_ALIAS("DATA", m_low_mem);
+REGION_ALIAS("BSS", m_low_mem);
+REGION_ALIAS("HEAP", m_low_mem);
+REGION_ALIAS("STACK", m_stack);
+
+#include "common/plo-ia32.lds"
+
+#endif /* end of __LINKER__ */
+
+
+#endif /* end of IA32_GENERIC_LDT */

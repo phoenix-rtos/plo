@@ -5,8 +5,8 @@
  *
  * Hardware Abstraction Layer
  *
- * Copyright 2021 Phoenix Systems
- * Author: Hubert Buczynski
+ * Copyright 2021-2022 Phoenix Systems
+ * Author: Hubert Buczynski, Gerard Swiderski
  *
  * This file is part of Phoenix-RTOS.
  *
@@ -24,8 +24,11 @@ struct {
 
 
 /* Linker symbols */
-extern void _end(void);
-extern void _plo_bss(void);
+extern char __ramtext_start[], __ramtext_end[];
+extern char __data_start[], __data_end[];
+extern char __bss_start[], __bss_end[];
+extern char __heap_base[], __heap_limit[];
+extern char __stack_top[], __stack_limit[];
 
 /* Timer */
 extern void timer_init(void);
@@ -134,8 +137,16 @@ static void hal_getMinOverlappedRange(addr_t start, addr_t end, mapent_t *entry,
 
 int hal_memoryGetNextEntry(addr_t start, addr_t end, mapent_t *entry)
 {
-	mapent_t tempEntry;
-	mapent_t minEntry;
+	int i;
+	mapent_t tempEntry, minEntry;
+
+	static const mapent_t entries[] = {
+		{ .start = (addr_t)__ramtext_start, .end = (addr_t)__ramtext_end, .type = hal_entryTemp },
+		{ .start = (addr_t)__data_start, .end = (addr_t)__data_end, .type = hal_entryTemp },
+		{ .start = (addr_t)__bss_start, .end = (addr_t)__bss_end, .type = hal_entryTemp },
+		{ .start = (addr_t)__heap_base, .end = (addr_t)__heap_limit, .type = hal_entryTemp },
+		{ .start = (addr_t)__stack_limit, .end = (addr_t)__stack_top, .type = hal_entryTemp },
+	};
 
 	if (start == end)
 		return -1;
@@ -144,23 +155,18 @@ int hal_memoryGetNextEntry(addr_t start, addr_t end, mapent_t *entry)
 	hal_memset(&minEntry, 0, sizeof(minEntry));
 	minEntry.start = (addr_t)-1;
 
-	/* plo: .bss */
-	tempEntry.start = (addr_t)_plo_bss;
-	tempEntry.end = (addr_t)_end;
-	tempEntry.type = hal_entryTemp;
-	hal_getMinOverlappedRange(start, end, &tempEntry, &minEntry);
-
-	/* syspage */
+	/* Syspage entry */
 	tempEntry.start = (addr_t)hal_common.hs;
-	tempEntry.end = tempEntry.start + SIZE_SYSPAGE;
+	tempEntry.end = (addr_t)__heap_limit;
 	tempEntry.type = hal_entryReserved;
 	hal_getMinOverlappedRange(start, end, &tempEntry, &minEntry);
 
-	/* plo: .stack */
-	tempEntry.start = (addr_t)ADDR_STACK;
-	tempEntry.end = tempEntry.start + SIZE_STACK;
-	tempEntry.type = hal_entryTemp;
-	hal_getMinOverlappedRange(start, end, &tempEntry, &minEntry);
+	for (i = 0; i < sizeof(entries) / sizeof(entries[0]); ++i) {
+		if (entries[i].start >= entries[i].end)
+			continue;
+		hal_memcpy(&tempEntry, &entries[i], sizeof(mapent_t));
+		hal_getMinOverlappedRange(start, end, &tempEntry, &minEntry);
+	}
 
 	if (minEntry.start != (addr_t)-1) {
 		entry->start = minEntry.start;

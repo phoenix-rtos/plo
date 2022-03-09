@@ -32,16 +32,8 @@
 
 #endif
 
-#define SIZE_PAGE    0x1000
-#define SIZE_SYSPAGE (2 * SIZE_PAGE)
 
-#define ADDR_DDR 0x80000000
-#define SIZE_DDR (128 * 1024 * 1024)
-
-#define ADDR_STACK (_end + SIZE_SYSPAGE + SIZE_STACK)
-#define SIZE_STACK (2 * SIZE_PAGE)
-
-#define ADDR_OCRAM 0x907000
-#define SIZE_OCRAM 0x020000
+/* Import platform specific definitions */
+#include "ld/armv7a7-imx6ull.ldt"
 
 #endif

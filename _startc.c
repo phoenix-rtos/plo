@@ -3,8 +3,8 @@
  *
  * Entrypoint
  *
- * Copyright 2021 Phoenix Systems
- * Author: Hubert Buczynski
+ * Copyright 2021-2022 Phoenix Systems
+ * Author: Hubert Buczynski, Gerard Swiderski
  *
  * This file is part of Phoenix-RTOS.
  *
@@ -13,8 +13,9 @@
 
 #include <hal/hal.h>
 
-extern void _end(void);
-extern void _plo_bss(void);
+extern char __bss_start[], __bss_end[];
+extern char __data_load[], __data_start[], __data_end[];
+extern char __ramtext_load[], __ramtext_start[], __ramtext_end[];
 
 extern void (*__init_array_start[])(void);
 extern void (*__init_array_end[])(void);
@@ -30,8 +31,15 @@ void _startc(int argc, char **argv, char **env)
 {
 	size_t i, size;
 
+	/* Load .fastram.text and .data sections */
+	if (__ramtext_start != __ramtext_load)
+		hal_memcpy(__ramtext_start, __ramtext_load, __ramtext_end - __ramtext_start);
+
+	if (__data_start != __data_load)
+		hal_memcpy(__data_start, __data_load, __data_end - __data_start);
+
 	/* Clear the .bss section */
-	hal_memset(_plo_bss, 0, (addr_t)_end - (addr_t)_plo_bss);
+	hal_memset(__bss_start, 0, __bss_end - __bss_start);
 
 	size = __init_array_end - __init_array_start;
 	for (i = 0; i < size; i++)

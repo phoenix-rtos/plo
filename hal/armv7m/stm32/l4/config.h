@@ -29,15 +29,12 @@
 #include "../../cpu.h"
 #include "../../mpu.h"
 
+#define PATH_KERNEL "phoenix-armv7m4-stm32l4x6.elf"
+
 #endif
 
-#define PATH_KERNEL "phoenix-armv7m4-stm32l4x6.elf"
-#define CPU_INFO    "Cortex-M4 STM32L4x6"
 
-#define SIZE_PAGE    0x200
-#define SIZE_STACK   (8 * SIZE_PAGE)
-#define SIZE_SYSPAGE (8 * SIZE_PAGE)
-
-#define ADDR_STACK (_end + SIZE_SYSPAGE + SIZE_STACK)
+/* Import platform specific definitions */
+#include "ld/armv7m4-stm32l4x6.ldt"
 
 #endif
