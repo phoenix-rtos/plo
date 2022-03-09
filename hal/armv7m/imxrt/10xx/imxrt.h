@@ -38,13 +38,13 @@ enum { clk_pfd0 = 0, clk_pfd1, clk_pfd2, clk_pfd3 };
 
 
 enum { clk_mux_pll3 = 0, clk_mux_periph, clk_mux_semcAlt, clk_mux_semc, clk_mux_prePeriph, clk_mux_trace,
-    clk_mux_periphclk2, clk_mux_lpspi, clk_mux_flexspi, clk_mux_usdhc2, clk_mux_usdhc1, clk_mux_sai3, clk_mux_sai2,
+    clk_mux_periphclk2, clk_mux_lpspi, clk_mux_flexspi, clk_mux_flexspi2, clk_mux_usdhc2, clk_mux_usdhc1, clk_mux_sai3, clk_mux_sai2,
     clk_mux_sai1, clk_mux_perclk, clk_mux_flexio2, clk_mux_can, clk_mux_uart, clk_mux_enc, clk_mux_ldbDi1,
     clk_mux_ldbDi0, clk_mux_spdif, clk_mux_flexio1, clk_mux_lpi2c, clk_mux_lcdif1pre, clk_mux_lcdif1, clk_mux_csi };
 
 
 enum { clk_div_arm = 0, clk_div_periphclk2, clk_div_semc, clk_div_ahb, clk_div_ipg, clk_div_lpspi, clk_div_lcdif1,
-    clk_div_flexspi, clk_div_perclk, clk_div_ldbDi1, clk_div_ldbDi0, clk_div_can, clk_div_trace, clk_div_usdhc2,
+    clk_div_flexspi, clk_div_flexspi2, clk_div_perclk, clk_div_ldbDi1, clk_div_ldbDi0, clk_div_can, clk_div_trace, clk_div_usdhc2,
     clk_div_usdhc1, clk_div_uart, clk_div_flexio2, clk_div_sai3pre, clk_div_sai3, clk_div_flexio2pre, clk_div_sai1pre,
     clk_div_sai1, clk_div_enc, clk_div_encpre, clk_div_sai2pre, clk_div_sai2, clk_div_spdif0pre, clk_div_spdif0,
     clk_div_flexio1pre, clk_div_flexio1, clk_div_lpi2c, clk_div_lcdif1pre, clk_div_csi };

@@ -934,6 +934,10 @@ void _imxrt_ccmSetMux(int mux, u32 val)
 			*(imxrt_common.ccm + ccm_cscmr1) = (*(imxrt_common.ccm + ccm_cscmr1) & ~(0x3 << 29)) | ((val & 0x3) << 29);
 			break;
 
+		case clk_mux_flexspi2:
+			*(imxrt_common.ccm + ccm_cbcmr) = (*(imxrt_common.ccm + ccm_cbcmr) & ~(0x3 << 8)) | ((val & 0x3) << 8);
+			break;
+
 		case clk_mux_usdhc2:
 			*(imxrt_common.ccm + ccm_cscmr1) = (*(imxrt_common.ccm + ccm_cscmr1) & ~(1 << 17)) | ((val & 1) << 17);
 			break;
@@ -1048,6 +1052,10 @@ u32 _imxrt_ccmGetMux(int mux)
 
 		case clk_mux_flexspi:
 			val = (*(imxrt_common.ccm + ccm_cscmr1) >> 29) & 0x3;
+			break;
+
+		case clk_mux_flexspi2:
+			val = (*(imxrt_common.ccm + ccm_cbcmr) >> 8) & 0x3;
 			break;
 
 		case clk_mux_usdhc2:
