@@ -158,7 +158,7 @@ static int uart_sync(unsigned int minor)
 	if ((uart = uart_getInstance(minor)) == NULL)
 		return -EINVAL;
 
-	while (!(*(uart->base + isr) & 0x80))
+	while (!(*(uart->base + isr) & 0x40))
 		;
 
 	return EOK;
