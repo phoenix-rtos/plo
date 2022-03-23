@@ -55,9 +55,9 @@ ivt:
 	.word 0          /* reserved 2 */
 
 boot_data:
-	.word ADDR_OCRAM /* load address */
-	.word _plo_size  /* size - will be changed during image creation */
-	.word 0          /* plugin */
+	.word _plo_load_addr /* load address */
+	.word _plo_size      /* size - will be changed during image creation */
+	.word 0              /* plugin */
 	.word 0
 
 

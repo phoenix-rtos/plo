@@ -26,8 +26,11 @@
 #define ADDR_DDR 0x80000000
 #define SIZE_DDR (128 * 1024 * 1024)
 
-#define ADDR_OCRAM 0x907000
-#define SIZE_OCRAM 0x11000
+#define ADDR_OCRAM_HIGH 0x907000
+#define SIZE_OCRAM_HIGH (100 * 1024)
+
+#define ADDR_OCRAM_LOW 0x900000
+#define SIZE_OCRAM_LOW (28 * 1024)
 
 
 #if defined(__LINKER__)
@@ -35,16 +38,17 @@
 /* Memory map setup */
 MEMORY
 {
-	m_ocram   (rwx) : ORIGIN = ADDR_OCRAM, LENGTH = SIZE_OCRAM
-	m_ddr     (rwx) : ORIGIN = ADDR_DDR, LENGTH = SIZE_DDR
+	m_ocram_high (rwx) : ORIGIN = ADDR_OCRAM_HIGH, LENGTH = SIZE_OCRAM_HIGH
+	m_ocram_low  (rw)  : ORIGIN = ADDR_OCRAM_LOW, LENGTH = SIZE_OCRAM_LOW
+	m_ddr        (rwx) : ORIGIN = ADDR_DDR, LENGTH = SIZE_DDR
 }
 
-REGION_ALIAS("PLO_IMAGE", m_ocram);
-REGION_ALIAS("TCM_TEXT", m_ocram);
-REGION_ALIAS("DATA", m_ocram);
-REGION_ALIAS("BSS", m_ocram);
-REGION_ALIAS("HEAP", m_ocram);
-REGION_ALIAS("STACK", m_ocram);
+REGION_ALIAS("TCM_TEXT", m_ocram_low);
+REGION_ALIAS("DATA", m_ocram_low);
+REGION_ALIAS("HEAP", m_ocram_low);
+REGION_ALIAS("STACK", m_ocram_low);
+REGION_ALIAS("PLO_IMAGE", m_ocram_high);
+REGION_ALIAS("BSS", m_ocram_high);
 
 #include "common/plo-arm.lds"
 
