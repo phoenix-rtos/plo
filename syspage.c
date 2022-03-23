@@ -260,7 +260,7 @@ int syspage_mapAdd(const char *name, addr_t start, addr_t end, const char *attr)
 	/* Get entries from hal */
 	while (hal_memoryGetNextEntry(start, end, &tempEntry) >= 0) {
 		if ((entry = syspage_alloc(sizeof(mapent_t))) == NULL)
-			return NULL;
+			return -ENOMEM;
 
 		entry->type = tempEntry.type;
 		entry->start = tempEntry.start;
