@@ -141,7 +141,7 @@ ivt_flash:
 	.word 0                                  /* reserved 2 */
 
 flash_boot_data:
-	.word FLEXSPI1_BASE                      /* load address */
+	.word _plo_load_addr                     /* load address */
 	.word _plo_size                          /* size */
 	.word 0                                  /* plugin */
 	.word 0                                  /* empty - extra data word */
