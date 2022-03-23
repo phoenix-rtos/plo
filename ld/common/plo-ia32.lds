@@ -121,6 +121,7 @@ SECTIONS
 	PROVIDE(_stack = __stack_top);
 
 	_plo_size = LOADADDR(.data) + SIZEOF(.data) - ORIGIN(PLO_IMAGE);
+	_plo_load_addr = ORIGIN(PLO_IMAGE);
 
 	/DISCARD/ : { *(.note.GNU-stack) *(.gnu_debuglink) *(.gnu.lto_*) }
 }
