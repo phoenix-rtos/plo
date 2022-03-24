@@ -15,6 +15,8 @@ KERNEL=1
 include ../phoenix-rtos-build/Makefile.common
 include ../phoenix-rtos-build/Makefile.$(TARGET_SUFF)
 
+LDGEN ?= $(CC)
+
 CFLAGS += $(BOARD_CONFIG) -DVERSION=\"$(VERSION)\"
 CFLAGS += -I../plo
 
@@ -30,41 +32,39 @@ OBJS += $(addprefix $(PREFIX_O), _startc.o plo.o syspage.o)
 
 .PHONY: all base ram clean
 
+.PRECIOUS: $(BUILD_DIR)%/.
+
 
 all: base ram
 
 
-base: $(PREFIX_PROG_STRIPPED)plo-$(TARGET_FAMILY)-$(TARGET_SUBFAMILY).elf  $(PREFIX_PROG_STRIPPED)plo-$(TARGET_FAMILY)-$(TARGET_SUBFAMILY).img
+base: $(PREFIX_PROG_STRIPPED)plo-$(TARGET_FAMILY)-$(TARGET_SUBFAMILY).elf $(PREFIX_PROG_STRIPPED)plo-$(TARGET_FAMILY)-$(TARGET_SUBFAMILY).img
 
 
 ram: $(PREFIX_PROG_STRIPPED)plo-ram-$(TARGET_FAMILY)-$(TARGET_SUBFAMILY).elf $(PREFIX_PROG_STRIPPED)plo-ram-$(TARGET_FAMILY)-$(TARGET_SUBFAMILY).img
 
 
-$(BUILD_DIR)/script.plo $(BUILD_DIR)/ramscript.plo:
+$(BUILD_DIR)/script.plo $(BUILD_DIR)/ramscript.plo: | $(BUILD_DIR)/.
 	@echo "TOUCH $(@F)"
 	$(SIL)touch $@
 
 
-$(PREFIX_O)/script.o.plo: $(PREFIX_O)cmds/cmd.o $(BUILD_DIR)/script.plo
-	@mkdir -p $(@D)
+$(PREFIX_O)/script.o.plo: $(PREFIX_O)cmds/cmd.o $(BUILD_DIR)/script.plo | $(PREFIX_O)/.
 	@echo "EMBED script.plo"
 	$(SIL)$(OBJCOPY) --update-section .data=$(BUILD_DIR)/script.plo $(PREFIX_O)cmds/cmd.o --add-symbol script=.data:0 $@
 
 
-$(PREFIX_O)/ramscript.o.plo: $(PREFIX_O)cmds/cmd.o $(BUILD_DIR)/ramscript.plo
-	@mkdir -p $(@D)
+$(PREFIX_O)/ramscript.o.plo: $(PREFIX_O)cmds/cmd.o $(BUILD_DIR)/ramscript.plo | $(PREFIX_O)/.
 	@echo "EMBED ramscript.plo"
 	$(SIL)$(OBJCOPY) --update-section .data=$(BUILD_DIR)/ramscript.plo $(PREFIX_O)cmds/cmd.o --add-symbol script=.data:0 $@
 
 
-$(PREFIX_PROG)plo-$(TARGET_FAMILY)-$(TARGET_SUBFAMILY).elf: $(PREFIX_O)/$(TARGET_FAMILY)-$(TARGET_SUBFAMILY).ld $(OBJS) $(PREFIX_O)/script.o.plo
-	@mkdir -p $(@D)
+$(PREFIX_PROG)plo-$(TARGET_FAMILY)-$(TARGET_SUBFAMILY).elf: $(PREFIX_O)/$(TARGET_FAMILY)-$(TARGET_SUBFAMILY).ld $(OBJS) $(PREFIX_O)/script.o.plo | $(PREFIX_PROG)/.
 	@echo "LD  $(@F)"
 	$(SIL)$(LD) $(LDFLAGS) -Map=$<.map -o $@ -T $^ $(GCCLIB)
 
 
-$(PREFIX_PROG)plo-ram-$(TARGET_FAMILY)-$(TARGET_SUBFAMILY).elf: $(PREFIX_O)/$(TARGET_FAMILY)-$(TARGET_SUBFAMILY)-ram.ld $(OBJS) $(PREFIX_O)/ramscript.o.plo
-	@mkdir -p $(@D)
+$(PREFIX_PROG)plo-ram-$(TARGET_FAMILY)-$(TARGET_SUBFAMILY).elf: $(PREFIX_O)/$(TARGET_FAMILY)-$(TARGET_SUBFAMILY)-ram.ld $(OBJS) $(PREFIX_O)/ramscript.o.plo | $(PREFIX_PROG)/.
 	@echo "LD  $(@F)"
 	$(SIL)$(LD) $(LDFLAGS) -Map=$<.map -o $@ -T $^ $(GCCLIB)
 
@@ -79,14 +79,22 @@ $(PREFIX_PROG_STRIPPED)%.img: $(PREFIX_PROG_STRIPPED)%.elf
 	$(SIL)$(OBJCOPY) -O binary $< $@
 
 
-$(PREFIX_O)/$(TARGET_FAMILY)-$(TARGET_SUBFAMILY).ld:
+-include $(PREFIX_O)/$(TARGET_FAMILY)-$(TARGET_SUBFAMILY)*ld.d
+$(PREFIX_O)/$(TARGET_FAMILY)-$(TARGET_SUBFAMILY).ld: | $(PREFIX_O)/.
 	@echo "GEN $(@F)"
-	$(SIL)$(CC) $(LDSFLAGS) -D__LINKER__ -undef -xc -E -P ld/$(TARGET_FAMILY)-$(TARGET_SUBFAMILY).ldt > $@
+	$(SIL)$(LDGEN) $(LDSFLAGS) -MP -MF $@.d -MMD -D__LINKER__ -undef -xc -E -P ld/$(TARGET_FAMILY)-$(TARGET_SUBFAMILY).ldt > $@
+	$(SIL)$(SED) -i.tmp -e 's`.*\.o[ \t]*:`$@:`' $@.d && rm $@.d.tmp
 
 
-$(PREFIX_O)/$(TARGET_FAMILY)-$(TARGET_SUBFAMILY)-%.ld:
+$(PREFIX_O)/$(TARGET_FAMILY)-$(TARGET_SUBFAMILY)-%.ld: | $(PREFIX_O)/.
 	@echo "GEN $(@F)"
-	$(SIL)$(CC) $(LDSFLAGS) -D__LINKER__ -D$* -undef -xc -E -P ld/$(TARGET_FAMILY)-$(TARGET_SUBFAMILY).ldt > $@
+	$(SIL)$(LDGEN) $(LDSFLAGS) -MP -MF $@.d -MMD -D__LINKER__ -D$* -undef -xc -E -P ld/$(TARGET_FAMILY)-$(TARGET_SUBFAMILY).ldt > $@
+	$(SIL)$(SED) -i.tmp -e 's`.*\.o[ \t]*:`$@:`' $@.d && rm $@.d.tmp
+
+
+%/.:
+	@echo "MKDIR $(@D)"
+	$(SIL)mkdir -p "$(@D)"
 
 
 clean:
