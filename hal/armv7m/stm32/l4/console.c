@@ -35,7 +35,7 @@ void hal_consolePrint(const char *s)
 		*(halconsole_common.base + tdr) = *(s++);
 	}
 
-	while (~(*(halconsole_common.base + isr)) & 0x80)
+	while (~(*(halconsole_common.base + isr)) & 0x40)
 		;
 
 	return;
@@ -61,11 +61,11 @@ void console_init(void)
 
 	halconsole_common.base = uarts[uart].base;
 
-	/* Init tx pin - output, push-pull, high speed, no pull-up */
-	_stm32_gpioConfig(port, txpin, 2, af, 0, 2, 0);
+	/* Init tx pin - output, push-pull, low speed, no pull-up */
+	_stm32_gpioConfig(port, txpin, 2, af, 0, 0, 0);
 
-	/* Init rxd pin - input, push-pull, high speed, no pull-up */
-	_stm32_gpioConfig(port, rxpin, 2, af, 0, 2, 0);
+	/* Init rxd pin - input, push-pull, low speed, no pull-up */
+	_stm32_gpioConfig(port, rxpin, 2, af, 0, 0, 0);
 
 	/* Enable uart clock */
 	_stm32_rccSetDevClock(uarts[uart].uart, 1);
