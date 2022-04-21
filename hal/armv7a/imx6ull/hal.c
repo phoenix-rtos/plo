@@ -151,9 +151,9 @@ int hal_memoryGetNextEntry(addr_t start, addr_t end, mapent_t *entry)
 	if (start == end)
 		return -1;
 
-	hal_memset(&tempEntry, 0, sizeof(tempEntry));
-	hal_memset(&minEntry, 0, sizeof(minEntry));
 	minEntry.start = (addr_t)-1;
+	minEntry.end = 0;
+	minEntry.type = 0;
 
 	/* Syspage entry */
 	tempEntry.start = (addr_t)hal_common.hs;
@@ -164,7 +164,9 @@ int hal_memoryGetNextEntry(addr_t start, addr_t end, mapent_t *entry)
 	for (i = 0; i < sizeof(entries) / sizeof(entries[0]); ++i) {
 		if (entries[i].start >= entries[i].end)
 			continue;
-		hal_memcpy(&tempEntry, &entries[i], sizeof(mapent_t));
+		tempEntry.start = entries[i].start;
+		tempEntry.end = entries[i].end;
+		tempEntry.type = entries[i].type;
 		hal_getMinOverlappedRange(start, end, &tempEntry, &minEntry);
 	}
 
