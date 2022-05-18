@@ -20,7 +20,7 @@
 #include <lib/lib.h>
 
 
-#define SIZE_CMD_ARG_LINE 81
+#define SIZE_CMD_ARG_LINE 256
 #define SIZE_MSG_BUFF     0x100
 #define SIZE_MAGIC_NB     8
 
