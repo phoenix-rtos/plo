@@ -23,8 +23,6 @@
 #define SIZE_STACK (4 * SIZE_PAGE)
 #define SIZE_HEAP  (5 * SIZE_PAGE)
 
-#define ADDR_BITSTREAM 0x00100000
-
 #define ADDR_OCRAM_LOW  0x00000000
 #define SIZE_OCRAM_LOW  (192 * 1024)
 
@@ -33,6 +31,8 @@
 
 #define ADDR_DDR 0x00100000
 #define SIZE_DDR (512 * 1024 * 1024)
+
+#define ADDR_BITSTREAM (ADDR_DDR + SIZE_DDR - (4 * 1024 * 1024))
 
 #if defined(__LINKER__)
 
