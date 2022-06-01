@@ -438,6 +438,17 @@ int _zynq_loadPL(u32 srcAddr, u32 srcLen)
 			return -1;
 	}
 
+	/* Post-config */
+	_zynq_slcrUnlock();
+
+	/* Enable level shifter */
+	*(zynq_common.slcr + slcr_lvl_shftr_en) |= 0xf;
+
+	/* Deassert FPGA reset */
+	*(zynq_common.slcr + slcr_fpga_rst_ctrl) = 0;
+
+	_zynq_slcrLock();
+
 	return 0;
 }
 
