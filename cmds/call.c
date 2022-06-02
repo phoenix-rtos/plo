@@ -58,10 +58,10 @@ static int cmd_call(int argc, char *argv[])
 	offs += len;
 	buff[len] = '\0';
 
-	/* Check magic number */
+	/* Check magic number, don't return error, as there might be a next script */
 	if (hal_strcmp(buff, argv[3]) != 0) {
 		log_error("\nMagic number for %s is wrong.", argv[2]);
-		return -EINVAL;
+		return EOK;
 	}
 
 	/* Execute script */
