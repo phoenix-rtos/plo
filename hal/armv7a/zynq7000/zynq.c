@@ -17,6 +17,8 @@
 #include "zynq.h"
 #include "config.h"
 
+#include <board_config.h>
+
 #define MAX_WAITING_COUNTER 10000000
 
 #define SCLR_BASE_ADDRESS   0xf8000000
@@ -523,22 +525,11 @@ static void _zynq_ddrInit(void)
 	/* reg_ddrc_w_min_non_critical_x32 = 0x1; reg_ddrc_w_xact_run_length = 0x8; reg_ddrc_w_max_starve_x32 = 0x2 */
 	*(zynq_common.ddr + ddrc_wr_reg) = (*(zynq_common.ddr + ddrc_wr_reg) & ~0x03ffffff) | 0x00014001;
 
-	/* reg_ddrc_t_rc = 0x1b; reg_ddrc_t_rfc_min = 0x56; reg_ddrc_post_selfref_gap_x32 = 0x10 */
-	 *(zynq_common.ddr + ddrc_dram_param_reg0) = (*(zynq_common.ddr + ddrc_dram_param_reg0) & ~0x001fffff) | 0x0004159b;
-
-	/* reg_ddrc_wr2pre = 0x13; reg_ddrc_powerdown_to_x32 = 0x6; reg_ddrc_t_faw = 0x19; reg_ddrc_t_ras_max = 0x24; reg_ddrc_t_ras_min = 0x14; reg_ddrc_t_cke = 0x4 */
-	*(zynq_common.ddr + ddrc_dram_param_reg1) = (*(zynq_common.ddr + ddrc_dram_param_reg1) & ~0xf7ffffff) | 0x452464d3;
-
-	/* reg_ddrc_write_latency = 0x5; reg_ddrc_rd2wr = 0x7; reg_ddrc_wr2rd = 0xf; reg_ddrc_t_xp = 0x5; reg_ddrc_pad_pd = 0x0; reg_ddrc_rd2pre = 0x5; reg_ddrc_t_rcd = 0x7*/
-	*(zynq_common.ddr + ddrc_dram_param_reg2) = (*(zynq_common.ddr + ddrc_dram_param_reg2) & ~0xffffffff) | 0x7282bce5;
-
-	/* reg_ddrc_t_ccd = 0x4; reg_ddrc_t_rrd = 0x6; reg_ddrc_refresh_margin = 0x2; reg_ddrc_t_rp = 0x7; reg_ddrc_refresh_to_x32 = 0x8; reg_ddrc_mobile = 0x0;
-	 * reg_ddrc_en_dfi_dram_clk_disable = 0x0; reg_ddrc_read_latency = 0x7; reg_phy_mode_ddr1_ddr2 = 0x1; reg_ddrc_dis_pad_pd = 0x0 */
-	*(zynq_common.ddr + ddrc_dram_param_reg3) = (*(zynq_common.ddr + ddrc_dram_param_reg3) & ~0x7fdffffc) | 0x270872d0;
-
-	/* reg_ddrc_en_2t_timing_mode = 0x0; reg_ddrc_prefer_write = 0x0; reg_ddrc_mr_wr = 0x0; reg_ddrc_mr_addr = 0x0; reg_ddrc_mr_data = 0x0; ddrc_reg_mr_wr_busy = 0x0
-	 * reg_ddrc_mr_type = 0x0; reg_ddrc_mr_rdata_valid = 0x0 */
-	*(zynq_common.ddr + ddrc_dram_param_reg4) = (*(zynq_common.ddr + ddrc_dram_param_reg4) & ~0x0fffffc3) | 0x0;
+	*(zynq_common.ddr + ddrc_dram_param_reg0) = (*(zynq_common.ddr + ddrc_dram_param_reg0) & ~0x001fffff) | DDRC_DRAM_PARAM_REG0;
+	*(zynq_common.ddr + ddrc_dram_param_reg1) = (*(zynq_common.ddr + ddrc_dram_param_reg1) & ~0xf7ffffff) | DDRC_DRAM_PARAM_REG1;
+	*(zynq_common.ddr + ddrc_dram_param_reg2) = (*(zynq_common.ddr + ddrc_dram_param_reg2) & ~0xffffffff) | DDRC_DRAM_PARAM_REG2;
+	*(zynq_common.ddr + ddrc_dram_param_reg3) = (*(zynq_common.ddr + ddrc_dram_param_reg3) & ~0x7fdffffc) | DDRC_DRAM_PARAM_REG3;
+	*(zynq_common.ddr + ddrc_dram_param_reg4) = (*(zynq_common.ddr + ddrc_dram_param_reg4) & ~0x0fffffc3) | DDRC_DRAM_PARAM_REG4;
 
 	/* eg_ddrc_final_wait_x32 = 0x7; reg_ddrc_pre_ocd_x32 = 0x0; reg_ddrc_t_mrd = 0x4 */
 	*(zynq_common.ddr + ddrc_dram_init_param) = (*(zynq_common.ddr + ddrc_dram_init_param) & ~0x00003fff) | 0x00002007;
@@ -558,13 +549,8 @@ static void _zynq_ddrInit(void)
 	/* reg_ddrc_addrmap_bank_b0 = 0x7; reg_ddrc_addrmap_bank_b1 = 0x7; reg_ddrc_addrmap_bank_b2 = 0x7; reg_ddrc_addrmap_col_b5 = 0x0; reg_ddrc_addrmap_col_b6 = 0x0 */
 	*(zynq_common.ddr + ddrc_dram_addr_map_bank) = (*(zynq_common.ddr + ddrc_dram_addr_map_bank) & ~0x000fffff) | 0x00000777;
 
-	/* reg_ddrc_addrmap_col_b2 = 0x0; reg_ddrc_addrmap_col_b3 = 0x0; reg_ddrc_addrmap_col_b4 = 0x0; reg_ddrc_addrmap_col_b7 = 0x0; reg_ddrc_addrmap_col_b8 = 0x0
-	 * reg_ddrc_addrmap_col_b9 = 0xf; reg_ddrc_addrmap_col_b10 = 0xf; reg_ddrc_addrmap_col_b11 = 0xf */
-	*(zynq_common.ddr + ddrc_dram_addr_map_col) = (*(zynq_common.ddr + ddrc_dram_addr_map_col) & ~0xffffffff) | 0xfff00000;
-
-	/* reg_ddrc_addrmap_row_b0 = 0x6; reg_ddrc_addrmap_row_b1 = 0x6; reg_ddrc_addrmap_row_b2_11 = 0x6; reg_ddrc_addrmap_row_b12 = 0x6; reg_ddrc_addrmap_row_b13 = 0x6;
-	 * reg_ddrc_addrmap_row_b14 = 0xf; reg_ddrc_addrmap_row_b15 = 0xf */
-	*(zynq_common.ddr + ddrc_dram_addr_map_row) = (*(zynq_common.ddr + ddrc_dram_addr_map_row) & ~0x0fffffff) | 0x0ff66666;
+	*(zynq_common.ddr + ddrc_dram_addr_map_col) = (*(zynq_common.ddr + ddrc_dram_addr_map_col) & ~0xffffffff) | DDRC_DRAM_ADDR_MAP_COL;
+	*(zynq_common.ddr + ddrc_dram_addr_map_row) = (*(zynq_common.ddr + ddrc_dram_addr_map_row) & ~0x0fffffff) | DDRC_DRAM_ADDR_MAP_ROW;
 
 	/* reg_phy_rd_local_odt = 0x0; reg_phy_wr_local_odt = 0x3; reg_phy_idle_local_odt = 0x3; reserved_reg_ddrc_rank0_wr_odt = 0x1; reserved_reg_ddrc_rank0_rd_odt = 0x0 */
 	*(zynq_common.ddr + ddrc_dram_odt_reg) = (*(zynq_common.ddr + ddrc_dram_odt_reg) & ~0x0003f03f) | 0x0003c008;
@@ -636,58 +622,35 @@ static void _zynq_ddrInit(void)
 	/* reg_phy_dif_on = 0x0; reg_phy_dif_off = 0x0 */
 	*(zynq_common.ddr + ddrc_phy_rcvr_enable) = (*(zynq_common.ddr + ddrc_phy_rcvr_enable) & ~0x000000ff) | 0x00000000;
 
-	/* reg_phy_data_slice_in_use = 0x1; reg_phy_rdlvl_inc_mode = 0x0; reg_phy_gatelvl_inc_mode = 0x0; reg_phy_wrlvl_inc_mode = 0x0; reg_phy_bist_shift_dq = 0x0;
-	 * reg_phy_bist_err_clr = 0x0; reg_phy_dq_offset = 0x40 */
-	*(zynq_common.ddr + ddrc_phy_config0) = (*(zynq_common.ddr + ddrc_phy_config0) & ~0x7fffffcf) | 0x40000001;
-	*(zynq_common.ddr + ddrc_phy_config1) = (*(zynq_common.ddr + ddrc_phy_config1) & ~0x7fffffcf) | 0x40000001;
-	*(zynq_common.ddr + ddrc_phy_config2) = (*(zynq_common.ddr + ddrc_phy_config2) & ~0x7fffffcf) | 0x40000001;
-	*(zynq_common.ddr + ddrc_phy_config3) = (*(zynq_common.ddr + ddrc_phy_config3) & ~0x7fffffcf) | 0x40000001;
+	*(zynq_common.ddr + ddrc_phy_config0) = (*(zynq_common.ddr + ddrc_phy_config0) & ~0x7fffffcf) | DDRC_PHY_CONFIG0;
+	*(zynq_common.ddr + ddrc_phy_config1) = (*(zynq_common.ddr + ddrc_phy_config1) & ~0x7fffffcf) | DDRC_PHY_CONFIG1;
+	*(zynq_common.ddr + ddrc_phy_config2) = (*(zynq_common.ddr + ddrc_phy_config2) & ~0x7fffffcf) | DDRC_PHY_CONFIG2;
+	*(zynq_common.ddr + ddrc_phy_config3) = (*(zynq_common.ddr + ddrc_phy_config3) & ~0x7fffffcf) | DDRC_PHY_CONFIG3;
 
-	/* reg_phy_wrlvl_init_ratio = 0x3; reg_phy_gatelvl_init_ratio = 0xcf */
-	*(zynq_common.ddr + ddrc_phy_init_ratio0) = (*(zynq_common.ddr + ddrc_phy_init_ratio0) & ~0x000fffff) | 0x00033c03;
+	*(zynq_common.ddr + ddrc_phy_init_ratio0) = (*(zynq_common.ddr + ddrc_phy_init_ratio0) & ~0x000fffff) | DDRC_PHY_INIT_RATIO0;
+	*(zynq_common.ddr + ddrc_phy_init_ratio1) = (*(zynq_common.ddr + ddrc_phy_init_ratio1) & ~0x000fffff) | DDRC_PHY_INIT_RATIO1;
+	*(zynq_common.ddr + ddrc_phy_init_ratio2) = (*(zynq_common.ddr + ddrc_phy_init_ratio2) & ~0x000fffff) | DDRC_PHY_INIT_RATIO2;
+	*(zynq_common.ddr + ddrc_phy_init_ratio3) = (*(zynq_common.ddr + ddrc_phy_init_ratio3) & ~0x000fffff) | DDRC_PHY_INIT_RATIO3;
 
-	/* reg_phy_wrlvl_init_ratio = 0x3; reg_phy_gatelvl_init_ratio = 0xd0 */
-	*(zynq_common.ddr + ddrc_phy_init_ratio1) = (*(zynq_common.ddr + ddrc_phy_init_ratio1) & ~0x000fffff) | 0x00034003;
+	*(zynq_common.ddr + ddrc_phy_rd_dqs_cfg0) = (*(zynq_common.ddr + ddrc_phy_rd_dqs_cfg0) & ~0x000fffff) | DDRC_PHY_RD_DQS_CFG0;
+	*(zynq_common.ddr + ddrc_phy_rd_dqs_cfg1) = (*(zynq_common.ddr + ddrc_phy_rd_dqs_cfg1) & ~0x000fffff) | DDRC_PHY_RD_DQS_CFG1;
+	*(zynq_common.ddr + ddrc_phy_rd_dqs_cfg2) = (*(zynq_common.ddr + ddrc_phy_rd_dqs_cfg2) & ~0x000fffff) | DDRC_PHY_RD_DQS_CFG2;
+	*(zynq_common.ddr + ddrc_phy_rd_dqs_cfg3) = (*(zynq_common.ddr + ddrc_phy_rd_dqs_cfg3) & ~0x000fffff) | DDRC_PHY_RD_DQS_CFG3;
 
-	/* reg_phy_wrlvl_init_ratio = 0x0; reg_phy_gatelvl_init_ratio = 0xbd */
-	*(zynq_common.ddr + ddrc_phy_init_ratio2) = (*(zynq_common.ddr + ddrc_phy_init_ratio2) & ~0x000fffff) | 0x0002f400;
+	*(zynq_common.ddr + ddrc_phy_wr_dqs_cfg0) = (*(zynq_common.ddr + ddrc_phy_wr_dqs_cfg0) & ~0x000fffff) | DDRC_PHY_WR_DQS_CFG0;
+	*(zynq_common.ddr + ddrc_phy_wr_dqs_cfg1) = (*(zynq_common.ddr + ddrc_phy_wr_dqs_cfg1) & ~0x000fffff) | DDRC_PHY_WR_DQS_CFG1;
+	*(zynq_common.ddr + ddrc_phy_wr_dqs_cfg2) = (*(zynq_common.ddr + ddrc_phy_wr_dqs_cfg2) & ~0x000fffff) | DDRC_PHY_WR_DQS_CFG2;
+	*(zynq_common.ddr + ddrc_phy_wr_dqs_cfg3) = (*(zynq_common.ddr + ddrc_phy_wr_dqs_cfg3) & ~0x000fffff) | DDRC_PHY_WR_DQS_CFG3;
 
-	/* reg_phy_wrlvl_init_ratio = 0x0; reg_phy_gatelvl_init_ratio = 0xc1 */
-	*(zynq_common.ddr + ddrc_phy_init_ratio3) = (*(zynq_common.ddr + ddrc_phy_init_ratio3) & ~0x000fffff) | 0x00030400;
+	*(zynq_common.ddr + ddrc_phy_we_cfg0) = (*(zynq_common.ddr + ddrc_phy_we_cfg0) & ~0x001fffff) | DDRC_PHY_WE_CFG0;
+	*(zynq_common.ddr + ddrc_phy_we_cfg1) = (*(zynq_common.ddr + ddrc_phy_we_cfg1) & ~0x001fffff) | DDRC_PHY_WE_CFG1;
+	*(zynq_common.ddr + ddrc_phy_we_cfg2) = (*(zynq_common.ddr + ddrc_phy_we_cfg2) & ~0x001fffff) | DDRC_PHY_WE_CFG2;
+	*(zynq_common.ddr + ddrc_phy_we_cfg3) = (*(zynq_common.ddr + ddrc_phy_we_cfg3) & ~0x001fffff) | DDRC_PHY_WE_CFG3;
 
-	/* reg_phy_rd_dqs_slave_ratio = 0x35; reg_phy_rd_dqs_slave_force = 0x0; reg_phy_rd_dqs_slave_delay = 0x0 */
-	*(zynq_common.ddr + ddrc_phy_rd_dqs_cfg0) = (*(zynq_common.ddr + ddrc_phy_rd_dqs_cfg0) & ~0x000fffff) | 0x00000035;
-	*(zynq_common.ddr + ddrc_phy_rd_dqs_cfg1) = (*(zynq_common.ddr + ddrc_phy_rd_dqs_cfg1) & ~0x000fffff) | 0x00000035;
-	*(zynq_common.ddr + ddrc_phy_rd_dqs_cfg2) = (*(zynq_common.ddr + ddrc_phy_rd_dqs_cfg2) & ~0x000fffff) | 0x00000035;
-	*(zynq_common.ddr + ddrc_phy_rd_dqs_cfg3) = (*(zynq_common.ddr + ddrc_phy_rd_dqs_cfg3) & ~0x000fffff) | 0x00000035;
-
-	/* reg_phy_wr_dqs_slave_ratio = 0x83; reg_phy_wr_dqs_slave_force = 0x0; reg_phy_wr_dqs_slave_delay = 0x0 */
-	*(zynq_common.ddr + ddrc_phy_wr_dqs_cfg0) = (*(zynq_common.ddr + ddrc_phy_wr_dqs_cfg0) & ~0x000fffff) | 0x00000083;
-	*(zynq_common.ddr + ddrc_phy_wr_dqs_cfg1) = (*(zynq_common.ddr + ddrc_phy_wr_dqs_cfg1) & ~0x000fffff) | 0x00000083;
-
-	/* reg_phy_wr_dqs_slave_ratio = 0x80; reg_phy_wr_dqs_slave_force = 0x0; reg_phy_wr_dqs_slave_delay = 0x0 */
-	*(zynq_common.ddr + ddrc_phy_wr_dqs_cfg2) = (*(zynq_common.ddr + ddrc_phy_wr_dqs_cfg2) & ~0x000fffff) | 0x00000080;
-	*(zynq_common.ddr + ddrc_phy_wr_dqs_cfg3) = (*(zynq_common.ddr + ddrc_phy_wr_dqs_cfg3) & ~0x000fffff) | 0x00000080;
-
-	/* reg_phy_fifo_we_slave_ratio = 0x124; reg_phy_fifo_we_in_force = 0x0; reg_phy_fifo_we_in_delay = 0x0 */
-	*(zynq_common.ddr + ddrc_phy_we_cfg0) = (*(zynq_common.ddr + ddrc_phy_we_cfg0) & ~0x001fffff) | 0x00000124;
-
-	/* reg_phy_fifo_we_slave_ratio = 0x125; reg_phy_fifo_we_in_force = 0x0; reg_phy_fifo_we_in_delay = 0x0 */
-	*(zynq_common.ddr + ddrc_phy_we_cfg1) = (*(zynq_common.ddr + ddrc_phy_we_cfg1) & ~0x001fffff) | 0x00000125;
-
-	/* reg_phy_fifo_we_slave_ratio = 0x112; reg_phy_fifo_we_in_force = 0x0; reg_phy_fifo_we_in_delay = 0x0 */
-	*(zynq_common.ddr + ddrc_phy_we_cfg2) = (*(zynq_common.ddr + ddrc_phy_we_cfg2) & ~0x001fffff) | 0x00000112;
-
-	/* reg_phy_fifo_we_slave_ratio = 0x116; reg_phy_fifo_we_in_force = 0x0; reg_phy_fifo_we_in_delay = 0x0 */
-	*(zynq_common.ddr + ddrc_phy_we_cfg3) = (*(zynq_common.ddr + ddrc_phy_we_cfg3) & ~0x001fffff) | 0x00000116;
-
-	/* reg_phy_wr_data_slave_ratio = 0xc3; reg_phy_wr_data_slave_force = 0x0; reg_phy_wr_data_slave_delay = 0x0 */
-	*(zynq_common.ddr + ddrc_wr_data_slv0) = (*(zynq_common.ddr + ddrc_wr_data_slv0) & ~0x000fffff) | 0x000000c3;
-	*(zynq_common.ddr + ddrc_wr_data_slv1) = (*(zynq_common.ddr + ddrc_wr_data_slv1) & ~0x000fffff) | 0x000000c3;
-
-	/* reg_phy_wr_data_slave_ratio = 0xc0; reg_phy_wr_data_slave_force = 0x0; reg_phy_wr_data_slave_delay = 0x0 */
-	*(zynq_common.ddr + ddrc_wr_data_slv2) = (*(zynq_common.ddr + ddrc_wr_data_slv2) & ~0x000fffff) | 0x000000c0;
-	*(zynq_common.ddr + ddrc_wr_data_slv3) = (*(zynq_common.ddr + ddrc_wr_data_slv3) & ~0x000fffff) | 0x000000c0;
+	*(zynq_common.ddr + ddrc_wr_data_slv0) = (*(zynq_common.ddr + ddrc_wr_data_slv0) & ~0x000fffff) | DDRC_WR_DATA_SLV0;
+	*(zynq_common.ddr + ddrc_wr_data_slv1) = (*(zynq_common.ddr + ddrc_wr_data_slv1) & ~0x000fffff) | DDRC_WR_DATA_SLV1;
+	*(zynq_common.ddr + ddrc_wr_data_slv2) = (*(zynq_common.ddr + ddrc_wr_data_slv2) & ~0x000fffff) | DDRC_WR_DATA_SLV2;
+	*(zynq_common.ddr + ddrc_wr_data_slv3) = (*(zynq_common.ddr + ddrc_wr_data_slv3) & ~0x000fffff) | DDRC_WR_DATA_SLV3;
 
 	/* reg_phy_bl2 = 0x0; reg_phy_at_spd_atpg = 0x0; reg_phy_bist_enable = 0x0; reg_phy_bist_force_err = 0x0; reg_phy_bist_mode = 0x0;
 	 * reg_phy_invert_clkout = 0x1; reg_phy_sel_logic = 0x0; reg_phy_ctrl_slave_ratio = 0x100; reg_phy_ctrl_slave_force = 0x0; reg_phy_ctrl_slave_delay = 0x0;
