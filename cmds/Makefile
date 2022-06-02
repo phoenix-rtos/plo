@@ -6,7 +6,7 @@
 # %LICENSE%
 #
 
-PLO_ALLCOMMANDS = alias app bitstream call console copy dump echo go help kernel kernelimg map mpu phfs reboot script wait
+PLO_ALLCOMMANDS = alias app bitstream call console copy dump echo go help kernel kernelimg map mpu phfs reboot script test-ddr wait
 PLO_COMMANDS ?= $(PLO_ALLCOMMANDS)
 PLO_APPLETS = $(filter $(PLO_ALLCOMMANDS), $(PLO_COMMANDS))
 
