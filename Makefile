@@ -17,8 +17,10 @@ include ../phoenix-rtos-build/Makefile.$(TARGET_SUFF)
 
 LDGEN ?= $(CC)
 
-CFLAGS += $(BOARD_CONFIG) -DVERSION=\"$(VERSION)\"
-CFLAGS += -I../plo
+# TODO: replace BOARD_CONFIG usage with board_config.h
+CFLAGS += $(BOARD_CONFIG)
+CFLAGS += -I../plo -I$(PROJECT_PATH)/
+CFLAGS += -DVERSION=\"$(VERSION)\"
 
 include hal/$(TARGET_SUFF)/Makefile
 include lib/Makefile
