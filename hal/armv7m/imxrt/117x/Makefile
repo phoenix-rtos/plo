@@ -18,6 +18,6 @@ PLO_COMMANDS = alias app call console copy dump echo go help kernel kernelimg ma
 
 include devices/usbc-cdc/Makefile
 include devices/uart-imxrt117x/Makefile
-include devices/flash-imxrt/Makefile
+include devices/flash-flexspi/Makefile
 
 OBJS += $(addprefix $(PREFIX_O)hal/$(TARGET_SUFF)/imxrt/117x/, _init.o imxrt.o timer.o console.o)
