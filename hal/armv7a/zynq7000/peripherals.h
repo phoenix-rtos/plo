@@ -24,7 +24,7 @@
 #define UART_BAUDRATE 115200
 #define UART_REF_CLK  50000000 /* 50 MHz - description in _zynq_peripherals() */
 
-#define UART_CONSOLE  1
+
 #define UARTS_MAX_CNT 2
 
 
@@ -36,12 +36,6 @@
 
 #define UART0_CLK amba_uart0_clk
 #define UART1_CLK amba_uart1_clk
-
-#define UART0_RX mio_pin_10
-#define UART0_TX mio_pin_11
-
-#define UART1_RX mio_pin_49
-#define UART1_TX mio_pin_48
 
 
 /* TIMERs configuration */

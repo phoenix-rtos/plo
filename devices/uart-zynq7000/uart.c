@@ -17,6 +17,8 @@
 #include <lib/lib.h>
 #include <devices/devs.h>
 
+#include <board_config.h>
+
 
 #define MAX_TXRX_FIFO_SIZE 0x40
 #define BUFFER_SIZE        0x200
@@ -164,15 +166,13 @@ static int uart_setPin(u32 pin)
 	ctl.disableRcvr = 0;
 
 	switch (pin) {
-		/* Uart Rx */
-		case mio_pin_10:
-		case mio_pin_49:
+		case UART0_RX:
+		case UART1_RX:
 			ctl.triEnable = 1;
 			break;
 
-		/* Uart Tx */
-		case mio_pin_11:
-		case mio_pin_48:
+		case UART0_TX:
+		case UART1_TX:
 			ctl.triEnable = 0;
 			break;
 
