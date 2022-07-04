@@ -15,6 +15,19 @@
 
 #include <hal/hal.h>
 
+#include <board_config.h>
+
+#if UART_CONSOLE_PLO == 0
+#define UART_RX        UART0_RX
+#define UART_TX        UART0_TX
+#define UART_BASE_ADDR UART0_BASE_ADDR
+#define UART_CLK       UART0_CLK
+#else
+#define UART_RX        UART1_RX
+#define UART_TX        UART1_TX
+#define UART_BASE_ADDR UART1_BASE_ADDR
+#define UART_CLK       UART1_CLK
+#endif
 
 struct {
 	volatile u32 *uart;
@@ -51,7 +64,7 @@ static void console_initClock(void)
 	ctl.pll.divisor0 = 0x14;
 
 	_zynq_setCtlClock(&ctl);
-	_zynq_setAmbaClk(amba_uart1_clk, clk_enable);
+	_zynq_setAmbaClk(UART_CLK, clk_enable);
 }
 
 
@@ -65,19 +78,17 @@ static void console_setPin(u32 pin)
 	ctl.l3 = 0x7;
 	ctl.speed = 0;
 	ctl.ioType = 1;
-	ctl.pullup = 0;
-	ctl.disableRcvr = 0;
+	ctl.pullup = 1;
+	ctl.disableRcvr = 1;
 
 	switch (pin) {
-		/* Uart Rx */
-		case mio_pin_10:
-		case mio_pin_49:
+		case UART0_RX:
+		case UART1_RX:
 			ctl.triEnable = 1;
 			break;
 
-		/* Uart Tx */
-		case mio_pin_11:
-		case mio_pin_48:
+		case UART0_TX:
+		case UART1_TX:
 			ctl.triEnable = 0;
 			break;
 
@@ -92,10 +103,10 @@ static void console_setPin(u32 pin)
 void console_init(void)
 {
 	console_initClock();
-	console_setPin(UART1_RX);
-	console_setPin(UART1_TX);
+	console_setPin(UART_RX);
+	console_setPin(UART_TX);
 
-	halconsole_common.uart = UART1_BASE_ADDR;
+	halconsole_common.uart = UART_BASE_ADDR;
 
 	*(halconsole_common.uart + idr) = 0xfff;
 	/* Uart Mode Register
