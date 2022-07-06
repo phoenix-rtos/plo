@@ -34,8 +34,8 @@ static int cmd_go(int argc, char *argv[])
 		return -EINVAL;
 	}
 
-	log_info("\nRunning Phoenix-RTOS");
-	lib_printf(CONSOLE_NORMAL CONSOLE_CLEAR CONSOLE_CURSOR_SHOW);
+	log_info("\nRunning Phoenix-RTOS\n");
+	lib_printf(CONSOLE_NORMAL CONSOLE_CURSOR_SHOW);
 
 	devs_done();
 	hal_done();

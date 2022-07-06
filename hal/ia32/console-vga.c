@@ -329,4 +329,7 @@ void hal_consoleInit(void)
 	halconsole_common.rows = 25;
 	halconsole_common.cols = 80;
 	halconsole_common.attr = 0x05;
+
+	/* Clear console */
+	hal_consolePrint("\033[2J\033[H");
 }
