@@ -60,7 +60,7 @@ static int cmd_wait(int argc, char *argv[])
 		if (lib_consoleGetc(&c, step) > 0)
 			return -1;
 	}
-	lib_printf("\r%*s \r%s, %5d [ms]", sizeof(prompt) + 14, "", prompt, 0);
+	lib_printf("\r%*s \r%s, %5d [ms]\n", sizeof(prompt) + 14, "", prompt, 0);
 
 	return EOK;
 }
