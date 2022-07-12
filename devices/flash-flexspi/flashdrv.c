@@ -189,7 +189,7 @@ static int flashdrv_sync(unsigned int minor)
 }
 
 
-static ssize_t bufferSync(unsigned int minor, addr_t dstAddr)
+static ssize_t bufferSync(unsigned int minor, addr_t dstAddr, int isLast)
 {
 	ssize_t res = 0;
 	struct nor_device *dev = minorToDevice(minor);
@@ -200,6 +200,14 @@ static ssize_t bufferSync(unsigned int minor, addr_t dstAddr)
 		res = flashdrv_sync(minor);
 		if (res < 0) {
 			return res;
+		}
+
+		if (isLast != 0) {
+			return res;
+		}
+
+		if (dev->nor->totalSz < dstAddr + dev->nor->sectorSz) {
+			return -EIO;
 		}
 
 		res = nor_readData(&dev->fspi, dev->port, get_sectorAddress(dev, dstAddr), dev->sectorBuf, dev->nor->sectorSz, dev->timeout);
@@ -236,7 +244,7 @@ static ssize_t flashdrv_write(unsigned int minor, addr_t dstAddr, const void *da
 
 	doneBytes = 0;
 	while (doneBytes < size) {
-		res = bufferSync(minor, dstAddr);
+		res = bufferSync(minor, dstAddr, 0);
 		if (res < 0) {
 			return res; /* FIXME: should error or doneBytes to be returned ? */
 		}
@@ -256,7 +264,7 @@ static ssize_t flashdrv_write(unsigned int minor, addr_t dstAddr, const void *da
 	}
 
 	if (doneBytes > 0) {
-		res = bufferSync(minor, dstAddr);
+		res = bufferSync(minor, dstAddr, 1);
 		if (res < 0) {
 			return res; /* FIXME: should error or doneBytes to be returned ? */
 		}
