@@ -208,6 +208,7 @@ _plo:
 
 .globl _interrupts_dispatch
 .type _interrupts_dispatch, %function
+.section .noxip
 _interrupts_dispatch:
 	mrs r0, ipsr
 	stmdb sp!, {r0, r4-r11, lr}
@@ -222,6 +223,7 @@ _interrupts_dispatch:
 
 .globl _exceptions_dispatch
 .type _exceptions_dispatch, %function
+.section .noxip
 
 _exceptions_dispatch:
 	cpsid if

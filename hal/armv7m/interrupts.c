@@ -86,7 +86,7 @@ int hal_interruptsSet(unsigned int irq, int (*isr)(unsigned int, void *), void *
 }
 
 
-int hal_interruptDispatch(unsigned int irq)
+__attribute__((section(".noxip"))) int hal_interruptDispatch(unsigned int irq)
 {
 	if (irq_common.irqs[irq].isr == NULL)
 		return -1;
