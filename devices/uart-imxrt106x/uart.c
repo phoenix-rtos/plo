@@ -71,13 +71,13 @@ const struct {
 enum { veridr = 0, paramr, globalr, pincfgr, baudr, statr, ctrlr, datar, matchr, modirr, fifor, waterr };
 
 
-static inline int uart_getRXcount(uart_t *uart)
+__attribute__((section(".noxip"))) static inline int uart_getRXcount(uart_t *uart)
 {
 	return (*(uart->base + waterr) >> 24) & 0xff;
 }
 
 
-static inline int uart_getTXcount(uart_t *uart)
+__attribute__((section(".noxip"))) static inline int uart_getTXcount(uart_t *uart)
 {
 	return (*(uart->base + waterr) >> 8) & 0xff;
 }
@@ -96,7 +96,7 @@ static uart_t *uart_getInstance(unsigned int minor)
 }
 
 
-static int uart_handleIntr(unsigned int irq, void *buff)
+__attribute__((section(".noxip"))) static int uart_handleIntr(unsigned int irq, void *buff)
 {
 	char c;
 	u32 flags;
