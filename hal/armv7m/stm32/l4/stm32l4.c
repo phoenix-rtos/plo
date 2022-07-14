@@ -412,6 +412,26 @@ int _stm32_gpioGetPort(unsigned int d, u16 *val)
 }
 
 
+/* Flash banks */
+
+
+int _stm32_getFlashBank(void)
+{
+	return ((*(stm32_common.syscfg + syscfg_memrmp) & (1 << 8)) != 0) ? 1 : 0;
+}
+
+
+void _stm32_switchFlashBank(int bank)
+{
+	if (bank == 0) {
+		*(stm32_common.syscfg + syscfg_memrmp) &= ~(1 << 8);
+	}
+	else {
+		*(stm32_common.syscfg + syscfg_memrmp) |= 1 << 8;
+	}
+}
+
+
 /* Watchdog */
 
 

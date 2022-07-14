@@ -29,8 +29,8 @@
 
 typedef struct {
 	const char name[12];
-	const int (*run)(int, char *[]);
-	const void (*info)(void);
+	int (*const run)(int, char *[]);
+	void (*const info)(void);
 } cmd_t;
 
 
