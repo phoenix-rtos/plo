@@ -25,7 +25,7 @@
 .type _init_vectors, %object
 _init_vectors:
 .word _stack
-.word _start
+.word _start - _init_vectors
 
 .word _exceptions_dispatch  /* NMI */
 .word _exceptions_dispatch  /* HardFault */
@@ -55,6 +55,25 @@ _init_vectors:
 _start:
 	cpsid if
 
+	/* Skip plo copy if we're already in RAM (i.e. loaded via JTAG) */
+	mov r0, pc
+	ldr r1, =_init_vectors
+	cmp r0, r1
+	bgt stage1
+
+	/* Copy plo to RAM */
+	ldr r0, =_init_vectors /* dest */
+	ldr r1, =_plo_size
+	add r1, r1, r0         /* end */
+	mov r2, #0             /* src */
+
+stage0loop:
+	ldr r3, [r2], #4
+	str r3, [r0], #4
+	cmp r0, r1
+	blt stage0loop
+
+stage1:
 	/* Init vector table and stack pointer */
 	ldr r0, =0xe000ed08
 	ldr r1, =_init_vectors
