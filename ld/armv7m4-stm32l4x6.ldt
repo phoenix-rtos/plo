@@ -38,8 +38,8 @@ MEMORY
 }
 
 /* FLASH image */
-REGION_ALIAS("PLO_IMAGE", m_flash1);
-REGION_ALIAS("TCM_TEXT", m_flash1);
+REGION_ALIAS("PLO_IMAGE", m_sram);
+REGION_ALIAS("TCM_TEXT", m_sram);
 REGION_ALIAS("DATA", m_sram);
 REGION_ALIAS("BSS", m_sram);
 REGION_ALIAS("HEAP", m_sram);
