@@ -96,6 +96,12 @@ extern int _stm32_gpioGet(unsigned int d, u8 pin, u8 *val);
 extern int _stm32_gpioGetPort(unsigned int d, u16 *val);
 
 
+extern int _stm32_getFlashBank(void);
+
+
+extern void _stm32_switchFlashBank(int bank);
+
+
 /* Range = 0 - forbidden, 1 - 1.8V, 2 - 1.5V, 3 - 1.2V */
 extern void _stm32_pwrSetCPUVolt(u8 range);
 
