@@ -865,6 +865,16 @@ static void _zynq_armPllInit(u16 fdiv)
 }
 
 
+void _zynq_softRst(void)
+{
+	_zynq_slcrUnlock();
+
+	*(zynq_common.slcr + slcr_pss_rst_ctrl) |= 0x1;
+
+	_zynq_slcrLock();
+}
+
+
 void _zynq_init(void)
 {
 	zynq_common.ddr = (void *)DDRC_BASE_ADDRESS;
