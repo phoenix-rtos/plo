@@ -171,9 +171,7 @@ int hal_memoryGetNextEntry(addr_t start, addr_t end, mapent_t *entry)
 
 void hal_cpuReboot(void)
 {
-	/* TODO: implement system reset on Zynq */
-	for (;;)
-		;
+	_zynq_softRst();
 
 	__builtin_unreachable();
 }

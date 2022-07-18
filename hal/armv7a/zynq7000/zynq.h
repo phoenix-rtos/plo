@@ -111,6 +111,10 @@ extern int _zynq_getMIO(ctl_mio_t *mio);
 extern int _zynq_loadPL(u32 srcAddr, u32 srcLen);
 
 
+/* Processing System software reset control signal. */
+extern void _zynq_softRst(void);
+
+
 /* Function initializes plls, clocks, ddr and basic peripherals */
 extern void _zynq_init(void);
 
