@@ -202,6 +202,11 @@ static ssize_t bufferSync(unsigned int minor, addr_t dstAddr, int isLast)
 			return res;
 		}
 
+		if (dev->nor->totalSz <= dstAddr) {
+			dev->sectorPrevAddr = (addr_t)-1;
+			dev->sectorSyncAddr = (addr_t)-1;
+		}
+
 		if (isLast != 0) {
 			return res;
 		}
