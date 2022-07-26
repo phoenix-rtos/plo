@@ -191,7 +191,7 @@ static int qspi_setPin(u32 pin)
 		ctl.pullup = 1;
 		ctl.speed = 0x0;
 	}
-	else if (pin < mio_pin_01 && pin > mio_pin_06) {
+	else if (pin < mio_pin_01 && pin > mio_pin_08) {
 		return -EINVAL;
 	}
 
@@ -269,9 +269,9 @@ static void qspi_IOMode(void)
 
 	/* Configure controller */
 
-	/* Set baud rate, master mode, not Legacy mode */
-	*(qspi_common.base + cr) &= ~(0x1 << 3);
-	*(qspi_common.base + cr) |= (0x1 << 3) | 0x1 | (1 << 31);
+	/* Set baud rate to 100 MHz: 200 MHz / 2, master mode, not Legacy mode */
+	*(qspi_common.base + cr) &= ~(0x7 << 3);
+	*(qspi_common.base + cr) |= (0x0 << 3) | 0x1 | (1 << 31);
 	/* Set little endian */
 	*(qspi_common.base + cr) &= ~(1 << 26);
 	/* Set FIFO width 32 bits */
@@ -282,6 +282,10 @@ static void qspi_IOMode(void)
 
 	/* Enable manual mode and manual CS */
 	*(qspi_common.base + cr) |= (0x3 << 14);
+
+	/* Loopback clock is used for high-speed read data capturing (>40MHz) */
+	*(qspi_common.base + lpbk) = *(qspi_common.base + lpbk) & ~0x3f;
+	*(qspi_common.base + lpbk) = (1 << 5);
 
 	/* Disable linear mode */
 	*(qspi_common.base + lqspi_cr) = 0;
@@ -317,6 +321,7 @@ int qspi_init(void)
 	qspi_setPin(mio_pin_04); /* I/O */
 	qspi_setPin(mio_pin_05); /* I/O */
 	qspi_setPin(mio_pin_06); /* CLK */
+	qspi_setPin(mio_pin_08); /* SCLK */
 
 	qspi_IOMode();
 
