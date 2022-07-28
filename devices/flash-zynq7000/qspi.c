@@ -16,6 +16,7 @@
 #include "qspi.h"
 #include <lib/errno.h>
 
+#include <board_config.h>
 
 enum { cr = 0, sr, ier, idr, imr, er, dr, txd00, rxd, sicr, txth, rxth, gpio,
 	   lpbk = 0xe, txd01 = 0x20, txd10, txd11,
@@ -178,6 +179,11 @@ static int qspi_setPin(u32 pin)
 {
 	ctl_mio_t ctl;
 
+	/* Pin should not be configured by the driver */
+	if (pin < 0) {
+		return EOK;
+	}
+
 	ctl.pin = pin;
 	ctl.l0 = 0x1;
 	ctl.l1 = ctl.l2 = ctl.l3 = 0;
@@ -269,9 +275,16 @@ static void qspi_IOMode(void)
 
 	/* Configure controller */
 
-	/* Set baud rate to 100 MHz: 200 MHz / 2, master mode, not Legacy mode */
+	/* Set master mode, not Legacy mode */
+	*(qspi_common.base + cr) = 0x1 | (1 << 31);
+
+	/* Set baud rate to 100 MHz: 200 MHz / 2 */
 	*(qspi_common.base + cr) &= ~(0x7 << 3);
-	*(qspi_common.base + cr) |= (0x0 << 3) | 0x1 | (1 << 31);
+	if (QSPI_FCLK < 0) {
+		/* Set baud rate to 50 MHz: 200 MHz / 4 */
+		*(qspi_common.base + cr) |= (0x1 << 3);
+	}
+
 	/* Set little endian */
 	*(qspi_common.base + cr) &= ~(1 << 26);
 	/* Set FIFO width 32 bits */
@@ -284,8 +297,10 @@ static void qspi_IOMode(void)
 	*(qspi_common.base + cr) |= (0x3 << 14);
 
 	/* Loopback clock is used for high-speed read data capturing (>40MHz) */
-	*(qspi_common.base + lpbk) = *(qspi_common.base + lpbk) & ~0x3f;
-	*(qspi_common.base + lpbk) = (1 << 5);
+	if (QSPI_FCLK >= 0) {
+		*(qspi_common.base + lpbk) = *(qspi_common.base + lpbk) & ~0x3f;
+		*(qspi_common.base + lpbk) = (1 << 5);
+	}
 
 	/* Disable linear mode */
 	*(qspi_common.base + lqspi_cr) = 0;
@@ -315,13 +330,13 @@ int qspi_init(void)
 	if (res < 0)
 		return res;
 
-	qspi_setPin(mio_pin_01); /* Chip Select */
-	qspi_setPin(mio_pin_02); /* I/O */
-	qspi_setPin(mio_pin_03); /* I/O */
-	qspi_setPin(mio_pin_04); /* I/O */
-	qspi_setPin(mio_pin_05); /* I/O */
-	qspi_setPin(mio_pin_06); /* CLK */
-	qspi_setPin(mio_pin_08); /* SCLK */
+	qspi_setPin(QSPI_CS);
+	qspi_setPin(QSPI_IO0);
+	qspi_setPin(QSPI_IO1);
+	qspi_setPin(QSPI_IO2);
+	qspi_setPin(QSPI_IO3);
+	qspi_setPin(QSPI_CLK);
+	qspi_setPin(QSPI_FCLK);
 
 	qspi_IOMode();
 
