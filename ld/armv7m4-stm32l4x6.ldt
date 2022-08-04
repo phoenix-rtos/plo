@@ -32,7 +32,7 @@
 /* Memory map setup */
 MEMORY
 {
-	m_sram    (rwx) : ORIGIN = 0x20000000 + AREA_KERNEL, LENGTH = 384k - AREA_KERNEL
+	m_sram    (rwx) : ORIGIN = 0x20000000 + AREA_KERNEL, LENGTH = (256k + 64k) - AREA_KERNEL
 	m_flash2  (rx)  : ORIGIN = 0x08080000, LENGTH = 512k
 	m_flash1  (rx)  : ORIGIN = 0x08000000, LENGTH = 512k
 }
