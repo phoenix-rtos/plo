@@ -29,6 +29,7 @@ extern char __data_start[], __data_end[];
 extern char __bss_start[], __bss_end[];
 extern char __heap_base[], __heap_limit[];
 extern char __stack_top[], __stack_limit[];
+extern char __nand_start[], __nand_end[];
 
 /* Timer */
 extern void timer_init(void);
@@ -146,6 +147,7 @@ int hal_memoryGetNextEntry(addr_t start, addr_t end, mapent_t *entry)
 		{ .start = (addr_t)__bss_start, .end = (addr_t)__bss_end, .type = hal_entryTemp },
 		{ .start = (addr_t)__heap_base, .end = (addr_t)__heap_limit, .type = hal_entryTemp },
 		{ .start = (addr_t)__stack_limit, .end = (addr_t)__stack_top, .type = hal_entryTemp },
+		{ .start = (addr_t)__nand_start, .end = (addr_t)__nand_end, .type = hal_entryTemp },
 	};
 
 	if (start == end)
