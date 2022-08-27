@@ -23,6 +23,7 @@ struct {
 
 /* Linker symbols */
 extern char __ramtext_start[], __ramtext_end[];
+extern char _start[], _end[];
 extern char __data_start[], __data_end[];
 extern char __bss_start[], __bss_end[];
 extern char __heap_base[], __heap_limit[];
@@ -124,6 +125,7 @@ int hal_memoryGetNextEntry(addr_t start, addr_t end, mapent_t *entry)
 	/* The following entries are used only by plo - type = hal_entryTemp, kernel defines them by its own */
 	static const mapent_t entries[] = {
 		{ .start = 0x0, .end = 0x1000, .type = hal_entryTemp },
+		{ .start = (addr_t)_start, .end = (addr_t)_end, .type = hal_entryTemp },
 		{ .start = (addr_t)__ramtext_start, .end = (addr_t)__ramtext_end, .type = hal_entryTemp },
 		{ .start = (addr_t)__data_start, .end = (addr_t)__data_end, .type = hal_entryTemp },
 		{ .start = (addr_t)__bss_start, .end = (addr_t)__bss_end, .type = hal_entryTemp },
