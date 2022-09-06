@@ -25,10 +25,15 @@ SECTIONS
 {
 	. = ORIGIN(PLO_IMAGE);
 
-	.init : { KEEP (*(SORT_NONE(.init))) } > PLO_IMAGE
+	.init : {
+		__init_start = .;
+		KEEP (*(SORT_NONE(.init)))
+		__init_end = .;
+	} > PLO_IMAGE
 
 	.text :
 	{
+		__text_start = .;
 		. = ALIGN(4);
 		*(SORT(.text.sorted.*))
 		*(.text .stub .text.* .gnu.linkonce.t.*)
@@ -36,6 +41,7 @@ SECTIONS
 		*(.glue_7t)     /* glue thumb to arm code */
 		*(.eh_frame)
 		. = ALIGN(4);
+		PROVIDE_HIDDEN(__text_end = .); /* use __etext to include .fini */
 	} > PLO_IMAGE
 
 	.fini : { KEEP (*(SORT_NONE(.fini))) } > PLO_IMAGE
@@ -45,7 +51,11 @@ SECTIONS
 	PROVIDE (_etext = .);
 	PROVIDE (etext = .);
 
-	.rodata : { *(.rodata .rodata.* .gnu.linkonce.r.*) } > PLO_IMAGE
+	.rodata : {
+		__rodata_start = .;
+		*(.rodata .rodata.* .gnu.linkonce.r.*)
+		__rodata_end = .;
+	} > PLO_IMAGE
 	.eh_frame_hdr : { *(.eh_frame_hdr) *(.eh_frame_entry .eh_frame_entry.*) } > PLO_IMAGE
 	.eh_frame : ONLY_IF_RO { KEEP (*(.eh_frame)) *(.eh_frame.*) } > PLO_IMAGE
 
