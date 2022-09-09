@@ -121,6 +121,13 @@ static int cmd_kernelimg(int argc, char *argv[])
 		return -ENOMEM;
 	}
 
+#if defined(AREA_KERNEL)
+	if (dsz < AREA_KERNEL) {
+		log_info("\nData size %x was rounded to 0x%x (AREA_KERNEL)", dsz, AREA_KERNEL);
+		dsz = AREA_KERNEL;
+	}
+#endif
+
 	if ((entry = syspage_entryAdd(NULL, dbeg, dsz, sizeof(long long))) == NULL) {
 		log_error("\nCannot allocate memory for '%s'", kname);
 		phfs_close(handle);
