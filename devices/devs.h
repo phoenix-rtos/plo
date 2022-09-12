@@ -22,6 +22,7 @@
 #define DEV_USB     1
 #define DEV_STORAGE 2
 #define DEV_TTY     3
+#define DEV_RAM     4
 
 
 enum { dev_isMappable = 0, dev_isNotMappable };
