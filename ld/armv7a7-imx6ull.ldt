@@ -32,15 +32,25 @@
 #define ADDR_OCRAM_LOW 0x900000
 #define SIZE_OCRAM_LOW (28 * 1024)
 
+/* DDR memory to allocate plo's data */
+#define SIZE_DDR_PLO (4 * 1024 * 1024)
+
+#define ADDR_BUFF_DDR (ADDR_DDR + SIZE_DDR - SIZE_DDR_PLO)
+#define SIZE_BUFF_DDR (2 * 1024 * 1024)
+
+#define ADDR_UNCACHED_BUFF_DDR (ADDR_BUFF_DDR + SIZE_BUFF_DDR)
+#define SIZE_UNCACHED_BUFF_DDR (2 * 1024 * 1024)
+
 
 #if defined(__LINKER__)
 
 /* Memory map setup */
 MEMORY
 {
-	m_ocram_high (rwx) : ORIGIN = ADDR_OCRAM_HIGH, LENGTH = SIZE_OCRAM_HIGH
-	m_ocram_low  (rw)  : ORIGIN = ADDR_OCRAM_LOW, LENGTH = SIZE_OCRAM_LOW
-	m_ddr        (rwx) : ORIGIN = ADDR_DDR, LENGTH = SIZE_DDR
+	m_ocram_high   (rwx) : ORIGIN = ADDR_OCRAM_HIGH, LENGTH = SIZE_OCRAM_HIGH
+	m_ocram_low    (rw)  : ORIGIN = ADDR_OCRAM_LOW, LENGTH = SIZE_OCRAM_LOW
+	m_ddr   (rw)  : ORIGIN = ADDR_BUFF_DDR, LENGTH = SIZE_BUFF_DDR
+	m_uncached_ddr (rw)  : ORIGIN = ADDR_UNCACHED_BUFF_DDR, LENGTH = SIZE_UNCACHED_BUFF_DDR
 }
 
 REGION_ALIAS("TCM_TEXT", m_ocram_low);
@@ -49,8 +59,33 @@ REGION_ALIAS("HEAP", m_ocram_low);
 REGION_ALIAS("STACK", m_ocram_low);
 REGION_ALIAS("PLO_IMAGE", m_ocram_high);
 REGION_ALIAS("BSS", m_ocram_high);
+REGION_ALIAS("DDR", m_ddr);
+REGION_ALIAS("UNCACHED_DDR", m_uncached_ddr);
+
 
 #include "common/plo-arm.lds"
+
+
+/* Additional sections */
+SECTIONS
+{
+	.ddr (NOLOAD) :
+	{
+		. = ALIGN(4);
+		__ddr_start = .;
+		*(.ddr*)
+		__ddr_end = .;
+	} > DDR
+
+	.uncached_ddr (NOLOAD) :
+	{
+		. = ALIGN(4);
+		__uncached_ddr_start = .;
+		*(.uncached_ddr*)
+		__uncached_ddr_end = .;
+	} > UNCACHED_DDR
+}
+
 
 #endif /* end of __LINKER__ */
 

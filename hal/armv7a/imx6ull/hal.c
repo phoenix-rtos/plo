@@ -15,6 +15,7 @@
 
 
 #include <hal/hal.h>
+#include "../mmu.h"
 
 
 struct {
@@ -29,6 +30,8 @@ extern char __data_start[], __data_end[];
 extern char __bss_start[], __bss_end[];
 extern char __heap_base[], __heap_limit[];
 extern char __stack_top[], __stack_limit[];
+extern char __ddr_start[], __ddr_end[];
+extern char __uncached_ddr_start[], __uncached_ddr_end[];
 
 /* Timer */
 extern void timer_init(void);
@@ -41,13 +44,50 @@ extern void interrupts_init(void);
 extern void console_init(void);
 
 
+static void hal_memoryInit(void)
+{
+	int sz = 0;
+	addr_t addr;
+
+	mmu_init();
+
+	/* Define on-chip RAM memory as cached */
+	for (sz = 0; sz < SIZE_OCRAM_LOW; sz += SIZE_MMU_SECTION_REGION) {
+		addr = ADDR_OCRAM_LOW + sz;
+		mmu_mapAddr(addr, addr, MMU_FLAG_CACHED);
+	}
+
+	for (sz = 0; sz < SIZE_OCRAM_HIGH; sz += SIZE_MMU_SECTION_REGION) {
+		addr = ADDR_OCRAM_HIGH + sz;
+		mmu_mapAddr(addr, addr, MMU_FLAG_CACHED);
+	}
+
+	/* Define DDR memory as cached */
+	for (sz = 0; sz < SIZE_DDR; sz += SIZE_MMU_SECTION_REGION) {
+		addr = ADDR_DDR + sz;
+		mmu_mapAddr(addr, addr, MMU_FLAG_CACHED);
+	}
+
+	/* Define uncached DDR memory */
+	for (sz = 0; sz < SIZE_UNCACHED_BUFF_DDR; sz += SIZE_MMU_SECTION_REGION) {
+		addr = ADDR_UNCACHED_BUFF_DDR + sz;
+		mmu_mapAddr(addr, addr, MMU_FLAG_UNCACHED);
+	}
+
+	mmu_enable();
+}
+
+
 void hal_init(void)
 {
 	imx6ull_init();
+
+	hal_memoryInit();
 	interrupts_init();
 
 	timer_init();
 	console_init();
+
 
 	hal_common.entry = (addr_t)-1;
 }
@@ -146,6 +186,8 @@ int hal_memoryGetNextEntry(addr_t start, addr_t end, mapent_t *entry)
 		{ .start = (addr_t)__bss_start, .end = (addr_t)__bss_end, .type = hal_entryTemp },
 		{ .start = (addr_t)__heap_base, .end = (addr_t)__heap_limit, .type = hal_entryTemp },
 		{ .start = (addr_t)__stack_limit, .end = (addr_t)__stack_top, .type = hal_entryTemp },
+		{ .start = (addr_t)__ddr_start, .end = (addr_t)__ddr_end, .type = hal_entryTemp },
+		{ .start = (addr_t)__uncached_ddr_start, .end = (addr_t)__uncached_ddr_end, .type = hal_entryTemp },
 	};
 
 	if (start == end)
