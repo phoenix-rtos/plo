@@ -154,10 +154,6 @@ set_loop:
 	cmp r1, #4                       /* Check whether last way was reached               */
 	bne way_loop
 
-
-	/* Invalidate TLB */
-	mcr p15, 0, r1, c8, c7, 0
-
 	/* Enable L1 Caches */
 	mrc p15, 0, r1, c1, c0, 0         /* Read SCTLR (System Control Register) data  */
 	orr r1, r1, #(0x1 << 2)           /* Enable data cache                          */
