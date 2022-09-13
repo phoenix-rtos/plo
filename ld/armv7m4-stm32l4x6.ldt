@@ -23,6 +23,10 @@
 #define SIZE_STACK  (8 * SIZE_PAGE)
 #define SIZE_HEAP   (8 * SIZE_PAGE)
 
+#define FLASH_PROGRAM_1_ADDR    0x08000000
+#define FLASH_PROGRAM_2_ADDR    0x08080000
+#define FLASH_PROGRAM_BANK_SIZE (512 * 1024)
+
 #define RAM_ADDR      0x20000000
 #define RAM_BANK_SIZE (320 * 1024)
 
@@ -36,8 +40,8 @@
 MEMORY
 {
 	m_sram    (rwx) : ORIGIN = RAM_ADDR + AREA_KERNEL, LENGTH = (256k + 64k) - AREA_KERNEL
-	m_flash2  (rx)  : ORIGIN = 0x08080000, LENGTH = 512k
-	m_flash1  (rx)  : ORIGIN = 0x08000000, LENGTH = 512k
+	m_flash2  (rx)  : ORIGIN = FLASH_PROGRAM_2_ADDR, LENGTH = 512k
+	m_flash1  (rx)  : ORIGIN = FLASH_PROGRAM_1_ADDR, LENGTH = 512k
 }
 
 /* FLASH image */
