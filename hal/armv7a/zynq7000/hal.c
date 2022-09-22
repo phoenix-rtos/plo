@@ -16,6 +16,9 @@
 #include <hal/hal.h>
 #include <devices/gpio-zynq7000/gpio.h>
 
+#include "../mmu.h"
+#include "../cache.h"
+
 
 struct {
 	hal_syspage_t *hs;
@@ -29,6 +32,9 @@ extern char __data_start[], __data_end[];
 extern char __bss_start[], __bss_end[];
 extern char __heap_base[], __heap_limit[];
 extern char __stack_top[], __stack_limit[];
+extern char __ddr_start[], __ddr_end[];
+extern char __uncached_ddr_start[], __uncached_ddr_end[];
+
 
 /* Timer */
 extern void timer_init(void);
@@ -41,9 +47,49 @@ extern void interrupts_init(void);
 void console_init(void);
 
 
+static void hal_memoryInit(void)
+{
+	int sz = 0;
+	addr_t addr;
+
+	mmu_init();
+
+	/* Define on-chip RAM memory as cached */
+	for (sz = 0; sz <= SIZE_OCRAM_LOW; sz += SIZE_MMU_SECTION_REGION) {
+		addr = ADDR_OCRAM_LOW + sz;
+		mmu_mapAddr(addr, addr, MMU_FLAG_CACHED);
+	}
+
+	for (sz = 0; sz < SIZE_OCRAM_HIGH; sz += SIZE_MMU_SECTION_REGION) {
+		addr = (ADDR_OCRAM_HIGH & ~(SIZE_MMU_SECTION_REGION - 1)) + sz;
+		mmu_mapAddr(addr, addr, MMU_FLAG_CACHED);
+	}
+
+	/* Define DDR memory as cached */
+	for (sz = 0; sz < SIZE_DDR; sz += SIZE_MMU_SECTION_REGION) {
+		addr = ADDR_DDR + sz;
+		mmu_mapAddr(addr, addr, MMU_FLAG_CACHED);
+	}
+
+	for (sz = 0; sz < SIZE_BITSTREAM; sz += SIZE_MMU_SECTION_REGION) {
+		addr = ADDR_BITSTREAM + sz;
+		mmu_mapAddr(addr, addr, MMU_FLAG_UNCACHED | MMU_FLAG_XN);
+	}
+
+	/* Define uncached DDR memory */
+	for (sz = 0; sz < SIZE_UNCACHED_BUFF_DDR; sz += SIZE_MMU_SECTION_REGION) {
+		addr = ADDR_UNCACHED_BUFF_DDR + sz;
+		mmu_mapAddr(addr, addr, MMU_FLAG_UNCACHED | MMU_FLAG_XN);
+	}
+
+	mmu_enable();
+}
+
+
 void hal_init(void)
 {
 	_zynq_init();
+	hal_memoryInit();
 	interrupts_init();
 
 	gpio_init();
@@ -133,6 +179,9 @@ int hal_memoryGetNextEntry(addr_t start, addr_t end, mapent_t *entry)
 		{ .start = (addr_t)__bss_start, .end = (addr_t)__bss_end, .type = hal_entryTemp },
 		{ .start = (addr_t)__heap_base, .end = (addr_t)__heap_limit, .type = hal_entryTemp },
 		{ .start = (addr_t)__stack_limit, .end = (addr_t)__stack_top, .type = hal_entryTemp },
+		{ .start = (addr_t)__ddr_start, .end = (addr_t)__ddr_end, .type = hal_entryTemp },
+		{ .start = (addr_t)__uncached_ddr_start, .end = (addr_t)__uncached_ddr_end, .type = hal_entryTemp },
+		{ .start = (addr_t)ADDR_BITSTREAM, .end = (addr_t)SIZE_BITSTREAM, .type = hal_entryTemp },
 	};
 
 	if (start == end)
@@ -183,6 +232,16 @@ int hal_cpuJump(void)
 		return -1;
 
 	hal_interruptsDisable();
+
+	hal_dcacheEnable(0);
+	hal_dcacheFlush((addr_t)ADDR_OCRAM_LOW, (addr_t)ADDR_OCRAM_LOW + SIZE_OCRAM_LOW);
+	hal_dcacheFlush((addr_t)ADDR_OCRAM_HIGH, (addr_t)ADDR_OCRAM_HIGH + SIZE_OCRAM_HIGH);
+	hal_dcacheFlush((addr_t)ADDR_DDR, (addr_t)ADDR_DDR + SIZE_DDR);
+
+	hal_icacheEnable(0);
+	hal_icacheInval();
+
+	mmu_disable();
 
 	__asm__ volatile("mov r9, %1; \
 		 blx %0"
