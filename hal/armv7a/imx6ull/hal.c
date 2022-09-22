@@ -71,7 +71,7 @@ static void hal_memoryInit(void)
 	/* Define uncached DDR memory */
 	for (sz = 0; sz < SIZE_UNCACHED_BUFF_DDR; sz += SIZE_MMU_SECTION_REGION) {
 		addr = ADDR_UNCACHED_BUFF_DDR + sz;
-		mmu_mapAddr(addr, addr, MMU_FLAG_UNCACHED);
+		mmu_mapAddr(addr, addr, MMU_FLAG_UNCACHED | MMU_FLAG_XN);
 	}
 
 	mmu_enable();
@@ -116,6 +116,17 @@ int hal_cpuJump(void)
 		return -1;
 
 	hal_interruptsDisable();
+
+	hal_dcacheEnable(0);
+	hal_dcacheFlush((addr_t)ADDR_OCRAM_LOW, (addr_t)ADDR_OCRAM_LOW + SIZE_OCRAM_LOW);
+	hal_dcacheFlush((addr_t)ADDR_OCRAM_HIGH, (addr_t)ADDR_OCRAM_HIGH + SIZE_OCRAM_HIGH);
+	hal_dcacheFlush((addr_t)ADDR_DDR, (addr_t)ADDR_DDR + SIZE_DDR);
+
+	hal_icacheEnable(0);
+	hal_icacheInval();
+
+	mmu_disable();
+
 
 	__asm__ volatile("mov r9, %1; \
 		 blx %0"
