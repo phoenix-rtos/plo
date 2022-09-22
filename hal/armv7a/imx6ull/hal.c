@@ -16,6 +16,7 @@
 
 #include <hal/hal.h>
 #include "../mmu.h"
+#include "../cache.h"
 
 
 struct {
