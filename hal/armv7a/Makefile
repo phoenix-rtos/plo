@@ -14,4 +14,4 @@ else ifneq (, $(findstring imx6ull, $(TARGET_SUBFAMILY)))
     CFLAGS += -I../plo/hal/armv7a/imx6ull
 endif
 
-OBJS += $(addprefix $(PREFIX_O)hal/$(TARGET_SUFF)/, exceptions.o cpu.o string.o mmu.o)
+OBJS += $(addprefix $(PREFIX_O)hal/$(TARGET_SUFF)/, exceptions.o cpu.o string.o mmu.o _cache.o)
