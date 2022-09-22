@@ -19,9 +19,9 @@
 
 
 struct {
-	u8 pool[USB_POOL_SIZE] __attribute__((aligned(USB_BUFFER_SIZE)));
+	u8 pool[USB_POOL_SIZE];
 	size_t usedPools;
-} phyusb_common;
+} phyusb_common __attribute__((section(".uncached_ddr"), aligned(USB_BUFFER_SIZE)));
 
 
 void *usbclient_allocBuff(u32 size)
