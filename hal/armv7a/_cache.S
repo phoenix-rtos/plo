@@ -18,18 +18,26 @@
 
 .arm
 
-.globl hal_dcacheEnable
-.type hal_dcacheEnable, %function
-hal_dcacheEnable:
+.type cacheEnable, %function
+cacheEnable:
 	dsb
-	mrc p15, 0, r1, c1, c0, 0
+	mrc p15, 0, r2, c1, c0, 0
 	cmp r0, #0
-	orrne r1, r1, #(0x1 << 2)
-	biceq r1, r1, #(0x1 << 2)
-	mcr p15, 0, r1, c1, c0, 0
+	orrne r2, r2, r1
+	biceq r2, r2, r1
+	mcr p15, 0, r2, c1, c0, 0
 	dsb
 	isb
 	bx lr
+.size cacheEnable, .-cacheEnable
+.ltorg
+
+
+.globl hal_dcacheEnable
+.type hal_dcacheEnable, %function
+hal_dcacheEnable:
+	mov r1, #(1 << 2)
+	b cacheEnable
 .size hal_dcacheEnable, .-hal_dcacheEnable
 .ltorg
 
@@ -40,21 +48,18 @@ hal_dcacheInvalAll:
 	dsb
 	isb
 	mrc p15, 1, r0, c0, c0, 0        /* Read CCSIDR (Cache Size Identification Register) */
-	mov r3, #0x1ff
-	and r0, r3, r0, lsr #13          /* r0 = number of sets -                            */
+	ubfx r0, r0, #13, #9             /* r0 = number of sets -                            */
 	mov r1, #0                       /* r1 = way counter way_loop                        */
 way_loop:
 	mov r3, #0                       /* r3 = set counter set_loop                        */
 set_loop:
-	mov r2, r1, lsl #30
-	orr r2, r3, lsl #5               /* r2 = set/way cache operation format              */
+	orr r2, r1, r3, lsl #5           /* r2 = set/way cache operation format              */
 	mcr p15, 0, r2, c7, c6, 2        /* Invalidate line described by r2; write to DCISW  */
 	add r3, r3, #1                   /* Increment set counter                            */
 	cmp r0, r3                       /* Check whether last set was reached               */
 	bgt set_loop                     /* Iterate set_loop                                 */
-	add r1, r1, #1                   /* Increment way counter                            */
-	cmp r1, #4                       /* Check whether last way was reached               */
-	bne way_loop
+	adds r1, r1, #(1 << 30)          /* Increment way counter                            */
+	bcc way_loop
 	dsb
 	bx lr
 .size hal_dcacheInvalAll, .-hal_dcacheInvalAll
@@ -66,10 +71,9 @@ set_loop:
 hal_dcacheInval:
 	dsb
 	mrc p15, 0, r3, c0, c0, 1 /* Read the Cache Type Register */
-	lsr r3, r3, #16           /* DMinLine value */
-	and r3, r3, #0xf
+	ubfx r3, r3, #16, #4      /* DMinLine value */
 	mov r2, #4
-	mov r2, r2, lsl r3        /* Cache line size in bytes */
+	lsl r2, r2, r3            /* Cache line size in bytes */
 	sub r3, r2, #1            /* Cache line size mask */
 	bic r0, r0, r3
 inval_line:
@@ -89,10 +93,9 @@ inval_line:
 hal_dcacheClean:
 	dsb
 	mrc p15, 0, r3, c0, c0, 1  /* Read the Cache Type Register */
-	lsr r3, r3, #16            /* DMinLine value */
-	and r3, r3, #0xf
+	ubfx r3, r3, #16, #4       /* DMinLine value */
 	mov r2, #4
-	mov r2, r2, lsl r3         /* Cache line size in bytes */
+	lsl r2, r2, r3             /* Cache line size in bytes */
 	sub r3, r2, #1             /* Cache line size mask */
 	bic r0, r0, r3
 clean_line:
@@ -112,10 +115,9 @@ clean_line:
 hal_dcacheFlush:
 	dsb
 	mrc p15, 0, r3, c0, c0, 1  /* Read the Cache Type Register */
-	lsr r3, r3, #16            /* DMinLine value */
-	and r3, r3, #0xf
+	ubfx r3, r3, #16, #4       /* DMinLine value */
 	mov r2, #4
-	mov r2, r2, lsl r3         /* Cache line size in bytes */
+	lsl r2, r2, r3             /* Cache line size in bytes */
 	sub r3, r2, #1             /* Cache line size mask */
 	bic r0, r0, r3
 flush_line:
@@ -133,15 +135,8 @@ flush_line:
 .globl hal_icacheEnable
 .type hal_icacheEnable, %function
 hal_icacheEnable:
-	dsb
-	mrc p15, 0, r1, c1, c0, 0
-	cmp r0, #0
-	orrne r1, r1, #(0x1 << 12)
-	biceq r1, r1, #(0x1 << 12)
-	mcr p15, 0, r1, c1, c0, 0
-	dsb
-	isb
-	bx lr
+	mov r1, #(1 << 12)
+	b cacheEnable
 .size hal_icacheEnable, .-hal_icacheEnable
 .ltorg
 
