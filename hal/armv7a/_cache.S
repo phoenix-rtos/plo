@@ -24,7 +24,6 @@ hal_dcacheEnable:
 	dsb
 	mrc p15, 0, r1, c1, c0, 0
 	cmp r0, #0
-	ite ne
 	orrne r1, r1, #(0x1 << 2)
 	biceq r1, r1, #(0x1 << 2)
 	mcr p15, 0, r1, c1, c0, 0
@@ -60,7 +59,6 @@ set_loop:
 	bx lr
 .size hal_dcacheInvalAll, .-hal_dcacheInvalAll
 .ltorg
-
 
 
 .globl hal_dcacheInval
@@ -138,13 +136,11 @@ hal_icacheEnable:
 	dsb
 	mrc p15, 0, r1, c1, c0, 0
 	cmp r0, #0
-	ite ne
 	orrne r1, r1, #(0x1 << 12)
 	biceq r1, r1, #(0x1 << 12)
 	mcr p15, 0, r1, c1, c0, 0
 	dsb
 	isb
-	bx lr
 	bx lr
 .size hal_icacheEnable, .-hal_icacheEnable
 .ltorg
