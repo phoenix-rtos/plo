@@ -418,6 +418,26 @@ int syspage_mapRangeResolve(const char *name, addr_t *start, addr_t *end)
 }
 
 
+unsigned int syspage_mapRangeCheck(addr_t start, addr_t end, unsigned int *attrOut)
+{
+	const syspage_map_t *map = syspage_common.syspage->maps;
+
+	if (map != NULL) {
+		do {
+			if ((map->start <= start) && (end < map->end)) {
+				if (attrOut != NULL) {
+					*attrOut = map->attr;
+				}
+				return 1;
+			}
+			map = map->next;
+		} while (map != syspage_common.syspage->maps);
+	}
+
+	return 0;
+}
+
+
 const char *syspage_mapName(u8 id)
 {
 	const syspage_map_t *map;
