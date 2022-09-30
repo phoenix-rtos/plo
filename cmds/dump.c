@@ -5,8 +5,8 @@
  *
  * Dump memory
  *
- * Copyright 2021 Phoenix Systems
- * Author: Hubert Buczynski
+ * Copyright 2021-2022 Phoenix Systems
+ * Author: Hubert Buczynski, Gerard Swiderski
  *
  * This file is part of Phoenix-RTOS.
  *
@@ -17,62 +17,121 @@
 
 #include <hal/hal.h>
 #include <lib/lib.h>
+#include <syspage.h>
 
 
 static void cmd_dumpInfo(void)
 {
-	lib_printf("dumps memory, usage: dump <addr>");
+	lib_printf("dumps memory, usage: dump <addr> <size>");
 }
 
 
-/* TODO: old code needs to be cleaned up; address has to be checked with maps */
+static unsigned int region_validate(addr_t start, addr_t end, addr_t curr)
+{
+	unsigned int attr = 0;
+
+	(void)start;
+	(void)end;
+
+	if (syspage_mapRangeCheck(curr, curr, &attr)) {
+		attr = (attr & mAttrRead);
+	}
+
+	return attr != 0;
+}
+
+
+static void region_hexdump(addr_t start, addr_t end, unsigned int (*validate)(addr_t, addr_t, addr_t))
+{
+	static const int cols = 16;
+
+	unsigned int col, row;
+	unsigned int rows = (end - start + cols - 1) / cols;
+	addr_t ptr, offs = (start / cols) * cols;
+
+	lib_printf("\nMemory dump from 0x%x to 0x%x (%zu bytes):\n", (u32)start, (u32)end, end - start);
+
+	for (col = 0; col < 79; ++col) {
+		lib_consolePutc('-');
+	}
+
+	lib_printf("\n");
+
+	for (row = 0; row < rows; ++row) {
+		lib_printf("0x%08x | ", (u32)offs);
+
+		/* Print byte values */
+		for (col = 0; col < cols; ++col) {
+			ptr = offs + col;
+
+			if ((ptr < start) || (ptr >= end)) {
+				lib_printf("   ");
+				continue;
+			}
+
+			if ((validate != NULL) && (validate(start, end, ptr) == 0)) {
+				lib_printf("XX ");
+			}
+			else {
+				lib_printf("%02x ", *(u8 *)ptr);
+			}
+		}
+		lib_printf("| ");
+
+		/* Print "printable" representation */
+		for (col = 0; col < cols; ++col) {
+			ptr = offs + col;
+
+			if ((ptr < start) || (ptr >= end)) {
+				lib_printf(" ");
+				continue;
+			}
+
+			if ((validate != NULL) && (validate(start, end, ptr) == 0)) {
+				lib_printf("X");
+			}
+			else if (lib_isprint(*(u8 *)ptr)) {
+				lib_printf("%c", *(u8 *)ptr);
+			}
+			else {
+				lib_printf(".");
+			}
+		}
+
+		lib_printf("\n");
+		offs += cols;
+	}
+}
+
+
 static int cmd_dump(int argc, char *argv[])
 {
-	u8 byte;
-	addr_t offs;
+	addr_t start;
+	size_t length;
 	char *endptr;
-	unsigned int x, y;
-	static const int xsize = 16, ysize = 16;
 
-	if (argc == 1) {
-		log_error("\n%s: Arguments have to be defined", argv[0]);
+	if (argc == 2) {
+		log_error("\n%s: Provide <address> and <size>", argv[0]);
 		return -EINVAL;
 	}
 
-	offs = lib_strtoul(argv[1], &endptr, 16);
-	if (*endptr) {
+	start = lib_strtoul(argv[1], &endptr, 16);
+	if (*endptr || ((start == 0) && (endptr == argv[1]))) {
 		log_error("\n%s: Wrong arguments", argv[0]);
 		return -EINVAL;
 	}
 
-	lib_printf("\nMemory dump from 0x%x:\n", offs);
-	lib_printf("--------------------------\n");
-
-	for (y = 0; y < ysize; y++) {
-		lib_printf("0x%x   ", offs);
-
-		/* Print byte values */
-		for (x = 0; x < xsize; x++) {
-			byte = *(u8 *)(offs + x);
-			if (byte & 0xf0)
-				lib_printf("%x ", byte);
-			else
-				lib_printf("0%x ", byte);
-		}
-		lib_printf("  ");
-
-		/* Print ASCII representation */
-		for (x = 0; x < xsize; x++) {
-			byte = *(u8 *)(offs + x);
-			if ((byte <= 32) || (byte > 127))
-				lib_printf(".", byte);
-			else
-				lib_printf("%c", byte);
-		}
-
-		lib_printf("\n");
-		offs += xsize;
+	length = lib_strtoul(argv[2], &endptr, 0);
+	if (*endptr || ((length == 0) && (endptr == argv[2]))) {
+		log_error("\n%s: Wrong arguments", argv[0]);
+		return -EINVAL;
 	}
+
+	if (start + length < start) {
+		length = (addr_t)(-1) - start;
+	}
+
+	region_hexdump(start, start + length, region_validate);
 
 	return EOK;
 }
