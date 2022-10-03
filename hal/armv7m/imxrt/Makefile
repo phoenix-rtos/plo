@@ -9,13 +9,13 @@
 
 ifneq (, $(findstring imxrt117x, $(TARGET_SUBFAMILY)))
 	include hal/armv7m/imxrt/117x/Makefile
-	CFLAGS += -I../plo/hal/armv7m/imxrt/117x
+	CFLAGS += -Ihal/armv7m/imxrt/117x
 else ifneq (, $(findstring imxrt106x, $(TARGET_SUBFAMILY)))
 	include hal/armv7m/imxrt/10xx/Makefile
-	CFLAGS += -I../plo/hal/armv7m/imxrt/10xx
+	CFLAGS += -Ihal/armv7m/imxrt/10xx
 else ifneq (, $(findstring imxrt105x, $(TARGET_SUBFAMILY)))
 	include hal/armv7m/imxrt/10xx/Makefile
-	CFLAGS += -I../plo/hal/armv7m/imxrt/10xx
+	CFLAGS += -Ihal/armv7m/imxrt/10xx
 endif
 
 OBJS += $(addprefix $(PREFIX_O)hal/$(TARGET_SUFF)/imxrt/, hal.o)

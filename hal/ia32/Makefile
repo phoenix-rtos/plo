@@ -7,7 +7,7 @@
 #
 
 CFLAGS += -DVADDR_KERNEL_BASE=$(VADDR_KERNEL_BASE)
-CFLAGS += -I../plo/hal/ia32
+CFLAGS += -Ihal/ia32
 
 PLO_COMMANDS := alias app call console copy dump echo go help kernel map phfs script reboot syspage wait
 
