@@ -23,6 +23,7 @@
 #include "list.h"
 #include "log.h"
 #include "stdarg.h"
+#include "prompt.h"
 
 
 #define min(a, b) ({ \
