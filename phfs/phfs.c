@@ -353,6 +353,24 @@ ssize_t phfs_write(handler_t handler, addr_t offs, const void *buff, size_t len)
 }
 
 
+ssize_t phfs_erase(handler_t handler, addr_t offs, size_t len, unsigned int flags)
+{
+	phfs_device_t *pd;
+
+	if (handler.pd >= SIZE_PHFS_HANDLERS) {
+		return -EINVAL;
+	}
+
+	pd = &phfs_common.devices[handler.pd];
+
+	if (pd->minor != DEV_STORAGE && pd->prot != phfs_prot_raw) {
+		return -EINVAL;
+	}
+
+	return devs_erase(pd->major, pd->minor, offs, len, flags);
+}
+
+
 int phfs_close(handler_t handler)
 {
 	int res;

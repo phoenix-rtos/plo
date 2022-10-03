@@ -5,8 +5,8 @@
  *
  * Phoenix FileSystem
  *
- * Copyright 2020-2021 Phoenix Systems
- * Author: Hubert Buczynski
+ * Copyright 2020-2022 Phoenix Systems
+ * Author: Hubert Buczynski, Gerard Swiderski
  *
  * This file is part of Phoenix-RTOS.
  *
@@ -68,6 +68,10 @@ extern ssize_t phfs_read(handler_t handler, addr_t offs, void *buff, size_t len)
 
 /* Write data to registered device */
 extern ssize_t phfs_write(handler_t handler, addr_t offs, const void *buff, size_t len);
+
+
+/* Erase data from registered "raw" storage device. If len==(size_t)-1 device mass erase is performed. */
+extern ssize_t phfs_erase(handler_t handler, addr_t offs, size_t len, unsigned int flags);
 
 
 /* Close connection with the device */
