@@ -7,5 +7,5 @@
 #
 
 include hal/armv7m/stm32/l4/Makefile
-CFLAGS += -I../plo/hal/armv7m/stm32/l4
+CFLAGS += -Ihal/armv7m/stm32/l4
 OBJS += $(addprefix $(PREFIX_O)hal/$(TARGET_SUFF)/stm32/, hal.o)

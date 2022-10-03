@@ -19,7 +19,7 @@ LDGEN ?= $(CC)
 
 # TODO: replace BOARD_CONFIG usage with board_config.h
 CFLAGS += $(BOARD_CONFIG)
-CFLAGS += -I../plo -I$(PROJECT_PATH)/
+CFLAGS += -I. -I$(PROJECT_PATH)/
 CFLAGS += -DVERSION=\"$(VERSION)\"
 
 include hal/$(TARGET_SUFF)/Makefile
