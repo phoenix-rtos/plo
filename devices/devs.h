@@ -5,8 +5,8 @@
  *
  * Devices Interface
  *
- * Copyright 2021 Phoenix Systems
- * Author: Hubert Buczynski
+ * Copyright 2021-2022 Phoenix Systems
+ * Author: Hubert Buczynski, Gerard Swiderski
  *
  * This file is part of Phoenix-RTOS.
  *
@@ -36,6 +36,7 @@ typedef struct {
 
 	ssize_t (*read)(unsigned int minor, addr_t offs, void *buff, size_t len, time_t timeout);
 	ssize_t (*write)(unsigned int minor, addr_t offs, const void *buff, size_t len);
+	ssize_t (*erase)(unsigned int minor, addr_t offs, size_t len, unsigned int flags);
 } dev_handler_t;
 
 
@@ -66,6 +67,10 @@ extern ssize_t devs_read(unsigned int major, unsigned int minor, addr_t offs, vo
 
 /* Write data to device */
 extern ssize_t devs_write(unsigned int major, unsigned int minor, addr_t offs, const void *buff, size_t len);
+
+
+/* Erase data from storage device */
+extern ssize_t devs_erase(unsigned int major, unsigned int minor, addr_t offs, size_t len, unsigned int flags);
 
 
 /* Reset registered devices */

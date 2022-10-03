@@ -327,6 +327,7 @@ __attribute__((constructor)) static void uart_register(void)
 	static const dev_handler_t h = {
 		.read = uart_read,
 		.write = uart_safeWrite,
+		.erase = NULL,
 		.sync = uart_sync,
 		.map = uart_map,
 		.done = uart_done,

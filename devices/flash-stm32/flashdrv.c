@@ -140,6 +140,7 @@ __attribute__((constructor)) static void flashdrv_reg(void)
 		.done = flashdrv_done,
 		.read = flashdrv_read,
 		.write = flashdrv_write,
+		.erase = NULL, /* TODO */
 		.sync = flashdrv_sync,
 		.map = flashdrv_map
 	};

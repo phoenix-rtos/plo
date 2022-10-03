@@ -376,6 +376,7 @@ __attribute__((constructor)) static void ttydisk_register(void)
 	static const dev_handler_t h = {
 		.read = diskbios_read,
 		.write = diskbios_write,
+		.erase = NULL,
 		.sync = diskbios_sync,
 		.map = diskbios_map,
 		.done = diskbios_done,
