@@ -140,6 +140,7 @@ __attribute__((constructor)) static void ramdrv_reg(void)
 		.done = ramdrv_done,
 		.read = ramdrv_read,
 		.write = ramdrv_write,
+		.erase = NULL,
 		.sync = ramdrv_sync,
 		.map = ramdrv_map
 	};

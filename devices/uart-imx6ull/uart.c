@@ -401,6 +401,7 @@ __attribute__((constructor)) static void uart_reg(void)
 		.done = uart_done,
 		.read = uart_read,
 		.write = uart_safeWrite,
+		.erase = NULL,
 		.sync = uart_sync,
 		.map = uart_map,
 	};

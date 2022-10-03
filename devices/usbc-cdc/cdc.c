@@ -478,6 +478,7 @@ __attribute__((constructor)) static void cdc_reg(void)
 		.done = cdc_done,
 		.read = cdc_recv,
 		.write = cdc_send,
+		.erase = NULL,
 		.sync = cdc_sync,
 		.map = cdc_map,
 	};

@@ -520,6 +520,7 @@ __attribute__((constructor)) static void ttybios_register(void)
 	static const dev_handler_t h = {
 		.read = ttybios_read,
 		.write = ttybios_write,
+		.erase = NULL,
 		.sync = ttybios_sync,
 		.map = ttybios_map,
 		.done = ttybios_done,

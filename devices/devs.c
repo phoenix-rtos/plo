@@ -5,8 +5,8 @@
  *
  * Device Interface
  *
- * Copyright 2021 Phoenix Systems
- * Author: Hubert Buczynski
+ * Copyright 2021-2022 Phoenix Systems
+ * Author: Hubert Buczynski, Gerard Swiderski
  *
  * This file is part of Phoenix-RTOS.
  *
@@ -104,6 +104,27 @@ ssize_t devs_write(unsigned int major, unsigned int minor, addr_t offs, const vo
 		return -EINVAL;
 
 	return h->write(minor, offs, buff, len);
+}
+
+
+ssize_t devs_erase(unsigned int major, unsigned int minor, addr_t offs, size_t len, unsigned int flags)
+{
+	const dev_handler_t *h;
+
+	if (major >= SIZE_MAJOR || minor >= SIZE_MINOR) {
+		return -EINVAL;
+	}
+
+	h = devs_common.devs[major][minor];
+	if (h == NULL) {
+		return -ENODEV;
+	}
+
+	if (h->erase == NULL) {
+		return -ENOSYS;
+	}
+
+	return h->erase(minor, offs, len, flags);
 }
 
 
