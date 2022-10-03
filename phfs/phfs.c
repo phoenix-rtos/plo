@@ -240,16 +240,24 @@ int phfs_open(const char *alias, const char *file, unsigned int flags, handler_t
 	int res;
 	phfs_device_t *pd;
 
-	if ((res = phfs_getHandlerId(alias)) < 0)
-		return -EINVAL;
+	res = phfs_getHandlerId(alias);
+	if (res < 0) {
+		return res;
+	}
 
 	handler->pd = res;
 	pd = &phfs_common.devices[handler->pd];
 
+	if ((flags & PHFS_OPEN_RAWONLY) != 0 && pd->prot != phfs_prot_raw) {
+		return -ENXIO;
+	}
+
 	switch (pd->prot) {
 		case phfs_prot_phoenixd:
-			if ((res = phoenixd_open(file, pd->major, pd->minor, flags)) < 0)
+			res = phoenixd_open(file, pd->major, pd->minor, flags);
+			if (res < 0) {
 				return res;
+			}
 
 			handler->id = res;
 			break;
@@ -257,11 +265,15 @@ int phfs_open(const char *alias, const char *file, unsigned int flags, handler_t
 		case phfs_prot_raw:
 			/* NULL file means that phfs refers to raw device data */
 			handler->id = -1;
-			if (file == NULL)
+			if (file == NULL) {
 				break;
+			}
 
-			if ((res = phfs_getAliasId(file)) < 0)
+			res = phfs_getAliasId(file);
+			if (res < 0) {
 				return res;
+			}
+
 			handler->id = res;
 			break;
 

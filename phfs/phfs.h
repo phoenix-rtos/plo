@@ -19,6 +19,10 @@
 #include <devices/devs.h>
 #include <hal/hal.h>
 
+/* phfs_open flags */
+#define PHFS_OPEN_RAWONLY 0x80000000
+
+
 typedef struct {
 	unsigned int pd; /* phfs device descriptor */
 	unsigned int id; /* file id               */
