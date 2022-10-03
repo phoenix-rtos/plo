@@ -303,6 +303,61 @@ static ssize_t flashdrv_read(unsigned int minor, addr_t addr, void *data, size_t
 }
 
 
+static ssize_t flashdrv_erase(unsigned int minor, addr_t addr, size_t len, unsigned int flags)
+{
+	int res;
+	addr_t end, addr_mask;
+
+	struct nor_device *dev = minorToDevice(minor);
+
+	(void)flags;
+
+	if (dev == NULL || dev->active == 0) {
+		return -ENXIO;
+	}
+
+	if (addr + len > dev->fspi.slFlashSz[dev->port] && len != (size_t)-1) {
+		return -EINVAL;
+	}
+
+	if (len == 0) {
+		return 0;
+	}
+
+	/* Chip Erase */
+	if (len == (size_t)-1) {
+		len = dev->fspi.slFlashSz[dev->port];
+		lib_printf("\nErasing all data from flash device ...");
+		res = nor_eraseChip(&dev->fspi, dev->port, dev->timeout);
+		if (res < 0) {
+			return res;
+		}
+
+		return len;
+	}
+
+	/* Erase sectors or blocks */
+
+	addr_mask = dev->nor->sectorSz - 1;
+	end = (addr + len + addr_mask) & ~addr_mask;
+	addr &= ~addr_mask;
+
+	lib_printf("\nErasing sectors from 0x%x to 0x%x ...", addr, end);
+
+	len = 0;
+	while (addr < end) {
+		res = nor_eraseSector(&dev->fspi, dev->port, addr, dev->timeout);
+		if (res < 0) {
+			return res;
+		}
+		addr += dev->nor->sectorSz;
+		len += dev->nor->sectorSz;
+	}
+
+	return len;
+}
+
+
 static int flashdrv_done(unsigned int minor)
 {
 	int res;
@@ -392,7 +447,7 @@ __attribute__((constructor)) static void flashdrv_reg(void)
 		.done = flashdrv_done,
 		.read = flashdrv_read,
 		.write = flashdrv_write,
-		.erase = NULL, /* TODO */
+		.erase = flashdrv_erase,
 		.sync = flashdrv_sync,
 		.map = flashdrv_map,
 	};
