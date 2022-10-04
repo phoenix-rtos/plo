@@ -324,6 +324,10 @@ static ssize_t flashdrv_erase(unsigned int minor, addr_t addr, size_t len, unsig
 		return 0;
 	}
 
+	/* Invalidate sync */
+	dev->sectorPrevAddr = (addr_t)-1;
+	dev->sectorSyncAddr = (addr_t)-1;
+
 	/* Chip Erase */
 	if (len == (size_t)-1) {
 		len = dev->fspi.slFlashSz[dev->port];
