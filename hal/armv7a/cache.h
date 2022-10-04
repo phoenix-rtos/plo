@@ -17,6 +17,9 @@
 extern void hal_dcacheEnable(unsigned int mode);
 
 
+extern void hal_dcacheInvalAll(void);
+
+
 extern void hal_dcacheInval(addr_t start, addr_t end);
 
 
