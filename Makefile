@@ -28,6 +28,8 @@ include devices/Makefile
 include phfs/Makefile
 include cmds/Makefile
 
+# use explicit plo script dir, legacy value by default
+PLO_SCRIPT_DIR ?= $(BUILD_DIR)
 
 OBJS += $(addprefix $(PREFIX_O), _startc.o plo.o syspage.o)
 
@@ -46,19 +48,19 @@ base: $(PREFIX_PROG_STRIPPED)plo-$(TARGET_FAMILY)-$(TARGET_SUBFAMILY).elf $(PREF
 ram: $(PREFIX_PROG_STRIPPED)plo-ram-$(TARGET_FAMILY)-$(TARGET_SUBFAMILY).elf $(PREFIX_PROG_STRIPPED)plo-ram-$(TARGET_FAMILY)-$(TARGET_SUBFAMILY).img
 
 
-$(BUILD_DIR)/script.plo $(BUILD_DIR)/script-ram.plo: | $(BUILD_DIR)/.
+$(PLO_SCRIPT_DIR)/script.plo $(PLO_SCRIPT_DIR)/script-ram.plo: | $(BUILD_DIR)/.
 	@echo "TOUCH $(@F)"
 	$(SIL)touch $@
 
 
-$(PREFIX_O)/script.o.plo: $(PREFIX_O)cmds/cmd.o $(BUILD_DIR)/script.plo | $(PREFIX_O)/.
+$(PREFIX_O)/script.o.plo: $(PREFIX_O)cmds/cmd.o $(PLO_SCRIPT_DIR)/script.plo | $(PREFIX_O)/.
 	@echo "EMBED script.plo"
-	$(SIL)$(OBJCOPY) --update-section .data=$(BUILD_DIR)/script.plo $(PREFIX_O)cmds/cmd.o --add-symbol script=.data:0 $@
+	$(SIL)$(OBJCOPY) --update-section .data=$(PLO_SCRIPT_DIR)/script.plo $(PREFIX_O)cmds/cmd.o --add-symbol script=.data:0 $@
 
 
-$(PREFIX_O)/script-ram.o.plo: $(PREFIX_O)cmds/cmd.o $(BUILD_DIR)/script-ram.plo | $(PREFIX_O)/.
+$(PREFIX_O)/script-ram.o.plo: $(PREFIX_O)cmds/cmd.o $(PLO_SCRIPT_DIR)/script-ram.plo | $(PREFIX_O)/.
 	@echo "EMBED script-ram.plo"
-	$(SIL)$(OBJCOPY) --update-section .data=$(BUILD_DIR)/script-ram.plo $(PREFIX_O)cmds/cmd.o --add-symbol script=.data:0 $@
+	$(SIL)$(OBJCOPY) --update-section .data=$(PLO_SCRIPT_DIR)/script-ram.plo $(PREFIX_O)cmds/cmd.o --add-symbol script=.data:0 $@
 
 
 $(PREFIX_PROG)plo-$(TARGET_FAMILY)-$(TARGET_SUBFAMILY).elf: $(PREFIX_O)/$(TARGET_FAMILY)-$(TARGET_SUBFAMILY).ld $(OBJS) $(PREFIX_O)/script.o.plo | $(PREFIX_PROG)/.
