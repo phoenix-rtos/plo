@@ -48,7 +48,7 @@ base: $(PREFIX_PROG_STRIPPED)plo-$(TARGET_FAMILY)-$(TARGET_SUBFAMILY).elf $(PREF
 ram: $(PREFIX_PROG_STRIPPED)plo-ram-$(TARGET_FAMILY)-$(TARGET_SUBFAMILY).elf $(PREFIX_PROG_STRIPPED)plo-ram-$(TARGET_FAMILY)-$(TARGET_SUBFAMILY).img
 
 
-$(PLO_SCRIPT_DIR)/script.plo $(PLO_SCRIPT_DIR)/script-ram.plo: | $(BUILD_DIR)/.
+$(PLO_SCRIPT_DIR)/script.plo $(PLO_SCRIPT_DIR)/script-ram.plo: | $(PLO_SCRIPT_DIR)/.
 	@echo "TOUCH $(@F)"
 	$(SIL)touch $@
 
