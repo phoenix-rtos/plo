@@ -24,7 +24,7 @@
 
 static void cmd_eraseInfo(void)
 {
-	lib_printf("erase sectors or all data from storage device using phfs interface");
+	lib_printf("erase sectors or all data from storage device using phfs interface, Usage: erase <dev> [<offset> <size>]");
 }
 
 
@@ -37,7 +37,7 @@ static int cmd_erase(int argc, char *argv[])
 	handler_t h;
 
 	if (argc != 2 && argc != 4) {
-		lib_printf("\nUsage: %s <dev> [<offset> <size>]", argv[0]);
+		log_error("\n%s: Wrong argument count", argv[0]);
 		return -EINVAL;
 	}
 
