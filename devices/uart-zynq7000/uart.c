@@ -86,8 +86,6 @@ static inline void uart_txData(uart_t *uart)
 			*(uart->base + fifo) = c;
 		}
 	}
-
-	*(uart->base + idr) |= 1 << 3;
 }
 
 
@@ -104,10 +102,6 @@ static int uart_irqHandler(unsigned int n, void *data)
 	/* RX FIFO trigger irq */
 	if (st & 0x1)
 		uart_rxData(uart);
-
-	/* TX FIFO empty irq   */
-	if (st & (1 << 3))
-		uart_txData(uart);
 
 	return 0;
 }
@@ -242,10 +236,11 @@ static ssize_t uart_write(unsigned int minor, const void *buff, size_t len)
 
 	hal_interruptsDisable();
 	res = lib_cbufWrite(&uart->cbuffTx, buff, len);
-
-	/* Enable TX FIFO empty irq */
-	*(uart->base + ier) |= 1 << 3;
 	hal_interruptsEnable();
+
+	if (res > 0) {
+		uart_txData(uart);
+	}
 
 	return res;
 }
