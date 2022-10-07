@@ -19,14 +19,16 @@
 #include <lib/lib.h>
 #include <syspage.h>
 
+#include <phfs/phfs.h>
+
 
 static void cmd_dumpInfo(void)
 {
-	lib_printf("dumps memory, usage: dump <addr> <size>");
+	lib_printf("dumps memory, usage: dump [-F|-r <phfs>] <addr> [<size>]");
 }
 
 
-static unsigned int region_validate(addr_t start, addr_t end, addr_t curr)
+static unsigned int region_validator(addr_t start, addr_t end, addr_t curr)
 {
 	unsigned int attr = 0;
 
@@ -41,24 +43,19 @@ static unsigned int region_validate(addr_t start, addr_t end, addr_t curr)
 }
 
 
-static void region_hexdump(addr_t start, addr_t end, unsigned int (*validate)(addr_t, addr_t, addr_t))
+static void region_hexdump(addr_t start, addr_t end, addr_t offp, u8 align, unsigned int (*validator)(addr_t, addr_t, addr_t))
 {
+	unsigned int col;
 	static const int cols = 16;
+	addr_t ptr, offs = start;
 
-	unsigned int col, row;
-	unsigned int rows = (end - start + cols - 1) / cols;
-	addr_t ptr, offs = (start / cols) * cols;
-
-	lib_printf("\nMemory dump from 0x%x to 0x%x (%zu bytes):\n", (u32)start, (u32)end, end - start);
-
-	for (col = 0; col < 79; ++col) {
-		lib_consolePutc('-');
+	if (align != 0) {
+		offp = (offp / cols) * cols;
+		offs = (offs / cols) * cols;
 	}
 
-	lib_printf("\n");
-
-	for (row = 0; row < rows; ++row) {
-		lib_printf("0x%08x | ", (u32)offs);
+	while (offs < end) {
+		lib_printf("0x%08x | ", (u32)offp);
 
 		/* Print byte values */
 		for (col = 0; col < cols; ++col) {
@@ -69,7 +66,7 @@ static void region_hexdump(addr_t start, addr_t end, unsigned int (*validate)(ad
 				continue;
 			}
 
-			if ((validate != NULL) && (validate(start, end, ptr) == 0)) {
+			if ((validator != NULL) && (validator(start, end, ptr) == 0)) {
 				lib_printf("XX ");
 			}
 			else {
@@ -87,7 +84,7 @@ static void region_hexdump(addr_t start, addr_t end, unsigned int (*validate)(ad
 				continue;
 			}
 
-			if ((validate != NULL) && (validate(start, end, ptr) == 0)) {
+			if ((validator != NULL) && (validator(start, end, ptr) == 0)) {
 				lib_printf("X");
 			}
 			else if (lib_isprint(*(u8 *)ptr)) {
@@ -99,39 +96,136 @@ static void region_hexdump(addr_t start, addr_t end, unsigned int (*validate)(ad
 		}
 
 		lib_printf("\n");
+		offp += cols;
 		offs += cols;
 	}
 }
 
 
+static void print_hline(void)
+{
+	unsigned int col;
+	for (col = 0; col < 79; ++col) {
+		lib_consolePutc('-');
+	}
+	lib_printf("\n");
+}
+
+
+static int dump_memory(addr_t addr, size_t length, int validate)
+{
+	addr_t end = addr + length;
+
+	lib_printf("\nMemory dump from 0x%x to 0x%x (%zu bytes):\n", (u32)addr, (u32)end, length);
+	print_hline();
+
+	region_hexdump(addr, end, addr, 1, validate ? region_validator : NULL);
+
+	return EOK;
+}
+
+
+static int dump_phfs(const char *devname, addr_t addr, size_t length)
+{
+	u8 buf[256];
+	handler_t h;
+	size_t chunk, rsz = 0;
+
+	int res = phfs_open(devname, NULL, PHFS_OPEN_RAWONLY, &h);
+	if (res < 0) {
+		lib_printf("\nUnable to open phfs device %s\n", devname);
+		return res;
+	}
+
+	lib_printf("\nRead phfs %s device from 0x%x to 0x%x (%zu bytes):\n", devname, (u32)addr, (u32)addr + length, length);
+	print_hline();
+
+	do {
+		chunk = (length - rsz) > sizeof(buf) ? sizeof(buf) : (length - rsz);
+		res = phfs_read(h, addr + rsz, buf, chunk);
+		if (res < 0) {
+			lib_printf("\nCant read data\n", devname);
+			return res;
+		}
+		region_hexdump((addr_t)buf, (addr_t)buf + res, addr + rsz, 0, NULL);
+		rsz += res;
+	} while (rsz < length);
+
+	(void)phfs_close(h);
+
+	return EOK;
+}
+
+
 static int cmd_dump(int argc, char *argv[])
 {
-	addr_t start;
-	size_t length;
+	int validate = 1, memdump = 1, argn = 1;
+	char *devname = NULL;
 	char *endptr;
+	addr_t start;
+	size_t length = 0x100;
 
-	if (argc == 2) {
-		log_error("\n%s: Provide <address> and <size>", argv[0]);
-		return -EINVAL;
+	while (argn < argc && argv[argn][0] == '-') {
+		if (argv[argn][1] == '\0' || argv[argn][2] != '\0') {
+			log_error("\n%s: Wrong arguments", argv[0]);
+			return -EINVAL;
+		}
+
+		switch (argv[argn][1]) {
+			case 'F':
+				/* Force no validation */
+				validate = 0;
+				break;
+
+			case 'r':
+				/* Use phfs device to read */
+				memdump = 0;
+				if (argn + 1 < argc) {
+					devname = argv[++argn];
+					if (*devname != '\0') {
+						break;
+					}
+				}
+				/* fall-through */
+
+			default:
+				log_error("\n%s: Wrong arguments", argv[0]);
+				return -EINVAL;
+		}
+
+		argn++;
 	}
 
-	start = lib_strtoul(argv[1], &endptr, 16);
-	if (*endptr || ((start == 0) && (endptr == argv[1]))) {
+	if (argn >= argc) {
 		log_error("\n%s: Wrong arguments", argv[0]);
 		return -EINVAL;
 	}
 
-	length = lib_strtoul(argv[2], &endptr, 0);
-	if (*endptr || ((length == 0) && (endptr == argv[2]))) {
+	start = lib_strtoul(argv[argn], &endptr, 16);
+	if (*endptr || ((start == 0) && (endptr == argv[argn]))) {
 		log_error("\n%s: Wrong arguments", argv[0]);
 		return -EINVAL;
+	}
+
+	argn++;
+	if (argn < argc) {
+		length = lib_strtoul(argv[argn], &endptr, 0);
+		if (*endptr || ((length == 0) && (endptr == argv[argn]))) {
+			log_error("\n%s: Wrong arguments", argv[0]);
+			return -EINVAL;
+		}
 	}
 
 	if (start + length < start) {
 		length = (addr_t)(-1) - start;
 	}
 
-	region_hexdump(start, start + length, region_validate);
+	if (memdump != 0) {
+		dump_memory(start, length, validate);
+	}
+	else {
+		dump_phfs(devname, start, length);
+	}
 
 	return EOK;
 }
