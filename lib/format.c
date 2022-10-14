@@ -673,6 +673,7 @@ void lib_formatParse(void *ctx, void (*feed)(void *, char), const char *format, 
 				lib_formatSprintfNum(ctx, feed, number, flags, min_number_len, float_frac_len);
 				break;
 
+#if 0
 			case 'g':
 				flags |= FLAG_DOUBLE;
 				float_frac_len = float_frac_len >= 0 ? float_frac_len : 6;
@@ -686,6 +687,7 @@ void lib_formatParse(void *ctx, void (*feed)(void *, char), const char *format, 
 				number = lib_formatU32FromFloat((float)va_arg(args, double));
 				lib_formatSprintfNum(ctx, feed, number, flags, min_number_len, float_frac_len);
 				break;
+#endif
 
 			case '%':
 				feed(ctx, '%');
