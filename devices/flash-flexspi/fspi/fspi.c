@@ -282,59 +282,53 @@ __attribute__((section(".noxip"))) static int flexspi_checkFlags(flexspi_t *fspi
 __attribute__((section(".noxip"))) static ssize_t flexspi_opRead(flexspi_t *fspi, time_t start, struct xferOp *xfer)
 {
 	int res;
-	size_t ofs, len = xfer->data.read.sz, size = xfer->data.read.sz & ~7;
+	size_t size = xfer->data.read.sz;
 	u8 *buf = xfer->data.read.ptr;
+	u8 *end = xfer->data.read.ptr + size;
+	u8 *rfdr = (u8 *)(fspi->base + rfdr32);
+	u32 i, water = 1u + ((*(fspi->base + iprxfcr) & 0x7cu) >> 2);
 
-	/* note: FlexSPI FIFO watermark level is 64bit aligned */
-	for (ofs = 0; ofs < size; ofs += 8, buf += 8, len -= 8) {
-		/* Wait for rx FIFO available */
-		while ((*(fspi->base + intr) & (1 << 5)) == 0) {
-			res = flexspi_checkFlags(fspi);
-			if (res != EOK) {
-				return res;
+	while (size != 0u) {
+		if (size >= 8u * water) {
+			/* Wait for rx FIFO available */
+			while ((*(fspi->base + intr) & (1u << 5)) == 0) {
+				res = flexspi_checkFlags(fspi);
+				if (res != EOK) {
+					return res;
+				}
+				else if (xfer->timeout > 0 && (hal_timerGet() - start) >= xfer->timeout) {
+					return -ETIME;
+				}
 			}
-			else if (xfer->timeout > 0 && (hal_timerGet() - start) >= xfer->timeout) {
-				return -ETIME;
+		}
+		else {
+			while (size > (*(fspi->base + iprxfsts) & 0xffu) * 8u) {
+				res = flexspi_checkFlags(fspi);
+				if (res != EOK) {
+					return res;
+				}
+				else if (xfer->timeout > 0 && (hal_timerGet() - start) >= xfer->timeout) {
+					return -ETIME;
+				}
 			}
 		}
 
-		((u32 *)buf)[0] = (fspi->base + rfdr32)[0];
-		((u32 *)buf)[1] = (fspi->base + rfdr32)[1];
+		if (size >= 8u * water) {
+			for (i = 0; i < 8u * water && buf < end; ++i) {
+				*buf++ = rfdr[i];
+			}
+			size -= 8 * water;
+		}
+		else {
+			for (i = 0; i < 4u * ((size + 3u) / 4u) && buf < end; ++i) {
+				*buf++ = rfdr[i];
+			}
+			size = 0;
+		}
 
 		/* Move FIFO pointer to watermark level */
-		*(fspi->base + intr) |= 1 << 5;
+		*(fspi->base + intr) |= 1u << 5;
 	}
-
-	if (ofs < xfer->data.read.sz) {
-		/* Wait for rx FIFO available */
-		while ((*(fspi->base + intr) & (1 << 5)) == 0) {
-			res = flexspi_checkFlags(fspi);
-			if (res != EOK) {
-				return res;
-			}
-			else if (xfer->timeout > 0 && (hal_timerGet() - start) >= xfer->timeout) {
-				return -ETIME;
-			}
-		}
-
-		for (ofs = rfdr32; len > 0; ++ofs) {
-			u32 tmp = *(fspi->base + ofs); /* is volatile! */
-			size = len < sizeof(tmp) ? len : sizeof(tmp);
-			hal_memcpy(buf, &tmp, size);
-			len -= size;
-			buf += size;
-		}
-		/* Move FIFO pointer to watermark level */
-		*(fspi->base + intr) |= 1 << 5;
-	}
-
-	/* FIXME: delay of ~27us */
-	for (u32 i = 0x10000; i > 0; --i) {
-		asm volatile("nop");
-	}
-
-	/* Reset rx FIFO */
-	*(fspi->base + iprxfcr) |= 1;
 
 	return buf - (u8 *)xfer->data.read.ptr;
 }
