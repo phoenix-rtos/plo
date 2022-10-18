@@ -187,22 +187,48 @@ static int flashdrv_welSet(unsigned int cmdID)
 }
 
 
-static int flashdrv_sectorErase(addr_t offs)
+static int flashdrv_chipErase(void)
 {
-	u32 id = 0;
-	ssize_t res;
+	int res;
+	time_t timeout;
+
+	const flash_cfi_t *cfi = &fdrv_common.info.cfi;
+	const flash_cmd_t *cmd = &fdrv_common.info.cmds[flash_cmd_be];
+
+	res = flashdrv_welSet(flash_cmd_wren);
+	if (res < 0) {
+		return res;
+	}
+
+	hal_memset(fdrv_common.cmdTx, 0, cmd->size);
+	fdrv_common.cmdTx[0] = cmd->opCode;
+
+	qspi_start();
+	res = (int)qspi_polledTransfer(fdrv_common.cmdTx, NULL, cmd->size, TIMEOUT_CMD_MS);
+	qspi_stop();
+
+	if (res < 0) {
+		return res;
+	}
+
+	timeout = CFI_TIMEOUT_MAX_ERASE(cfi->timeoutTypical.chipErase, cfi->timeoutMax.chipErase) + TIMEOUT_CMD_MS;
+
+	return flashdrv_wipCheck(timeout);
+}
+
+
+static int flashdrv_sectorErase(addr_t offs, size_t sectSz)
+{
+	int res;
 	time_t timeout;
 	const flash_cmd_t *cmd;
 	const flash_cfi_t *cfi = &fdrv_common.info.cfi;
 
-	if (offs > CFI_SIZE_FLASH(cfi->chipSize))
+	if (offs > CFI_SIZE_FLASH(cfi->chipSize)) {
 		return -EINVAL;
+	}
 
-	res = flashdrv_regionFind(offs, &id);
-	if (res < 0)
-		return res;
-
-	switch (CFI_SIZE_SECTION(cfi->regs[id].size)) {
+	switch (sectSz) {
 		case 0x1000:
 			cmd = (fdrv_common.info.addrMode == flash_4byteAddr) ? &fdrv_common.info.cmds[flash_cmd_4p4e] : &fdrv_common.info.cmds[flash_cmd_p4e];
 			break;
@@ -220,7 +246,7 @@ static int flashdrv_sectorErase(addr_t offs)
 	flashdrv_serializeTxCmd(fdrv_common.cmdTx, cmd, offs);
 
 	qspi_start();
-	res = qspi_polledTransfer(fdrv_common.cmdTx, fdrv_common.cmdRx, cmd->size, TIMEOUT_CMD_MS);
+	res = (int)qspi_polledTransfer(fdrv_common.cmdTx, fdrv_common.cmdRx, cmd->size, TIMEOUT_CMD_MS);
 	if (res < 0) {
 		qspi_stop();
 		return res;
@@ -392,7 +418,7 @@ static ssize_t flashdrv_write(unsigned int minor, addr_t offs, const void *buff,
 			if (res < 0)
 				return res;
 
-			res = flashdrv_sectorErase(regStart + (sectSz * sectID));
+			res = flashdrv_sectorErase(regStart + (sectSz * sectID), sectSz);
 			if (res < 0)
 				return res;
 
@@ -417,6 +443,89 @@ static ssize_t flashdrv_write(unsigned int minor, addr_t offs, const void *buff,
 	}
 
 	return saveSz;
+}
+
+
+static ssize_t flashdrv_erase(unsigned int minor, addr_t addr, size_t len, unsigned int flags)
+{
+	int res;
+	size_t sectSz;
+	unsigned int id = 0;
+	addr_t end, addr_mask;
+	const flash_cfi_t *cfi = &fdrv_common.info.cfi;
+
+	if (len == 0) {
+		return 0;
+	}
+
+	/* Invalidate sync */
+	fdrv_common.regID = (u32)-1;
+	fdrv_common.sectID = (u32)-1;
+	fdrv_common.buffPos = 0;
+
+	/* Chips erase */
+	if (len == (size_t)-1) {
+		len = CFI_SIZE_FLASH(cfi->chipSize);
+		lib_printf("\nErasing all data from flash device ...");
+		res = flashdrv_chipErase();
+		if (res < 0) {
+			return res;
+		}
+
+		return len;
+	}
+
+
+	/* Erase sectors */
+
+	if ((addr + len) > CFI_SIZE_FLASH(cfi->chipSize)) {
+		return -EINVAL;
+	}
+
+
+	/* Calculate sector size of the last address */
+	end = addr + len;
+	res = flashdrv_regionFind(end, &id);
+	if (res < 0) {
+		return res;
+	}
+
+	sectSz = CFI_SIZE_SECTION(cfi->regs[id].size);
+
+	addr_mask = sectSz - 1;
+	end = (end + addr_mask) & ~addr_mask;
+
+	/* Calculate sector size of the start address */
+	res = flashdrv_regionFind(addr, &id);
+	if (res < 0) {
+		return res;
+	}
+
+	sectSz = CFI_SIZE_SECTION(cfi->regs[id].size);
+	addr_mask = sectSz - 1;
+	addr &= ~addr_mask;
+
+
+	lib_printf("\nErasing sectors from 0x%x to 0x%x ...", addr, end);
+
+	len = 0;
+	while (addr < end) {
+		res = flashdrv_sectorErase(addr, sectSz);
+		if (res < 0) {
+			return res;
+		}
+		addr += sectSz;
+		len += sectSz;
+
+		res = flashdrv_regionFind(addr, &id);
+		if (res < 0) {
+			return res;
+		}
+
+		sectSz = CFI_SIZE_SECTION(cfi->regs[id].size);
+	}
+
+	return len;
 }
 
 
@@ -492,7 +601,7 @@ __attribute__((constructor)) static void flashdrv_reg(void)
 		.done = flashdrv_done,
 		.read = flashdrv_read,
 		.write = flashdrv_write,
-		.erase = NULL, /* TODO */
+		.erase = flashdrv_erase,
 		.sync = flashdrv_sync,
 		.map = flashdrv_map,
 	};
