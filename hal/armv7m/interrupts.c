@@ -73,12 +73,15 @@ int hal_interruptsSet(unsigned int irq, int (*isr)(unsigned int, void *), void *
 	irq_common.irqs[irq].isr = isr;
 	irq_common.irqs[irq].data = data;
 
-	if (isr == NULL) {
-		interrupts_nvicSetIRQ(irq - 0x10, 0);
-	}
-	else {
-		interrupts_nvicSetPriority(irq - 0x10, 0);
-		interrupts_nvicSetIRQ(irq - 0x10, 1);
+	/* Is it a IRQ handled by NVIC? */
+	if (irq >= 0x10) {
+		if (isr == NULL) {
+			interrupts_nvicSetIRQ(irq - 0x10, 0);
+		}
+		else {
+			interrupts_nvicSetPriority(irq - 0x10, 0);
+			interrupts_nvicSetIRQ(irq - 0x10, 1);
+		}
 	}
 	hal_interruptsEnable();
 
