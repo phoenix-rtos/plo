@@ -89,6 +89,20 @@ static inline void uart_txData(uart_t *uart)
 }
 
 
+static inline void uart_irqEnable(uart_t *uart)
+{
+	/* Enable RX FIFO trigger */
+	*(uart->base + ier) |= 0x1;
+}
+
+
+static inline void uart_irqDisable(uart_t *uart)
+{
+	/* Disable RX FIFO trigger */
+	*(uart->base + idr) |= 0x1;
+}
+
+
 static int uart_irqHandler(unsigned int n, void *data)
 {
 	u32 st;
@@ -213,9 +227,9 @@ static ssize_t uart_read(unsigned int minor, addr_t offs, void *buff, size_t len
 			return -ETIME;
 	}
 
-	hal_interruptsDisable();
+	uart_irqDisable(uart);
 	res = lib_cbufRead(&uart->cbuffRx, buff, len);
-	hal_interruptsEnable();
+	uart_irqEnable(uart);
 
 	return res;
 }
@@ -234,9 +248,9 @@ static ssize_t uart_write(unsigned int minor, const void *buff, size_t len)
 	while (uart->cbuffTx.full)
 		;
 
-	hal_interruptsDisable();
+	uart_irqDisable(uart);
 	res = lib_cbufWrite(&uart->cbuffTx, buff, len);
-	hal_interruptsEnable();
+	uart_irqEnable(uart);
 
 	if (res > 0) {
 		uart_txData(uart);
