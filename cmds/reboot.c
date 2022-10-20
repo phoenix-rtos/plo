@@ -36,7 +36,7 @@ static int cmd_reboot(int argc, char *argv[])
 	log_info("\nRebooting\n");
 	devs_done();
 	hal_done();
-	hal_interruptsDisable();
+	hal_interruptsDisableAll();
 	hal_cpuReboot();
 	return EOK;
 }
