@@ -50,6 +50,26 @@ struct {
 } interrupts_common;
 
 
+void hal_interruptsEnable(unsigned int irqn)
+{
+	if (irqn >= SIZE_INTERRUPTS) {
+		return;
+	}
+
+	*(interrupts_common.gic + gicd_isenabler0 + (irqn >> 5)) = 1 << (irqn & 0x1f);
+}
+
+
+void hal_interruptsDisable(unsigned int irqn)
+{
+	if (irqn >= SIZE_INTERRUPTS) {
+		return;
+	}
+
+	*(interrupts_common.gic + gicd_icenabler0 + (irqn >> 5)) = 1 << (irqn & 0x1f);
+}
+
+
 void interrupts_dispatch(void)
 {
 	u32 n, iar;
@@ -72,18 +92,6 @@ void interrupts_dispatch(void)
 	*(interrupts_common.gic + gicv_eoir) = (*(interrupts_common.gic + gicv_eoir) & 0x03ff) | iar;
 
 	return;
-}
-
-
-static void interrupts_enableIRQ(unsigned int irqn)
-{
-	*(interrupts_common.gic + gicd_isenabler0 + (irqn >> 5)) = 1 << (irqn & 0x1f);
-}
-
-
-static void interrupts_disableIRQ(unsigned int irqn)
-{
-	*(interrupts_common.gic + gicd_icenabler0 + (irqn >> 5)) = 1 << (irqn & 0x1f);
 }
 
 
@@ -115,20 +123,20 @@ int hal_interruptsSet(unsigned int n, int (*f)(unsigned int, void *), void *data
 	if (n >= SIZE_INTERRUPTS)
 		return -1;
 
-	hal_interruptsDisable();
+	hal_interruptsDisableAll();
 	interrupts_common.handlers[n].data = data;
 	interrupts_common.handlers[n].f = f;
 
 	if (f == NULL) {
-		interrupts_disableIRQ(n);
+		hal_interruptsDisable(n);
 	}
 	else {
 		interrupts_setPriority(n, 0xa);
 		interrupts_setConf(n, 0x3);
-		interrupts_enableIRQ(n);
+		hal_interruptsEnable(n);
 	}
 
-	hal_interruptsEnable();
+	hal_interruptsEnableAll();
 
 	return 0;
 }
@@ -176,4 +184,6 @@ void interrupts_init(void)
 	*(interrupts_common.gic + gicv_ctlr) |= 1;
 	*(interrupts_common.gic + gicv_bpr) = 0;
 	*(interrupts_common.gic + gicv_pmr) = 0xff;
+
+	hal_interruptsEnableAll();
 }

@@ -16,13 +16,13 @@
 #include <hal/hal.h>
 
 
-void hal_interruptsDisable(void)
+void hal_interruptsDisableAll(void)
 {
 	__asm__ volatile("cpsid if");
 }
 
 
-void hal_interruptsEnable(void)
+void hal_interruptsEnableAll(void)
 {
 	__asm__ volatile("cpsie if");
 }
