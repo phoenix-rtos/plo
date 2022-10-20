@@ -213,9 +213,9 @@ static ssize_t uart_read(unsigned int minor, addr_t offs, void *buff, size_t len
 			return -ETIME;
 	}
 
-	hal_interruptsDisable();
+	hal_interruptsDisable(info[minor].irq);
 	res = lib_cbufRead(&uart->cbuffRx, buff, len);
-	hal_interruptsEnable();
+	hal_interruptsEnable(info[minor].irq);
 
 	return res;
 }
@@ -234,9 +234,9 @@ static ssize_t uart_write(unsigned int minor, const void *buff, size_t len)
 	while (uart->cbuffTx.full)
 		;
 
-	hal_interruptsDisable();
+	hal_interruptsDisable(info[minor].irq);
 	res = lib_cbufWrite(&uart->cbuffTx, buff, len);
-	hal_interruptsEnable();
+	hal_interruptsEnable(info[minor].irq);
 
 	if (res > 0) {
 		uart_txData(uart);
