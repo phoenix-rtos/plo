@@ -80,9 +80,9 @@ time_t hal_timerGet(void)
 {
 	time_t val;
 
-	hal_interruptsDisable();
+	hal_irqnDisable(TTC0_1_IRQ);
 	val = timer_common.time;
-	hal_interruptsEnable();
+ 	hal_irqnEnable(TTC0_1_IRQ);
 
 	return val;
 }

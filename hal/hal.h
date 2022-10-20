@@ -70,12 +70,20 @@ extern int hal_memoryAddMap(addr_t start, addr_t end, u32 attr, u32 mapId);
 extern int hal_memoryGetNextEntry(addr_t start, addr_t end, mapent_t *entry);
 
 
-/* Function enables interrupts */
+/* Functions enables/disable all interrupts */
 extern void hal_interruptsEnable(void);
 
 
-/* Function disables interrupts */
 extern void hal_interruptsDisable(void);
+
+
+/* Functions enables/disable specific interrupt */
+
+extern void hal_irqnEnable(unsigned int irqn);
+
+
+extern void hal_irqnDisable(unsigned int irqn);
+
 
 
 /* Function registers interrupts in controller */

@@ -62,14 +62,20 @@ static const u8 spiConf[] = {/* IRQID: 32-39 */ rising_edge, rising_edge, high_l
 
 
 
-static inline void interrupts_enableIRQ(unsigned int irqn)
+void hal_irqnEnable(unsigned int irqn)
 {
+	if (irqn < SPI_FIRST_IRQID || irqn >= SIZE_INTERRUPTS)
+		return;
+
 	*(interrupts_common.mpcore + diser0 + (irqn >> 5)) = 1 << (irqn & 0x1f);
 }
 
 
-static inline void interrupts_disableIRQ(unsigned int irqn)
+void hal_irqnDisable(unsigned int irqn)
 {
+	if (irqn < SPI_FIRST_IRQID || irqn >= SIZE_INTERRUPTS)
+		return;
+
 	*(interrupts_common.mpcore + dicer0 + (irqn >> 5)) = 1 << (irqn & 0x1f);
 }
 
@@ -138,12 +144,12 @@ int hal_interruptsSet(unsigned int n, int (*f)(unsigned int, void *), void *data
 	interrupts_common.handlers[n].f = f;
 
 	if (f == NULL) {
-		interrupts_disableIRQ(n);
+		hal_irqnDisable(n);
 	}
 	else {
 		interrupts_setPriority(n, 0xa); /* each of the irqs has the same priority */
 		interrupts_setCPU(n, 0x1);      /* CPU 0 handle all irqs                  */
-		interrupts_enableIRQ(n);
+		hal_irqnEnable(n);
 	}
 
 	hal_interruptsEnable();
