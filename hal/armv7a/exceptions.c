@@ -128,7 +128,7 @@ void exceptions_dispatch(unsigned int n, exc_context_t *ctx)
 {
 	char buff[512];
 
-	extern void hal_interruptsDisable(void);
+	hal_interruptsDisableAll();
 
 	hal_exceptionsDumpContext(buff, ctx, n);
 	hal_consolePrint(buff);

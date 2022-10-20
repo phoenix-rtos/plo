@@ -16,6 +16,7 @@
 
 #include <hal/hal.h>
 
+#define TIMER_IRQN 87
 
 enum { gpt_cr = 0, gpt_pr, gpt_sr, gpt_ir, gpt_ocr1, gpt_ocr2, gpt_ocr3, gpt_icr1, gpt_icr2, gpt_cnt };
 
@@ -42,9 +43,9 @@ time_t hal_timerGet(void)
 {
 	time_t val;
 
-	hal_interruptsDisable();
+	hal_interruptsDisable(TIMER_IRQN);
 	val = timer_common.time;
-	hal_interruptsEnable();
+	hal_interruptsEnable(TIMER_IRQN);
 
 	return val;
 }
@@ -59,7 +60,7 @@ void timer_done(void)
 	/* Clear status register */
 	*(timer_common.base + gpt_sr) = *(timer_common.base + gpt_sr);
 
-	hal_interruptsSet(87, NULL, NULL);
+	hal_interruptsSet(TIMER_IRQN, NULL, NULL);
 }
 
 

@@ -241,7 +241,7 @@ int hal_cpuJump(void)
 	if (hal_common.entry == (addr_t)-1)
 		return -1;
 
-	hal_interruptsDisable();
+	hal_interruptsDisableAll();
 
 	hal_dcacheEnable(0);
 	hal_dcacheFlush((addr_t)ADDR_OCRAM_LOW, (addr_t)ADDR_OCRAM_LOW + SIZE_OCRAM_LOW);
