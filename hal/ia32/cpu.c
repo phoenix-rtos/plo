@@ -53,7 +53,7 @@ void hal_cpuReboot(void)
 {
 	u8 status;
 
-	hal_interruptsDisable();
+	hal_interruptsDisableAll();
 
 	/* 1. Try to reboot using keyboard controller (8042) */
 	do {
