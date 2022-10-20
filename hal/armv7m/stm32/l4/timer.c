@@ -39,9 +39,9 @@ time_t hal_timerGet(void)
 {
 	time_t val;
 
-	hal_interruptsDisable();
+	hal_interruptsDisableAll();
 	val = timer_common.time;
-	hal_interruptsEnable();
+	hal_interruptsEnableAll();
 
 	return val;
 }
