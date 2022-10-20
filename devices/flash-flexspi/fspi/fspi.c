@@ -106,7 +106,7 @@ __attribute__((section(".noxip"))) int flexspi_init(flexspi_t *fspi, int instanc
 		return res;
 	}
 
-	hal_interruptsDisable();
+	hal_interruptsDisableAll();
 
 	hal_disableDCache();
 	hal_disableICache();
@@ -202,7 +202,7 @@ __attribute__((section(".noxip"))) int flexspi_init(flexspi_t *fspi, int instanc
 	hal_enableICache();
 	hal_enableDCache();
 
-	hal_interruptsEnable();
+	hal_interruptsEnableAll();
 
 	return EOK;
 }

@@ -140,7 +140,7 @@ static ssize_t uart_read(unsigned int minor, addr_t offs, void *buff, size_t len
 			return -ETIME;
 	}
 
-	hal_interruptsDisable();
+	hal_interruptsDisableAll();
 
 	l = (uart->rh > uart->rt) ? min(uart->rh - uart->rt, len) : min(SIZE_RX - uart->rt, len);
 	hal_memcpy(buff, &uart->rx[uart->rt], l);
@@ -151,7 +151,7 @@ static ssize_t uart_read(unsigned int minor, addr_t offs, void *buff, size_t len
 	}
 	uart->rt = (uart->rt + l) % SIZE_RX;
 
-	hal_interruptsEnable();
+	hal_interruptsEnableAll();
 
 	return l;
 }
@@ -172,7 +172,7 @@ static ssize_t uart_write(unsigned int minor, const void *buff, size_t len)
 	while (uart->tf)
 		;
 
-	hal_interruptsDisable();
+	hal_interruptsDisableAll();
 
 	l = (uart->th > uart->tt) ? min(uart->th - uart->tt, len) : min(SIZE_TX - uart->tt, len);
 	hal_memcpy(&uart->tx[uart->tt], buff, l);
@@ -192,7 +192,7 @@ static ssize_t uart_write(unsigned int minor, const void *buff, size_t len)
 	if ((uart->tt = (uart->tt + l) % SIZE_TX) == uart->th)
 		uart->tf = 1;
 
-	hal_interruptsEnable();
+	hal_interruptsEnableAll();
 
 	return l;
 }

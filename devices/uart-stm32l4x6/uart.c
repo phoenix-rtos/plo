@@ -105,22 +105,22 @@ static ssize_t uart_read(unsigned int minor, addr_t offs, void *buff, size_t len
 	if (len == 0)
 		return 0;
 
-	hal_interruptsDisable();
+	hal_interruptsDisable(uartInfo[minor].irq);
 	for (cnt = 0; cnt < len; ++cnt) {
 		uart->rxflag = 0;
 		if (uart->rxdr == uart->rxdw) {
-			hal_interruptsEnable();
+			hal_interruptsEnable(uartInfo[minor].irq);
 			start = hal_timerGet();
 			while (!uart->rxflag) {
 				if ((hal_timerGet() - start) >= timeout)
 					return -ETIME;
 			}
-			hal_interruptsDisable();
+			hal_interruptsDisable(uartInfo[minor].irq);
 		}
 		((unsigned char *)buff)[cnt] = uart->rxdfifo[uart->rxdr++];
 		uart->rxdr %= sizeof(uart->rxdfifo);
 	}
-	hal_interruptsEnable();
+	hal_interruptsEnable(uartInfo[minor].irq);
 
 	return (ssize_t)cnt;
 }
