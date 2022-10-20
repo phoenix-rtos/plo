@@ -84,13 +84,13 @@ int interrupts_ack(unsigned int n)
 }
 
 
-void hal_interruptsDisable(void)
+void hal_interruptsDisableAll(void)
 {
 	__asm__ volatile("cli":);
 }
 
 
-void hal_interruptsEnable(void)
+void hal_interruptsEnableAll(void)
 {
 	__asm__ volatile("sti":);
 }
@@ -101,12 +101,12 @@ int hal_interruptsSet(unsigned int irq, int (*f)(unsigned int, void *), void *da
 	if (irq >= SIZE_INTERRUPTS)
 		return -EINVAL;
 
-	hal_interruptsDisable();
+	hal_interruptsDisableAll();
 
 	interrupts_common.handlers[irq].f = f;
 	interrupts_common.handlers[irq].data = data;
 
-	hal_interruptsEnable();
+	hal_interruptsEnableAll();
 
 	return EOK;
 }
