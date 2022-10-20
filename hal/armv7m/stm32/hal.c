@@ -183,7 +183,7 @@ int hal_cpuJump(void)
 	if (hal_common.entry == (addr_t)-1)
 		return -1;
 
-	hal_interruptsDisable();
+	hal_interruptsDisableAll();
 
 	mpu_getHalData(hal_common.hs);
 
