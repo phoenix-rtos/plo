@@ -105,6 +105,7 @@ static int flashdrv_map(unsigned int minor, addr_t addr, size_t sz, int mode, ad
 
 	fSz = dev->fspi.slFlashSz[dev->port];
 	fStart = (addr_t)dev->fspi.ahbAddr;
+	*a = fStart;
 
 	/* Check if region is located on flash */
 	if ((addr + sz) > fSz) {
@@ -113,7 +114,6 @@ static int flashdrv_map(unsigned int minor, addr_t addr, size_t sz, int mode, ad
 
 	/* Check if flash is mappable to map region */
 	if (fStart <= memaddr && (fStart + fSz) >= (memaddr + memsz)) {
-		*a = fStart;
 		return dev_isMappable;
 	}
 
