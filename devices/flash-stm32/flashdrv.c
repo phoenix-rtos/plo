@@ -99,25 +99,28 @@ static int flashdrv_map(unsigned int minor, addr_t addr, size_t sz, int mode, ad
 	size_t fSz;
 	addr_t fStart;
 
-	if (flashdrv_isValidMinor(minor) == 0)
+	if (flashdrv_isValidMinor(minor) == 0) {
 		return -EINVAL;
+	}
 
 	fStart = flashParams[minor].start;
 	fSz = flashParams[minor].end - flashParams[minor].start;
+	*a = fStart;
 
 	/* Check if region is located on flash */
-	if ((addr + sz) >= fSz)
+	if ((addr + sz) >= fSz) {
 		return -EINVAL;
+	}
 
 	/* Check if flash is mappable to map region */
 	if (fStart <= memaddr && (fStart + fSz) >= (memaddr + memsz)) {
-		*a = fStart;
 		return dev_isMappable;
 	}
 
 	/* Device mode cannot be higher than map mode to copy data */
-	if ((mode & memmode) != mode)
+	if ((mode & memmode) != mode) {
 		return -EINVAL;
+	}
 
 	/* Data can be copied from device to map */
 	return dev_isNotMappable;

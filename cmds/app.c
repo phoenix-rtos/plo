@@ -24,7 +24,7 @@
 
 static void cmd_appInfo(void)
 {
-	lib_printf("loads app, usage: app [<dev> [-x] <name> <imap1;imap2...> <dmap1;dmap2...>]");
+	lib_printf("loads app, usage: app [<dev> [-x | -xn] <name> <imap1;imap2...> <dmap1;dmap2...>]");
 }
 
 
@@ -123,28 +123,25 @@ static int cmd_appLoad(handler_t handler, size_t size, const char *name, char *i
 		return res;
 	}
 
-	switch (res) {
-		case dev_isNotMappable:
-			if ((entry = syspage_entryAdd(imaps, (addr_t)-1, size, SIZE_PAGE)) == NULL) {
-				log_error("\nCannot allocate memory for %s", name);
-				return -ENOMEM;
-			}
-
-			/* Copy elf file to selected entry */
-			if ((res = cmd_cp2ent(handler, entry)) < 0)
-				return res;
-			break;
-
-		case dev_isMappable:
-			if ((entry = syspage_entryAdd(NULL, addr + offs, size, SIZE_PAGE)) == NULL) {
-				log_error("\nCannot allocate memory for %s", name);
-				return -ENOMEM;
-			}
-			break;
-
-		default:
-			log_error("\nDevice mappable routine failed");
+	if (res == dev_isMappable || (res == dev_isNotMappable && (flags & flagSyspageNoCopy) != 0)) {
+		if ((entry = syspage_entryAdd(NULL, addr + offs, size, SIZE_PAGE)) == NULL) {
+			log_error("\nCannot allocate memory for %s", name);
 			return -ENOMEM;
+		}
+	}
+	else if (res == dev_isNotMappable) {
+		if ((entry = syspage_entryAdd(imaps, (addr_t)-1, size, SIZE_PAGE)) == NULL) {
+			log_error("\nCannot allocate memory for %s", name);
+			return -ENOMEM;
+		}
+
+		/* Copy elf file to selected entry */
+		if ((res = cmd_cp2ent(handler, entry)) < 0)
+			return res;
+	}
+	else {
+		log_error("\nDevice mappable routine failed");
+		return -ENOMEM;
 	}
 
 	if ((prog = syspage_progAdd(appArgv, flags)) == NULL ||
@@ -201,6 +198,10 @@ static int cmd_app(int argc, char *argv[])
 	if (argv[argvID][0] == '-') {
 		if ((argv[argvID][1] | 0x20) == 'x' && argv[argvID][2] == '\0') {
 			flags |= flagSyspageExec;
+			argvID++;
+		}
+		else if ((argv[argvID][1] | 0x20) == 'x' && (argv[argvID][2] | 0x20) == 'n' && argv[argvID][3] == '\0') {
+			flags |= flagSyspageExec | flagSyspageNoCopy;
 			argvID++;
 		}
 		else {
