@@ -24,7 +24,7 @@
 
 static void cmd_dumpInfo(void)
 {
-	lib_printf("dumps memory, usage: dump [-F|-r <phfs>] <addr> [<size>]");
+	lib_consolePuts("dumps memory, usage: dump [-F|-r <phfs>] <addr> [<size>]");
 }
 
 
@@ -62,40 +62,40 @@ static void region_hexdump(addr_t start, addr_t end, addr_t offp, u8 align, unsi
 			ptr = offs + col;
 
 			if ((ptr < start) || (ptr >= end)) {
-				lib_printf("   ");
+				lib_consolePuts("   ");
 				continue;
 			}
 
 			if ((validator != NULL) && (validator(start, end, ptr) == 0)) {
-				lib_printf("XX ");
+				lib_consolePuts("XX ");
 			}
 			else {
 				lib_printf("%02x ", *(u8 *)ptr);
 			}
 		}
-		lib_printf("| ");
+		lib_consolePuts("| ");
 
 		/* Print "printable" representation */
 		for (col = 0; col < cols; ++col) {
 			ptr = offs + col;
 
 			if ((ptr < start) || (ptr >= end)) {
-				lib_printf(" ");
+				lib_consolePutc(' ');
 				continue;
 			}
 
 			if ((validator != NULL) && (validator(start, end, ptr) == 0)) {
-				lib_printf("X");
+				lib_consolePutc('X');
 			}
 			else if (lib_isprint(*(u8 *)ptr)) {
 				lib_printf("%c", *(u8 *)ptr);
 			}
 			else {
-				lib_printf(".");
+				lib_consolePutc('.');
 			}
 		}
 
-		lib_printf("\n");
+		lib_consolePutc('\n');
 		offp += cols;
 		offs += cols;
 	}
@@ -108,7 +108,7 @@ static void print_hline(void)
 	for (col = 0; col < 79; ++col) {
 		lib_consolePutc('-');
 	}
-	lib_printf("\n");
+	lib_consolePutc('\n');
 }
 
 
