@@ -182,9 +182,7 @@ static int cmd_dump(int argc, char *argv[])
 				memdump = 0;
 				if (argn + 1 < argc) {
 					devname = argv[++argn];
-					if (*devname != '\0') {
-						break;
-					}
+					break;
 				}
 				/* fall-through */
 
@@ -202,7 +200,7 @@ static int cmd_dump(int argc, char *argv[])
 	}
 
 	start = lib_strtoul(argv[argn], &endptr, 16);
-	if (*endptr || ((start == 0) && (endptr == argv[argn]))) {
+	if (*endptr != '\0') {
 		log_error("\n%s: Wrong arguments", argv[0]);
 		return -EINVAL;
 	}
@@ -210,7 +208,7 @@ static int cmd_dump(int argc, char *argv[])
 	argn++;
 	if (argn < argc) {
 		length = lib_strtoul(argv[argn], &endptr, 0);
-		if (*endptr || ((length == 0) && (endptr == argv[argn]))) {
+		if ((*endptr != '\0') || (length == 0)) {
 			log_error("\n%s: Wrong arguments", argv[0]);
 			return -EINVAL;
 		}
