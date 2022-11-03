@@ -157,6 +157,7 @@ void cmd_prompt(void)
 	char c = 0, sc = 0;
 	int pos = 0;
 	int i, k, chgfl = 0, ncl;
+	unsigned char newline = 0;
 
 	cmd_common.ll = 0;
 	cmd_common.cl = 0;
@@ -196,7 +197,17 @@ void cmd_prompt(void)
 
 		/* Regular characters */
 		if (c) {
-			if (c == '\r') {
+			if ((c == '\r') || (c == '\n')) {
+				/* handle crlf line ending */
+				if (c == '\r') {
+					newline = 1;
+				}
+				/* lf after cr - skip */
+				else if ((c == '\n') && (newline != 0)) {
+					newline = 0;
+					continue;
+				}
+
 				if (pos) {
 					cmd_parse(cmd_common.lines[cmd_common.ll]);
 
@@ -206,6 +217,9 @@ void cmd_prompt(void)
 				pos = 0;
 				lib_printf("\n%s", PROMPT);
 				continue;
+			}
+			else {
+				newline = 0;
 			}
 
 			/* If character isn't backspace add it to line buffer */
