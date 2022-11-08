@@ -47,6 +47,6 @@ void lib_listRemove(void **list, void *t, size_t noff, size_t poff)
 		if (t == *list)
 			*list = (void *)*((addr_t *)(t + noff));
 	}
-	*((addr_t *)(t + noff)) = NULL;
-	*((addr_t *)(t + poff)) = NULL;
+	*((addr_t *)(t + noff)) = (addr_t)NULL;
+	*((addr_t *)(t + poff)) = (addr_t)NULL;
 }
