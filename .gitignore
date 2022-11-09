@@ -10,3 +10,4 @@
 .DS_Store
 toolchain/
 ia32/plo
+.vscode/*
