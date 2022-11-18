@@ -17,7 +17,7 @@
 #include <hal/string.h>
 
 
-void hal_memcpy(void *dst, const void *src, size_t n)
+void *hal_memcpy(void *dst, const void *src, size_t n)
 {
 	__asm__ volatile
 	(" \
@@ -34,6 +34,7 @@ void hal_memcpy(void *dst, const void *src, size_t n)
 	:
 	: "g" (n), "g" (dst), "g" (src)
 	: "ecx", "edx", "esi", "edi", "cc", "memory");
+	return dst;
 }
 
 

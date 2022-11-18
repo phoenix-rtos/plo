@@ -19,7 +19,7 @@
 #include <config.h>
 
 
-extern void hal_memcpy(void *dst, const void *src, size_t l);
+extern void *hal_memcpy(void *dst, const void *src, size_t l);
 
 
 extern int hal_memcmp(const void *ptr1, const void *ptr2, size_t num);
