@@ -22,6 +22,7 @@ CFLAGS += $(BOARD_CONFIG)
 CFLAGS += -I. -I$(PROJECT_PATH)/
 CFLAGS += -DVERSION=\"$(VERSION)\"
 
+OBJS :=
 include hal/$(TARGET_SUFF)/Makefile
 include lib/Makefile
 include devices/Makefile
@@ -32,6 +33,15 @@ include cmds/Makefile
 PLO_SCRIPT_DIR ?= $(BUILD_DIR)
 
 OBJS += $(addprefix $(PREFIX_O), _startc.o plo.o syspage.o)
+
+# add optional per-project customizations - all WEAK symbols can be overridden
+OBJS += $(addprefix $(PREFIX_O)/custom/, $(patsubst $(PROJECT_PATH)/%.c, %.o, $(wildcard $(PROJECT_PATH)/plo*.c)))
+
+$(PREFIX_O)/custom/%.o: $(PROJECT_PATH)/%.c
+	@mkdir -p $(@D)
+	@printf "CC  %-24s\n" "$<"
+	$(SIL)$(CC) -c $(CFLAGS) "$(abspath $<)" -o "$@"
+	$(SIL)$(CC) -M  -MD -MP -MF $(PREFIX_O)/custom/$*.c.d -MT "$@" $(CFLAGS) $<
 
 
 .PHONY: all base ram clean
