@@ -26,7 +26,11 @@
 #if defined(__LINKER__)
 
 /* FlexRAM configuration */
+#if defined(CUSTOM_FLEXRAM_CONFIG)
+FLEXRAM_CONFIG = CUSTOM_FLEXRAM_CONFIG;
+#else
 FLEXRAM_CONFIG = 0xaaaaabff;
+#endif
 
 /* Memory map setup */
 MEMORY
