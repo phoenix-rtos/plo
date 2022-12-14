@@ -81,7 +81,7 @@ static int nor_readID(flexspi_t *fspi, u8 port, u32 *retValue, time_t timeout)
 }
 
 
-int nor_readStatus(flexspi_t *fspi, u8 port, u8 *statusByte, time_t timeout)
+__attribute__((section(".noxip"))) int nor_readStatus(flexspi_t *fspi, u8 port, u8 *statusByte, time_t timeout)
 {
 	struct xferOp xfer;
 
@@ -98,7 +98,7 @@ int nor_readStatus(flexspi_t *fspi, u8 port, u8 *statusByte, time_t timeout)
 }
 
 
-int nor_waitBusy(flexspi_t *fspi, u8 port, time_t timeout)
+__attribute__((section(".noxip"))) int nor_waitBusy(flexspi_t *fspi, u8 port, time_t timeout)
 {
 	int res;
 	u8 status = 0;
@@ -114,7 +114,7 @@ int nor_waitBusy(flexspi_t *fspi, u8 port, time_t timeout)
 }
 
 
-int nor_writeEnable(flexspi_t *fspi, u8 port, int enable, time_t timeout)
+__attribute__((section(".noxip"))) int nor_writeEnable(flexspi_t *fspi, u8 port, int enable, time_t timeout)
 {
 	struct xferOp xfer;
 	int res, seqCode;
@@ -152,7 +152,7 @@ int nor_writeEnable(flexspi_t *fspi, u8 port, int enable, time_t timeout)
 }
 
 
-int nor_eraseSector(flexspi_t *fspi, u8 port, addr_t addr, time_t timeout)
+__attribute__((section(".noxip"))) int nor_eraseSector(flexspi_t *fspi, u8 port, addr_t addr, time_t timeout)
 {
 	struct xferOp xfer;
 
@@ -177,7 +177,7 @@ int nor_eraseSector(flexspi_t *fspi, u8 port, addr_t addr, time_t timeout)
 }
 
 
-int nor_eraseChip(flexspi_t *fspi, u8 port, time_t timeout)
+__attribute__((section(".noxip"))) int nor_eraseChip(flexspi_t *fspi, u8 port, time_t timeout)
 {
 	struct xferOp xfer;
 
@@ -202,7 +202,7 @@ int nor_eraseChip(flexspi_t *fspi, u8 port, time_t timeout)
 }
 
 
-int nor_pageProgram(flexspi_t *fspi, u8 port, addr_t dstAddr, const void *src, size_t pageSz, time_t timeout)
+__attribute__((section(".noxip"))) int nor_pageProgram(flexspi_t *fspi, u8 port, addr_t dstAddr, const void *src, size_t pageSz, time_t timeout)
 {
 	struct xferOp xfer;
 
