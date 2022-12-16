@@ -20,6 +20,7 @@
 #include "console.h"
 #include "ctype.h"
 #include "errno.h"
+#include "getopt.h"
 #include "list.h"
 #include "log.h"
 #include "stdarg.h"
