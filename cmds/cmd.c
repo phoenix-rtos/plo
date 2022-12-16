@@ -137,6 +137,8 @@ int cmd_parse(const char *script)
 			if (hal_strcmp(argv[0], cmd_common.cmds[i]->name) != 0)
 				continue;
 
+			lib_getoptReset();
+
 			if ((ret = cmd_common.cmds[i]->run(argc, argv)) < 0)
 				return ret;
 

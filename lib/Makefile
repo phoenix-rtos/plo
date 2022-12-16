@@ -6,4 +6,4 @@
 # %LICENSE%
 #
 
-OBJS += $(addprefix $(PREFIX_O)lib/, console.o ctype.o cbuffer.o format.o list.o log.o printf.o prompt.o sprintf.o strtoul.o)
+OBJS += $(addprefix $(PREFIX_O)lib/, console.o ctype.o cbuffer.o format.o getopt.o list.o log.o printf.o prompt.o sprintf.o strtoul.o)
