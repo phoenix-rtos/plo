@@ -14,6 +14,7 @@
  */
 
 #include <hal/hal.h>
+#include "otp.h"
 
 
 struct {
@@ -48,6 +49,7 @@ void hal_init(void)
 
 	mpu_init();
 	timer_init();
+	otp_init();
 	console_init();
 
 	hal_common.entry = (addr_t)-1;
