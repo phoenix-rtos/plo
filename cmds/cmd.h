@@ -27,6 +27,11 @@
 /* Reserve +1 for terminating NULL pointer in conformance to C standard */
 #define SIZE_CMD_ARGV (10 + 1)
 
+/* Command exit statuses */
+#define CMD_EXIT_FAILURE 1
+#define CMD_EXIT_SUCCESS 0
+
+
 typedef struct {
 	const char name[12];
 	int (*const run)(int, char *[]);
