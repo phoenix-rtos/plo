@@ -229,6 +229,18 @@ char *hal_strncpy(char *dest, const char *src, size_t n)
 /* clang-format on */
 
 
+char *hal_strchr(const char *s, int c)
+{
+	do {
+		if (*s == c) {
+			return (char *)s;
+		}
+	} while (*(s++));
+
+	return NULL;
+}
+
+
 int hal_i2s(char *prefix, char *s, unsigned int i, unsigned char b, char zero)
 {
 	static const char digits[] = "0123456789abcdef";
