@@ -116,7 +116,7 @@ int cmd_parse(const char *script)
 {
 	char *argv[SIZE_CMD_ARGV];
 	char argline[SIZE_CMD_ARG_LINE];
-	int ret, argc;
+	int ret = -1, argc;
 	unsigned int i;
 
 	for (;;) {
@@ -133,19 +133,22 @@ int cmd_parse(const char *script)
 			return argc;
 
 		/* Find command and launch associated function */
-		for (i = 0; i < SIZE_CMDS; i++) {
+		for (i = 0; cmd_common.cmds[i] != NULL && i < SIZE_CMDS; i++) {
 			if (hal_strcmp(argv[0], cmd_common.cmds[i]->name) != 0)
 				continue;
 
 			lib_getoptReset();
 
-			if ((ret = cmd_common.cmds[i]->run(argc, argv)) < 0)
+			ret = cmd_common.cmds[i]->run(argc, argv);
+			if (ret < 0) {
 				return ret;
+			}
 
 			break;
 		}
 
-		if (i >= SIZE_CMDS) {
+		/* If previous loop exits with ret < 0, invalid cmd is provided */
+		if (ret < 0) {
 			log_error("\n'%s' - unknown command!", argv[0]);
 			return -EINVAL;
 		}
