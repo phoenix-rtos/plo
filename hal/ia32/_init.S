@@ -23,13 +23,12 @@
 .section .init
 
 
-/* Loader high level part entry point */
+/* External variables */
+.extern _plo_size
+.extern _stack
+.extern _stacksz
 .extern _startc
 .type _startc, @function
-
-
-/* Loader size */
-.extern _plo_size
 
 
 /* Loader entry point */
@@ -41,115 +40,86 @@ _start:
 _plo_start:
 	cli
 
-	/* Setup real mode data segments and stack */
+	/* Set real mode data segments and stack */
 	xorw %ax, %ax
 	movw %ax, %ds
 	movw %ax, %es
 	movw %ax, %ss
 	movw $_stack, %sp
 
+	sti
+
 	/* Store boot disk number */
 	movb %dl, _plo_bdn
 
-	sti
-
-	/* Extended read disk parameters */
-	movw $_plo_geo, %si
-	movb $0x48, %ah
+_plo_lba:
+	/* Check disk LBA support */
+	movw $0x55aa, %bx
+	movb $0x41, %ah
 	int $0x13
-	jnc _plo_load
+	jc _plo_chs
+	cmpw $0xaa55, %bx
+	jne _plo_chs
+	testb $0x1, %cl
+	jz _plo_chs
 
-	/* Fallback to CHS read disk parameters */
+	/* Set start LBA address */
+	xorl %eax, %eax
+
+	/* Set read disk vector */
+	movw $_plo_load_lba, _plo_load_sec
+	jmp _plo_load
+
+_plo_chs:
+	/* Read disk parameters */
 	xorw %di, %di
+	movb _plo_bdn, %dl
 	movb $0x8, %ah
 	int $0x13
 	jc _plo_end
 
-	/* Store cylinders */
-	xorl %eax, %eax
-	movb %ch, %al
-	movb %cl, %ah
-	andb $0xc0, %ah
-	rolb $0x2, %ah
-	incl %eax
-	movl %eax, _plo_geo_cyls
+	/* Store heads and sectors */
+	movw %dx, %si
+	shrw $0x8, %si
+	movw %cx, %di
+	andw $0x3f, %di
 
-	/* Store heads */
-	xorl %eax, %eax
-	movb %dh, %al
-	incl %eax
-	movl %eax, _plo_geo_heads
-
-	/* Store sectors */
-	xorl %eax, %eax
-	movb %cl, %al
-	andb $0x3f, %al
-	movl %eax, _plo_geo_secs
+	/* Set start CHS address */
+	xorw %bp, %bp
+	xorb %dh, %dh
+	movw $0x1, %ax
 
 _plo_load:
 	/* Load high level part into memory */
-	movl $_plo_size-1, %ecx
+	movw $((ADDR_PLO + 0x200) >> 4), %bx
+	movw %bx, %es
+	xorw %bx, %bx
+	movb _plo_bdn, %dl
+	movl $_plo_size - 1, %ecx
 	shrl $0x9, %ecx
 
 _plo_load1:
-	/* Extended read sectors from disk */
-	movw $_plo_dap, %si
-	movb $0x42, %ah
-	int $0x13
-	jnc _plo_load2
+	/* Increment sector */
+	incl %eax
 
-	/* Fallback to CHS read sectors from disk */
-	pushw %cx
-	movb _plo_chs_head, %dh
-	movw _plo_chs_cyl, %cx
-	xchgb %cl, %ch
-	rorb $0x2, %cl
-	movb _plo_chs_sec, %al
-	orb %al, %cl
-	movw _plo_dap_seg, %es
-	movw _plo_dap_offs, %bx
-	movw $0x201, %ax
-	int $0x13
-	popw %cx
+	/* Read sector from disk */
+	call *_plo_load_sec
 	jc _plo_end
 
-_plo_load2:
-	/* Increment sector */
-	incl _plo_dap_sec
-	incb _plo_chs_sec
-
-	/* Check track limit */
-	movb _plo_geo_secs, %al
-	cmp %al, _plo_chs_sec
-	jna _plo_load3
-
-	/* Sector exceeded */
-	movb $0x1, _plo_chs_sec
-	incb _plo_chs_head
-	movl _plo_geo_heads, %eax
-	decl %eax
-	cmpb %al, _plo_chs_head
-	jna _plo_load3
-
-	/* Head exceeded */
-	movb $0x0, _plo_chs_head
-	incw _plo_chs_cyl
-
-_plo_load3:
 	/* Move offset */
-	addw $0x200, _plo_dap_offs
-	jnc _plo_load4
+	addw $0x200, %bx
+	jnc _plo_load2
 
-	/* Increment segment */
-	addw $0x1000, _plo_dap_seg
-	movw $0x0, _plo_dap_offs
+	/* Move segment */
+	movw %es, %bx
+	addw $0x1000, %bx
+	movw %bx, %es
+	xorw %bx, %bx
 
-_plo_load4:
+_plo_load2:
 	loop _plo_load1
 
 	/* Setup GDT */
-	cli
-
 	/* 32-bit code segment descriptor (selector 0x8) */
 	movw $0xffff, (ADDR_GDT + 0x8)
 	movw $0x0000, (ADDR_GDT + 0xa)
@@ -167,6 +137,8 @@ _plo_load4:
 	movw $0x0000, (ADDR_GDT + 0x1a)
 	movw $0x9a00, (ADDR_GDT + 0x1c)
 	movw $0x0000, (ADDR_GDT + 0x1e)
+
+	cli
 
 	/* Load IDTR and GDTR */
 	lidt _plo_syspage_idtr
@@ -202,6 +174,58 @@ _plo_end:
 	ljmp $0xffff, $0x0
 
 
+/* CHS read disk sector */
+_plo_load_chs:
+	/* Check track limit */
+	cmpw %di, %ax
+	jna _plo_load_chs1
+
+	/* Sector exceeded */
+	incb %dh
+	movw %si, %ax
+	cmpb %al, %dh
+	movw $0x1, %ax
+	jna _plo_load_chs1
+
+	/* Head exceeded */
+	incw %bp
+	xorb %dh, %dh
+
+_plo_load_chs1:
+	pushw %cx
+	movw %bp, %cx
+	xchgb %cl, %ch
+	rorb $0x2, %cl
+	orb %al, %cl
+	pushw %ax
+	movw $0x201, %ax
+	int $0x13
+	popw %ax
+	popw %cx
+	ret
+
+
+/* LBA read disk sector */
+_plo_load_lba:
+	movw %sp, %bp
+	pushl $0x0
+	pushl %eax
+	pushw %es
+	pushw %bx
+	pushl $0x10010
+	movw %sp, %si
+	movb $0x42, %ah
+	int $0x13
+	movl -8(%bp), %eax
+	movw %bp, %sp
+	ret
+
+
+/* Vector for reading disk sector */
+_plo_load_sec:
+	.word _plo_load_chs
+
+
 /* Boot disk number */
 .globl _plo_bdn
 _plo_bdn:
@@ -234,68 +258,6 @@ _plo_syspage_stack:
 /* Kernel stack size */
 _plo_syspage_stacksz:
 	.long _stacksz
-
-
-/* Disk geometry packet */
-_plo_geo:
-/* Packet length */
-_plo_geo_len:
-	.word 0x1e
-/* Flags */
-_plo_geo_flags:
-	.word 0
-/* Cylinders */
-_plo_geo_cyls:
-	.long 0
-/* Heads */
-_plo_geo_heads:
-	.long 0
-/* Sectors per track */
-_plo_geo_secs:
-	.long 0
-/* Total sectors */
-_plo_geo_size:
-	.quad 0
-/* Sector size */
-_plo_geo_secsz:
-	.word 0x200
-/* EDD pointer */
-_plo_geo_edd:
-	.long 0
-
-
-/* Disk address packet */
-_plo_dap:
-/* Packet length */
-_plo_dap_len:
-	.byte 0x10
-/* Unused byte */
-	.byte 0
-/* Sectors */
-_plo_dap_secs:
-	.word 0x1
-/* Offset */
-_plo_dap_offs:
-	.word 0
-/* Segment */
-_plo_dap_seg:
-	.word (ADDR_PLO + 0x200) >> 4
-/* Sector (LBA) */
-_plo_dap_sec:
-	.quad 0x1
-
-
-/* Disk CHS address */
-_plo_chs:
-/* Cylinder */
-_plo_chs_cyl:
-	.word 0
-/* Head */
-_plo_chs_head:
-	.byte 0
-/* Sector */
-_plo_chs_sec:
-	.byte 0x2
 
 
 /* Empty IDT descriptor */
