@@ -61,4 +61,19 @@ typedef struct _msg_t {
 extern int msg_send(unsigned int major, unsigned int minor, msg_t *smsg, msg_t *rmsg);
 
 
+static inline void msg_serialize32(u8 *to, u32 from)
+{
+	to[0] = from & 0xff;
+	to[1] = (from >> 8) & 0xff;
+	to[2] = (from >> 16) & 0xff;
+	to[3] = (from >> 24) & 0xff;
+}
+
+
+static inline u32 msg_deserialize32(u8 *from)
+{
+	return (from[0] | (from[1] << 8) | (from[2] << 16) | (from[3] << 24));
+}
+
+
 #endif

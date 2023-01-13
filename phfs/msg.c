@@ -23,6 +23,20 @@
 #define MSGREAD_FRAME 1
 
 
+static void msg_serializeHeaders(msg_t *msg, u8 *buff)
+{
+	msg_serialize32(buff, msg->csum);
+	msg_serialize32(buff + sizeof(msg->csum), msg->type);
+}
+
+
+static void msg_deserializeHeaders(msg_t *msg, u8 *buff)
+{
+	msg->csum = msg_deserialize32(buff);
+	msg->type = msg_deserialize32(buff + sizeof(msg->csum));
+}
+
+
 static u32 msg_csum(msg_t *msg)
 {
 	u32 k;
@@ -39,17 +53,20 @@ static u32 msg_csum(msg_t *msg)
 
 static int msg_write(unsigned int major, unsigned int minor, msg_t *msg)
 {
+	u32 len = msg_getlen(msg);
 	u8 *p = (u8 *)msg;
 	u8 cs[2];
 	u16 k;
 	int res;
+
+	msg_serializeHeaders(msg, p);
 
 	/* Frame start */
 	cs[0] = MSG_MARK;
 	if ((res = devs_write(major, minor, 0, cs, 1)) < 0)
 		return res;
 
-	for (k = 0; k < MSG_HDRSZ + msg_getlen(msg); k++) {
+	for (k = 0; k < MSG_HDRSZ + len; k++) {
 		if ((p[k] == MSG_MARK) || (p[k] == MSG_ESC)) {
 			cs[0] = MSG_ESC;
 			cs[1] = p[k] == MSG_MARK ? MSG_ESCMARK : MSG_ESCESC;
@@ -69,9 +86,10 @@ static int msg_write(unsigned int major, unsigned int minor, msg_t *msg)
 static int msg_read(unsigned int major, unsigned int minor, msg_t *msg, time_t timeout, int *state)
 {
 	u8 c;
+	u8 headers[MSG_HDRSZ];
 	u8 buff[MSG_HDRSZ + MSG_MAXLEN];
 	int i, escfl = 0, res = 0;
-	unsigned int l = 0;
+	unsigned int len = 0;
 
 	for (;;) {
 		if ((res = devs_read(major, minor, 0, buff, sizeof(buff), timeout)) < 0)
@@ -82,7 +100,7 @@ static int msg_read(unsigned int major, unsigned int minor, msg_t *msg, time_t t
 
 			if (*state == MSGREAD_FRAME) {
 				/* Return error if frame is to long */
-				if (l == MSG_HDRSZ + MSG_MAXLEN) {
+				if (len == MSG_HDRSZ + MSG_MAXLEN) {
 					*state = MSGREAD_DESYN;
 					return -ENXIO;
 				}
@@ -102,17 +120,29 @@ static int msg_read(unsigned int major, unsigned int minor, msg_t *msg, time_t t
 						c = MSG_ESC;
 					escfl = 0;
 				}
-				*((u8 *)msg + l++) = c;
+
+				if (len < MSG_HDRSZ) {
+					headers[len] = c;
+				}
+				else {
+					msg->data[len - MSG_HDRSZ] = c;
+				}
+
+				len++;
+
+				if (len == MSG_HDRSZ) {
+					msg_deserializeHeaders(msg, headers);
+				}
 
 				/* Frame received */
-				if ((l >= MSG_HDRSZ) && (l == msg_getlen(msg) + MSG_HDRSZ)) {
+				if ((len >= MSG_HDRSZ) && (len == msg_getlen(msg) + MSG_HDRSZ)) {
 					*state = MSGREAD_DESYN;
 
 					/* Verify received message */
 					if (msg_getcsum(msg) != msg_csum(msg))
 						return -ENXIO;
 
-					return l;
+					return len;
 				}
 			}
 			else {
@@ -135,6 +165,7 @@ int msg_send(unsigned int major, unsigned int minor, msg_t *smsg, msg_t *rmsg)
 	int state = MSGREAD_DESYN;
 
 	msg_setcsum(smsg, msg_csum(smsg));
+
 	for (retr = 0; retr < MSGRECV_MAXRETR; retr++) {
 		if (msg_write(major, minor, smsg) < 0)
 			continue;
