@@ -31,7 +31,7 @@
 #define REQUEST_RECIPIENT_ENDPOINT  2
 #define REQUEST_RECIPIENT_OTHER     3
 
-#define EXTRACT_REQ_TYPE(req_type) ((0x3 << 5) & req_type)
+#define EXTRACT_REQ_TYPE(req_type) ((3 << 5) & (req_type))
 
 /* request types */
 #define REQ_GET_STATUS        0

@@ -5,8 +5,8 @@
  *
  * Descriptors handler
  *
- * Copyright 2019-2021 Phoenix Systems
- * Author: Kamil Amanowicz, Hubert Buczynski
+ * Copyright 2019-2023 Phoenix Systems
+ * Author: Kamil Amanowicz, Hubert Buczynski, Gerard Swiderski
  *
  * This file is part of Phoenix-RTOS.
  *
@@ -19,7 +19,7 @@
 #include <lib/errno.h>
 
 
-struct {
+static struct {
 	volatile u32 dev;
 	volatile u32 cfg;
 
@@ -36,7 +36,7 @@ struct {
 
 static void desc_endptInit(usb_endpoint_desc_t *endpt)
 {
-	int endNb = endpt->bEndpointAddress & 0x7;
+	int endNb = endpt->bEndpointAddress & 7;
 	int dir = (endpt->bEndpointAddress & (1 << 7)) ? 1 : 0;
 
 	desc_common.data->endpts[endNb].caps[dir].mult = 0;
@@ -45,7 +45,7 @@ static void desc_endptInit(usb_endpoint_desc_t *endpt)
 	desc_common.data->endpts[endNb].caps[dir].ios = 1;
 	desc_common.data->endpts[endNb].caps[dir].init = 1;
 
-	desc_common.data->endpts[endNb].ctrl[dir].type = endpt->bmAttributes & 0x03;
+	desc_common.data->endpts[endNb].ctrl[dir].type = endpt->bmAttributes & 3;
 	desc_common.data->endpts[endNb].ctrl[dir].data_toggle = 1;
 	desc_common.data->endpts[endNb].ctrl[dir].data_inhibit = 0;
 	desc_common.data->endpts[endNb].ctrl[dir].stall = 0;
@@ -93,8 +93,9 @@ int desc_init(usb_desc_list_t *desList, usb_common_data_t *usb_data_in, usb_dc_t
 	/* Extract mandatory descriptors to mapped memory */
 	for (; desList != NULL; desList = desList->next) {
 
-		if (localOffset > USB_BUFFER_SIZE)
+		if (localOffset > USB_BUFFER_SIZE) {
 			return -1;
+		}
 
 		switch (desList->descriptor->bDescriptorType) {
 			case USB_DESC_DEVICE:
@@ -157,7 +158,7 @@ int desc_init(usb_desc_list_t *desList, usb_common_data_t *usb_data_in, usb_dc_t
 
 static void desc_ReqSetAddress(const usb_setup_packet_t *setup)
 {
-	if (setup->wValue) {
+	if (setup->wValue != 0) {
 		desc_common.dc->status = DC_ADDRESS;
 
 		desc_common.dc->dev_addr = setup->wValue << 25;
@@ -170,6 +171,8 @@ static void desc_ReqSetAddress(const usb_setup_packet_t *setup)
 	}
 	else if (desc_common.dc->status != DC_CONFIGURED) {
 		desc_common.dc->status = DC_DEFAULT;
+	}
+	else {
 	}
 }
 
@@ -185,13 +188,16 @@ static void desc_ReqSetConfig(void)
 
 static int desc_ReqGetConfig(const usb_setup_packet_t *setup)
 {
-	if (setup->wValue != 0 || setup->wIndex != 0 || setup->wLength != 1)
+	if (setup->wValue != 0 || setup->wIndex != 0 || setup->wLength != 1) {
 		return EOK;
+	}
 
-	if (desc_common.dc->status != DC_CONFIGURED)
+	if (desc_common.dc->status != DC_CONFIGURED) {
 		desc_common.data->endpts[0].buf[USB_ENDPT_DIR_OUT].buffer[0] = 0;
-	else
+	}
+	else {
 		desc_common.data->endpts[0].buf[USB_ENDPT_DIR_OUT].buffer[1] = 1;
+	}
 
 	ctrl_execTransfer(0, (u32)desc_common.data->endpts[0].buf[USB_ENDPT_DIR_OUT].buffer, setup->wLength, USB_ENDPT_DIR_OUT);
 
@@ -203,13 +209,13 @@ static void desc_ReqGetDescriptor(const usb_setup_packet_t *setup)
 {
 	usb_string_desc_t *strdesc;
 
-	if (setup->wValue >> 8 == USB_DESC_DEVICE) {
+	if ((setup->wValue >> 8) == USB_DESC_DEVICE) {
 		ctrl_execTransfer(0, desc_common.dev, sizeof(usb_device_desc_t), USB_ENDPT_DIR_IN);
 	}
-	else if (setup->wValue >> 8 == USB_DESC_CONFIG) {
+	else if ((setup->wValue >> 8) == USB_DESC_CONFIG) {
 		ctrl_execTransfer(0, desc_common.cfg, setup->wLength, USB_ENDPT_DIR_IN);
 	}
-	else if (setup->wValue >> 8 == USB_DESC_STRING) {
+	else if ((setup->wValue >> 8) == USB_DESC_STRING) {
 		if ((setup->wValue & 0xff) == 0) {
 			strdesc = (usb_string_desc_t *)desc_common.str_0;
 			ctrl_execTransfer(0, desc_common.str_0, MIN(strdesc->bLength, setup->wLength), USB_ENDPT_DIR_IN);
@@ -227,12 +233,16 @@ static void desc_ReqGetDescriptor(const usb_setup_packet_t *setup)
 			ctrl_execTransfer(0, (u32)desc_common.data->endpts[0].buf[USB_ENDPT_DIR_OUT].buffer, 71, USB_ENDPT_DIR_OUT);
 			return;
 		}
+		else {
+		}
 	}
-	else if (setup->wValue >> 8 == USB_DESC_TYPE_HID_REPORT) {
+	else if ((setup->wValue >> 8) == USB_DESC_TYPE_HID_REPORT) {
 		ctrl_execTransfer(0, desc_common.hid_reports, 76, USB_ENDPT_DIR_IN);
 	}
+	else {
+	}
 
-	ctrl_execTransfer(0, (u32)desc_common.data->endpts[0].buf[USB_ENDPT_DIR_OUT].buffer, 0x40, USB_ENDPT_DIR_OUT);
+	ctrl_execTransfer(0, (u32)desc_common.data->endpts[0].buf[USB_ENDPT_DIR_OUT].buffer, 64, USB_ENDPT_DIR_OUT);
 }
 
 
@@ -246,7 +256,7 @@ static void desc_defaultSetup(const usb_setup_packet_t *setup)
 		ctrl_execTransfer(0, (u32)desc_common.data->endpts[0].buf[USB_ENDPT_DIR_IN].buffer, 0, USB_ENDPT_DIR_IN);
 		desc_common.data->endpts[0].buf[USB_ENDPT_DIR_OUT].buffer[0] = 0;
 
-		ctrl_execTransfer(1, (u32)desc_common.data->endpts[0].buf[USB_ENDPT_DIR_OUT].buffer, 0x80, USB_ENDPT_DIR_OUT);
+		ctrl_execTransfer(1, (u32)desc_common.data->endpts[0].buf[USB_ENDPT_DIR_OUT].buffer, 64 + 64, USB_ENDPT_DIR_OUT);
 		desc_common.dc->op = DC_OP_RCV_ENDP0;
 	}
 }
@@ -256,9 +266,9 @@ int desc_setup(const usb_setup_packet_t *setup)
 {
 	int res = EOK;
 
-
-	if (EXTRACT_REQ_TYPE(setup->bmRequestType) != REQUEST_TYPE_STANDARD)
+	if (EXTRACT_REQ_TYPE(setup->bmRequestType) != REQUEST_TYPE_STANDARD) {
 		return EOK;
+	}
 
 	switch (setup->bRequest) {
 		case REQ_SET_ADDRESS:
@@ -297,14 +307,17 @@ int desc_setup(const usb_setup_packet_t *setup)
 
 static void desc_ClassReqSetReport(const usb_setup_packet_t *setup)
 {
-	dtd_t *dtd = ctrl_execTransfer(0, (u32)desc_common.data->endpts[0].buf[USB_ENDPT_DIR_OUT].buffer, 64 + setup->wLength, USB_ENDPT_DIR_OUT); /* read data to buffer with URB struct*/
+	/* read data to buffer with URB struct*/
+	dtd_t *dtd = ctrl_execTransfer(0, (u32)desc_common.data->endpts[0].buf[USB_ENDPT_DIR_OUT].buffer, 64 + setup->wLength, USB_ENDPT_DIR_OUT);
 
-	if (!DTD_ERROR(dtd)) {
-		desc_common.dc->op = DC_OP_RCV_ENDP0; /* mark that data is ready */
+	if (dtd == NULL || DTD_ERROR(dtd) != 0) {
+		/* mark that data is ready */
+		desc_common.dc->op = DC_OP_RCV_ENDP0;
 		desc_common.data->endpts[0].buf[USB_ENDPT_DIR_OUT].len = 64 + setup->wLength - DTD_SIZE(dtd);
 	}
 	else {
-		desc_common.dc->op = DC_OP_RCV_ERR; /* mark that data is incomplete */
+		/* mark that data is incomplete */
+		desc_common.dc->op = DC_OP_RCV_ERR;
 		desc_common.data->endpts[0].buf[USB_ENDPT_DIR_OUT].len = -1;
 	}
 }
@@ -313,9 +326,11 @@ static void desc_ClassReqSetReport(const usb_setup_packet_t *setup)
 int desc_classSetup(const usb_setup_packet_t *setup)
 {
 	int res = EOK;
+	dtd_t *dtd;
 
-	if (EXTRACT_REQ_TYPE(setup->bmRequestType) != REQUEST_TYPE_CLASS)
+	if (EXTRACT_REQ_TYPE(setup->bmRequestType) != REQUEST_TYPE_CLASS) {
 		return EOK;
+	}
 
 	switch (setup->bRequest) {
 		case CLASS_REQ_SET_IDLE:
@@ -333,12 +348,21 @@ int desc_classSetup(const usb_setup_packet_t *setup)
 			break;
 
 		case CLASS_REQ_SET_LINE_CODING:
-			ctrl_execTransfer(0, (u32)desc_common.data->endpts[0].buf[USB_ENDPT_DIR_OUT].buffer, 64 + setup->wLength, USB_ENDPT_DIR_OUT); /* read data to buffer with URB struct*/
-			ctrl_execTransfer(0, (u32)desc_common.data->endpts[0].buf[USB_ENDPT_DIR_IN].buffer, 0, USB_ENDPT_DIR_IN);                     /* ACK */
+			/* read data to buffer with URB struct */
+			dtd = ctrl_execTransfer(0, (u32)desc_common.data->endpts[0].buf[USB_ENDPT_DIR_OUT].buffer, 64 + setup->wLength, USB_ENDPT_DIR_OUT);
+			if (dtd == NULL || DTD_ERROR(dtd) != 0) {
+				/* mark that data is incomplete */
+				desc_common.dc->op = DC_OP_RCV_ERR;
+				desc_common.data->endpts[0].buf[USB_ENDPT_DIR_OUT].len = -1;
+				return -1;
+			}
+			/* ACK */
+			ctrl_execTransfer(0, (u32)desc_common.data->endpts[0].buf[USB_ENDPT_DIR_IN].buffer, 0, USB_ENDPT_DIR_IN);
 			break;
 
 		case CLASS_REQ_SET_CONTROL_LINE_STATE:
-			ctrl_execTransfer(0, (u32)desc_common.data->endpts[0].buf[USB_ENDPT_DIR_IN].buffer, 0, USB_ENDPT_DIR_IN); /* ACK */
+			/* ACK */
+			ctrl_execTransfer(0, (u32)desc_common.data->endpts[0].buf[USB_ENDPT_DIR_IN].buffer, 0, USB_ENDPT_DIR_IN);
 			break;
 
 		default:

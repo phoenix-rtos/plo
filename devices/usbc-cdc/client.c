@@ -5,8 +5,8 @@
  *
  * USB client
  *
- * Copyright 2019-2021 Phoenix Systems
- * Author: Kamil Amanowicz, Hubert Buczynski
+ * Copyright 2019-2023 Phoenix Systems
+ * Author: Kamil Amanowicz, Hubert Buczynski, Gerard Swiderski
  *
  * This file is part of Phoenix-RTOS.
  *
@@ -20,27 +20,34 @@
 #include <lib/errno.h>
 
 
-struct {
+static struct {
 	usb_dc_t dc;
 	usb_common_data_t data;
-} imx_common;
+} usbclient_common;
 
 
 ssize_t usbclient_send(int endpt, const void *data, size_t len)
 {
 	dtd_t *res;
 
-	if (len > USB_BUFFER_SIZE)
-		return -1;
+	if (len > USB_BUFFER_SIZE) {
+		return -ENOMEM;
+	}
 
-	if (!imx_common.data.endpts[endpt].caps[USB_ENDPT_DIR_IN].init)
-		return -1;
+	if (usbclient_common.data.endpts[endpt].caps[USB_ENDPT_DIR_IN].init == 0) {
+		return -ENXIO;
+	}
 
-	hal_memcpy(imx_common.data.endpts[endpt].buf[USB_ENDPT_DIR_IN].buffer, data, len);
-	res = ctrl_execTransfer(endpt, (u32)imx_common.data.endpts[endpt].buf[USB_ENDPT_DIR_IN].buffer, len, USB_ENDPT_DIR_IN);
+	if (usbclient_common.dc.connected == 0) {
+		return -ECONNREFUSED;
+	}
 
-	if (DTD_ERROR(res))
-		return -1;
+	hal_memcpy(usbclient_common.data.endpts[endpt].buf[USB_ENDPT_DIR_IN].buffer, data, len);
+
+	res = ctrl_execTransfer(endpt, (u32)usbclient_common.data.endpts[endpt].buf[USB_ENDPT_DIR_IN].buffer, len, USB_ENDPT_DIR_IN);
+	if (res == NULL || DTD_ERROR(res) != 0) {
+		return -EIO;
+	}
 
 	return len - DTD_SIZE(res);
 }
@@ -48,16 +55,20 @@ ssize_t usbclient_send(int endpt, const void *data, size_t len)
 
 ssize_t usbclient_rcvEndp0(void *data, size_t len)
 {
-	ssize_t res = -1;
+	ssize_t res = -EIO;
 
-	while (imx_common.dc.op != DC_OP_RCV_ENDP0)
-		;
+	(void)len; /* FIXME: unused */
 
-	res = imx_common.data.endpts[0].buf[USB_ENDPT_DIR_OUT].len;
-	hal_memcpy(data, imx_common.data.endpts[0].buf[USB_ENDPT_DIR_OUT].buffer, res); /* copy data to buffer */
-	imx_common.dc.op = DC_OP_NONE;
+	while ((usbclient_common.dc.op != DC_OP_RCV_ENDP0) && (usbclient_common.dc.op != DC_OP_RCV_ERR)) {
+	}
 
-	ctrl_execTransfer(0, (u32)imx_common.data.endpts[0].buf[USB_ENDPT_DIR_IN].buffer, 0, USB_ENDPT_DIR_IN); /* ACK */
+	if (usbclient_common.dc.op != DC_OP_RCV_ERR) {
+		res = usbclient_common.data.endpts[0].buf[USB_ENDPT_DIR_OUT].len;
+		hal_memcpy(data, usbclient_common.data.endpts[0].buf[USB_ENDPT_DIR_OUT].buffer, res); /* copy data to buffer */
+		usbclient_common.dc.op = DC_OP_NONE;
+
+		ctrl_execTransfer(0, (u32)usbclient_common.data.endpts[0].buf[USB_ENDPT_DIR_IN].buffer, 0, USB_ENDPT_DIR_IN); /* ACK */
+	}
 
 	return res;
 }
@@ -66,97 +77,148 @@ ssize_t usbclient_rcvEndp0(void *data, size_t len)
 ssize_t usbclient_receive(int endpt, void *data, size_t len)
 {
 	dtd_t *dtd;
-	ssize_t res = -1;
+	ssize_t res;
 
-	if (len > USB_BUFFER_SIZE)
-		return -1;
-
-	if (!imx_common.data.endpts[endpt].caps[USB_ENDPT_DIR_OUT].init)
-		return -1;
-
-	if (endpt) {
-		dtd = ctrl_execTransfer(endpt, (u32)imx_common.data.endpts[endpt].buf[USB_ENDPT_DIR_OUT].buffer, USB_BUFFER_SIZE, USB_ENDPT_DIR_OUT);
-
-		if (!DTD_ERROR(dtd)) {
-			res = USB_BUFFER_SIZE - DTD_SIZE(dtd);
-			if (res > len)
-				res = len;
-
-			hal_memcpy(data, imx_common.data.endpts[endpt].buf[USB_ENDPT_DIR_OUT].buffer, res);
-		}
-		else {
-			res = -1;
-		}
+	if (len > USB_BUFFER_SIZE) {
+		return -ENOMEM;
 	}
-	else {
-		res = usbclient_rcvEndp0(data, len);
+
+	if (usbclient_common.data.endpts[endpt].caps[USB_ENDPT_DIR_OUT].init == 0) {
+		return -ENXIO;
 	}
+
+	if (usbclient_common.dc.connected == 0) {
+		return -ECONNREFUSED;
+	}
+
+	if (endpt == 0) {
+		return usbclient_rcvEndp0(data, len);
+	}
+
+	dtd = ctrl_execTransfer(endpt, (u32)usbclient_common.data.endpts[endpt].buf[USB_ENDPT_DIR_OUT].buffer, USB_BUFFER_SIZE, USB_ENDPT_DIR_OUT);
+
+	if (dtd == NULL || DTD_ERROR(dtd) != 0) {
+		return -EIO;
+	}
+
+	res = USB_BUFFER_SIZE - DTD_SIZE(dtd);
+	if (res > len) {
+		res = len;
+	}
+
+	hal_memcpy(data, usbclient_common.data.endpts[endpt].buf[USB_ENDPT_DIR_OUT].buffer, res);
 
 	return res;
 }
 
 
-int usbclient_intr(unsigned int irq, void *buff)
+static int usbclient_intr(unsigned int irq, void *arg)
 {
-	int i;
+	unsigned int i;
+
+	(void)irq;
+	(void)arg;
 
 	ctrl_hfIrq();
 
 	/* Low frequency interrupts, handle for OUT control endpoint */
-	if (imx_common.dc.setupstat & 0x1)
-		desc_classSetup(&imx_common.dc.setup);
+	if ((usbclient_common.dc.setupstat & 1) != 0) {
+		desc_classSetup(&usbclient_common.dc.setup);
+	}
 
 	ctrl_lfIrq();
 
 	/* Initialize endpoints */
-	if (imx_common.dc.op == DC_OP_INIT) {
+	if (usbclient_common.dc.op == DC_OP_INIT) {
+		usbclient_common.dc.endptFailed = 0;
+
+		ctrl_initQtd();
+
 		for (i = 1; i < ENDPOINTS_NUMBER; ++i) {
-			if (ctrl_endptInit(i, &imx_common.data.endpts[i]) < 0)
+			if (ctrl_endptInit(i, &usbclient_common.data.endpts[i]) < 0) {
+				usbclient_common.dc.endptFailed = i;
 				break;
+			}
 		}
-		imx_common.dc.op = DC_OP_NONE;
+
+		usbclient_common.dc.op = DC_OP_NONE;
 	}
 
 	return 0;
 }
 
 
+static void usbclient_cleanData(void)
+{
+	unsigned int i;
+	usbclient_buffReset();
+
+	usbclient_common.data.setupMem = NULL;
+	usbclient_common.dc.dtdMem = NULL;
+	usbclient_common.dc.endptqh = NULL;
+
+	for (i = 0; i < ENDPOINTS_NUMBER; ++i) {
+		if (usbclient_common.data.endpts[i].caps[USB_ENDPT_DIR_IN].init != 0) {
+			usbclient_common.data.endpts[i].buf[USB_ENDPT_DIR_IN].buffer = NULL;
+		}
+
+		if (usbclient_common.data.endpts[i].caps[USB_ENDPT_DIR_OUT].init != 0) {
+			usbclient_common.data.endpts[i].buf[USB_ENDPT_DIR_OUT].buffer = NULL;
+		}
+	}
+}
+
+
 int usbclient_init(usb_desc_list_t *desList)
 {
-	int i;
-	imx_common.dc.dev_addr = 0;
-	imx_common.dc.base = (void *)phy_getBase();
+	int res;
+	unsigned int i;
+
+	usbclient_common.dc.endptFailed = 0;
+
+	usbclient_common.dc.connected = 0;
+	usbclient_common.dc.dev_addr = 0;
+	usbclient_common.dc.base = (void *)phy_getBase();
 
 	phy_init();
 
-	if ((imx_common.data.setupMem = (char *)usbclient_allocBuff(USB_BUFFER_SIZE)) == NULL)
-		return -1;
+	do {
+		usbclient_common.data.setupMem = (char *)usbclient_allocBuff(USB_BUFFER_SIZE);
+		if (usbclient_common.data.setupMem == NULL) {
+			res = -ENOMEM;
+			break;
+		}
 
-	for (i = 1; i < ENDPOINTS_NUMBER; ++i) {
-		imx_common.data.endpts[i].caps[USB_ENDPT_DIR_OUT].init = 0;
-		imx_common.data.endpts[i].caps[USB_ENDPT_DIR_IN].init = 0;
-	}
+		for (i = 1; i < ENDPOINTS_NUMBER; ++i) {
+			usbclient_common.data.endpts[i].caps[USB_ENDPT_DIR_OUT].init = 0;
+			usbclient_common.data.endpts[i].caps[USB_ENDPT_DIR_IN].init = 0;
+		}
 
-	if (desc_init(desList, &imx_common.data, &imx_common.dc) < 0) {
-		usbclient_buffReset();
-		return -1;
-	}
+		res = desc_init(desList, &usbclient_common.data, &usbclient_common.dc);
+		if (res != EOK) {
+			break;
+		}
 
-	if (ctrl_init(&imx_common.data, &imx_common.dc) < 0) {
-		usbclient_buffReset();
-		return -1;
-	}
+		res = ctrl_init(&usbclient_common.data, &usbclient_common.dc);
+		if (res != EOK) {
+			break;
+		}
 
-	hal_interruptsSet(phy_getIrq(), usbclient_intr, (void *)NULL);
-	return EOK;
+		hal_interruptsSet(phy_getIrq(), usbclient_intr, (void *)NULL);
+		return EOK;
+
+	} while (0);
+
+	usbclient_cleanData();
+	return res;
 }
 
 
 int usbclient_destroy(void)
 {
 	ctrl_reset();
-	usbclient_buffReset();
 	hal_interruptsSet(phy_getIrq(), NULL, NULL);
+	usbclient_cleanData();
 
 	phy_reset();
 
