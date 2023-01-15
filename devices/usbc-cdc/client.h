@@ -5,8 +5,8 @@
  *
  * USB client
  *
- * Copyright 2019-2021 Phoenix Systems
- * Author: Kamil Amanowicz, Hubert Buczynski
+ * Copyright 2019-2023 Phoenix Systems
+ * Author: Kamil Amanowicz, Hubert Buczynski, Gerard Swiderski
  *
  * This file is part of Phoenix-RTOS.
  *
@@ -93,10 +93,12 @@ typedef struct _usb_dc_t {
 	volatile dqh_t *endptqh;
 	u32 status;
 	u32 dev_addr;
+	u8 connected;
 
 	volatile u8 op;
 	usb_setup_packet_t setup;
 
+	volatile int endptFailed;
 	volatile u32 setupstat;
 } usb_dc_t;
 
@@ -158,13 +160,16 @@ extern int ctrl_init(usb_common_data_t *usb_data_in, usb_dc_t *dc_in);
 extern void ctrl_setAddress(u32 addr);
 
 
+extern void ctrl_initQtd(void);
+
+
 extern int ctrl_endptInit(int endpt, endpt_data_t *ctrl_endptInit);
 
 
-extern int ctrl_lfIrq(void);
+extern void ctrl_lfIrq(void);
 
 
-extern int ctrl_hfIrq(void);
+extern void ctrl_hfIrq(void);
 
 
 extern dtd_t *ctrl_execTransfer(int endpt, u32 paddr, u32 sz, int dir);
