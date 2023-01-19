@@ -46,7 +46,7 @@ static ssize_t cmd_cpphfs2phfs(handler_t srcHandler, addr_t srcAddr, size_t srcS
 	do {
 		chunk = ((srcSz - rsz) > sizeof(buff)) ? sizeof(buff) : (srcSz - rsz);
 		if ((res = phfs_read(srcHandler, srcAddr + rsz, buff, chunk)) < 0) {
-			log_error("\nCan't read data\n");
+			log_error("\nCan't read data");
 			return res;
 		}
 		rsz += res;
@@ -54,7 +54,7 @@ static ssize_t cmd_cpphfs2phfs(handler_t srcHandler, addr_t srcAddr, size_t srcS
 		chunk = res;
 		while (chunk) {
 			if ((res = phfs_write(dstHandler, dstAddr + wsz, buff, chunk)) < 0) {
-				log_error("\nCan't write data to address: 0x%x\n", dstAddr + wsz);
+				log_error("\nCan't write data to address: 0x%x", dstAddr + wsz);
 				return res;
 			}
 			chunk -= res;
