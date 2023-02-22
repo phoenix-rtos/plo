@@ -93,7 +93,6 @@ static int cmd_devParse(handler_t *h, addr_t *offs, size_t *sz, unsigned int arg
 			log_error("\nCan't open file '%s' on %s", argv[*argvID], alias);
 			return res;
 		}
-		(*argvID)++;
 	}
 	/* Open device using direct access to memory */
 	else {
@@ -109,6 +108,7 @@ static int cmd_devParse(handler_t *h, addr_t *offs, size_t *sz, unsigned int arg
 			return res;
 		}
 	}
+	(*argvID)++;
 
 	return EOK;
 }
