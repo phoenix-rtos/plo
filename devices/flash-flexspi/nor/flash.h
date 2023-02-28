@@ -5,7 +5,7 @@
  *
  * i.MX RT NOR flash device driver
  *
- * Copyright 2021-2022 Phoenix Systems
+ * Copyright 2021-2023 Phoenix Systems
  * Author: Gerard Swiderski
  *
  * This file is part of Phoenix-RTOS.
@@ -57,12 +57,15 @@
 #define FLASH_CMD_PGSP       0x85 /* Read volatile configuration */
 #define FLASH_CMD_P4E        0x20 /* 4KB sector erase */
 #define FLASH_CMD_4P4E       0x21 /* 4 byte 4 KB sector erase */
+#define FLASH_CMD_DE         0xc4 /* Die erase (requires address of stacked dice) */
 #define FLASH_CMD_BE         0x60 /* Chip erase */
 #define FLASH_CMD_CE         0xc7 /* Chip erase fast */
 #define FLASH_CMD_SE         0xd8 /* 64KB sector erase*/
 #define FLASH_CMD_4SE        0xdc /* 4 byte 64KB sector erase */
 #define FLASH_CMD_ERSP       0x75 /* Program/erase suspend */
 #define FLASH_CMD_ERRS       0x7a /* Program/erase resume */
+#define FLASH_CMD_EN4B       0xb7 /* Enter 4-byte address mode */
+#define FLASH_CMD_EX4B       0xe9 /* Exit 4-byte address mode */
 
 
 #endif /* _FLASH_H_ */

@@ -17,6 +17,7 @@
 #include <lib/lib.h>
 #include <devices/devs.h>
 
+#include "lut.h"
 #include "fspi.h"
 #include "nor/nor.h"
 
@@ -305,7 +306,8 @@ static ssize_t flashdrv_read(unsigned int minor, addr_t addr, void *data, size_t
 
 static ssize_t flashdrv_erase(unsigned int minor, addr_t addr, size_t len, unsigned int flags)
 {
-	int res;
+	int res, dieCount;
+	u32 capFlags;
 	addr_t end, addr_mask;
 
 	struct nor_device *dev = minorToDevice(minor);
@@ -328,11 +330,23 @@ static ssize_t flashdrv_erase(unsigned int minor, addr_t addr, size_t len, unsig
 	dev->sectorPrevAddr = (addr_t)-1;
 	dev->sectorSyncAddr = (addr_t)-1;
 
+	capFlags = dev->nor->capFlags;
+
 	/* Chip Erase */
 	if (len == (size_t)-1) {
 		len = dev->fspi.slFlashSz[dev->port];
+		if ((capFlags & NOR_CAPS_DIE4) != 0) {
+			dieCount = 4;
+		}
+		else if ((capFlags & NOR_CAPS_DIE2) != 0) {
+			dieCount = 2;
+		}
+		else {
+			dieCount = 1;
+		}
 		lib_printf("\nErasing all data from flash device ...");
-		res = nor_eraseChip(&dev->fspi, dev->port, dev->timeout);
+
+		res = nor_eraseChipDie(&dev->fspi, dev->port, capFlags, dieCount, len / dieCount, dev->timeout);
 		if (res < 0) {
 			return res;
 		}
@@ -428,7 +442,7 @@ static int flashdrv_init(unsigned int minor)
 			}
 		}
 
-		flexspi_lutUpdate(&dev->fspi, 0, dev->nor->lut, dev->nor->lutSz);
+		flexspi_lutUpdateEntries(&dev->fspi, 0, dev->nor->lut, LUT_ENTRIES, LUT_SEQSZ);
 
 		hal_memset(flashSz, 0, sizeof(flashSz));
 		flashSz[port] = dev->nor->totalSz;

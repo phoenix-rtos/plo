@@ -73,9 +73,7 @@ struct xferOp {
 			const void *ptr;
 			size_t sz;
 		} write;
-		struct {
-			/* empty */
-		} command;
+		u8 command;
 	} data;
 };
 
@@ -92,8 +90,12 @@ extern int flexspi_deinit(flexspi_t *fspi);
 extern void flexspi_setFlashSize(flexspi_t *fspi, const size_t *flashSizes, size_t count);
 
 
-/* Update FlexSPI sequence lookup table */
+/* Update FlexSPI sequence lookup table (raw table) */
 extern void flexspi_lutUpdate(flexspi_t *fspi, u32 index, const u32 *lutTable, size_t count);
+
+
+/* Update FlexSPI sequence lookup table (table of pointers) */
+extern void flexspi_lutUpdateEntries(flexspi_t *fspi, u32 index, const u32 *lutTable[], size_t elems, size_t count);
 
 
 /* Execute a transfer using lookup table of FlexSPI sequences */
