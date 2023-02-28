@@ -5,7 +5,7 @@
  *
  * i.MX RT NOR flash device driver
  *
- * Copyright 2021-2022 Phoenix Systems
+ * Copyright 2021-2023 Phoenix Systems
  * Author: Gerard Swiderski
  *
  * This file is part of Phoenix-RTOS.
@@ -17,132 +17,183 @@
 #ifndef _LUTTABLES_H_
 #define _LUTTABLES_H_
 
-#define LUTSZ_GENERIC (4 * 10)
+#define NOR_LUTSEQSZ 4
 
-static const u32 lutGeneric[LUTSZ_GENERIC] = {
-	/* Read Fast Quad (3-byte address) */
-	[4 * fspi_readData + 0] = LUT_SEQ(lutCmd_SDR, lutPad1, FLASH_CMD_QIOR, lutCmdRADDR_SDR, lutPad4, 0x18),
-	[4 * fspi_readData + 1] = LUT_SEQ(lutCmdMODE8_SDR, lutPad4, 0x00, lutCmdDUMMY_SDR, lutPad4, 0x04),
-	[4 * fspi_readData + 2] = LUT_SEQ(lutCmdREAD_SDR, lutPad4, 0x04, lutCmdSTOP, lutPad1, 0),
-	[4 * fspi_readData + 3] = 0,
+/*
+ * Generic NOR Command Sequences
+ */
 
-	/* Read Status Register */
-	[4 * fspi_readStatus + 0] = LUT_SEQ(lutCmd_SDR, lutPad1, FLASH_CMD_RDSR1, lutCmdREAD_SDR, lutPad1, 0x04),
-	[4 * fspi_readStatus + 1] = LUT_SEQ(lutCmdSTOP, lutPad1, 0, 0, 0, 0),
-	[4 * fspi_readStatus + 2] = 0,
-	[4 * fspi_readStatus + 3] = 0,
+/* Read Jedec ID */
+static const u32 seq_genericReadID[NOR_LUTSEQSZ] = {
+	LUT_SEQ(lutCmd_SDR, lutPad1, FLASH_CMD_RDID, lutCmdREAD_SDR, lutPad1, 0x04),
+	0, 0, 0
+};
 
-	/* Write Status Register */
-	[4 * fspi_writeStatus + 0] = LUT_SEQ(lutCmd_SDR, lutPad1, FLASH_CMD_WRR1, lutCmdWRITE_SDR, lutPad1, 0x04),
-	[4 * fspi_writeStatus + 1] = LUT_SEQ(lutCmdSTOP, lutPad1, 0, 0, 0, 0),
-	[4 * fspi_writeStatus + 2] = 0,
-	[4 * fspi_writeStatus + 3] = 0,
+/* Read Fast Quad (3-byte address) */
+static const u32 seq_genericReadData[NOR_LUTSEQSZ] = {
+	LUT_SEQ(lutCmd_SDR, lutPad1, FLASH_CMD_QIOR, lutCmdRADDR_SDR, lutPad4, 0x18),
+	LUT_SEQ(lutCmdMODE8_SDR, lutPad4, 0x00, lutCmdDUMMY_SDR, lutPad4, 0x04),
+	LUT_SEQ(lutCmdREAD_SDR, lutPad4, 0x04, lutCmdSTOP, lutPad1, 0),
+	0
+};
 
-	/* Write Enable */
-	[4 * fspi_writeEnable + 0] = LUT_SEQ(lutCmd_SDR, lutPad1, FLASH_CMD_WREN, lutCmdSTOP, lutPad1, 0),
-	[4 * fspi_writeEnable + 1] = 0,
-	[4 * fspi_writeEnable + 2] = 0,
-	[4 * fspi_writeEnable + 3] = 0,
+/* Read Status Register */
+static const u32 seq_genericReadStatus[NOR_LUTSEQSZ] = {
+	LUT_SEQ(lutCmd_SDR, lutPad1, FLASH_CMD_RDSR1, lutCmdREAD_SDR, lutPad1, 0x04),
+	LUT_SEQ(lutCmdSTOP, lutPad1, 0, 0, 0, 0),
+	0, 0
+};
 
-	/* Write Disable */
-	[4 * fspi_writeDisable + 0] = LUT_SEQ(lutCmd_SDR, lutPad1, FLASH_CMD_WRDI, lutCmdSTOP, lutPad1, 0),
-	[4 * fspi_writeDisable + 1] = 0,
-	[4 * fspi_writeDisable + 2] = 0,
-	[4 * fspi_writeDisable + 3] = 0,
+/* Write Status Register */
+static const u32 seq_genericWriteStatus[NOR_LUTSEQSZ] = {
+	LUT_SEQ(lutCmd_SDR, lutPad1, FLASH_CMD_WRR1, lutCmdWRITE_SDR, lutPad1, 0x04),
+	LUT_SEQ(lutCmdSTOP, lutPad1, 0, 0, 0, 0),
+	0, 0
+};
 
-	/* Sector Erase (3-byte address) */
-	[4 * fspi_eraseSector + 0] = LUT_SEQ(lutCmd_SDR, lutPad1, FLASH_CMD_P4E, lutCmdRADDR_SDR, lutPad1, 0x18),
-	[4 * fspi_eraseSector + 1] = LUT_SEQ(lutCmdSTOP, lutPad1, 0, 0, 0, 0),
-	[4 * fspi_eraseSector + 2] = 0,
-	[4 * fspi_eraseSector + 3] = 0,
+/* Write Enable */
+static const u32 seq_genericWriteEnable[NOR_LUTSEQSZ] = {
+	LUT_SEQ(lutCmd_SDR, lutPad1, FLASH_CMD_WREN, lutCmdSTOP, lutPad1, 0),
+	0, 0, 0
+};
 
-	/* Block Erase (3-byte address) */
-	[4 * fspi_eraseBlock + 0] = LUT_SEQ(lutCmd_SDR, lutPad1, FLASH_CMD_SE, lutCmdRADDR_SDR, lutPad1, 0x18),
-	[4 * fspi_eraseBlock + 1] = LUT_SEQ(lutCmdSTOP, lutPad1, 0, 0, 0, 0),
-	[4 * fspi_eraseBlock + 2] = 0,
-	[4 * fspi_eraseBlock + 3] = 0,
+/* Write Disable */
+static const u32 seq_genericWriteDisable[NOR_LUTSEQSZ] = {
+	LUT_SEQ(lutCmd_SDR, lutPad1, FLASH_CMD_WRDI, lutCmdSTOP, lutPad1, 0),
+	0, 0, 0
+};
 
-	/* Chip Erase */
-	[4 * fspi_eraseChip + 0] = LUT_SEQ(lutCmd_SDR, lutPad1, FLASH_CMD_CE, lutCmdSTOP, lutPad1, 0),
-	[4 * fspi_eraseChip + 1] = 0,
-	[4 * fspi_eraseChip + 2] = 0,
-	[4 * fspi_eraseChip + 3] = 0,
+/* Sector Erase (3-byte address) */
+static const u32 seq_genericEraseSector[NOR_LUTSEQSZ] = {
+	LUT_SEQ(lutCmd_SDR, lutPad1, FLASH_CMD_P4E, lutCmdRADDR_SDR, lutPad1, 0x18),
+	LUT_SEQ(lutCmdSTOP, lutPad1, 0, 0, 0, 0),
+	0, 0
+};
 
-	/* Quad Input Page Program (3-byte address) */
-	[4 * fspi_programQPP + 0] = LUT_SEQ(lutCmd_SDR, lutPad1, FLASH_CMD_QPP, lutCmdRADDR_SDR, lutPad1, 0x18),
-	[4 * fspi_programQPP + 1] = LUT_SEQ(lutCmdWRITE_SDR, lutPad4, 0x04, lutCmdSTOP, lutPad1, 0),
-	[4 * fspi_programQPP + 2] = 0,
-	[4 * fspi_programQPP + 3] = 0,
+/* Block Erase (3-byte address) */
+static const u32 seq_genericEraseBlock[NOR_LUTSEQSZ] = {
+	LUT_SEQ(lutCmd_SDR, lutPad1, FLASH_CMD_SE, lutCmdRADDR_SDR, lutPad1, 0x18),
+	LUT_SEQ(lutCmdSTOP, lutPad1, 0, 0, 0, 0),
+	0, 0
+};
 
-	[4 * fspi_readID + 0] = LUT_SEQ(lutCmd_SDR, lutPad1, FLASH_CMD_RDID, lutCmdREAD_SDR, lutPad1, 0x04),
-	[4 * fspi_readID + 1] = 0,
-	[4 * fspi_readID + 2] = 0,
-	[4 * fspi_readID + 3] = 0,
+/* Chip Erase */
+static const u32 seq_genericEraseChip[NOR_LUTSEQSZ] = {
+	LUT_SEQ(lutCmd_SDR, lutPad1, FLASH_CMD_CE, lutCmdSTOP, lutPad1, 0),
+	0, 0, 0
+};
+
+/* Quad Input Page Program (3-byte address) */
+static const u32 seq_genericProgramQPP[NOR_LUTSEQSZ] = {
+	LUT_SEQ(lutCmd_SDR, lutPad1, FLASH_CMD_QPP, lutCmdRADDR_SDR, lutPad1, 0x18),
+	LUT_SEQ(lutCmdWRITE_SDR, lutPad4, 0x04, lutCmdSTOP, lutPad1, 0),
+	0, 0
 };
 
 
-#define LUTSZ_MICRON (4 * 10)
+/*
+ * Micron NOR dedicated Command Sequences
+ */
 
-static const u32 lutMicron[LUTSZ_MICRON] = {
-	/* Read Fast Quad (4-byte address) */
-	[4 * fspi_readData + 0] = LUT_SEQ(lutCmd_SDR, lutPad1, FLASH_CMD_4QIOR, lutCmdRADDR_SDR, lutPad4, 0x20),
-	[4 * fspi_readData + 1] = LUT_SEQ(lutCmdDUMMY_SDR, lutPad4, 0x0a, lutCmdREAD_SDR, lutPad4, 0x04),
-	[4 * fspi_readData + 2] = LUT_SEQ(lutCmdSTOP, lutPad1, 0, 0, 0, 0),
-	[4 * fspi_readData + 3] = 0,
-
-	/* Read Status Register */
-	[4 * fspi_readStatus + 0] = LUT_SEQ(lutCmd_SDR, lutPad1, FLASH_CMD_RDSR1, lutCmdREAD_SDR, lutPad1, 0x04),
-	[4 * fspi_readStatus + 1] = LUT_SEQ(lutCmdSTOP, lutPad1, 0, 0, 0, 0),
-	[4 * fspi_readStatus + 1] = 0,
-	[4 * fspi_readStatus + 1] = 0,
-
-	/* Write Status Register */
-	[4 * fspi_writeStatus + 0] = LUT_SEQ(lutCmd_SDR, lutPad1, FLASH_CMD_WRR1, lutCmdWRITE_SDR, lutPad1, 0x04),
-	[4 * fspi_writeStatus + 1] = LUT_SEQ(lutCmdSTOP, lutPad1, 0, 0, 0, 0),
-	[4 * fspi_writeStatus + 2] = 0,
-	[4 * fspi_writeStatus + 3] = 0,
-
-	/* Write Enable */
-	[4 * fspi_writeEnable + 0] = LUT_SEQ(lutCmd_SDR, lutPad1, FLASH_CMD_WREN, lutCmdSTOP, lutPad1, 0),
-	[4 * fspi_writeEnable + 1] = 0,
-	[4 * fspi_writeEnable + 2] = 0,
-	[4 * fspi_writeEnable + 3] = 0,
-
-	/* Write Disable */
-	[4 * fspi_writeDisable + 0] = LUT_SEQ(lutCmd_SDR, lutPad1, FLASH_CMD_WRDI, lutCmdSTOP, lutPad1, 0),
-	[4 * fspi_writeDisable + 1] = 0,
-	[4 * fspi_writeDisable + 2] = 0,
-	[4 * fspi_writeDisable + 3] = 0,
-
-	/* Sector Erase (4-byte address) */
-	[4 * fspi_eraseSector + 0] = LUT_SEQ(lutCmd_SDR, lutPad1, FLASH_CMD_4P4E, lutCmdRADDR_SDR, lutPad1, 0x20),
-	[4 * fspi_eraseSector + 1] = LUT_SEQ(lutCmdSTOP, lutPad1, 0, 0, 0, 0),
-	[4 * fspi_eraseSector + 2] = 0,
-	[4 * fspi_eraseSector + 3] = 0,
-
-	/* Block Erase (4-byte address) */
-	[4 * fspi_eraseBlock + 0] = LUT_SEQ(lutCmd_SDR, lutPad1, FLASH_CMD_4SE, lutCmdRADDR_SDR, lutPad1, 0x20),
-	[4 * fspi_eraseBlock + 1] = LUT_SEQ(lutCmdSTOP, lutPad1, 0, 0, 0, 0),
-	[4 * fspi_eraseBlock + 3] = 0,
-	[4 * fspi_eraseBlock + 4] = 0,
-
-	/* Chip Erase */
-	[4 * fspi_eraseChip + 0] = LUT_SEQ(lutCmd_SDR, lutPad1, FLASH_CMD_BE, lutCmdSTOP, lutPad1, 0),
-	[4 * fspi_eraseChip + 1] = 0,
-	[4 * fspi_eraseChip + 2] = 0,
-	[4 * fspi_eraseChip + 3] = 0,
-
-	/* Quad Input Page Program (4-byte address) */
-	[4 * fspi_programQPP + 0] = LUT_SEQ(lutCmd_SDR, lutPad1, FLASH_CMD_4QEPP, lutCmdRADDR_SDR, lutPad4, 0x20),
-	[4 * fspi_programQPP + 1] = LUT_SEQ(lutCmdWRITE_SDR, lutPad4, 0x04, lutCmdSTOP, lutPad1, 0),
-	[4 * fspi_programQPP + 2] = 0,
-	[4 * fspi_programQPP + 3] = 0,
-
-	[4 * fspi_readID + 0] = LUT_SEQ(lutCmd_SDR, lutPad1, FLASH_CMD_RDID, lutCmdREAD_SDR, lutPad1, 0x04),
-	[4 * fspi_readID + 1] = 0,
-	[4 * fspi_readID + 2] = 0,
-	[4 * fspi_readID + 3] = 0,
+/* Read Fast Quad (4-byte address) */
+static const u32 seq_micronReadData[NOR_LUTSEQSZ] = {
+	LUT_SEQ(lutCmd_SDR, lutPad1, FLASH_CMD_4QIOR, lutCmdRADDR_SDR, lutPad4, 0x20),
+	LUT_SEQ(lutCmdDUMMY_SDR, lutPad4, 0x0a, lutCmdREAD_SDR, lutPad4, 0x04),
+	LUT_SEQ(lutCmdSTOP, lutPad1, 0, 0, 0, 0),
+	0
 };
 
+
+/* Sector Erase (4-byte address) */
+static const u32 seq_micronEraseSector[NOR_LUTSEQSZ] = {
+	LUT_SEQ(lutCmd_SDR, lutPad1, FLASH_CMD_4P4E, lutCmdRADDR_SDR, lutPad1, 0x20),
+	LUT_SEQ(lutCmdSTOP, lutPad1, 0, 0, 0, 0),
+	0, 0
+};
+
+/* Block Erase (4-byte address) */
+static const u32 seq_micronEraseBlock[NOR_LUTSEQSZ] = {
+	LUT_SEQ(lutCmd_SDR, lutPad1, FLASH_CMD_4SE, lutCmdRADDR_SDR, lutPad1, 0x20),
+	LUT_SEQ(lutCmdSTOP, lutPad1, 0, 0, 0, 0),
+	0, 0
+};
+
+/* Chip Erase (Erase Bulk) Micron up to 512Mb */
+static const u32 seq_micronEraseBulk[NOR_LUTSEQSZ] = {
+	LUT_SEQ(lutCmd_SDR, lutPad1, FLASH_CMD_BE, lutCmdSTOP, lutPad1, 0),
+	0, 0, 0
+};
+
+/* Die Erase (with address of stacked die) */
+static const u32 seq_micronEraseDie[NOR_LUTSEQSZ] = {
+	LUT_SEQ(lutCmd_SDR, lutPad1, FLASH_CMD_DE, lutCmdRADDR_SDR, lutPad1, 0x20),
+	LUT_SEQ(lutCmdSTOP, lutPad1, 0, 0, 0, 0),
+	0,
+	0,
+};
+
+/* Quad Input Page Program (4-byte address) */
+static const u32 seq_micronProgramQPP[NOR_LUTSEQSZ] = {
+	LUT_SEQ(lutCmd_SDR, lutPad1, FLASH_CMD_4QEPP, lutCmdRADDR_SDR, lutPad4, 0x20),
+	LUT_SEQ(lutCmdWRITE_SDR, lutPad4, 0x04, lutCmdSTOP, lutPad1, 0),
+	0, 0
+};
+
+/* Enter 4-byte address mode */
+static const u32 seq_micronEnter4Byte[NOR_LUTSEQSZ] = {
+	LUT_SEQ(lutCmd_SDR, lutPad1, FLASH_CMD_EN4B, lutCmdSTOP, lutPad1, 0),
+	0, 0, 0
+};
+
+/* Exit 4-byte address mode */
+static const u32 seq_micronExit4Byte[NOR_LUTSEQSZ] = {
+	LUT_SEQ(lutCmd_SDR, lutPad1, FLASH_CMD_EX4B, lutCmdSTOP, lutPad1, 0),
+	0, 0, 0
+};
+
+
+/* Generic chips: ISSI, Winbond, Macronix */
+static const u32 *lutGeneric[LUT_ENTRIES] = {
+	[fspi_readData] = seq_genericReadData,
+	[fspi_readStatus] = seq_genericReadStatus,
+	[fspi_writeStatus] = seq_genericWriteStatus,
+	[fspi_writeEnable] = seq_genericWriteEnable,
+	[fspi_writeDisable] = seq_genericWriteDisable,
+	[fspi_eraseSector] = seq_genericEraseSector,
+	[fspi_eraseBlock] = seq_genericEraseBlock,
+	[fspi_eraseChip] = seq_genericEraseChip,
+	[fspi_programQPP] = seq_genericProgramQPP,
+	[fspi_readID] = seq_genericReadID,
+};
+
+/* Micron chips with bulk erase <=512Mb */
+static const u32 *lutMicronMono[LUT_ENTRIES] = {
+	[fspi_readData] = seq_micronReadData,
+	[fspi_readStatus] = seq_genericReadStatus,
+	[fspi_writeStatus] = seq_genericWriteStatus,
+	[fspi_writeEnable] = seq_genericWriteEnable,
+	[fspi_writeDisable] = seq_genericWriteDisable,
+	[fspi_eraseSector] = seq_micronEraseSector,
+	[fspi_eraseBlock] = seq_micronEraseBlock,
+	[fspi_eraseChip] = seq_micronEraseBulk,
+	[fspi_programQPP] = seq_micronProgramQPP,
+	[fspi_readID] = seq_genericReadID,
+};
+
+/* Micron chips with stacked dice >=1Gb */
+static const u32 *lutMicronDie[LUT_ENTRIES] = {
+	[fspi_readData] = seq_micronReadData,
+	[fspi_readStatus] = seq_genericReadStatus,
+	[fspi_writeStatus] = seq_genericWriteStatus,
+	[fspi_writeEnable] = seq_genericWriteEnable,
+	[fspi_writeDisable] = seq_genericWriteDisable,
+	[fspi_eraseSector] = seq_micronEraseSector,
+	[fspi_eraseBlock] = seq_micronEraseBlock,
+	[fspi_eraseChip] = seq_micronEraseDie,
+	[fspi_programQPP] = seq_micronProgramQPP,
+	[fspi_readID] = seq_genericReadID,
+	[fspi_enter4byteAddr] = seq_micronEnter4Byte,
+	[fspi_exit4byteAddr] = seq_micronExit4Byte,
+};
 
 #endif /* _LUTTABLES_H_ */

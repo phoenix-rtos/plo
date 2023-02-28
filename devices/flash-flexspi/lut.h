@@ -17,6 +17,8 @@
 #ifndef _FLEXSPI_LUT_H_
 #define _FLEXSPI_LUT_H_
 
+#define LUT_ENTRIES 16
+#define LUT_SEQSZ   4
 
 #define LUT_OPCODE(cmd) ((cmd & 0x3f) << 10)
 #define LUT_PAD(pad)    ((pad & 0x3) << 8)

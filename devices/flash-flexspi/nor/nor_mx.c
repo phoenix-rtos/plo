@@ -6,7 +6,7 @@
  * i.MX RT nor flash device driver
  * Macronix Specific
  *
- * Copyright 2021-2022 Phoenix Systems
+ * Copyright 2021-2023 Phoenix Systems
  * Author: Gerard Swiderski
  *
  * This file is part of Phoenix-RTOS.
@@ -36,13 +36,14 @@ int nor_mxQuadEnable(struct nor_device *dev)
 	}
 
 	/*
-	 * Load only the necessary commands, let assume that the LUT table has only one
-	 * entry for XIP (legacy read in single mode) at `fspi_readData` location, than
-	 * can safely load commands while XIP or AHB any read.
+	 * Load only the necessary commands, assuming the LUT only has one entry for XIP
+	 * (legacy read in single lane mode) in the `fspi_readData` location, so it's
+	 * still safe to load commands while XIP is reading or AHB read, as long as we
+	 * don't touch the command read for XIP.
 	 */
-	flexspi_lutUpdate(&dev->fspi, fspi_writeEnable * 4, dev->nor->lut + fspi_writeEnable * 4, 4);
-	flexspi_lutUpdate(&dev->fspi, fspi_writeStatus * 4, dev->nor->lut + fspi_writeStatus * 4, 4);
-	flexspi_lutUpdate(&dev->fspi, fspi_readStatus * 4, dev->nor->lut + fspi_readStatus * 4, 4);
+	flexspi_lutUpdateEntries(&dev->fspi, fspi_writeEnable * LUT_SEQSZ, dev->nor->lut + fspi_writeEnable, 1, LUT_SEQSZ);
+	flexspi_lutUpdateEntries(&dev->fspi, fspi_writeStatus * LUT_SEQSZ, dev->nor->lut + fspi_writeStatus, 1, LUT_SEQSZ);
+	flexspi_lutUpdateEntries(&dev->fspi, fspi_readStatus * LUT_SEQSZ, dev->nor->lut + fspi_readStatus, 1, LUT_SEQSZ);
 
 	xfer.op = xfer_opRead;
 	xfer.port = dev->port;

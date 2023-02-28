@@ -52,24 +52,19 @@ __attribute__((section(".noxip"))) static void flexspi_disable(flexspi_t *fspi, 
 __attribute__((section(".noxip"))) static inline void flexspi_swreset(flexspi_t *fspi)
 {
 	*(fspi->base + mcr0) |= 1;
-	while ((*(fspi->base + mcr0) & 1) != 0)
-		;
+	while ((*(fspi->base + mcr0) & 1) != 0) {
+	}
 }
 
 
-__attribute__((section(".noxip"))) void flexspi_lutUpdate(flexspi_t *fspi, u32 index, const u32 *lutTable, size_t count)
+__attribute__((section(".noxip"))) static void flexspi_lutSet(flexspi_t *fspi, u32 index, u32 lutCopy[64], size_t count)
 {
-	u32 lutCopy[64];
 	unsigned int i;
 	volatile u32 *lutPtr = fspi->base + lut64 + index;
 
-	for (i = 0; i < count; ++i) {
-		lutCopy[i] = *lutTable++;
-	}
-
 	/* Wait for bus and lut sequencer to be idle */
-	while (((*(fspi->base + sts0) & 2) != 0 && (*(fspi->base + sts0) & 1) != 0) == 0)
-		;
+	while ((((*(fspi->base + sts0) & 2u) != 0u) && (*(fspi->base + sts0) & 1u) == 0u)) {
+	}
 
 	/* Unlock LUT */
 	*(fspi->base + lutkey) = 0x5af05af0;
@@ -77,7 +72,7 @@ __attribute__((section(".noxip"))) void flexspi_lutUpdate(flexspi_t *fspi, u32 i
 
 	/* Update LUT */
 	for (i = 0; i < count; ++i) {
-		*lutPtr++ = lutCopy[i];
+		lutPtr[i] = lutCopy[i];
 	}
 
 	/* Lock LUT */
@@ -86,11 +81,41 @@ __attribute__((section(".noxip"))) void flexspi_lutUpdate(flexspi_t *fspi, u32 i
 }
 
 
+__attribute__((section(".noxip"))) void flexspi_lutUpdateEntries(flexspi_t *fspi, u32 index, const u32 *lutTable[], size_t elems, size_t count)
+{
+	u32 lutCopy[64];
+	const u32 *src;
+	unsigned int i, j;
+
+	for (i = 0; i < elems; ++i) {
+		src = lutTable[i];
+		for (j = 0; j < count; ++j) {
+			lutCopy[i * count + j] = ((src != NULL) ? src[j] : 0);
+		}
+	}
+
+	flexspi_lutSet(fspi, index, lutCopy, elems * count);
+}
+
+
+__attribute__((section(".noxip"))) void flexspi_lutUpdate(flexspi_t *fspi, u32 index, const u32 *lutTable, size_t count)
+{
+	u32 lutCopy[64];
+	unsigned int i;
+
+	for (i = 0; i < count; ++i) {
+		lutCopy[i] = lutTable[i];
+	}
+
+	flexspi_lutSet(fspi, index, lutCopy, count);
+}
+
+
 __attribute__((section(".noxip"))) int flexspi_init(flexspi_t *fspi, int instance, u8 slPortMask)
 {
 	int res;
 	unsigned int i;
-	u32 reg, lut[4], *base = flexspi_getBase(instance);
+	u32 reg, lut[LUT_SEQSZ], *base = flexspi_getBase(instance);
 
 	if (base == NULL || (slPortMask & ~0xf) != 0 || (slPortMask & 0xf) == 0) {
 		return -EINVAL;
@@ -194,7 +219,7 @@ __attribute__((section(".noxip"))) int flexspi_init(flexspi_t *fspi, int instanc
 	lut[3] = 0;
 
 	/* Configure initial LUT sequences as needed (for AHB read and IP) */
-	flexspi_lutUpdate(fspi, 0, lut, sizeof(lut) / sizeof(lut[0]));
+	flexspi_lutUpdate(fspi, 0, lut, LUT_SEQSZ);
 
 	/* Reset all registers except control registers */
 	flexspi_swreset(fspi);

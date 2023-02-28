@@ -5,7 +5,7 @@
  *
  * i.MX RT NOR flash device driver
  *
- * Copyright 2021-2022 Phoenix Systems
+ * Copyright 2021-2023 Phoenix Systems
  * Author: Gerard Swiderski
  *
  * This file is part of Phoenix-RTOS.
@@ -20,6 +20,11 @@
 #define NOR_DEFAULT_TIMEOUT 10000
 #define NOR_SECTORSZ_MAX    0x1000
 #define NOR_PAGESZ_MAX      0x100
+
+#define NOR_CAPS_GENERIC 0
+#define NOR_CAPS_EN4B    0x100
+#define NOR_CAPS_DIE2    0x1000
+#define NOR_CAPS_DIE4    0x2000
 
 
 struct nor_device {
@@ -41,24 +46,20 @@ struct nor_info {
 	size_t totalSz;
 	size_t pageSz;
 	size_t sectorSz;
-	size_t lutSz;
-	const u32 *lut;
+	u32 capFlags;
+	const u32 **lut;
 	int (*init)(struct nor_device *);
 };
 
+/* clang-format off */
 
-enum { fspi_readData,
-	fspi_readStatus,
-	fspi_writeStatus,
-	fspi_writeEnable,
-	fspi_writeDisable,
-	fspi_eraseSector,
-	fspi_eraseBlock,
-	fspi_eraseChip,
-	fspi_programQPP,
-	fspi_readID,
+enum { fspi_readData = 0, fspi_readStatus, fspi_writeStatus, fspi_writeEnable,
+	fspi_writeDisable, fspi_eraseSector, fspi_eraseBlock, fspi_eraseChip,
+	fspi_programQPP, fspi_readID, fspi_enter4byteAddr, fspi_exit4byteAddr,
+	fspi_cmdCustom1, fspi_cmdCustom2, fspi_cmdCustom3, fspi_cmdCustom4
 };
 
+/* clang-format on */
 
 extern void nor_deviceInit(struct nor_device *dev, int port, int active, time_t timeout);
 
@@ -75,7 +76,7 @@ extern int nor_writeEnable(flexspi_t *fspi, u8 port, int enable, time_t timeout)
 extern int nor_eraseSector(flexspi_t *fspi, u8 port, addr_t addr, time_t timeout);
 
 
-extern int nor_eraseChip(flexspi_t *fspi, u8 port, time_t timeout);
+extern int nor_eraseChipDie(flexspi_t *fspi, u8 port, u32 capFlags, int dieCount, size_t dieSize, time_t timeout);
 
 
 extern int nor_pageProgram(flexspi_t *fspi, u8 port, addr_t dstAddr, const void *src, size_t pageSz, time_t timeout);
