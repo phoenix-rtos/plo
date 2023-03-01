@@ -1,0 +1,267 @@
+/*
+ * Phoenix-RTOS
+ *
+ * Operating system loader
+ *
+ * Test device
+ *
+ * Copyright 2023 Phoenix Systems
+ * Author: Hubert Badocha
+ *
+ * This file is part of Phoenix-RTOS.
+ *
+ * %LICENSE%
+ */
+
+#include <hal/hal.h>
+#include <lib/lib.h>
+#include <syspage.h>
+#include <devices/devs.h>
+
+#include "cmd.h"
+
+
+#define TEST_DEV_TIMEOUT_MS 500
+
+#define ERASE_BEFORE 1
+#define ERASE_AFTER  2
+
+#define BUF_SIZE 257 /* Write and read size specially not aligned to any power of 2 to possibly test more edge cases. */
+
+
+static void cmd_testDevInfo(void)
+{
+	lib_consolePuts("performs simple dev read/write test, usage:test-dev [-e erase before] [-E erase after] <dev> <addr> <size>");
+}
+
+
+static void cmd_testDevUsage(void)
+{
+	lib_consolePuts("Usage: test-dev [-e] [-E] <major>.<minor> <addr> <size>\n"
+					"  -e       Erase before\n"
+					"  -E 		Erase after\n");
+}
+
+
+static int cmd_testDevWrite(int major, int minor, addr_t addr, size_t length)
+{
+	ssize_t res;
+	size_t rsz, i, chunk;
+	u8 buf[BUF_SIZE];
+
+	for (rsz = 0; rsz < length; rsz += res) {
+		chunk = min((length - rsz), sizeof(buf));
+		for (i = 0; i < chunk; i++) {
+			buf[i] = ((rsz + i) & 0xff);
+		}
+		res = devs_write(major, minor, addr + rsz, buf, chunk);
+		if (res < 0) {
+			lib_printf("\nWrite failed %zd\n", res);
+			return res;
+		}
+	}
+	return EOK;
+}
+
+
+static int cmd_testDevRead(int major, int minor, addr_t addr, size_t length)
+{
+	ssize_t res;
+	size_t rsz, chunk;
+	u8 buf[BUF_SIZE];
+
+	lib_printf("\nRead device %d.%d  from 0x%x to 0x%x (%zu bytes):\n", major, minor, (u32)addr, (u32)addr + length, length);
+	lib_consolePutHLine();
+
+	for (rsz = 0; rsz < length; rsz += res) {
+		chunk = min((length - rsz), sizeof(buf));
+		res = devs_read(major, minor, addr + rsz, buf, chunk, TEST_DEV_TIMEOUT_MS);
+		if (res < 0) {
+			log_error("\nCan't read data %zd\n", res);
+			return res;
+		}
+		lib_consolePutRegionHex((addr_t)buf, (addr_t)buf + res, addr + rsz, 0, NULL);
+	}
+	return EOK;
+}
+
+
+static int cmd_testDevErase(int major, int minor, addr_t addr, size_t length)
+{
+	ssize_t res;
+
+	res = devs_erase(major, minor, addr, length, 0);
+	if (res < 0) {
+		log_error("\nErase failed %zd\n", res);
+		return -EINVAL;
+	}
+
+	return EOK;
+}
+
+
+static int cmd_testDevCheck(int major, int minor, addr_t addr, size_t length)
+{
+	ssize_t res;
+	size_t rsz, i, chunk;
+	u8 buf[BUF_SIZE];
+
+	for (rsz = 0; rsz < length; rsz += res) {
+		chunk = min((length - rsz), sizeof(buf));
+		res = devs_read(major, minor, addr + rsz, buf, chunk, TEST_DEV_TIMEOUT_MS);
+		if (res < 0) {
+			log_error("\nCan't read data %zd\n", res);
+			return res;
+		}
+		for (i = 0; i < chunk; i++) {
+			if (buf[i] != ((rsz + i) & 0xffu)) {
+				log_error("\nDiscrepancy at index %zu, expected %zu got %u\n", rsz + i, i, buf[i]);
+				return -1;
+			}
+		}
+	}
+	return EOK;
+}
+
+
+static int cmd_doTestDev(int major, int minor, addr_t addr, size_t length, u8 erase)
+{
+	ssize_t res;
+
+	res = devs_check(major, minor);
+	if (res < 0) {
+		log_error("\nInvalid device %zd\n", res);
+		return -EINVAL;
+	}
+
+	if ((erase & ERASE_BEFORE) != 0u) {
+		res = cmd_testDevErase(major, minor, addr, length);
+		if (res < 0) {
+			return res;
+		}
+	}
+
+	res = cmd_testDevWrite(major, minor, addr, length);
+	if (res < 0) {
+		if ((erase & ERASE_AFTER) != 0u) {
+			(void)cmd_testDevErase(major, minor, addr, length);
+		}
+
+		return res;
+	}
+
+	res = devs_sync(major, minor);
+	if (res < 0) {
+		lib_printf("\nSync failed %zd\n", res);
+		if ((erase & ERASE_AFTER) != 0u) {
+			(void)cmd_testDevErase(major, minor, addr, length);
+		}
+
+		return res;
+	}
+
+	res = cmd_testDevCheck(major, minor, addr, length);
+	if (res < 0) {
+		(void)cmd_testDevRead(major, minor, addr, length);
+		if ((erase & ERASE_AFTER) != 0u) {
+			(void)cmd_testDevErase(major, minor, addr, length);
+		}
+
+		return res;
+	}
+
+	if ((erase & ERASE_AFTER) != 0u) {
+		res = cmd_testDevErase(major, minor, addr, length);
+		if (res < 0) {
+			return res;
+		}
+	}
+
+	log_info("\ntest-dev: Success!\n");
+
+	return EOK;
+}
+
+
+static int cmd_testDev(int argc, char *argv[])
+{
+	int major, minor, opt, err;
+	u8 erase = 0;
+	char *endptr;
+	addr_t start;
+	size_t length;
+
+	for (;;) {
+		opt = lib_getopt(argc, argv, "eE");
+		if (opt < 0) {
+			break;
+		}
+		switch (opt) {
+			case 'e':
+				erase |= ERASE_BEFORE;
+				break;
+
+			case 'E':
+				erase |= ERASE_AFTER;
+				break;
+
+			default:
+				cmd_testDevUsage();
+				return CMD_EXIT_FAILURE;
+		}
+	}
+
+	if ((optind + 2) > argc) {
+		lib_consolePuts("\nInvalid arguments.\n");
+		cmd_testDevUsage();
+		return CMD_EXIT_FAILURE;
+	}
+
+	major = lib_strtoul(argv[optind], &endptr, 0);
+	if (*endptr != '.') {
+		lib_consolePuts("\nInvalid device.\n");
+		cmd_testDevUsage();
+		return CMD_EXIT_FAILURE;
+	}
+	minor = lib_strtoul(endptr + 1, &endptr, 0);
+	if (*endptr != '\0') {
+		lib_consolePuts("\nInvalid device.\n");
+		cmd_testDevUsage();
+		return CMD_EXIT_FAILURE;
+	}
+	optind++;
+
+	start = lib_strtoul(argv[optind], &endptr, 0);
+	if (*endptr != '\0') {
+		lib_consolePuts("\nInvalid start.\n");
+		cmd_testDevUsage();
+		return CMD_EXIT_FAILURE;
+	}
+	optind++;
+
+	length = lib_strtoul(argv[optind], &endptr, 0);
+	if ((*endptr != '\0') || (length == 0u)) {
+		lib_consolePuts("\nInvalid length.\n");
+		cmd_testDevUsage();
+		return CMD_EXIT_FAILURE;
+	}
+
+	if ((start + length) < start) {
+		length = (addr_t)(-1) - start;
+	}
+
+	err = cmd_doTestDev(major, minor, start, length, erase);
+	if (err < 0) {
+		log_error("\nError: %d\n", err);
+		return CMD_EXIT_FAILURE;
+	}
+	return CMD_EXIT_SUCCESS;
+}
+
+
+__attribute__((constructor)) static void cmd_testDevReg(void)
+{
+	const static cmd_t app_cmd = { .name = "test-dev", .run = cmd_testDev, .info = cmd_testDevInfo };
+
+	cmd_reg(&app_cmd);
+}

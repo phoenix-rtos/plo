@@ -50,4 +50,12 @@ extern void lib_consolePutc(char c);
 extern int lib_consoleGetc(char *c, time_t timeout);
 
 
+/* Prints horizontal line */
+extern void lib_consolePutHLine(void);
+
+
+/* Dump memory region. */
+extern void lib_consolePutRegionHex(addr_t start, addr_t end, addr_t offp, u8 align, unsigned int (*validator)(addr_t, addr_t, addr_t));
+
+
 #endif
