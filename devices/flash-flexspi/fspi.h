@@ -5,7 +5,7 @@
  *
  * FlexSPI Controller driver
  *
- * Copyright 2021-2022 Phoenix Systems
+ * Copyright 2021-2023 Phoenix Systems
  * Author: Gerard Swiderski
  *
  * This file is part of Phoenix-RTOS.
@@ -48,7 +48,7 @@ enum { flexspi_instance1 = 1, /* referred as FLEXSPI or FLEXSPI1 */
 
 typedef struct _flexspi_t {
 	volatile u32 *base;
-	u32 *ahbAddr;
+	addr_t ahbAddr;
 	u8 instance;
 	u8 slPortMask;
 	size_t slFlashSz[4];

@@ -5,7 +5,7 @@
  *
  * i.MX RT NOR flash device driver
  *
- * Copyright 2021-2022 Phoenix Systems
+ * Copyright 2021-2023 Phoenix Systems
  * Author: Gerard Swiderski
  *
  * This file is part of Phoenix-RTOS.
@@ -104,7 +104,7 @@ static int flashdrv_map(unsigned int minor, addr_t addr, size_t sz, int mode, ad
 	}
 
 	fSz = dev->fspi.slFlashSz[dev->port];
-	fStart = (addr_t)dev->fspi.ahbAddr;
+	fStart = dev->fspi.ahbAddr;
 	*a = fStart;
 
 	/* Check if region is located on flash */

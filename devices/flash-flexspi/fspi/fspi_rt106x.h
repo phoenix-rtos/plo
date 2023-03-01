@@ -5,7 +5,7 @@
  *
  * FlexSPI Controller driver (i.MX RT106x)
  *
- * Copyright 2021-2022 Phoenix Systems
+ * Copyright 2021-2023 Phoenix Systems
  * Author: Gerard Swiderski
  *
  * This file is part of Phoenix-RTOS.
@@ -30,12 +30,12 @@ enum { mcr0 = 0, mcr1, mcr2, ahbcr, inten, intr, lutkey, lutcr, ahbrxbuf0cr0, ah
 #define AHBRXBUF_CNT 4
 
 
-static void *flexspi_ahbAddr(int instance)
+static addr_t flexspi_ahbAddr(int instance)
 {
 	switch (instance) {
-		case flexspi_instance1: return (void *)0x60000000;
-		case flexspi_instance2: return (void *)0x70000000;
-		default: return NULL;
+		case flexspi_instance1: return 0x60000000;
+		case flexspi_instance2: return 0x70000000;
+		default: return 0;
 	}
 }
 
