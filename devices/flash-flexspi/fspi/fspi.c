@@ -5,7 +5,7 @@
  *
  * FlexSPI Controller driver
  *
- * Copyright 2021-2022 Phoenix Systems
+ * Copyright 2021-2023 Phoenix Systems
  * Author: Gerard Swiderski
  *
  * This file is part of Phoenix-RTOS.
@@ -401,15 +401,22 @@ __attribute__((section(".noxip"))) ssize_t flexspi_xferExec(flexspi_t *fspi, str
 {
 	u32 dataSize;
 	time_t start = hal_timerGet();
+	addr_t dataAddr = flexspi_getAddressByPort(fspi, xfer->port, xfer->addr);
 
 	if (xfer->op == xfer_opRead) {
+		dataSize = xfer->data.read.sz;
+
 		/* For >64k read out the data directly from the AHB buffer (data may be cached) */
-		if (xfer->data.read.sz > 0xffff) {
-			hal_memcpy(xfer->data.read.ptr, fspi->ahbAddr + xfer->addr, xfer->data.read.sz);
-			return EOK;
+		if (dataSize > 0xffff) {
+			if ((xfer->addr + dataSize) > fspi->slFlashSz[xfer->port]) {
+				dataSize = fspi->slFlashSz[xfer->port] - xfer->addr;
+			}
+
+			hal_memcpy(xfer->data.read.ptr, (u8 *)fspi->ahbAddr + dataAddr, dataSize);
+			return dataSize;
 		}
 
-		dataSize = xfer->data.read.sz & 0xffff;
+		dataSize &= 0xffff;
 	}
 	else if (xfer->op == xfer_opWrite) {
 		/* IP write is limited to IPDATSZ mask */
@@ -437,7 +444,7 @@ __attribute__((section(".noxip"))) ssize_t flexspi_xferExec(flexspi_t *fspi, str
 	*(fspi->base + intr) |= (1 << 4) | (1 << 3) | (1 << 2) | (1 << 1);
 
 	/* Set device's start address of transfer */
-	*(fspi->base + ipcr0) = flexspi_getAddressByPort(fspi, xfer->port, xfer->addr);
+	*(fspi->base + ipcr0) = dataAddr;
 
 	/* Reset tx/rx FIFOs, no DMA */
 	*(fspi->base + iptxfcr) = (*(fspi->base + iptxfcr) & ~3) | 1;
