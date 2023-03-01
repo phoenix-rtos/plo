@@ -43,83 +43,14 @@ static unsigned int region_validator(addr_t start, addr_t end, addr_t curr)
 }
 
 
-static void region_hexdump(addr_t start, addr_t end, addr_t offp, u8 align, unsigned int (*validator)(addr_t, addr_t, addr_t))
-{
-	unsigned int col;
-	static const int cols = 16;
-	addr_t ptr, offs = start;
-
-	if (align != 0) {
-		offp = (offp / cols) * cols;
-		offs = (offs / cols) * cols;
-	}
-
-	while (offs < end) {
-		lib_printf("0x%08x | ", (u32)offp);
-
-		/* Print byte values */
-		for (col = 0; col < cols; ++col) {
-			ptr = offs + col;
-
-			if ((ptr < start) || (ptr >= end)) {
-				lib_consolePuts("   ");
-				continue;
-			}
-
-			if ((validator != NULL) && (validator(start, end, ptr) == 0)) {
-				lib_consolePuts("XX ");
-			}
-			else {
-				lib_printf("%02x ", *(u8 *)ptr);
-			}
-		}
-		lib_consolePuts("| ");
-
-		/* Print "printable" representation */
-		for (col = 0; col < cols; ++col) {
-			ptr = offs + col;
-
-			if ((ptr < start) || (ptr >= end)) {
-				lib_consolePutc(' ');
-				continue;
-			}
-
-			if ((validator != NULL) && (validator(start, end, ptr) == 0)) {
-				lib_consolePutc('X');
-			}
-			else if (lib_isprint(*(u8 *)ptr)) {
-				lib_printf("%c", *(u8 *)ptr);
-			}
-			else {
-				lib_consolePutc('.');
-			}
-		}
-
-		lib_consolePutc('\n');
-		offp += cols;
-		offs += cols;
-	}
-}
-
-
-static void print_hline(void)
-{
-	unsigned int col;
-	for (col = 0; col < 79; ++col) {
-		lib_consolePutc('-');
-	}
-	lib_consolePutc('\n');
-}
-
-
 static int dump_memory(addr_t addr, size_t length, int validate)
 {
 	addr_t end = addr + length;
 
 	lib_printf("\nMemory dump from 0x%x to 0x%x (%zu bytes):\n", (u32)addr, (u32)end, length);
-	print_hline();
+	lib_consolePutHLine();
 
-	region_hexdump(addr, end, addr, 1, validate ? region_validator : NULL);
+	lib_consolePutRegionHex(addr, end, addr, 1, (validate == 0) ? NULL : region_validator);
 
 	return EOK;
 }
@@ -138,7 +69,7 @@ static int dump_phfs(const char *devname, addr_t addr, size_t length)
 	}
 
 	lib_printf("\nRead phfs %s device from 0x%x to 0x%x (%zu bytes):\n", devname, (u32)addr, (u32)addr + length, length);
-	print_hline();
+	lib_consolePutHLine();
 
 	do {
 		chunk = (length - rsz) > sizeof(buf) ? sizeof(buf) : (length - rsz);
@@ -147,7 +78,7 @@ static int dump_phfs(const char *devname, addr_t addr, size_t length)
 			lib_printf("\nCant read data\n", devname);
 			return res;
 		}
-		region_hexdump((addr_t)buf, (addr_t)buf + res, addr + rsz, 0, NULL);
+		lib_consolePutRegionHex((addr_t)buf, (addr_t)buf + res, addr + rsz, 0, NULL);
 		rsz += res;
 	} while (rsz < length);
 
