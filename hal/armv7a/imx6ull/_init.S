@@ -43,7 +43,77 @@ _vector_table:
 
 
 .org 0x400, 0x0
+qspi_config:
+	.word 0          /* DQS Loopback */
+	.word 0          /* Hold delay */
+	.word 0, 0       /* Reserved */
+	.word 0          /* Quad mode enable */
+	.word 0          /* device_cmd */
+	.word 0          /* write_cmd_ipcr */
+	.word 0x02000000 /* write_enable_ipcr */
+	.word 3          /* Chip select hold time */
+	.word 3          /* Chip select setup time */
+	.word 0x200000   /* Serial flash A1 size */
+	.word 0          /* Serial flash A2 size */
+	.word 0          /* Serial flash B1 size */
+	.word 0          /* Serial flash B2 size */
+	.word 0          /* Serial clock freq (18 MHz) */
+	.word 0          /* busy_bit_offset */
+	.word 1          /* Mode of operation of serial flash (Single pad) */
+	.word 0          /* Serial Flash Port B Selection */
+	.word 0          /* Dual Data Rate mode enable */
+	.word 0          /* Data Strobe Signal enable in Serial Flash */
+	.word 0          /* Parallel Mode */
+	.word 0          /* CS1 on Port A */
+	.word 0          /* CS1 on Port B */
+	.word 0          /* Full Speed Phase Selection */
+	.word 0          /* Full Speed Delay Selection */
+	.word 0          /* DDR Sampling Point */
+	/* LUT program sequance */
+	.word 0x08180403, 0x24001C00, 0x00000000, 0x00000000 /* Read command */
+	.word 0x00000000, 0x00000000, 0x00000000, 0x00000000
+	.word 0x00000000, 0x00000000, 0x00000000, 0x00000000
+	.word 0x00000000, 0x00000000, 0x00000000, 0x00000000
+	.word 0x00000000, 0x00000000, 0x00000000, 0x00000000
+	.word 0x00000000, 0x00000000, 0x00000000, 0x00000000
+	.word 0x00000000, 0x00000000, 0x00000000, 0x00000000
+	.word 0x00000000, 0x00000000, 0x00000000, 0x00000000
+	.word 0x00000000, 0x00000000, 0x00000000, 0x00000000
+	.word 0x00000000, 0x00000000, 0x00000000, 0x00000000
+	.word 0x00000000, 0x00000000, 0x00000000, 0x00000000
+	.word 0x00000000, 0x00000000, 0x00000000, 0x00000000
+	.word 0x00000000, 0x00000000, 0x00000000, 0x00000000
+	.word 0x00000000, 0x00000000, 0x00000000, 0x00000000
+	.word 0x00000000, 0x00000000, 0x00000000, 0x00000000
+	.word 0x00000000, 0x00000000, 0x00000000, 0x00000000
 
+	.word 0          /* read_status_ipcr */
+	.word 0          /* enable_dqs_phase */
+	/* Reserved 36 bytes */
+	.word 0, 0, 0, 0
+	.word 0, 0, 0, 0
+	.word 0
+
+	.word 0          /* dqs_pad_setting_override */
+	.word 0          /* sclk_pad_setting_override */
+	.word 0          /* data_pad_setting_override */
+	.word 0          /* cs_pad_setting_override */
+	.word 0          /* dqs_loopback_internal */
+	.word 0          /* dqs_phase_sel */
+	.word 0          /* dqs_fa_delay_chain_sel */
+	.word 0          /* dqs_fb_delay_chain_sel */
+	.word 0          /* sclk_fa_delay_chain_sel */
+	.word 0          /* sclk_fb_delay_chain_sel */
+	/* Reserved 64 bytes */
+	.word 0, 0, 0, 0
+	.word 0, 0, 0, 0
+	.word 0, 0, 0, 0
+	.word 0, 0, 0, 0
+
+	.word 0xc0ffee01 /* tag */
+
+
+.org 0x1000, 0x0
 ivt:
 	.word 0x402000d1 /* hdr */
 	.word _start     /* entry */
