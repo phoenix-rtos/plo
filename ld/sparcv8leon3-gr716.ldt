@@ -1,0 +1,34 @@
+#ifndef LEON3_GR716_LDT
+#define LEON3_GR716_LDT
+
+#define SIZE_PAGE 0x200
+#define SIZE_STACK (8 * SIZE_PAGE)
+#define SIZE_HEAP  (8 * SIZE_PAGE)
+
+
+#if defined(__LINKER__)
+
+/* Memory map setup */
+MEMORY
+{
+	m_bootprom      : ORIGIN = 0x00000000, LENGTH = 4K
+	m_extprom       : ORIGIN = 0x01000000, LENGTH = 16M
+	m_spi0          : ORIGIN = 0x02000000, LENGTH = 32M
+	m_spi1          : ORIGIN = 0x04000000, LENGTH = 32M
+	m_dram          : ORIGIN = 0x30000000, LENGTH = 64K
+	m_iocram        : ORIGIN = 0x31000000, LENGTH = 128K
+	m_sram          : ORIGIN = 0x40000000, LENGTH = 2M
+}
+
+REGION_ALIAS("PLO_IMAGE", m_iocram)
+REGION_ALIAS("RODATA", m_dram)
+REGION_ALIAS("DATA", m_dram)
+REGION_ALIAS("BSS", m_dram)
+REGION_ALIAS("HEAP", m_dram)
+REGION_ALIAS("STACK", m_dram)
+
+#include "common/plo-sparc.lds"
+
+#endif /* __LINKER__ */
+
+#endif
