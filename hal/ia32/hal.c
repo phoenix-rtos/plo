@@ -28,7 +28,7 @@ extern void hal_exceptionsInit(void);
 extern void hal_interruptsInit(void);
 
 /* Memory */
-extern void hal_memoryInit(void);
+extern int hal_memoryInit(void);
 
 /* Timer */
 extern void hal_timerInit(void);
@@ -58,6 +58,10 @@ void hal_init(void)
 	hal_consoleInit();
 	hal_exceptionsInit();
 	hal_interruptsInit();
-	hal_memoryInit();
+	if (hal_memoryInit() < 0) {
+		for (;;) {
+			hal_cpuHalt();
+		}
+	}
 	hal_timerInit();
 }

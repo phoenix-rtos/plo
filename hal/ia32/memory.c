@@ -195,28 +195,65 @@ int hal_memoryGetNextEntry(addr_t start, addr_t end, mapent_t *entry)
 
 
 /* Flushes 8042 keyboard controller buffers */
-static void memory_empty8042(void)
+static int memory_empty8042(void)
 {
 	unsigned char status;
-
-	do {
+	unsigned short int timeout;
+	for (timeout = 0xffff; timeout != 0; --timeout) {
 		/* Discard input data */
-		if ((status = hal_inb((void *)0x64)) & 0x01) {
+		status = hal_inb((void *)0x64);
+		if ((status & 0x01) != 0) {
 			hal_inb((void *)0x60);
 			continue;
 		}
-	} while (status & 0x02);
+		if ((status & 0x02) == 0) {
+			return 0;
+		}
+	}
+	return -1;
+}
+
+
+static int checkA20Line(void)
+{
+	int result = 0;
+	/* Set base to some address in the first 1MiB that can be overwritten */
+	/* Address of the magic number at the end of MBR (0xAA55) */
+	volatile u16 *const base = (void *)((ADDR_PLO) + 512 - 2);
+	/* Some values that should be equal, if A20 is off */
+	u16 v1 = *(base + (0x100000 / sizeof(*base)));
+	u16 v2 = *base;
+	if (v1 == v2) {
+		/* They are equal: try to overwrite one of them */
+		*base = v2 + 1;
+		/* Did value that shouldn't change, changed? */
+		if ((*(base + (0x100000 / sizeof(*base)))) != v1) {
+			/* A20 is off */
+			result = -1;
+		}
+		*base = v2;
+	}
+	return result;
 }
 
 
 /* Enables A20 line mask */
-static void memory_enableA20(void)
+static int memory_enableA20(void)
 {
-	memory_empty8042();
-	hal_outb((void *)0x64, 0xd1);
-	memory_empty8042();
-	hal_outb((void *)0x60, 0xdf);
-	memory_empty8042();
+	if (checkA20Line() < 0) {
+		if (memory_empty8042() < 0) {
+			return -1;
+		}
+		hal_outb((void *)0x64, 0xd1);
+		if (memory_empty8042() < 0) {
+			return -1;
+		}
+		hal_outb((void *)0x60, 0xdf);
+		if (memory_empty8042() < 0) {
+			return -1;
+		}
+	}
+	return 0;
 }
 
 
@@ -228,7 +265,10 @@ int hal_memoryAddMap(addr_t start, addr_t end, u32 attr, u32 mapId)
 
 int hal_memoryInit(void)
 {
-	memory_enableA20();
+	if (memory_enableA20() < 0) {
+		hal_consolePrint("hal: Failed to enable A20 line\n");
+		return -1;
+	}
 
 	return 0;
 }
