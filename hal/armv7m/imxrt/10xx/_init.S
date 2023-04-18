@@ -154,7 +154,6 @@ _init_vectors:
 .word _stack
 .word _start
 
-/* TODO: define exception_dispatch */
 .word _exceptions_dispatch                     /* NMI */
 .word _exceptions_dispatch                     /* HardFault */
 .word _exceptions_dispatch                     /* MemMgtFault */
@@ -227,7 +226,13 @@ _interrupts_dispatch:
 
 _exceptions_dispatch:
 	cpsid if
-	/* TODO: implement exception dispatcher */
-	1: b 1b
+
+	mrs r0, psp
+	stmdb sp!, {r0, r4-r11, lr}
+
+	mrs r0, ipsr
+	mov r1, sp
+
+	b hal_exceptionsDispatch
 .size _exceptions_dispatch, .-_exceptions_dispatch
 .ltorg
