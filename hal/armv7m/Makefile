@@ -14,4 +14,4 @@ ifneq (, $(findstring stm32, $(TARGET_SUBFAMILY)))
 	include hal/armv7m/stm32/Makefile
 endif
 
-OBJS += $(addprefix $(PREFIX_O)hal/$(TARGET_SUFF)/, cpu.o interrupts.o mpu.o string.o)
+OBJS += $(addprefix $(PREFIX_O)hal/$(TARGET_SUFF)/, cpu.o exceptions.o interrupts.o mpu.o string.o)
