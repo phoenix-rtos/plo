@@ -26,7 +26,7 @@
 
 /* UART */
 #ifndef UART1
-#define UART1 0
+#define UART1 1
 #endif
 
 #ifndef UART2
@@ -73,8 +73,13 @@
 #define UART12 1
 #endif
 
+#ifdef UART_CONSOLE_PLO
+#undef UART_CONSOLE
+#define UART_CONSOLE UART_CONSOLE_PLO
+#endif
+
 #ifndef UART_CONSOLE
-#define UART_CONSOLE 11
+#define UART_CONSOLE 1
 #endif
 
 #define UART_CLK      24000000
