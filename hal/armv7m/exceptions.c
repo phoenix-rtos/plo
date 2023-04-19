@@ -5,8 +5,8 @@
  *
  * Exception handling
  *
- * Copyright 2017 Phoenix Systems
- * Author: Pawel Pisarczyk, Jakub Sejdak, Aleksander Kaminski
+ * Copyright 2017, 2023 Phoenix Systems
+ * Author: Pawel Pisarczyk, Jakub Sejdak, Aleksander Kaminski, Gerard Swiderski
  *
  * This file is part of Phoenix-RTOS.
  *
@@ -25,7 +25,7 @@
 #endif
 
 
-typedef struct {
+struct cpuContext {
 	u32 r0;
 	u32 r1;
 	u32 r2;
@@ -34,10 +34,10 @@ typedef struct {
 	u32 lr;
 	u32 pc;
 	u32 psr;
-} cpu_hwContext_t;
+};
 
 
-typedef struct _exc_context_t {
+struct excContext {
 	u32 psp;
 	u32 r4;
 	u32 r5;
@@ -50,11 +50,11 @@ typedef struct _exc_context_t {
 	u32 excret;
 
 	/* Saved by hardware */
-	cpu_hwContext_t mspctx;
-} exc_context_t;
+	struct cpuContext mspctx;
+};
 
 
-__attribute__((section(".noxip"))) void hal_exceptionsDumpContext(char *buff, exc_context_t *ctx, int n)
+__attribute__((section(".noxip"))) void hal_exceptionsDumpContext(char *buff, struct excContext *ctx, int n)
 {
 	static const char *const mnemonics[] = {
 		"0 #InitialSP", "1 #Reset", "2 #NMI", "3 #HardFault",
@@ -63,68 +63,67 @@ __attribute__((section(".noxip"))) void hal_exceptionsDumpContext(char *buff, ex
 		"12 #Debug", "13 #", "14 #PendSV", "15 #SysTick"
 	};
 
-	size_t i = 0;
-	cpu_hwContext_t *hwctx;
+	struct cpuContext *hwctx;
 	u32 msp = (u32)ctx + sizeof(*ctx);
 	u32 psp = ctx->psp;
+	const u32 fpucheck = (*(u32 *)0xe000ed88) & ((3uL << 20) | (3uL << 22));
+	char *ptr = buff;
+
+	n &= 0xf;
 
 	/* If we came from userspace HW ctx in on psp stack */
 	if (ctx->excret == EXCRET_PSP) {
 		hwctx = (void *)ctx->psp;
-		msp -= sizeof(cpu_hwContext_t);
-		psp += sizeof(cpu_hwContext_t);
-#ifdef CPU_IMXRT /* FIXME - check if FPU was enabled instead */
+		msp -= sizeof(*hwctx);
+		psp += sizeof(*hwctx);
+		if (fpucheck != 0) {
 			psp += SIZE_FPUCTX;
-#endif
+		}
 	}
 	else {
 		hwctx = &ctx->mspctx;
-#ifdef CPU_IMXRT
+		if (fpucheck != 0) {
 			msp += SIZE_FPUCTX;
-#endif
+		}
 	}
 
-	n &= 0xf;
+	hal_strcpy(ptr, "\nException: ");
+	ptr += hal_strlen(ptr);
 
-	hal_strcpy(buff, "\nException: ");
-	hal_strcpy(buff += hal_strlen(buff), mnemonics[n]);
-	hal_strcpy(buff += hal_strlen(buff), "\n");
-	buff += hal_strlen(buff);
+	hal_strcpy(ptr, mnemonics[n]);
+	ptr += hal_strlen(ptr);
 
-	i += hal_i2s(" r0=", &buff[i], hwctx->r0, 16, 1);
-	i += hal_i2s("  r1=", &buff[i], hwctx->r1, 16, 1);
-	i += hal_i2s("  r2=", &buff[i], hwctx->r2, 16, 1);
-	i += hal_i2s("  r3=", &buff[i], hwctx->r3, 16, 1);
+	ptr += hal_i2s("\n r0=", ptr, hwctx->r0, 16, 1);
+	ptr += hal_i2s("  r1=", ptr, hwctx->r1, 16, 1);
+	ptr += hal_i2s("  r2=", ptr, hwctx->r2, 16, 1);
+	ptr += hal_i2s("  r3=", ptr, hwctx->r3, 16, 1);
 
-	i += hal_i2s("\n r4=", &buff[i], ctx->r4, 16, 1);
-	i += hal_i2s("  r5=", &buff[i], ctx->r5, 16, 1);
-	i += hal_i2s("  r6=", &buff[i], ctx->r6, 16, 1);
-	i += hal_i2s("  r7=", &buff[i], ctx->r7, 16, 1);
+	ptr += hal_i2s("\n r4=", ptr, ctx->r4, 16, 1);
+	ptr += hal_i2s("  r5=", ptr, ctx->r5, 16, 1);
+	ptr += hal_i2s("  r6=", ptr, ctx->r6, 16, 1);
+	ptr += hal_i2s("  r7=", ptr, ctx->r7, 16, 1);
 
-	i += hal_i2s("\n r8=", &buff[i], ctx->r8, 16, 1);
-	i += hal_i2s("  r9=", &buff[i], ctx->r9, 16, 1);
-	i += hal_i2s(" r10=", &buff[i], ctx->r10, 16, 1);
-	i += hal_i2s(" r11=", &buff[i], ctx->r11, 16, 1);
+	ptr += hal_i2s("\n r8=", ptr, ctx->r8, 16, 1);
+	ptr += hal_i2s("  r9=", ptr, ctx->r9, 16, 1);
+	ptr += hal_i2s(" r10=", ptr, ctx->r10, 16, 1);
+	ptr += hal_i2s(" r11=", ptr, ctx->r11, 16, 1);
 
-	i += hal_i2s("\nr12=", &buff[i], hwctx->r12, 16, 1);
-	i += hal_i2s(" psr=", &buff[i], hwctx->psr, 16, 1);
-	i += hal_i2s("  lr=", &buff[i], hwctx->lr, 16, 1);
-	i += hal_i2s("  pc=", &buff[i], hwctx->pc, 16, 1);
+	ptr += hal_i2s("\nr12=", ptr, hwctx->r12, 16, 1);
+	ptr += hal_i2s(" psr=", ptr, hwctx->psr, 16, 1);
+	ptr += hal_i2s("  lr=", ptr, hwctx->lr, 16, 1);
+	ptr += hal_i2s("  pc=", ptr, hwctx->pc, 16, 1);
 
-	i += hal_i2s("\npsp=", &buff[i], psp, 16, 1);
-	i += hal_i2s(" msp=", &buff[i], msp, 16, 1);
-	i += hal_i2s(" exr=", &buff[i], ctx->excret, 16, 1);
-	i += hal_i2s(" bfa=", &buff[i], *(u32 *)0xe000ed38, 16, 1);
+	ptr += hal_i2s("\npsp=", ptr, psp, 16, 1);
+	ptr += hal_i2s(" msp=", ptr, msp, 16, 1);
+	ptr += hal_i2s(" exr=", ptr, ctx->excret, 16, 1);
+	ptr += hal_i2s(" bfa=", ptr, *(u32 *)0xe000ed38, 16, 1);
 
-	i += hal_i2s("\ncfs=", &buff[i], *(u32 *)0xe000ed28, 16, 1);
-
-	buff[i++] = '\n';
-
-	buff[i] = 0;
+	*(ptr++) = '\n';
+	*ptr = '\0';
 }
 
 
-__attribute__((section(".noxip"))) void hal_exceptionsDispatch(unsigned int n, exc_context_t *ctx)
+__attribute__((section(".noxip"))) void hal_exceptionsDispatch(unsigned int n, struct excContext *ctx)
 {
 	static char buff[512];
 
@@ -137,7 +136,9 @@ __attribute__((section(".noxip"))) void hal_exceptionsDispatch(unsigned int n, e
 #elif defined(CPU_IMXRT)
 	_imxrt_nvicSystemReset();
 #endif
-#else
-	hal_cpuHalt();
 #endif
+
+	for (;;) {
+		hal_cpuHalt();
+	}
 }
