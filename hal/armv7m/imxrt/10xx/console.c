@@ -13,6 +13,8 @@
  * %LICENSE%
  */
 
+#include <board_config.h>
+
 #include <hal/hal.h>
 
 #define CONCAT(a, b)         a##b
