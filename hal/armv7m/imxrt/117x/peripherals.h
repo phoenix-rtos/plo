@@ -66,11 +66,11 @@
 #endif
 
 #ifndef UART11
-#define UART11 1
+#define UART11 0
 #endif
 
 #ifndef UART12
-#define UART12 1
+#define UART12 0
 #endif
 
 #ifdef UART_CONSOLE_PLO
