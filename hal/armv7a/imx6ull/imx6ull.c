@@ -363,6 +363,8 @@ extern void imx6ull_setQSPIClockSource(unsigned char source, unsigned char divid
 
 void imx6ull_init(void)
 {
+	u32 reg, tmp;
+
 	imx6ull_common.ccm = (void *)0x020c4000;
 	imx6ull_common.ccm_analog = (void *)0x020c8000;
 	imx6ull_common.mmdc = (void *)0x021b0000;
@@ -379,6 +381,23 @@ void imx6ull_init(void)
 
 	/* Enable EPITs clocks */
 	*(imx6ull_common.ccm + ccm_ccgr1) |= 0x00005000;
+
+	/* Set ENFC clock to 198 MHz */
+	/* First disable all output clocks */
+	reg = *(imx6ull_common.ccm + ccm_ccgr4);
+	tmp = reg;
+	reg &= ~((3u << 30) | (3u << 28) | (3u << 26) | (3u << 24) | (3u << 12));
+	*(imx6ull_common.ccm + ccm_ccgr4) = reg;
+
+	/* Configure ENFC clock */
+	reg = *(imx6ull_common.ccm + ccm_cs2cdr);
+	reg &= ~((63u << 21) | (7u << 18) | (7u << 15)); /* Clear ENFC clock selector and dividers */
+	reg |= (3u << 15);                               /* Set ENFC_CLK_SEL to PLL2 PFD2 (396 MHz) */
+	reg |= (1u << 18);                               /* Set ENFC_PRED divider to 2 */
+	*(imx6ull_common.ccm + ccm_cs2cdr) = reg;
+
+	/* Restore output clocks state */
+	*(imx6ull_common.ccm + ccm_ccgr4) = tmp;
 
 	imx6ull_ddrInit();
 }

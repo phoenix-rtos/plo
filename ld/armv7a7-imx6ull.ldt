@@ -19,9 +19,9 @@
 
 
 /* Platform specific definitions */
-#define SIZE_PAGE    0x1000
-#define SIZE_STACK   (2 * SIZE_PAGE)
-#define SIZE_HEAP    (2 * SIZE_PAGE)
+#define SIZE_PAGE  0x1000
+#define SIZE_STACK (2 * SIZE_PAGE)
+#define SIZE_HEAP  (2 * SIZE_PAGE)
 
 #define ADDR_DDR 0x80000000
 #define SIZE_DDR (128 * 1024 * 1024)
@@ -41,6 +41,15 @@
 #define ADDR_UNCACHED_BUFF_DDR (ADDR_BUFF_DDR + SIZE_BUFF_DDR)
 #define SIZE_UNCACHED_BUFF_DDR (2 * 1024 * 1024)
 
+/* NAND buffers */
+#define SIZE_NAND_DMA   (4 * 1024)        /* DMA chain buffer */
+#define SIZE_NAND_BUFF  (9 * 1024)        /* Handle up to 8KB page with extra 1KB for OOB */
+#define SIZE_NAND_PAGE  (9 * 1024)        /* Handle up to 8KB page with extra 1KB for OOB */
+#define SIZE_NAND_BLOCK (2 * 1024 * 1024) /* Handle up to 2MB eraseblock */
+
+#define ADDR_BUFF_NAND_DDR (ADDR_UNCACHED_BUFF_DDR + SIZE_UNCACHED_BUFF_DDR)
+#define SIZE_BUFF_NAND_DDR (SIZE_NAND_DMA + SIZE_NAND_BUFF + SIZE_NAND_PAGE + SIZE_NAND_BLOCK)
+
 
 #if defined(__LINKER__)
 
@@ -51,6 +60,7 @@ MEMORY
 	m_ocram_low    (rw)  : ORIGIN = ADDR_OCRAM_LOW, LENGTH = SIZE_OCRAM_LOW
 	m_ddr   (rw)  : ORIGIN = ADDR_BUFF_DDR, LENGTH = SIZE_BUFF_DDR
 	m_uncached_ddr (rw)  : ORIGIN = ADDR_UNCACHED_BUFF_DDR, LENGTH = SIZE_UNCACHED_BUFF_DDR
+	m_ddr_nand   (rw)  : ORIGIN = ADDR_BUFF_NAND_DDR, LENGTH = SIZE_BUFF_NAND_DDR
 }
 
 REGION_ALIAS("TCM_TEXT", m_ocram_low);
@@ -61,7 +71,7 @@ REGION_ALIAS("PLO_IMAGE", m_ocram_high);
 REGION_ALIAS("BSS", m_ocram_high);
 REGION_ALIAS("DDR", m_ddr);
 REGION_ALIAS("UNCACHED_DDR", m_uncached_ddr);
-
+REGION_ALIAS("NAND", m_ddr_nand);
 
 #include "common/plo-arm.lds"
 
@@ -84,6 +94,24 @@ SECTIONS
 		*(.uncached_ddr*)
 		__uncached_ddr_end = .;
 	} > UNCACHED_DDR
+
+	.nand (NOLOAD) :
+	{
+		. = ALIGN(4);
+		__nand_start = .;
+		nand_dma = .;
+		. += SIZE_NAND_DMA;
+		. = ALIGN(4);
+		nand_buff = .;
+		. += SIZE_NAND_BUFF;
+		. = ALIGN(4);
+		nand_page = .;
+		. += SIZE_NAND_PAGE;
+		. = ALIGN(4);
+		nand_block = .;
+		. += SIZE_NAND_BLOCK;
+		__nand_end = .;
+	} > NAND
 }
 
 

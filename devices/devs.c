@@ -17,7 +17,7 @@
 
 #include <lib/errno.h>
 
-#define SIZE_MAJOR 5
+#define SIZE_MAJOR 8
 #define SIZE_MINOR 16
 
 

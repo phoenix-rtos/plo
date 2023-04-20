@@ -38,6 +38,7 @@ extern char __heap_base[], __heap_limit[];
 extern char __stack_top[], __stack_limit[];
 extern char __ddr_start[], __ddr_end[];
 extern char __uncached_ddr_start[], __uncached_ddr_end[];
+extern char __nand_start[], __nand_end[];
 
 /* Timer */
 extern void timer_init(void);
@@ -94,7 +95,6 @@ void hal_init(void)
 	timer_init();
 	console_init();
 
-
 	hal_common.entry = (addr_t)-1;
 }
 
@@ -134,10 +134,12 @@ int hal_cpuJump(void)
 	mmu_disable();
 
 
+	/* clang-format off */
 	__asm__ volatile("mov r9, %1; \
 		 blx %0"
 		:
 		: "r"(hal_common.entry), "r"((addr_t)hal_common.hs));
+	/* clang-format on */
 
 	return 0;
 }
@@ -210,6 +212,7 @@ int hal_memoryGetNextEntry(addr_t start, addr_t end, mapent_t *entry)
 		{ .start = (addr_t)__stack_limit, .end = (addr_t)__stack_top, .type = hal_entryTemp },
 		{ .start = (addr_t)__ddr_start, .end = (addr_t)__ddr_end, .type = hal_entryTemp },
 		{ .start = (addr_t)__uncached_ddr_start, .end = (addr_t)__uncached_ddr_end, .type = hal_entryTemp },
+		{ .start = (addr_t)__nand_start, .end = (addr_t)__nand_end, .type = hal_entryTemp },
 	};
 
 	if (start == end)
