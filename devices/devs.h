@@ -18,14 +18,19 @@
 
 #include <hal/hal.h>
 
-#define DEV_UART    0
-#define DEV_USB     1
-#define DEV_STORAGE 2
-#define DEV_TTY     3
-#define DEV_RAM     4
+#define DEV_UART      0
+#define DEV_USB       1
+#define DEV_STORAGE   2
+#define DEV_TTY       3
+#define DEV_RAM       4
+#define DEV_NAND_DATA 5
+#define DEV_NAND_META 6
+#define DEV_NAND_RAW  7
 
 
+/* clang-format off */
 enum { dev_isMappable = 0, dev_isNotMappable };
+/* clang-format on */
 
 
 typedef struct {

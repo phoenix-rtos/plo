@@ -43,6 +43,7 @@ _vector_table:
 
 
 .org 0x400, 0x0
+#ifdef PLO_NOR_BOOT
 qspi_config:
 	.word 0          /* DQS Loopback */
 	.word 0          /* Hold delay */
@@ -114,6 +115,7 @@ qspi_config:
 
 
 .org 0x1000, 0x0
+#endif
 ivt:
 	.word 0x402000d1 /* hdr */
 	.word _start     /* entry */

@@ -23,7 +23,12 @@ GCCLIB := $(shell $(CC) $(CFLAGS) -print-libgcc-file-name)
 PLO_COMMANDS = alias app call console copy dump echo erase go jffs2 help kernel map phfs script test-ddr wait
 PLO_COMMANDS += test-dev
 
-include devices/flash-imx6ull/Makefile
+ifeq ($(PLO_NAND), y)
+	include devices/nand-imx6ull/Makefile
+endif
+ifeq ($(PLO_NOR), y)
+	include devices/flash-imx6ull/Makefile
+endif
 include devices/uart-imx6ull/Makefile
 include devices/usbc-cdc/Makefile
 
