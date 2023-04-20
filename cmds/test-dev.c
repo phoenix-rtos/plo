@@ -119,7 +119,7 @@ static int cmd_testDevCheck(int major, int minor, addr_t addr, size_t length, u8
 		}
 		for (i = 0; i < chunk; i++) {
 			if (buf[i] != ((rsz + i) & 0xffu)) {
-				log_error("\nDiscrepancy at index %zu, expected %zu got %u\n", rsz + i, i, buf[i]);
+				log_error("\nDiscrepancy at index %zu, expected %zu got %u\n", rsz + i, (rsz + i) & 0xffu, buf[i]);
 				return -1;
 			}
 		}
