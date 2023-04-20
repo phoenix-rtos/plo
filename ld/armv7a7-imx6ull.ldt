@@ -42,13 +42,14 @@
 #define SIZE_UNCACHED_BUFF_DDR (2 * 1024 * 1024)
 
 /* NAND buffers */
-#define SIZE_NAND_DMA   (4 * 1024)        /* DMA chain buffer */
-#define SIZE_NAND_BUFF  (9 * 1024)        /* Handle up to 8KB page with extra 1KB for OOB */
-#define SIZE_NAND_PAGE  (9 * 1024)        /* Handle up to 8KB page with extra 1KB for OOB */
-#define SIZE_NAND_BLOCK (2 * 1024 * 1024) /* Handle up to 2MB eraseblock */
+#define SIZE_NAND_DMA       (4 * 1024)        /* DMA chain buffer */
+#define SIZE_NAND_BUFF      (9 * 1024)        /* Handle up to 8KB page with extra 1KB for OOB */
+#define SIZE_NAND_PAGE      (9 * 1024)        /* Handle up to 8KB page with extra 1KB for OOB */
+#define SIZE_NAND_RAW_PAGE  (10 * 1024)        /* Handle up to 8KB page with extra 2KB for OOB and meta */
+#define SIZE_NAND_BLOCK     (2 * 1024 * 1024) /* Handle up to 2MB eraseblock */
 
 #define ADDR_BUFF_NAND_DDR (ADDR_UNCACHED_BUFF_DDR + SIZE_UNCACHED_BUFF_DDR)
-#define SIZE_BUFF_NAND_DDR (SIZE_NAND_DMA + SIZE_NAND_BUFF + SIZE_NAND_PAGE + SIZE_NAND_BLOCK)
+#define SIZE_BUFF_NAND_DDR (SIZE_NAND_DMA + SIZE_NAND_BUFF + SIZE_NAND_PAGE + SIZE_NAND_RAW_PAGE + SIZE_NAND_BLOCK)
 
 
 #if defined(__LINKER__)
@@ -107,6 +108,9 @@ SECTIONS
 		. = ALIGN(4);
 		nand_page = .;
 		. += SIZE_NAND_PAGE;
+		. = ALIGN(4);
+		nand_raw_page = .;
+		. += SIZE_NAND_RAW_PAGE;
 		. = ALIGN(4);
 		nand_block = .;
 		. += SIZE_NAND_BLOCK;

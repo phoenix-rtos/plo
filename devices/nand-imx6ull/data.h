@@ -28,7 +28,6 @@ typedef struct {
 extern nand_t *nand_get(unsigned minor);
 
 
-extern int data_sync(unsigned int minor);
-
+extern int data_doSync(nand_t *nand);
 
 #endif
