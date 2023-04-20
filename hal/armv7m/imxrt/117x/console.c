@@ -27,8 +27,8 @@
 #define CONSOLE_ISEL(n, pin) (CONCAT2(pctl_isel_lpuart, CONCAT(n, _##pin)))
 #define CONSOLE_BAUD(n)      (UART_PIN(n, BAUDRATE))
 
-#if CONSOLE_BAUD(UART_CONSOLE)
-#define CONSOLE_BAUDRATE CONSOLE_BAUD(UART_CONSOLE)
+#if CONSOLE_BAUD(UART_CONSOLE_PLO)
+#define CONSOLE_BAUDRATE CONSOLE_BAUD(UART_CONSOLE_PLO)
 #else
 #define CONSOLE_BAUDRATE (UART_BAUDRATE)
 #endif
@@ -57,21 +57,21 @@ void console_init(void)
 {
 	u32 t;
 
-	halconsole_common.uart = CONSOLE_BASE(UART_CONSOLE);
+	halconsole_common.uart = CONSOLE_BASE(UART_CONSOLE_PLO);
 
-	_imxrt_setDevClock(CONSOLE_CLK(UART_CONSOLE), 0, 0, 0, 0, 1);
+	_imxrt_setDevClock(CONSOLE_CLK(UART_CONSOLE_PLO), 0, 0, 0, 0, 1);
 
 	/* tx */
-	_imxrt_setIOmux(CONSOLE_MUX(UART_CONSOLE, TX_PIN), 0, 0);
-	_imxrt_setIOpad(CONSOLE_PAD(UART_CONSOLE, TX_PIN), 0, 0, 0, 0, 0, 0);
+	_imxrt_setIOmux(CONSOLE_MUX(UART_CONSOLE_PLO, TX_PIN), 0, 0);
+	_imxrt_setIOpad(CONSOLE_PAD(UART_CONSOLE_PLO, TX_PIN), 0, 0, 0, 0, 0, 0);
 
 	/* rx */
-	_imxrt_setIOmux(CONSOLE_MUX(UART_CONSOLE, RX_PIN), 0, 0);
-	_imxrt_setIOpad(CONSOLE_PAD(UART_CONSOLE, RX_PIN), 0, 0, 1, 1, 0, 0);
+	_imxrt_setIOmux(CONSOLE_MUX(UART_CONSOLE_PLO, RX_PIN), 0, 0);
+	_imxrt_setIOpad(CONSOLE_PAD(UART_CONSOLE_PLO, RX_PIN), 0, 0, 1, 1, 0, 0);
 
-#if (UART_CONSOLE == 1) || (UART_CONSOLE == 12)
-	_imxrt_setIOisel(CONSOLE_ISEL(UART_CONSOLE, txd), 0);
-	_imxrt_setIOisel(CONSOLE_ISEL(UART_CONSOLE, rxd), 0);
+#if (UART_CONSOLE_PLO == 1) || (UART_CONSOLE_PLO == 12)
+	_imxrt_setIOisel(CONSOLE_ISEL(UART_CONSOLE_PLO, txd), 0);
+	_imxrt_setIOisel(CONSOLE_ISEL(UART_CONSOLE_PLO, rxd), 0);
 #endif
 
 	/* Reset all internal logic and registers, except the Global Register */

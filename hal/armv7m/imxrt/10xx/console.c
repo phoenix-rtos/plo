@@ -27,8 +27,8 @@
 #define CONSOLE_ISEL(n, pin) (CONCAT2(pctl_isel_lpuart, CONCAT(n, _##pin)))
 #define CONSOLE_BAUD(n)      (UART_PIN(n, BAUDRATE))
 
-#if CONSOLE_BAUD(UART_CONSOLE)
-#define CONSOLE_BAUDRATE CONSOLE_BAUD(UART_CONSOLE)
+#if CONSOLE_BAUD(UART_CONSOLE_PLO)
+#define CONSOLE_BAUDRATE CONSOLE_BAUD(UART_CONSOLE_PLO)
 #else
 #define CONSOLE_BAUDRATE (UART_BAUDRATE)
 #endif
@@ -57,21 +57,21 @@ void console_init(void)
 {
 	u32 t;
 
-	halconsole_common.uart = CONSOLE_BASE(UART_CONSOLE);
+	halconsole_common.uart = CONSOLE_BASE(UART_CONSOLE_PLO);
 
-	_imxrt_ccmControlGate(CONSOLE_CLK(UART_CONSOLE), clk_state_run_wait);
+	_imxrt_ccmControlGate(CONSOLE_CLK(UART_CONSOLE_PLO), clk_state_run_wait);
 
 	/* tx */
-	_imxrt_setIOmux(CONSOLE_MUX(UART_CONSOLE, TX_PIN), 0, 2);
-	_imxrt_setIOpad(CONSOLE_PAD(UART_CONSOLE, TX_PIN), 0, 0, 0, 1, 0, 2, 6, 0);
+	_imxrt_setIOmux(CONSOLE_MUX(UART_CONSOLE_PLO, TX_PIN), 0, 2);
+	_imxrt_setIOpad(CONSOLE_PAD(UART_CONSOLE_PLO, TX_PIN), 0, 0, 0, 1, 0, 2, 6, 0);
 
 	/* rx */
-	_imxrt_setIOmux(CONSOLE_MUX(UART_CONSOLE, RX_PIN), 0, 2);
-	_imxrt_setIOpad(CONSOLE_PAD(UART_CONSOLE, RX_PIN), 0, 0, 0, 1, 0, 2, 6, 0);
+	_imxrt_setIOmux(CONSOLE_MUX(UART_CONSOLE_PLO, RX_PIN), 0, 2);
+	_imxrt_setIOpad(CONSOLE_PAD(UART_CONSOLE_PLO, RX_PIN), 0, 0, 0, 1, 0, 2, 6, 0);
 
-#if (UART_CONSOLE >= 2) && (UART_CONSOLE <= 8)
-	_imxrt_setIOisel(CONSOLE_ISEL(UART_CONSOLE, rx), 1);
-	_imxrt_setIOisel(CONSOLE_ISEL(UART_CONSOLE, tx), 1);
+#if (UART_CONSOLE_PLO >= 2) && (UART_CONSOLE_PLO <= 8)
+	_imxrt_setIOisel(CONSOLE_ISEL(UART_CONSOLE_PLO, rx), 1);
+	_imxrt_setIOisel(CONSOLE_ISEL(UART_CONSOLE_PLO, tx), 1);
 #endif
 
 	_imxrt_ccmSetMux(clk_mux_uart, 0);
