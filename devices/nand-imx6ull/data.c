@@ -57,7 +57,7 @@ static void data_invalidateNandPage(nand_t *nand)
 }
 
 
-static int data_doSync(nand_t *nand)
+int data_doSync(nand_t *nand)
 {
 	unsigned int i, nblocks, npages;
 	int err;
@@ -109,7 +109,7 @@ static int data_doSync(nand_t *nand)
 }
 
 
-int data_sync(unsigned int minor)
+static int data_sync(unsigned int minor)
 {
 	nand_t *nand = nand_get(minor);
 
