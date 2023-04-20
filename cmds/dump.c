@@ -35,7 +35,7 @@ static unsigned int region_validator(addr_t start, addr_t end, addr_t curr)
 	(void)start;
 	(void)end;
 
-	if (syspage_mapRangeCheck(curr, curr, &attr)) {
+	if (syspage_mapRangeCheck(curr, curr, &attr) != 0) {
 		attr = (attr & mAttrRead);
 	}
 
@@ -96,8 +96,8 @@ static int cmd_dump(int argc, char *argv[])
 	addr_t start;
 	size_t length = 0x100;
 
-	while (argn < argc && argv[argn][0] == '-') {
-		if (argv[argn][1] == '\0' || argv[argn][2] != '\0') {
+	while ((argn < argc) && (argv[argn][0] == '-')) {
+		if ((argv[argn][1] == '\0') || (argv[argn][2] != '\0')) {
 			log_error("\n%s: Wrong arguments", argv[0]);
 			return -EINVAL;
 		}
@@ -111,7 +111,7 @@ static int cmd_dump(int argc, char *argv[])
 			case 'r':
 				/* Use phfs device to read */
 				memdump = 0;
-				if (argn + 1 < argc) {
+				if ((argn + 1) < argc) {
 					devname = argv[++argn];
 					break;
 				}
@@ -130,7 +130,7 @@ static int cmd_dump(int argc, char *argv[])
 		return -EINVAL;
 	}
 
-	start = lib_strtoul(argv[argn], &endptr, 16);
+	start = lib_strtoul(argv[argn], &endptr, 0);
 	if (*endptr != '\0') {
 		log_error("\n%s: Wrong arguments", argv[0]);
 		return -EINVAL;
@@ -139,13 +139,13 @@ static int cmd_dump(int argc, char *argv[])
 	argn++;
 	if (argn < argc) {
 		length = lib_strtoul(argv[argn], &endptr, 0);
-		if ((*endptr != '\0') || (length == 0)) {
+		if ((*endptr != '\0') || (length == 0u)) {
 			log_error("\n%s: Wrong arguments", argv[0]);
 			return -EINVAL;
 		}
 	}
 
-	if (start + length < start) {
+	if ((start + length) < start) {
 		length = (addr_t)(-1) - start;
 	}
 
