@@ -13,6 +13,8 @@
  * %LICENSE%
  */
 
+#include <board_config.h>
+
 #include <hal/hal.h>
 #include <lib/lib.h>
 #include <devices/devs.h>
