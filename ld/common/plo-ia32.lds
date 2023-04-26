@@ -52,6 +52,7 @@ SECTIONS
 	PROVIDE (etext = .);
 
 	.rodata : {
+		__rodata_load = LOADADDR(.rodata);
 		__rodata_start = .;
 		*(.rodata .rodata.* .gnu.linkonce.r.*)
 		__rodata_end = .;
