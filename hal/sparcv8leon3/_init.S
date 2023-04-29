@@ -24,7 +24,7 @@
 .type _init, #function
 _init:
 	/* Set up trap table */
-	set _trap_table, %g1
+	sethi %hi(_trap_table), %g1
 	wr %g1, %tbr
 
 	wr %g0, 0x2, %wim
