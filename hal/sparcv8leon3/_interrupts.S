@@ -42,11 +42,10 @@ _interrupts_dispatch:
 	 */
 	srl %g2, %l0, %g3
 	cmp %g3, 1
-
-	bne wovfl_done
+	/* calculate new wim: current %wim in %g2, %g3 is scratch */
 	sll %g2, (NWINDOWS - 1), %g3
 
-	/* calculate new wim: current %wim in %g2, %g3 is scratch */
+	bne wovfl_done
 	srl %g2, 1, %g2
 
 	save
@@ -107,9 +106,9 @@ wovfl_done:
 
 	/* back to task context */
 	mov %fp, %sp
-	add %sp, 0x48, %fp
 
 	ld  [%sp + 0x40], %g1 /* y */
+	add %sp, 0x48, %fp
 	wr  %g1, %g0, %y
 	ldd [%sp + 0x38], %i6  /* i6, i7 */
 	ldd [%sp + 0x30], %i4  /* i4, i5 */
@@ -118,19 +117,18 @@ wovfl_done:
 	ldd [%sp + 0x18], %g4  /* g4, g5 */
 	ldd [%sp + 0x10], %g2  /* g2, g3 */
 	ld  [%sp + 0x0c], %g1  /* g1 */
-	ld  [%sp + 0x08], %l2  /* nPC */
 	ldd [%sp + 0x00], %l0  /* psr, PC */
+	ld  [%sp + 0x08], %l2  /* nPC */
 
 	/* Check if restore would cause window underflow.
 	 * After restore: CWP = CWP + 1 (mod NWINDOWS)
 	 * i.e. wim >> (CWP + 1) == 1
 	 */
-	rd %wim, %l4
 	and	%l0, PSR_CWP, %l5
 	add %l5, 1, %l5
 	cmp %l5, NWINDOWS
 	bne cwp_done
-	nop
+	rd %wim, %l4
 	/* we'd end up in non-existent window #31, it means it's #0 */
 	mov 0, %l5
 
@@ -140,14 +138,15 @@ cwp_done:
 	 */
 	srl %l4, %l5, %l6
 	cmp %l6, 1
-	bne wufl_done
-	/* uses the delay slot
-	 * calculate new wim
-	 * %l4 = current %wim
+	/* calculate new wim
+	 * %l4 = current wim
 	 * wim = (wim << 1) ^ (wim >> (NWINDOWS - 1))
 	 */
 	sll %l4, 1, %l5
+
+	bne wufl_done
 	srl %l4, (NWINDOWS - 1), %l4
+
 	wr %l4, %l5, %wim
 	nop
 	nop
