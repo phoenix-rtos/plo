@@ -14,13 +14,38 @@
  */
 
 #include <hal/hal.h>
+#include <lib/errno.h>
 
 
 static const struct {
 	void (*runBootloader)(void *arg);
 	const u32 version;
 	const char *copyright;
-} **volatile bootloaderTree = (void *)0x21001c;
+} * *volatile bootloaderTree;
+
+
+int bootloader_init(void)
+{
+	u32 base;
+
+	/*
+	 * On the i.MX RT1176, the bootrom entry point may be located at
+	 * different addresses depending on the revision of the chip:
+	 * - MIMXRT1176 0x0021001c
+	 * - PIMXRT1176 0x0020001c
+	 */
+
+	for (base = 0x00210000; base >= 0x00200000uL; base -= 0x10000) {
+		bootloaderTree = (void *)(base + 0x1c);
+		if ((((u32)(*bootloaderTree)->copyright) & ~0xffffuL) == base) {
+			return EOK;
+		}
+	}
+
+	bootloaderTree = (void *)-1;
+
+	return -ENOSYS;
+}
 
 
 u32 bootloader_getVersion(void)

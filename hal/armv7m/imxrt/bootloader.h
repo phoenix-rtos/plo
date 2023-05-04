@@ -22,15 +22,19 @@
 #define BOOT_DOWNLOADER_UART (0x12 << 16)
 
 
-/* Returns bootloader version */
+/* Detect and initialize bootloader */
+int bootloader_init(void);
+
+
+/* Return bootloader version */
 u32 bootloader_getVersion(void);
 
 
-/* Gets pointer to vendor copyright string */
+/* Get pointer to vendor copyright string */
 const char *bootloader_getVendorString(void);
 
 
-/* Enters ROM bootloader firmware */
+/* Enter ROM bootloader firmware */
 void bootloader_run(u32 bootcfg) __attribute__((noreturn));
 
 
