@@ -14,13 +14,22 @@
  */
 
 #include <hal/hal.h>
+#include <lib/errno.h>
 
 
 static const struct {
 	const u32 version;
 	const char *copyright;
 	void (*runBootloader)(void *arg);
-} **volatile bootloaderTree = (void *)0x20001c;
+} * *volatile bootloaderTree;
+
+
+int bootloader_init(void)
+{
+	bootloaderTree = (void *)0x20001c;
+
+	return EOK;
+}
 
 
 u32 bootloader_getVersion(void)

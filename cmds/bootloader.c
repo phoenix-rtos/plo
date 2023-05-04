@@ -29,9 +29,17 @@ static void cmd_bootloaderInfo(void)
 
 static int cmd_bootloader(int argc, char *argv[])
 {
+	int ret;
+
 	if (argc != 1) {
 		log_error("\n%s: Command does not accept arguments", argv[0]);
 		return -EINVAL;
+	}
+
+	ret = bootloader_init();
+	if (ret < 0) {
+		log_error("\n%s: ROM bootloader unavailable", argv[0]);
+		return ret;
 	}
 
 	lib_printf("\nEntering ROM-API bootloader: %s\n", bootloader_getVendorString());
