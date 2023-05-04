@@ -18,9 +18,11 @@
 
 
 /* Serial downloader media */
-#define BOOT_DOWNLOADER_USB  (0x11 << 16)
-#define BOOT_DOWNLOADER_UART (0x12 << 16)
+#define BOOT_DOWNLOADER_AUTO (0x10uL << 16)
+#define BOOT_DOWNLOADER_USB  (0x11uL << 16)
+#define BOOT_DOWNLOADER_UART (0x12uL << 16)
 
+#define BOOT_IMAGE_SELECT(n) ((n)&3uL)
 
 /* Detect and initialize bootloader */
 int bootloader_init(void);

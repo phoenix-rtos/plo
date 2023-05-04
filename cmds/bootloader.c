@@ -23,40 +23,107 @@
 
 static void cmd_bootloaderInfo(void)
 {
-	lib_printf("enters cpu vendor bootloader mode");
+	lib_printf("enters cpu vendor bootloader mode use <-h> to see usage");
+}
+
+
+static void print_usage(const char *name)
+{
+	lib_printf(
+		"Usage: %s <-b | -s imagenum>\n"
+		"where:\n"
+		"\t-b enters USB serial downloader mode\n"
+		"\t-s <imagenum> selects image <1, 2, 3 or 4> to boot from\n",
+		name);
 }
 
 
 static int cmd_bootloader(int argc, char *argv[])
 {
 	int ret;
+	int opt;
+	int optBootMode = 0;
+	int optImageSel = 0;
 
-	if (argc != 1) {
-		log_error("\n%s: Command does not accept arguments", argv[0]);
-		return -EINVAL;
-	}
+	lib_printf("\n");
 
 	ret = bootloader_init();
 	if (ret < 0) {
-		log_error("\n%s: ROM bootloader unavailable", argv[0]);
+		log_error("%s: ROM bootloader unavailable", argv[0]);
 		return ret;
 	}
 
-	lib_printf("\nEntering ROM-API bootloader: %s\n", bootloader_getVendorString());
+	if (argc == 1) {
+		print_usage(argv[0]);
+		return CMD_EXIT_FAILURE;
+	}
+
+	for (;;) {
+		opt = lib_getopt(argc, argv, "bhs:");
+		if (opt == -1) {
+			break;
+		}
+
+		switch (opt) {
+			case 'b':
+				optBootMode = BOOT_DOWNLOADER_USB;
+				break;
+
+			case 's':
+				optImageSel = (int)lib_strtol(optarg, NULL, 0);
+				if ((optImageSel < 1) || (optImageSel > 4)) {
+					log_error("%s: invalid image selection <1, 4>\n", argv[0]);
+					print_usage(argv[0]);
+					return CMD_EXIT_FAILURE;
+				}
+				break;
+
+			case 'h':
+			default:
+				print_usage(argv[0]);
+				return CMD_EXIT_FAILURE;
+		}
+	}
+
+	if ((optBootMode != 0) && (optImageSel != 0)) {
+		log_error("%s: select either boot mode or image number, not both\n", argv[0]);
+		print_usage(argv[0]);
+		return CMD_EXIT_FAILURE;
+	}
+
+	optImageSel = ((optImageSel < 1) && (optImageSel > 4)) ? 0 : (optImageSel - 1);
+
+	if (optBootMode != 0) {
+		lib_printf("USB Serial downloader mode\n");
+	}
+	else {
+		lib_printf("Selected image to boot from: %d\n", optImageSel + 1);
+	}
+
+	lib_printf("Entering ROM-API bootloader: %s\n", bootloader_getVendorString());
 
 	devs_done();
 	hal_done();
 	hal_interruptsDisableAll();
 
-	bootloader_run(BOOT_DOWNLOADER_USB);
+	/*
+	 * TODO: Enable 60sec watchdog on imxrt1064,
+	 * like on imxrt1176 is enabled by default
+	 */
 
-	return EOK;
+	bootloader_run(optBootMode | BOOT_IMAGE_SELECT(optImageSel));
+
+	/* Never reached */
+
+	return CMD_EXIT_SUCCESS;
 }
 
 
 __attribute__((constructor)) static void cmd_bootloaderReg(void)
 {
-	const static cmd_t app_cmd = { .name = "bootloader", .run = cmd_bootloader, .info = cmd_bootloaderInfo };
+	const static cmd_t app_cmd = {
+		.name = "bootloader", .run = cmd_bootloader, .info = cmd_bootloaderInfo
+	};
 
 	cmd_reg(&app_cmd);
 }
