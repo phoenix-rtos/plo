@@ -43,8 +43,8 @@
 
 #define RESET \
 	mov	%g0, %g4; \
-	sethi %hi(_init), %g4; \
-	jmp %g4 + %lo(_init); \
+	call _init; \
+	nop; \
 	nop;
 
 

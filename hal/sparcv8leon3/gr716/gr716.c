@@ -138,43 +138,6 @@ static void _gr716_pllSetDefault(void)
 }
 
 
-/* Initialize external SRAM */
-static void _gr716_sram_init(void)
-{
-	io_cfg_t ioCfg;
-
-	_gr716_cguClkEnable(cgu_primary, cgudev_ftmctrl);
-	/* Set up addr pins */
-	for (size_t i = 0; i <= 20; i++) {
-		ioCfg.pin = i;
-		ioCfg.dir = 1;
-		ioCfg.opt = 2;
-		ioCfg.pullup = 0;
-		ioCfg.pulldn = 0;
-		_gr716_ioCfg(&ioCfg);
-	}
-	/* Set up data pins */
-	for (size_t i = 25; i <= 34; i++) {
-		ioCfg.pin = i;
-		ioCfg.dir = 1;
-		ioCfg.opt = 2;
-		ioCfg.pullup = 0;
-		ioCfg.pulldn = 0;
-		_gr716_ioCfg(&ioCfg);
-	}
-	for (size_t i = 49; i <= 52; i++) {
-		ioCfg.pin = i;
-		ioCfg.dir = 1;
-		ioCfg.opt = 2;
-		ioCfg.pullup = 0;
-		ioCfg.pulldn = 0;
-		_gr716_ioCfg(&ioCfg);
-	}
-	/* Set SRAM bank size and enable bus ready signalling */
-	*(gr716_common.mctrl0_base + mctrl_cfg2) |= (0xf << 9) | (1 << 7);
-}
-
-
 /* Enable (1) / disable (0) interrupts from PLL and clock logic */
 void _gr716_pllIntCfg(u8 en)
 {
@@ -259,5 +222,4 @@ void _gr716_init(void)
 	gr716_common.mctrl0_base = MCTRL0_BASE;
 
 	_gr716_pllSetDefault();
-	_gr716_sram_init();
 }

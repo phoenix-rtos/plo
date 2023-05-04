@@ -20,12 +20,12 @@ MEMORY
 	m_sram          : ORIGIN = 0x40000000, LENGTH = 2M
 }
 
-REGION_ALIAS("PLO_IMAGE", m_iocram)
-REGION_ALIAS("RODATA", m_dram)
-REGION_ALIAS("DATA", m_dram)
-REGION_ALIAS("BSS", m_dram)
-REGION_ALIAS("HEAP", m_dram)
-REGION_ALIAS("STACK", m_dram)
+REGION_ALIAS("PLO_IMAGE", m_sram)
+REGION_ALIAS("RODATA", m_sram)
+REGION_ALIAS("DATA", m_sram)
+REGION_ALIAS("BSS", m_sram)
+REGION_ALIAS("HEAP", m_sram)
+REGION_ALIAS("STACK", m_sram)
 
 #include "common/plo-sparc.lds"
 
