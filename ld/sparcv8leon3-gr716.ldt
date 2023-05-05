@@ -4,7 +4,7 @@
 #define SIZE_PAGE 0x200
 #define SIZE_STACK (8 * SIZE_PAGE)
 #define SIZE_HEAP  (8 * SIZE_PAGE)
-
+#define AREA_KERNEL 0x100000
 
 #if defined(__LINKER__)
 
@@ -17,7 +17,7 @@ MEMORY
 	m_spi1          : ORIGIN = 0x04000000, LENGTH = 32M
 	m_dram          : ORIGIN = 0x30000000, LENGTH = 64K
 	m_iocram        : ORIGIN = 0x31000000, LENGTH = 128K
-	m_sram          : ORIGIN = 0x40000000, LENGTH = 2M
+	m_sram          : ORIGIN = 0x40000000 + AREA_KERNEL, LENGTH = 2M - AREA_KERNEL
 }
 
 REGION_ALIAS("PLO_IMAGE", m_sram)
