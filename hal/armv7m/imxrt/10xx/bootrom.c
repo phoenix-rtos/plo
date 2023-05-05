@@ -24,7 +24,7 @@ static const struct {
 } * *volatile bootloaderTree;
 
 
-int bootloader_init(void)
+int bootrom_init(void)
 {
 	bootloaderTree = (void *)0x20001c;
 
@@ -32,21 +32,21 @@ int bootloader_init(void)
 }
 
 
-u32 bootloader_getVersion(void)
+u32 bootrom_getVersion(void)
 {
 	return (*bootloaderTree)->version;
 }
 
 
-const char *bootloader_getVendorString(void)
+const char *bootrom_getVendorString(void)
 {
 	return (*bootloaderTree)->copyright;
 }
 
 
-__attribute__((noreturn)) void bootloader_run(u32 bootcfg)
+__attribute__((noreturn)) void bootrom_run(u32 bootcfg)
 {
-	u32 arg = (0xebuL << 24) | (bootcfg & (0x130003uL));
+	u32 arg = (0xebu << 24) | (bootcfg & (0x130003u));
 
 	(*bootloaderTree)->runBootloader(&arg);
 

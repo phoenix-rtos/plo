@@ -24,20 +24,20 @@ static const struct {
 } * *volatile bootloaderTree;
 
 
-int bootloader_init(void)
+int bootrom_init(void)
 {
 	u32 base;
 
 	/*
-	 * On the i.MX RT1176, the bootrom entry point may be located at
+	 * On the i.MX RT1176, the bootloader entry point may be located at
 	 * different addresses depending on the revision of the chip:
 	 * - MIMXRT1176 0x0021001c
 	 * - PIMXRT1176 0x0020001c
 	 */
 
-	for (base = 0x00210000; base >= 0x00200000uL; base -= 0x10000) {
-		bootloaderTree = (void *)(base + 0x1c);
-		if ((((u32)(*bootloaderTree)->copyright) & ~0xffffuL) == base) {
+	for (base = 0x00210000u; base >= 0x00200000u; base -= 0x10000u) {
+		bootloaderTree = (void *)(base + 0x1cu);
+		if ((((u32)(*bootloaderTree)->copyright) & ~0xffffu) == base) {
 			return EOK;
 		}
 	}
@@ -48,21 +48,21 @@ int bootloader_init(void)
 }
 
 
-u32 bootloader_getVersion(void)
+u32 bootrom_getVersion(void)
 {
 	return (*bootloaderTree)->version;
 }
 
 
-const char *bootloader_getVendorString(void)
+const char *bootrom_getVendorString(void)
 {
 	return (*bootloaderTree)->copyright;
 }
 
 
-__attribute__((noreturn)) void bootloader_run(u32 bootcfg)
+__attribute__((noreturn)) void bootrom_run(u32 bootcfg)
 {
-	u32 arg = (0xebuL << 24) | (bootcfg & (0x130003uL));
+	u32 arg = (0xebu << 24) | (bootcfg & (0x130003u));
 
 	(*bootloaderTree)->runBootloader(&arg);
 

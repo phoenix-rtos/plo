@@ -17,11 +17,11 @@
 
 #include <devices/devs.h>
 #include <hal/hal.h>
-#include <hal/armv7m/imxrt/bootloader.h>
+#include <hal/armv7m/imxrt/bootrom.h>
 #include <lib/lib.h>
 
 
-static void cmd_bootloaderInfo(void)
+static void cmd_bootromInfo(void)
 {
 	lib_printf("enters cpu vendor bootloader mode use <-h> to see usage");
 }
@@ -38,7 +38,7 @@ static void print_usage(const char *name)
 }
 
 
-static int cmd_bootloader(int argc, char *argv[])
+static int cmd_bootrom(int argc, char *argv[])
 {
 	int ret;
 	int opt;
@@ -47,7 +47,7 @@ static int cmd_bootloader(int argc, char *argv[])
 
 	lib_printf("\n");
 
-	ret = bootloader_init();
+	ret = bootrom_init();
 	if (ret < 0) {
 		log_error("%s: ROM bootloader unavailable", argv[0]);
 		return ret;
@@ -91,16 +91,14 @@ static int cmd_bootloader(int argc, char *argv[])
 		return CMD_EXIT_FAILURE;
 	}
 
-	optImageSel = ((optImageSel < 1) && (optImageSel > 4)) ? 0 : (optImageSel - 1);
-
 	if (optBootMode != 0) {
 		lib_printf("USB Serial downloader mode\n");
 	}
 	else {
-		lib_printf("Selected image to boot from: %d\n", optImageSel + 1);
+		lib_printf("Selected image to boot from: %d\n", optImageSel);
 	}
 
-	lib_printf("Entering ROM-API bootloader: %s\n", bootloader_getVendorString());
+	lib_printf("Entering ROM-API bootloader: %s\n", bootrom_getVendorString());
 
 	devs_done();
 	hal_done();
@@ -111,7 +109,11 @@ static int cmd_bootloader(int argc, char *argv[])
 	 * like on imxrt1176 is enabled by default
 	 */
 
-	bootloader_run(optBootMode | BOOT_IMAGE_SELECT(optImageSel));
+	if (optImageSel > 0) {
+		optImageSel--;
+	}
+
+	bootrom_run(optBootMode | BOOT_IMAGE_SELECT(optImageSel));
 
 	/* Never reached */
 
@@ -119,10 +121,10 @@ static int cmd_bootloader(int argc, char *argv[])
 }
 
 
-__attribute__((constructor)) static void cmd_bootloaderReg(void)
+__attribute__((constructor)) static void cmd_bootromReg(void)
 {
 	const static cmd_t app_cmd = {
-		.name = "bootloader", .run = cmd_bootloader, .info = cmd_bootloaderInfo
+		.name = "bootrom", .run = cmd_bootrom, .info = cmd_bootromInfo
 	};
 
 	cmd_reg(&app_cmd);
