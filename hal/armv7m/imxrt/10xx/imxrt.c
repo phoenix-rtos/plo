@@ -3,10 +3,10 @@
  *
  * Operating system loader
  *
- * iMXRT basic peripherals control functions
+ * iMXRT 10xx basic peripherals control functions
  *
- * Copyright 2017, 2019, 2020 Phoenix Systems
- * Author: Aleksander Kaminski, Jan Sikorski, Hubert Buczynski
+ * Copyright 2017, 2019-2023 Phoenix Systems
+ * Author: Aleksander Kaminski, Jan Sikorski, Hubert Buczynski, Gerard Swiderski
  *
  * This file is part of Phoenix-RTOS.
  *
@@ -32,6 +32,7 @@ struct {
 	volatile u32 *rtwdog;
 	volatile u32 *src;
 
+	u32 resetFlags;
 	u32 xtaloscFreq;
 	u32 cpuclk;
 } imxrt_common;
@@ -1531,6 +1532,14 @@ int _imxrt_gpioGetPort(unsigned int d, u32 *val)
 }
 
 
+/* SRC */
+
+u32 _imxrt_getResetFlags(void)
+{
+	return imxrt_common.resetFlags;
+}
+
+
 void _imxrt_init(void)
 {
 	int i;
@@ -1617,6 +1626,12 @@ void _imxrt_init(void)
 
 	/* Wait for any pending CCM div/mux handshake process to complete */
 	while (*(imxrt_common.ccm + ccm_cdhipr) & 0x1002b);
+
+	/* Save SRSR */
+	imxrt_common.resetFlags = (*(imxrt_common.src + src_srsr)) & 0x1ff;
+
+	/* Clear SRSR */
+	*(imxrt_common.src + src_srsr) |= imxrt_common.resetFlags;
 
 	/* Allow userspace applications to access hardware registers */
 	for (i = 0; i < sizeof(imxrt_common.aips) / sizeof(imxrt_common.aips[0]); ++i) {

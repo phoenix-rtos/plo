@@ -556,6 +556,9 @@ extern int _imxrt_setIOpad(int pad, char hys, char pus, char pue, char pke, char
 extern int _imxrt_setIOisel(int isel, char daisy);
 
 
+extern u32 _imxrt_getResetFlags(void);
+
+
 extern void _imxrt_init(void);
 
 

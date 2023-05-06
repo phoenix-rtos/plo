@@ -5,9 +5,9 @@
  *
  * Initial loader's routines
  *
- * Copyright 2012, 2017, 2020-2021 Phoenix Systems
+ * Copyright 2012, 2017, 2020-2023 Phoenix Systems
  * Copyright 2001, 2005 Pawel Pisarczyk
- * Authors: Pawel Pisarczyk, Lukasz Kosinski, Hubert Buczynski
+ * Authors: Pawel Pisarczyk, Lukasz Kosinski, Hubert Buczynski, Gerard Swiderski
  *
  * This file is part of Phoenix-RTOS.
  *
@@ -29,12 +29,17 @@ void hal_customDone(void) __attribute__((weak, alias("nop")));
 
 int main(void)
 {
+	u32 flags;
+
 	hal_init();
 	hal_customInit();
 	syspage_init();
 
 	lib_printf(CONSOLE_BOLD "Phoenix-RTOS loader v. " VERSION CONSOLE_NORMAL);
 	lib_printf(CONSOLE_CURSOR_HIDE CONSOLE_MAGENTA "\nhal: %s", hal_cpuInfo());
+	if (hal_cpuReasonOfReset(&flags) >= 0) {
+		lib_printf(" (crf=0x%08x)", flags);
+	}
 	devs_init();
 	cmd_run();
 

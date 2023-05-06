@@ -142,6 +142,14 @@ int hal_cpuJump(void)
 	return 0;
 }
 
+
+int hal_cpuReasonOfReset(u32 *val)
+{
+	/* TODO: Implement reading of the source of reset register */
+	return -1;
+}
+
+
 addr_t hal_kernelGetAddress(addr_t addr)
 {
 	addr_t offs;

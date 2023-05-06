@@ -201,3 +201,10 @@ int hal_cpuJump(void)
 	/* clang-format on */
 	__builtin_unreachable();
 }
+
+
+int hal_cpuReasonOfReset(u32 *val)
+{
+	/* TODO: Implement reading of the source of reset register */
+	return -1;
+}

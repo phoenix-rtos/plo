@@ -331,6 +331,9 @@ extern int _imxrt_getDevClock(int clock, int *div, int *mux, int *mfd, int *mfn,
 extern int _imxrt_setDevClock(int clock, int div, int mux, int mfd, int mfn, int state);
 
 
+extern u32 _imxrt_getResetFlags(void);
+
+
 extern void _imxrt_init(void);
 
 
