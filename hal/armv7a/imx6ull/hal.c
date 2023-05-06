@@ -145,8 +145,11 @@ int hal_cpuJump(void)
 
 int hal_cpuReasonOfReset(u32 *val)
 {
-	/* TODO: Implement reading of the source of reset register */
-	return -1;
+	if (imx6ull_getResetFlags() >= 0) {
+		*val = imx6ull_getResetFlags();
+		return 1;
+	}
+	return 0;
 }
 
 

@@ -18,6 +18,9 @@
 #include "../cpu.h"
 
 
+/* clang-format off */
+
+
 /* CCM registers */
 enum { ccm_ccr = 0, ccm_ccdr, ccm_csr, ccm_ccsr, ccm_cacrr, ccm_cbcdr, ccm_cbcmr,
 	ccm_cscmr1, ccm_cscmr2, ccm_cscdr1, ccm_cs1cdr, ccm_cs2cdr, ccm_cdcdr, ccm_chsccdr,
@@ -41,6 +44,10 @@ enum { ccm_analog_pll_arm = 0, ccm_analog_pll_arm_set, ccm_analog_pll_arm_clr, c
 	ccm_analog_misc0 = 84, ccm_analog_misc0_set, ccm_analog_misc0_clr, ccm_analog_misc0_tog, ccm_analog_misc1,
 	ccm_analog_misc1_set, ccm_analog_misc1_clr, ccm_analog_misc1_tog, ccm_analog_misc2, ccm_analog_misc2_set,
 	ccm_analog_misc2_clr, ccm_analog_misc2_tog };
+
+
+enum { src_scr = 0, src_sbmr1, src_srsr, src_sisr = 5, src_sbmr2 = 7, src_gpr1, src_gpr2,
+	src_gpr3, src_gpr4, src_gpr5, src_gpr6, src_gpr7, src_gpr8, src_gpr9, src_gpr10 };
 
 
 /* IOMUX - GPR */
@@ -126,16 +133,29 @@ static const char ccm_reserved[] = { clk_asrc + 1, clk_ipsync_ip2apb_tzasc1_ipg 
 	clk_mmdc_core_aclk_fast_core_p0 + 1, clk_iomux_snvs_gpr + 1, clk_usdhc2 + 1 };
 
 
+/* clang-format on */
+
+
 struct {
 	volatile u32 *ccm;
 	volatile u32 *ccm_analog;
+
+	volatile u32 *src;
 
 	volatile u32 *iomux;
 	volatile u32 *iomux_gpr;
 	volatile u32 *iomux_snvs;
 
 	volatile u32 *mmdc;
+
+	u32 resetFlags;
 } imx6ull_common;
+
+
+u32 imx6ull_getResetFlags(void)
+{
+	return imx6ull_common.resetFlags;
+}
 
 
 static int imx6ull_isValidDev(int dev)
@@ -347,6 +367,8 @@ void imx6ull_init(void)
 	imx6ull_common.ccm_analog = (void *)0x020c8000;
 	imx6ull_common.mmdc = (void *)0x021b0000;
 
+	imx6ull_common.src = (void *)0x020d8000;
+
 	imx6ull_common.iomux = (void *)0x020e0000;
 	imx6ull_common.iomux_gpr = (void *)0x020e4000;
 	imx6ull_common.iomux_snvs = (void *)0x02290000;
@@ -359,6 +381,13 @@ void imx6ull_init(void)
 
 	/* Enable EPITs clocks */
 	*(imx6ull_common.ccm + ccm_ccgr1) |= 0x00005000;
+
+	/* Save SRSR */
+	imx6ull_common.resetFlags = (*(imx6ull_common.ccm + src_srsr) & 0x101fdu);
+
+	/* Clear SRSR */
+	*(imx6ull_common.src + src_srsr) = 0xfdu;
+
 
 	imx6ull_ddrInit();
 }
