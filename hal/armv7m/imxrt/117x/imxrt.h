@@ -340,4 +340,16 @@ extern int _imxrt_setDirectLPCG(int clock, int state);
 extern int _imxrt_setLevelLPCG(int clock, int level);
 
 
+/* CM4 core management */
+
+
+extern u32 _imxrt_getStateCM4(void);
+
+
+extern int _imxrt_setVtorCM4(int dwpLock, int dwp, addr_t vtor);
+
+
+extern void _imxrt_runCM4(void);
+
+
 #endif
