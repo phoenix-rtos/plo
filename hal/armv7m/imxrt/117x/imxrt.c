@@ -46,11 +46,13 @@ struct {
 	volatile u32 *wdog3;
 	volatile u32 *iomuxc_snvs;
 	volatile u32 *iomuxc_lpsr;
+	volatile u32 *iomuxc_lpsr_gpr;
 	volatile u32 *iomuxc_gpr;
 	volatile u32 *iomuxc;
 	volatile u32 *ccm;
 
 	u32 cpuclk;
+	u32 cm4state;
 } imxrt_common;
 
 /* clang-format on */
@@ -297,6 +299,59 @@ __attribute__((section(".noxip"))) int _imxrt_setLevelLPCG(int clock, int level)
 }
 
 
+/* CM4 */
+
+
+int _imxrt_setVtorCM4(int dwpLock, int dwp, addr_t vtor)
+{
+	u32 tmp;
+
+	/* is CM4 running already ? */
+	if ((imxrt_common.cm4state & 1u) != 0u) {
+		return -1;
+	}
+
+	tmp = *(imxrt_common.iomuxc_lpsr_gpr + 0u);
+	tmp |= *(imxrt_common.iomuxc_lpsr_gpr + 1u);
+
+	/* is DWP locked or CM7 forbidden ? */
+	if ((tmp & (0xdu << 28)) != 0u) {
+		return -1;
+	}
+
+	tmp = ((((u32)dwpLock & 3u) << 30) | (((u32)dwp & 3u) << 28));
+
+	*(imxrt_common.iomuxc_lpsr_gpr + 0u) = (tmp | (vtor & 0xfff8u));
+	*(imxrt_common.iomuxc_lpsr_gpr + 1u) = (tmp | ((vtor >> 16) & 0xffffu));
+
+	hal_cpuDataMemoryBarrier();
+
+	imxrt_common.cm4state |= 2u;
+
+	return 0;
+}
+
+
+void _imxrt_runCM4(void)
+{
+	/* CM7 is allowed to reset system, CM4 is disallowed */
+	*(imxrt_common.src + src_srmr) |= ((3u << 10) | (3u << 6));
+	hal_cpuDataMemoryBarrier();
+
+	/* Release CM4 reset */
+	*(imxrt_common.src + src_scr) |= 1u;
+	hal_cpuDataSyncBarrier();
+
+	imxrt_common.cm4state |= 1u;
+}
+
+
+u32 _imxrt_getStateCM4(void)
+{
+	return imxrt_common.cm4state;
+}
+
+
 void _imxrt_init(void)
 {
 	int i;
@@ -313,11 +368,14 @@ void _imxrt_init(void)
 	imxrt_common.src = (void *)0x40c04000;
 	imxrt_common.iomuxc_snvs = (void *)0x40c94000;
 	imxrt_common.iomuxc_lpsr = (void *)0x40c08000;
+	imxrt_common.iomuxc_lpsr_gpr = (void *)0x40c0c000;
 	imxrt_common.iomuxc_gpr = (void *)0x400e4000;
 	imxrt_common.iomuxc = (void *)0x400e8000;
 	imxrt_common.ccm = (void *)0x40cc0000;
 
 	imxrt_common.cpuclk = 640000000;
+
+	imxrt_common.cm4state = (((*(imxrt_common.src + src_scr) & 1u) != 0u) ? 1u : 0u);
 
 	/* Disable watchdogs */
 	if (*(imxrt_common.wdog1 + wdog_wcr) & (1 << 2))
