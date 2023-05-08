@@ -44,8 +44,8 @@ struct {
 	volatile u16 *wdog1;
 	volatile u16 *wdog2;
 	volatile u32 *wdog3;
-	volatile u32 *iomux_snvs;
-	volatile u32 *iomux_lpsr;
+	volatile u32 *iomuxc_snvs;
+	volatile u32 *iomuxc_lpsr;
 	volatile u32 *iomuxc_gpr;
 	volatile u32 *iomuxc;
 	volatile u32 *ccm;
@@ -68,9 +68,9 @@ __attribute__((section(".noxip"))) static volatile u32 *_imxrt_IOmuxGetReg(int m
 		return imxrt_common.iomuxc + 4 + mux - pctl_mux_gpio_emc_b1_00;
 
 	if (mux < pctl_mux_gpio_lpsr_00)
-		return imxrt_common.iomux_snvs + mux - pctl_mux_wakeup;
+		return imxrt_common.iomuxc_snvs + mux - pctl_mux_wakeup;
 
-	return imxrt_common.iomux_lpsr + mux - pctl_mux_gpio_lpsr_00;
+	return imxrt_common.iomuxc_lpsr + mux - pctl_mux_gpio_lpsr_00;
 }
 
 
@@ -97,9 +97,9 @@ __attribute__((section(".noxip"))) static volatile u32 *_imxrt_IOpadGetReg(int p
 		return imxrt_common.iomuxc + pad + 149 - pctl_pad_gpio_emc_b1_00;
 
 	if (pad < pctl_pad_gpio_lpsr_00)
-		return imxrt_common.iomux_snvs + pad + 14 - pctl_pad_test_mode;
+		return imxrt_common.iomuxc_snvs + pad + 14 - pctl_pad_test_mode;
 
-	return imxrt_common.iomux_lpsr + pad + 16 - pctl_pad_gpio_lpsr_00;
+	return imxrt_common.iomuxc_lpsr + pad + 16 - pctl_pad_gpio_lpsr_00;
 }
 
 
@@ -197,7 +197,7 @@ __attribute__((section(".noxip"))) static volatile u32 *_imxrt_IOiselGetReg(int 
 	}
 
 	if (isel >= pctl_isel_can3_canrx)
-		return imxrt_common.iomux_lpsr + 32 + isel - pctl_isel_can3_canrx;
+		return imxrt_common.iomuxc_lpsr + 32 + isel - pctl_isel_can3_canrx;
 
 	return imxrt_common.iomuxc + 294 + isel - pctl_isel_flexcan1_rx;
 }
@@ -311,8 +311,8 @@ void _imxrt_init(void)
 	imxrt_common.wdog2 = (void *)0x40034000;
 	imxrt_common.wdog3 = (void *)0x40038000;
 	imxrt_common.src = (void *)0x40c04000;
-	imxrt_common.iomux_snvs = (void *)0x40c94000;
-	imxrt_common.iomux_lpsr = (void *)0x40c08000;
+	imxrt_common.iomuxc_snvs = (void *)0x40c94000;
+	imxrt_common.iomuxc_lpsr = (void *)0x40c08000;
 	imxrt_common.iomuxc_gpr = (void *)0x400e4000;
 	imxrt_common.iomuxc = (void *)0x400e8000;
 	imxrt_common.ccm = (void *)0x40cc0000;
