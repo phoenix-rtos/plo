@@ -3,10 +3,10 @@
  *
  * Operating system loader
  *
- * iMXRT basic peripherals control functions
+ * iMXRT 117x basic peripherals control functions
  *
- * Copyright 2017, 2019, 2020 Phoenix Systems
- * Author: Aleksander Kaminski, Jan Sikorski, Hubert Buczynski
+ * Copyright 2017, 2019-2023 Phoenix Systems
+ * Author: Aleksander Kaminski, Jan Sikorski, Hubert Buczynski, Gerard Swiderski
  *
  * This file is part of Phoenix-RTOS.
  *
@@ -16,14 +16,20 @@
 #include "imxrt.h"
 #include "../../cpu.h"
 
+/* clang-format off */
+
 enum { stk_ctrl = 0, stk_load, stk_val, stk_calib };
 
 
 enum { aipstz_mpr = 0, aipstz_opacr = 16, aipstz_opacr1, aipstz_opacr2, aipstz_opacr3, aipstz_opacr4 };
 
 
-enum { src_scr = 0, src_sbmr1, src_srsr, src_sbmr2 = 7, src_gpr1, src_gpr2, src_gpr3, src_gpr4,
-	src_gpr5, src_gpr6, src_gpr7, src_gpr8, src_gpr9, src_gpr10 };
+enum { src_scr = 0, src_srmr, src_sbmr1, src_sbmr2, src_srsr,
+	src_gpr1, src_gpr2, src_gpr3, src_gpr4, src_gpr5,
+	src_gpr6, src_gpr7, src_gpr8, src_gpr9, src_gpr10,
+	src_gpr11, src_gpr12, src_gpr13, src_gpr14, src_gpr15,
+	src_gpr16, src_gpr17, src_gpr18, src_gpr19, src_gpr20 };
+
 
 enum { wdog_wcr = 0, wdog_wsr, wdog_wrsr, wdog_wicr, wdog_wmcr };
 
@@ -47,6 +53,7 @@ struct {
 	u32 cpuclk;
 } imxrt_common;
 
+/* clang-format on */
 
 
 /* IOMUX */
