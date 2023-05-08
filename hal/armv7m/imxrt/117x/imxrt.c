@@ -3,10 +3,10 @@
  *
  * Operating system loader
  *
- * iMXRT basic peripherals control functions
+ * iMXRT 117x basic peripherals control functions
  *
- * Copyright 2017, 2019, 2020 Phoenix Systems
- * Author: Aleksander Kaminski, Jan Sikorski, Hubert Buczynski
+ * Copyright 2017, 2019-2023 Phoenix Systems
+ * Author: Aleksander Kaminski, Jan Sikorski, Hubert Buczynski, Gerard Swiderski
  *
  * This file is part of Phoenix-RTOS.
  *
@@ -16,14 +16,20 @@
 #include "imxrt.h"
 #include "../../cpu.h"
 
+/* clang-format off */
+
 enum { stk_ctrl = 0, stk_load, stk_val, stk_calib };
 
 
 enum { aipstz_mpr = 0, aipstz_opacr = 16, aipstz_opacr1, aipstz_opacr2, aipstz_opacr3, aipstz_opacr4 };
 
 
-enum { src_scr = 0, src_sbmr1, src_srsr, src_sbmr2 = 7, src_gpr1, src_gpr2, src_gpr3, src_gpr4,
-	src_gpr5, src_gpr6, src_gpr7, src_gpr8, src_gpr9, src_gpr10 };
+enum { src_scr = 0, src_srmr, src_sbmr1, src_sbmr2, src_srsr,
+	src_gpr1, src_gpr2, src_gpr3, src_gpr4, src_gpr5,
+	src_gpr6, src_gpr7, src_gpr8, src_gpr9, src_gpr10,
+	src_gpr11, src_gpr12, src_gpr13, src_gpr14, src_gpr15,
+	src_gpr16, src_gpr17, src_gpr18, src_gpr19, src_gpr20 };
+
 
 enum { wdog_wcr = 0, wdog_wsr, wdog_wrsr, wdog_wicr, wdog_wmcr };
 
@@ -44,9 +50,11 @@ struct {
 	volatile u32 *iomuxc;
 	volatile u32 *ccm;
 
+	u32 resetFlags;
 	u32 cpuclk;
 } imxrt_common;
 
+/* clang-format on */
 
 
 /* IOMUX */
@@ -232,6 +240,7 @@ __attribute__((section(".noxip"))) int _imxrt_getDevClock(int clock, int *div, i
 	return 0;
 }
 
+
 __attribute__((section(".noxip"))) int _imxrt_setDevClock(int clock, int div, int mux, int mfd, int mfn, int state)
 {
 	unsigned int t;
@@ -290,6 +299,14 @@ __attribute__((section(".noxip"))) int _imxrt_setLevelLPCG(int clock, int level)
 }
 
 
+/* SRC */
+
+u32 _imxrt_getResetFlags(void)
+{
+	return imxrt_common.resetFlags;
+}
+
+
 void _imxrt_init(void)
 {
 	int i;
@@ -334,8 +351,11 @@ void _imxrt_init(void)
 	*(imxrt_common.iomuxc_gpr + 28) &= ~(1 << 13);
 	hal_cpuDataMemoryBarrier();
 
-	/* Clear SRSR */
-	*(imxrt_common.src + src_srsr) = 0xffffffffu;
+	/* Save SRSR (both CM4 and CM7) */
+	imxrt_common.resetFlags = (*(imxrt_common.src + src_srsr)) & 0x7fff7fffu;
+
+	/* Clear SRSR (both CM4 and CM7) */
+	*(imxrt_common.src + src_srsr) |= imxrt_common.resetFlags;
 
 	/* Reconfigure all IO pads as slow slew-rate and low drive strength */
 	for (i = pctl_pad_gpio_emc_b1_00; i <= pctl_pad_gpio_disp_b2_15; ++i) {

@@ -142,6 +142,17 @@ int hal_cpuJump(void)
 	return 0;
 }
 
+
+int hal_cpuReasonOfReset(u32 *val)
+{
+	if (imx6ull_getResetFlags() >= 0) {
+		*val = imx6ull_getResetFlags();
+		return 1;
+	}
+	return 0;
+}
+
+
 addr_t hal_kernelGetAddress(addr_t addr)
 {
 	addr_t offs;

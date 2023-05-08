@@ -160,6 +160,9 @@ enum {
 };
 
 
+extern u32 imx6ull_getResetFlags(void);
+
+
 extern int imx6ull_setDevClock(int dev, unsigned int state);
 
 

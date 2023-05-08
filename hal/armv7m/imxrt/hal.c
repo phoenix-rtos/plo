@@ -5,7 +5,7 @@
  *
  * Hardware Abstraction Layer
  *
- * Copyright 2020-2022 Phoenix Systems
+ * Copyright 2020-2023 Phoenix Systems
  * Author: Hubert Buczynski, Marcin Baran, Gerard Swiderski
  *
  * This file is part of Phoenix-RTOS.
@@ -163,6 +163,16 @@ int hal_memoryGetNextEntry(addr_t start, addr_t end, mapent_t *entry)
 	}
 
 	return -1;
+}
+
+
+int hal_cpuReasonOfReset(u32 *val)
+{
+	if (_imxrt_getResetFlags() != 0) {
+		*val = _imxrt_getResetFlags();
+		return 1;
+	}
+	return 0;
 }
 
 

@@ -100,3 +100,9 @@ const char *hal_cpuInfo(void)
 {
 	return "IA-32 Generic";
 }
+
+
+int hal_cpuReasonOfReset(u32 *val)
+{
+	return -1;
+}

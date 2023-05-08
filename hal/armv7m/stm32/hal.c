@@ -194,3 +194,13 @@ int hal_cpuJump(void)
 
 	return 0;
 }
+
+
+int hal_cpuReasonOfReset(u32 *val)
+{
+	if (_stm32_rccGetResetFlags() != 0) {
+		*val = _stm32_rccGetResetFlags();
+		return 1;
+	}
+	return 0;
+}

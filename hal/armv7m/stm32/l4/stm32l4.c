@@ -235,6 +235,12 @@ u32 _stm32_rccGetCPUClock(void)
 }
 
 
+u32 _stm32_rccGetResetFlags(void)
+{
+	return stm32_common.resetFlags;
+}
+
+
 void _stm32_rccClearResetFlags(void)
 {
 	*(stm32_common.rcc + rcc_csr) |= 1 << 23;
@@ -478,6 +484,9 @@ void _stm32_init(void)
 	*(stm32_common.rcc + rcc_cier) = 0;
 
 	hal_cpuDataMemoryBarrier();
+
+	/* Save cpu reset flags */
+	stm32_common.resetFlags = (*(stm32_common.rcc + rcc_csr) & (0xffu << 24));
 
 	/* GPIO init */
 	for (i = 0; i < sizeof(stm32_common.gpio) / sizeof(stm32_common.gpio[0]); ++i)

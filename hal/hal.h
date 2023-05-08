@@ -52,6 +52,10 @@ extern void hal_cpuReboot(void) __attribute__((noreturn));
 extern int hal_cpuJump(void);
 
 
+/* Get flags indicating the reason of the CPU reset */
+extern int hal_cpuReasonOfReset(u32 *val);
+
+
 /* Function translates virtual address into physical */
 extern addr_t hal_kernelGetAddress(addr_t addr);
 
