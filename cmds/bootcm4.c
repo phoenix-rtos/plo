@@ -22,10 +22,12 @@
 
 #define CM4_BOOT_MEMSIZE 0x00040000u
 #define CM4_BOOT_ADDRESS 0x20200000u
-#define CM4_VTOR_ADDRESS 0x20200100u
 
 
-static unsigned int isImgLoaded = 0u;
+static struct {
+	unsigned int isImgLoaded;
+	addr_t cm4VtorOffset;
+} common = { 0 };
 
 
 static void cmd_bootcm4Info(void)
@@ -39,7 +41,8 @@ static void print_usage(const char *name)
 	lib_printf(
 		"Usage: %s <options> [<device> <image>]\n"
 		"\t-b  boot CM4 core\n"
-		"\t-l  load binary image using phfs <device> and <image>",
+		"\t-l  load binary image using phfs <device> and <image>\n"
+		"\t-o  optional offset to vectors table (default=0)\n",
 		name);
 }
 
@@ -84,6 +87,7 @@ static ssize_t loadImagePhfs(const char *phfsDev, const char *phfsFile)
 
 static int cmd_bootcm4(int argc, char *argv[])
 {
+	char *endptr;
 	const char *phfsDev = NULL;
 	const char *phfsFile = NULL;
 
@@ -99,7 +103,7 @@ static int cmd_bootcm4(int argc, char *argv[])
 	}
 
 	for (;;) {
-		opt = lib_getopt(argc, argv, "bl");
+		opt = lib_getopt(argc, argv, "bhlo:");
 		if (opt == -1) {
 			break;
 		}
@@ -111,6 +115,15 @@ static int cmd_bootcm4(int argc, char *argv[])
 
 			case 'l':
 				optLoad = 1;
+				break;
+
+			case 'o':
+				common.cm4VtorOffset = (addr_t)lib_strtoul(optarg, &endptr, 0);
+				if ((*endptr != '\0') || (common.cm4VtorOffset >= CM4_BOOT_MEMSIZE)) {
+					log_error("%s: Invalid arguments", argv[0]);
+					return CMD_EXIT_FAILURE;
+				}
+
 				break;
 
 			case 'h':
@@ -148,16 +161,16 @@ static int cmd_bootcm4(int argc, char *argv[])
 
 		hal_invalDCacheAddr((void *)CM4_BOOT_ADDRESS, CM4_BOOT_MEMSIZE);
 
-		isImgLoaded++;
+		common.isImgLoaded++;
 	}
 
 	if (optBoot != 0) {
-		if (isImgLoaded == 0u) {
+		if (common.isImgLoaded == 0u) {
 			log_error("%s: CM4 core image not loaded", argv[0]);
 			return CMD_EXIT_FAILURE;
 		}
 
-		if (_imxrt_setVtorCM4(0, 0, CM4_VTOR_ADDRESS) < 0) {
+		if (_imxrt_setVtorCM4(0, 0, (CM4_BOOT_ADDRESS + common.cm4VtorOffset)) < 0) {
 			log_error("%s: Unable to init CM4 core vectors", argv[0]);
 			return CMD_EXIT_FAILURE;
 		}

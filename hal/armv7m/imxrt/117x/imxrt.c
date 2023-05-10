@@ -375,7 +375,7 @@ void _imxrt_init(void)
 
 	imxrt_common.cpuclk = 640000000;
 
-	imxrt_common.cm4state = (((*(imxrt_common.src + src_scr) & 1u) != 0u) ? 1u : 0u);
+	imxrt_common.cm4state = (*(imxrt_common.src + src_scr) & 1u);
 
 	/* Disable watchdogs */
 	if (*(imxrt_common.wdog1 + wdog_wcr) & (1 << 2))
