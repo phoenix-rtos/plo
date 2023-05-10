@@ -46,11 +46,14 @@ typedef struct {
 } phoenixd_stat_t;
 
 
+#define PHOENIXD_HDRSZ (2u * sizeof(u32) + sizeof(s32))
+
+
 typedef struct {
 	u32 handle;
 	u32 pos;
-	u32 len;
-	u8 data[MSG_MAXLEN - 3 * sizeof(u32)];
+	s32 len;
+	u8 data[MSG_MAXLEN - PHOENIXD_HDRSZ];
 } msg_phoenixd_t;
 
 
@@ -58,7 +61,16 @@ static void phoenixd_serializeMsgPhd(u8 *buff, u32 handle, u32 pos, u32 len)
 {
 	msg_serialize32(buff, handle);
 	msg_serialize32(buff + sizeof(u32), pos);
-	msg_serialize32(buff + 2 * sizeof(u32), len);
+	msg_serialize32(buff + (2u * sizeof(u32)), len);
+}
+
+
+static void phoenixd_serializeDataMsgPhd(u8 *buff, u32 handle, u32 pos, u32 len, const u8 *data)
+{
+	msg_serialize32(buff, handle);
+	msg_serialize32(buff + sizeof(u32), pos);
+	msg_serialize32(buff + (2u * sizeof(u32)), len);
+	hal_memcpy(buff + (3u * sizeof(u32)), data, len);
 }
 
 
@@ -66,7 +78,7 @@ static void phoenixd_deserializeMsgPhd(msg_phoenixd_t *msg, u8 *buff)
 {
 	msg->handle = msg_deserialize32(buff);
 	msg->pos = msg_deserialize32(buff + sizeof(u32));
-	msg->len = msg_deserialize32(buff + 2 * sizeof(u32));
+	msg->len = msg_deserialize32(buff + (2u * sizeof(u32)));
 }
 
 
@@ -97,7 +109,7 @@ int phoenixd_open(const char *file, unsigned int major, unsigned int minor, unsi
 	}
 	else {
 		fd = msg_deserialize32(rmsg.data);
-		if (fd == 0) {
+		if (fd == 0u) {
 			return -EIO;
 		}
 	}
@@ -110,36 +122,38 @@ ssize_t phoenixd_read(unsigned int fd, unsigned int major, unsigned int minor, a
 {
 	msg_t smsg, rmsg;
 	msg_phoenixd_t *io;
-	u16 hdrsz;
 	u32 l;
 
 	io = (msg_phoenixd_t *)smsg.data;
-	hdrsz = (u16)((u32)io->data - (u32)io);
 
-	if (len > MSG_MAXLEN - hdrsz)
+	if (len > (MSG_MAXLEN - PHOENIXD_HDRSZ)) {
 		return -EINVAL;
+	}
 
 	phoenixd_serializeMsgPhd(smsg.data, fd, offs, len);
 
 	msg_settype(&smsg, MSG_READ);
-	msg_setlen(&smsg, hdrsz);
+	msg_setlen(&smsg, PHOENIXD_HDRSZ);
 
-	if (msg_send(major, minor, &smsg, &rmsg) < 0)
+	if (msg_send(major, minor, &smsg, &rmsg) < 0) {
 		return -EIO;
+	}
 
-	if (msg_gettype(&rmsg) != MSG_READ)
+	if (msg_gettype(&rmsg) != MSG_READ) {
 		return -EIO;
+	}
 
 	io = (msg_phoenixd_t *)rmsg.data;
 
 	phoenixd_deserializeMsgPhd(io, rmsg.data);
 
-	if ((long)io->len < 0)
+	if (io->len < 0) {
 		return -EIO;
+	}
 
 	/* TODO: check io->pos */
 	// *pos = io->pos;
-	l = min(io->len, msg_getlen(&rmsg) - hdrsz);
+	l = min(io->len, msg_getlen(&rmsg) - PHOENIXD_HDRSZ);
 	hal_memcpy(buff, io->data, l);
 
 	return l;
@@ -148,8 +162,33 @@ ssize_t phoenixd_read(unsigned int fd, unsigned int major, unsigned int minor, a
 
 ssize_t phoenixd_write(unsigned int fd, unsigned int major, unsigned int minor, addr_t offs, const void *buff, size_t len)
 {
-	/* TODO */
-	return EOK;
+	msg_t smsg, rmsg;
+	msg_phoenixd_t *io;
+
+	io = (msg_phoenixd_t *)smsg.data;
+
+	if (len > (MSG_MAXLEN - PHOENIXD_HDRSZ)) {
+		return -EINVAL;
+	}
+
+	phoenixd_serializeDataMsgPhd(smsg.data, fd, offs, len, buff);
+
+	msg_settype(&smsg, MSG_WRITE);
+	msg_setlen(&smsg, PHOENIXD_HDRSZ + len);
+
+	if (msg_send(major, minor, &smsg, &rmsg) < 0) {
+		return -EIO;
+	}
+
+	if (msg_gettype(&rmsg) != MSG_WRITE) {
+		return -EIO;
+	}
+
+	io = (msg_phoenixd_t *)rmsg.data;
+
+	phoenixd_deserializeMsgPhd(io, rmsg.data);
+
+	return (io->len < 0) ? -EIO : io->len;
 }
 
 
@@ -158,33 +197,34 @@ int phoenixd_stat(unsigned int fd, unsigned int major, unsigned int minor, phfs_
 	msg_t smsg, rmsg;
 	msg_phoenixd_t *io;
 	phoenixd_stat_t *pstat;
-	u16 hdrsz;
 	int offs;
 
 	io = (msg_phoenixd_t *)smsg.data;
-	hdrsz = (u16)((u32)io->data - (u32)io);
 
 	phoenixd_serializeMsgPhd(smsg.data, fd, 0, 0);
 
 	smsg.type = 0;
 	msg_settype(&smsg, MSG_FSTAT);
-	msg_setlen(&smsg, hdrsz);
+	msg_setlen(&smsg, PHOENIXD_HDRSZ);
 
-	if (msg_send(major, minor, &smsg, &rmsg) < 0)
+	if (msg_send(major, minor, &smsg, &rmsg) < 0) {
 		return -EIO;
+	}
 
-	if (msg_gettype(&rmsg) != MSG_FSTAT)
+	if (msg_gettype(&rmsg) != MSG_FSTAT) {
 		return -EIO;
+	}
 
 	io = (msg_phoenixd_t *)rmsg.data;
 
 	phoenixd_deserializeMsgPhd(io, rmsg.data);
 
-	if (io->len != sizeof(phoenixd_stat_t))
+	if (io->len != sizeof(phoenixd_stat_t)) {
 		return -EIO;
+	}
 
 	pstat = (phoenixd_stat_t *)io->data;
-	offs = (u32)&pstat->st_size - (u32)pstat;
+	offs = ((addr_t)&pstat->st_size) - (addr_t)pstat;
 
 	stat->size = msg_deserialize32(io->data + offs);
 

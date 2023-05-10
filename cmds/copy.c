@@ -66,11 +66,12 @@ static ssize_t cmd_cpphfs2phfs(handler_t srcHandler, addr_t srcAddr, size_t srcS
 }
 
 
-static int cmd_devParse(handler_t *h, addr_t *offs, size_t *sz, unsigned int argc, char *argv[], unsigned int *argvID, const char **file)
+static int cmd_devParse(handler_t *h, addr_t *offs, size_t *sz, unsigned int argc, char *argv[], int isDst, unsigned int *argvID, const char **file)
 {
 	int res;
 	const char *alias;
 	char *endptr;
+	int flags = (isDst == 0) ? PHFS_OPEN_RDONLY : (PHFS_OPEN_CREATE | PHFS_OPEN_RDWR);
 
 	if (h == NULL || offs == NULL || sz == NULL || argv == NULL || argvID == NULL)
 		return -EINVAL;
@@ -89,7 +90,7 @@ static int cmd_devParse(handler_t *h, addr_t *offs, size_t *sz, unsigned int arg
 		*offs = 0;
 		*sz = 0;
 		*file = argv[*argvID];
-		if ((res = phfs_open(alias, argv[*argvID], 0, h)) < 0) {
+		if ((res = phfs_open(alias, argv[*argvID], flags, h)) < 0) {
 			log_error("\nCan't open file '%s' on %s", argv[*argvID], alias);
 			return res;
 		}
@@ -130,11 +131,13 @@ static int cmd_copy(int argc, char *argv[])
 		return -EINVAL;
 	}
 
-	if ((res = cmd_devParse(&h[0], &offs[0], &sz[0], argc, argv, &argvID, &file[0])) < 0)
+	if ((res = cmd_devParse(&h[0], &offs[0], &sz[0], argc, argv, 0, &argvID, &file[0])) < 0)
 		return res;
 
-	if ((res = cmd_devParse(&h[1], &offs[1], &sz[1], argc, argv, &argvID, &file[1])) < 0)
+	if ((res = cmd_devParse(&h[1], &offs[1], &sz[1], argc, argv, 1, &argvID, &file[1])) < 0) {
+		phfs_close(h[0]);
 		return res;
+	}
 
 	/* Copy data between devices */
 	log_info("\nCopying data, please wait...");

@@ -20,6 +20,9 @@
 #include <hal/hal.h>
 
 /* phfs_open flags */
+#define PHFS_OPEN_RDONLY  0
+#define PHFS_OPEN_RDWR    1
+#define PHFS_OPEN_CREATE  2
 #define PHFS_OPEN_RAWONLY 0x80000000
 
 
