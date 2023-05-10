@@ -228,7 +228,7 @@ char *hal_strncpy(char *dest, const char *src, size_t n)
 char *hal_strchr(const char *s, int c)
 {
 	do {
-		if (*s == c) {
+		if (*s == (char)c) {
 			return (char *)s;
 		}
 	} while (*(s++));
