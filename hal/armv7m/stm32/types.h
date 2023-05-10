@@ -27,7 +27,6 @@ typedef unsigned long long u64;
 typedef signed char s8;
 typedef short s16;
 typedef int s32;
-typedef int s32;
 typedef long long s64;
 
 typedef volatile unsigned char vu8;
