@@ -25,6 +25,7 @@
 #include "log.h"
 #include "stdarg.h"
 #include "prompt.h"
+#include "crc32.h"
 
 
 #define min(a, b) ({ \
