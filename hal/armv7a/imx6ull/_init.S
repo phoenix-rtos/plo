@@ -57,7 +57,7 @@ qspi_config:
 	.word 0          /* Serial flash A2 size */
 	.word 0          /* Serial flash B1 size */
 	.word 0          /* Serial flash B2 size */
-	.word 0          /* Serial clock freq (18 MHz) */
+	.word 6          /* Serial clock freq (99 MHz, SDR only) */
 	.word 0          /* busy_bit_offset */
 	.word 1          /* Mode of operation of serial flash (Single pad) */
 	.word 0          /* Serial Flash Port B Selection */
