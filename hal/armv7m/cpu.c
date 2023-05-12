@@ -5,8 +5,8 @@
  *
  * ARMv7 Cortex-M
  *
- * Copyright 2017, 2019, 2020 Phoenix Systems
- * Author: Aleksander Kaminski, Jan Sikorski, Hubert Buczynski
+ * Copyright 2017, 2019, 2020, 2023 Phoenix Systems
+ * Author: Aleksander Kaminski, Jan Sikorski, Hubert Buczynski, Gerard Swiderski
  *
  * This file is part of Phoenix-RTOS.
  *
@@ -149,22 +149,73 @@ __attribute__((section(".noxip"))) void hal_cleanDCache(void)
 }
 
 
+__attribute__((section(".noxip"))) void hal_cleanDCacheAddr(void *addr, u32 sz)
+{
+	u32 daddr;
+	int dsize;
+
+	if (sz == 0u) {
+		return;
+	}
+
+	daddr = (((u32)addr) & ~0x1fu);
+	dsize = sz + ((u32)addr & 0x1fu);
+
+	hal_cpuDataSyncBarrier();
+
+	do {
+		*(cpu_common.scb + scb_dccmvac) = daddr;
+		daddr += 0x20u;
+		dsize -= 0x20;
+	} while (dsize > 0);
+
+	hal_cpuDataSyncBarrier();
+	hal_cpuInstrBarrier();
+}
+
+
+__attribute__((section(".noxip"))) void hal_cleaninvalDCacheAddr(void *addr, u32 sz)
+{
+	u32 daddr;
+	int dsize;
+
+	if (sz == 0u) {
+		return;
+	}
+
+	daddr = (((u32)addr) & ~0x1fu);
+	dsize = sz + ((u32)addr & 0x1fu);
+
+	hal_cpuDataSyncBarrier();
+
+	do {
+		*(cpu_common.scb + scb_dccimvac) = daddr;
+		daddr += 0x20u;
+		dsize -= 0x20;
+	} while (dsize > 0);
+
+	hal_cpuDataSyncBarrier();
+	hal_cpuInstrBarrier();
+}
+
+
 __attribute__((section(".noxip"))) void hal_invalDCacheAddr(void *addr, u32 sz)
 {
 	u32 daddr;
 	int dsize;
 
-	if (sz == 0)
+	if (sz == 0u) {
 		return;
+	}
 
-	daddr = (((u32)addr) & ~0x1f);
-	dsize = sz + ((u32)addr & 0x1f);
+	daddr = (((u32)addr) & ~0x1fu);
+	dsize = sz + ((u32)addr & 0x1fu);
 
 	hal_cpuDataSyncBarrier();
 
 	do {
 		*(cpu_common.scb + scb_dcimvac) = daddr;
-		daddr += 0x20;
+		daddr += 0x20u;
 		dsize -= 0x20;
 	} while (dsize > 0);
 

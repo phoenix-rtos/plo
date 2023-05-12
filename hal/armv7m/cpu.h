@@ -5,8 +5,8 @@
  *
  * ARMv7 Cortex-M
  *
- * Copyright 2021 Phoenix Systems
- * Author: Hubert Buczynski
+ * Copyright 2021, 2023 Phoenix Systems
+ * Author: Hubert Buczynski, Gerard Swiderski
  *
  * This file is part of Phoenix-RTOS.
  *
@@ -70,6 +70,12 @@ extern void hal_disableICache(void);
 
 
 extern void hal_cleanDCache(void);
+
+
+extern void hal_cleanDCacheAddr(void *addr, u32 sz);
+
+
+extern void hal_cleaninvalDCacheAddr(void *addr, u32 sz);
 
 
 extern void hal_invalDCacheAddr(void *addr, u32 sz);
