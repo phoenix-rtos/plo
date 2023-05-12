@@ -18,6 +18,7 @@
 #include "../cpu.h"
 
 
+/* clang-format off */
 /* CCM registers */
 enum { ccm_ccr = 0, ccm_ccdr, ccm_csr, ccm_ccsr, ccm_cacrr, ccm_cbcdr, ccm_cbcmr,
 	ccm_cscmr1, ccm_cscmr2, ccm_cscdr1, ccm_cs1cdr, ccm_cs2cdr, ccm_cdcdr, ccm_chsccdr,
@@ -124,6 +125,7 @@ enum {
 /* Reserved slots */
 static const char ccm_reserved[] = { clk_asrc + 1, clk_ipsync_ip2apb_tzasc1_ipg + 1, clk_pxp + 1,
 	clk_mmdc_core_aclk_fast_core_p0 + 1, clk_iomux_snvs_gpr + 1, clk_usdhc2 + 1 };
+/* clang-format on */
 
 
 struct {
@@ -338,6 +340,24 @@ static void imx6ull_pllInit(void)
 	while ((*(imx6ull_common.ccm_analog + ccm_analog_pll_enet) & (1 << 31)))
 		;
 #endif
+}
+
+
+extern void imx6ull_setQSPIClockSource(unsigned char source, unsigned char divider)
+{
+	u32 reg;
+
+	reg = *(imx6ull_common.ccm + ccm_cscmr1);
+
+	/* Set divider. */
+	reg &= ~(7u << 26);
+	reg |= ((divider - 1u) & 0x7u) << 26;
+
+	/* Set source. */
+	reg &= ~(7u << 7);
+	reg |= (source & 0x7u) << 7;
+
+	*(imx6ull_common.ccm + ccm_cscmr1) = reg;
 }
 
 

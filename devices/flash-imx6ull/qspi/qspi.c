@@ -119,12 +119,6 @@ __attribute__((section(".noxip"))) static void qspi_setMux(int dev_no)
 }
 
 
-__attribute__((section(".noxip"))) static void qspi_setClk(void)
-{
-	imx6ull_setDevClock(clk_qspi, 0x03);
-}
-
-
 __attribute__((section(".noxip"))) static void qspi_enable(int enable)
 {
 	if (enable == 0) {
@@ -174,6 +168,18 @@ __attribute__((section(".noxip"))) static void qspi_swReset(void)
 	qspi_enable(0);
 	QSPI_BASE[QSPI_MCR] &= ~(QSPI_MCR_SWRSTHD | QSPI_MCR_SWRSTSD);
 	qspi_enable(1);
+}
+
+
+__attribute__((section(".noxip"))) static void qspi_setClk(void)
+{
+	imx6ull_setDevClock(clk_qspi, 0x03);
+
+	qspi_enable(0);
+	/* Set clock source to PLL2 440M Hz with divider 4 = 100 MHz. */
+	imx6ull_setQSPIClockSource(CLK_SEL_QSPI1_PLL2, 4);
+	qspi_enable(1);
+	qspi_swReset();
 }
 
 
