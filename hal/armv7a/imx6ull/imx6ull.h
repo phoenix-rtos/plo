@@ -20,6 +20,7 @@
 #include "types.h"
 
 
+/* clang-format off */
 /* Devices clocks */
 enum {
 	/* CCM_CCGR0 */
@@ -158,6 +159,14 @@ enum {
 	pad_csi_d0, pad_csi_d1, pad_csi_d2, pad_csi_d3, pad_csi_d4, pad_csi_d5,
 	pad_csi_d6, pad_csi_d7
 };
+/* clang-format off */
+
+#define CLK_SEL_QSPI1_PLL3      0
+#define CLK_SEL_QSPI1_PLL2_PFD0 1
+#define CLK_SEL_QSPI1_PLL2_PFD2 2
+#define CLK_SEL_QSPI1_PLL2      3
+#define CLK_SEL_QSPI1_PLL3_PFD3 4
+#define CLK_SEL_QSPI1_PLL3_PFD2 5
 
 
 extern int imx6ull_setDevClock(int dev, unsigned int state);
@@ -170,6 +179,9 @@ extern int imx6ull_setIOmux(int mux, char sion, char mode);
 
 
 extern int imx6ull_setIOpad(int pad, char hys, char pus, char pue, char pke, char ode, char speed, char dse, char sre);
+
+
+extern void imx6ull_setQSPIClockSource(unsigned char source, unsigned char divider);
 
 
 extern void imx6ull_init(void);
