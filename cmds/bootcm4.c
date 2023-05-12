@@ -159,7 +159,7 @@ static int cmd_bootcm4(int argc, char *argv[])
 			return CMD_EXIT_FAILURE;
 		}
 
-		hal_invalDCacheAddr((void *)CM4_BOOT_ADDRESS, CM4_BOOT_MEMSIZE);
+		hal_cleaninvalDCacheAddr((void *)CM4_BOOT_ADDRESS, CM4_BOOT_MEMSIZE);
 
 		common.isImgLoaded++;
 	}
