@@ -105,7 +105,7 @@ __attribute__((section(".noxip"))) static void qspi_setMux(int dev_no)
 		char dse;
 		char sre;
 	} qspi_pad[2][8] = {
-		{ { pad_nand_d7, 0, 4, 0 }, { pad_nand_ale, 0, 4, 0 }, { pad_nand_wp, 0, 4, 0 }, { pad_nand_rdy, 0, 4, 0 }, { pad_nand_ce0, 0, 4, 0 }, { pad_nand_ce1, 0, 4, 0 }, { pad_nand_cle, 0, 4, 0 }, { pad_nand_dqs, 0, 4, 0 } },
+		{ { pad_nand_d7, 1, 4, 0 }, { pad_nand_ale, 1, 4, 0 }, { pad_nand_wp, 1, 4, 0 }, { pad_nand_rdy, 1, 4, 0 }, { pad_nand_ce0, 1, 4, 0 }, { pad_nand_ce1, 1, 4, 0 }, { pad_nand_cle, 1, 4, 0 }, { pad_nand_dqs, 1, 4, 0 } },
 		{ { pad_nand_re, 1, 4, 0 }, { pad_nand_we, 1, 4, 0 }, { pad_nand_d0, 1, 4, 0 }, { pad_nand_d1, 1, 4, 0 }, { pad_nand_d2, 1, 4, 0 }, { pad_nand_d3, 1, 4, 0 }, { pad_nand_d4, 1, 4, 0 }, { pad_nand_d5, 1, 4, 0 } },
 	};
 
