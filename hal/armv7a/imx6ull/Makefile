@@ -29,6 +29,9 @@ endif
 ifeq ($(PLO_NOR), y)
 	include devices/flash-imx6ull/Makefile
 endif
+ifeq ($(PLO_NOR_BOOT), y)
+	CFLAGS += -DPLO_NOR_BOOT
+endif
 include devices/uart-imx6ull/Makefile
 include devices/usbc-cdc/Makefile
 
