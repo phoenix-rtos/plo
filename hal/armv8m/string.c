@@ -20,8 +20,10 @@
 
 
 /* clang-format off */
-void hal_memcpy(void *dst, const void *src, size_t l)
+void *hal_memcpy(void *dst, const void *src, size_t l)
 {
+	void *ret = dst;
+
 	__asm__ volatile
 	(" \
 		orr r3, %0, %1; \
@@ -44,6 +46,7 @@ void hal_memcpy(void *dst, const void *src, size_t l)
 	: "+r" (dst), "+r" (src), "+r" (l)
 	:
 	: "r3", "memory", "cc");
+	return ret;
 }
 
 
