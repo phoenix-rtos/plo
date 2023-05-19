@@ -19,6 +19,8 @@
 
 void *hal_memcpy(void *dst, const void *src, size_t n)
 {
+	void *ret = dst;
+
 	__asm__ volatile
 	(" \
 		cld; \
@@ -34,7 +36,7 @@ void *hal_memcpy(void *dst, const void *src, size_t n)
 	:
 	: "g" (n), "g" (dst), "g" (src)
 	: "ecx", "edx", "esi", "edi", "cc", "memory");
-	return dst;
+	return ret;
 }
 
 

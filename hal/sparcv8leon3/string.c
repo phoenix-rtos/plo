@@ -21,6 +21,8 @@ void *memcpy(void *dst, const void *src, size_t n) __attribute__((weak, alias("h
 
 void *hal_memcpy(void *dst, const void *src, size_t l)
 {
+	void *ret = dst;
+
 	/* clang-format off */
 
 	__asm__ volatile(" \
@@ -57,7 +59,7 @@ void *hal_memcpy(void *dst, const void *src, size_t l)
 
 	/* clang-format on */
 
-	return dst;
+	return ret;
 }
 
 
