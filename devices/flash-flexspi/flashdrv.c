@@ -148,7 +148,7 @@ static int flashdrv_sync(unsigned int minor)
 	}
 
 	/* all 'ones' in buffer means sector is erased ... */
-	for (pos = 0; pos < dev->nor->pageSz; ++pos) {
+	for (pos = 0; pos < dev->nor->sectorSz; ++pos) {
 		if (*(dev->sectorBuf + pos) != NOR_ERASED_STATE) {
 			break;
 		}
