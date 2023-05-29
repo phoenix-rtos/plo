@@ -94,6 +94,7 @@ static int cmd_bootcm4(int argc, char *argv[])
 	int opt;
 	int optLoad = 0;
 	int optBoot = 0;
+	addr_t tmp;
 
 	lib_printf("\n");
 
@@ -118,11 +119,12 @@ static int cmd_bootcm4(int argc, char *argv[])
 				break;
 
 			case 'o':
-				common.cm4VtorOffset = (addr_t)lib_strtoul(optarg, &endptr, 0);
-				if ((*endptr != '\0') || (common.cm4VtorOffset >= CM4_BOOT_MEMSIZE)) {
+				tmp = (addr_t)lib_strtoul(optarg, &endptr, 0);
+				if ((*endptr != '\0') || (tmp >= CM4_BOOT_MEMSIZE)) {
 					log_error("%s: Invalid arguments", argv[0]);
 					return CMD_EXIT_FAILURE;
 				}
+				common.cm4VtorOffset = tmp;
 
 				break;
 
