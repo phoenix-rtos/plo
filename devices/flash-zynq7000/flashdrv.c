@@ -588,7 +588,8 @@ static int flashdrv_init(unsigned int minor)
 			return -EINVAL;
 	}
 
-	lib_printf("\ndev/flash: Initializing flash(%d.%d)", DEV_STORAGE, minor);
+	lib_printf("\ndev/flash: Configured %s %dMB nor flash(%d.%d)", info->name,
+		CFI_SIZE_FLASH(info->cfi.chipSize) >> 20u, DEV_STORAGE, minor);
 
 	return EOK;
 }
