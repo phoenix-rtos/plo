@@ -19,14 +19,14 @@
 #include <hal/hal.h>
 
 /* Return timeouts in ms */
-#define CFI_TIMEOUT_MAX_PROGRAM(typical, max) (((1 << typical) * (1 << max)) / 1000)
-#define CFI_TIMEOUT_MAX_ERASE(typical, max)   ((1 << typical) * (1 << max))
+#define CFI_TIMEOUT_MAX_PROGRAM(typical, max) (((1u << typical) * (1u << max)) / 1000u)
+#define CFI_TIMEOUT_MAX_ERASE(typical, max)   ((1u << typical) * (1u << max))
 
 /* Return size in bytes */
-#define CFI_SIZE_FLASH(val)                (1 << val)
-#define CFI_SIZE_SECTION(val)              (val * 0x100)
-#define CFI_SIZE_PAGE(val)                 (1 << val)
-#define CFI_SIZE_REGION(regSize, regCount) (CFI_SIZE_SECTION(regSize) * (regCount + 1))
+#define CFI_SIZE_FLASH(val)                (1u << val)
+#define CFI_SIZE_SECTION(val)              ((size_t)val * 0x100u)
+#define CFI_SIZE_PAGE(val)                 (1u << val)
+#define CFI_SIZE_REGION(regSize, regCount) (CFI_SIZE_SECTION(regSize) * (size_t)(regCount + 1u))
 
 
 /* Order in command's table */
@@ -105,9 +105,10 @@ typedef struct {
 	flash_cfi_t cfi;
 	flash_cmd_t cmds[flash_cmd_end];
 
-	enum { flash_3byteAddr, flash_4byteAddr } addrMode; /* Address mode based on chip size */
-	int readCmd;                              /* Default read command define for specific flash memory */
-	int ppCmd;                                /* Default page program command define for specific flash memory */
+	enum { flash_3byteAddr,
+		flash_4byteAddr } addrMode; /* Address mode based on chip size */
+	int readCmd;                    /* Default read command define for specific flash memory */
+	int ppCmd;                      /* Default page program command define for specific flash memory */
 	const char *name;
 } flash_info_t;
 

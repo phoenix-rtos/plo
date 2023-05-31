@@ -485,7 +485,7 @@ static ssize_t flashdrv_erase(unsigned int minor, addr_t addr, size_t len, unsig
 
 	/* Calculate sector size of the last address */
 	end = addr + len;
-	res = flashdrv_regionFind(end, &id);
+	res = flashdrv_regionFind(end - 1, &id);
 	if (res < 0) {
 		return res;
 	}
@@ -510,19 +510,19 @@ static ssize_t flashdrv_erase(unsigned int minor, addr_t addr, size_t len, unsig
 
 	len = 0;
 	while (addr < end) {
-		res = flashdrv_sectorErase(addr, sectSz);
-		if (res < 0) {
-			return res;
-		}
-		addr += sectSz;
-		len += sectSz;
-
 		res = flashdrv_regionFind(addr, &id);
 		if (res < 0) {
 			return res;
 		}
 
 		sectSz = CFI_SIZE_SECTION(cfi->regs[id].size);
+
+		res = flashdrv_sectorErase(addr, sectSz);
+		if (res < 0) {
+			return res;
+		}
+		addr += sectSz;
+		len += sectSz;
 	}
 
 	return len;
