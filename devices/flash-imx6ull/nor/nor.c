@@ -29,9 +29,9 @@
 
 static const char *nor_vendors[] = {
 	"\xef" " Winbond",
-	"\x20" "Micron",
+	"\x20" " Micron",
 	"\x9d" " ISSI",
-	"\xc2"" Macronix",
+	"\xc2" " Macronix",
 	NULL
 };
 /* clang-format on */
