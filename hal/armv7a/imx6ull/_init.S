@@ -58,7 +58,7 @@ qspi_config:
 	.word 0          /* Serial flash A2 size */
 	.word 0          /* Serial flash B1 size */
 	.word 0          /* Serial flash B2 size */
-	.word 6          /* Serial clock freq (99 MHz, SDR only) */
+	.word 0          /* Serial clock freq (18 MHz) */
 	.word 0          /* busy_bit_offset */
 	.word 1          /* Mode of operation of serial flash (Single pad) */
 	.word 0          /* Serial Flash Port B Selection */
@@ -71,7 +71,7 @@ qspi_config:
 	.word 0          /* Full Speed Delay Selection */
 	.word 0          /* DDR Sampling Point */
 	/* LUT program sequance */
-	.word 0x08180403, 0x24001C00, 0x00000000, 0x00000000 /* Read command */
+	.word 0x08180403, 0x24001C00, 0x00000000, 0x00000000 /* Standard READ 0x3 command. */
 	.word 0x00000000, 0x00000000, 0x00000000, 0x00000000
 	.word 0x00000000, 0x00000000, 0x00000000, 0x00000000
 	.word 0x00000000, 0x00000000, 0x00000000, 0x00000000

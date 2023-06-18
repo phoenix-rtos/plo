@@ -176,8 +176,8 @@ __attribute__((section(".noxip"))) static void qspi_setClk(void)
 	imx6ull_setDevClock(clk_qspi, 0x03);
 
 	qspi_enable(0);
-	/* Set clock source to PLL2 440M Hz with divider 4 = 100 MHz. */
-	imx6ull_setQSPIClockSource(CLK_SEL_QSPI1_PLL2, 4);
+	/* Set clock source to PLL3 480M Hz with divider 6 = 80 MHz. */
+	imx6ull_setQSPIClockSource(CLK_SEL_QSPI1_PLL3, 6);
 	qspi_enable(1);
 	qspi_swReset();
 }
