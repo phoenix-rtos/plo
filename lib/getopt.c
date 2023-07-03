@@ -49,35 +49,33 @@ int lib_getopt(int argc, char *const argv[], const char *optstring)
 		lib_getoptReset();
 	}
 
-	if (argc == 0 || argv == NULL || optind >= argc) {
+	if ((argc == 0) || (argv == NULL) || (optind >= argc)) {
 		return -1;
 	}
 
-	if (argv[optind] == NULL || argv[optind][0] != '-' || argv[optind][1] == '\0') {
+	if ((argv[optind] == NULL) || (argv[optind][0] != '-') || (argv[optind][1] == '\0')) {
 		return -1;
 	}
 
-	if (argv[optind][1] == '-' && argv[optind][2] == '\0') {
+	if ((argv[optind][1] == '-') && (argv[optind][2] == '\0')) {
 		optind++;
 		return -1;
 	}
 
 	opt = argv[optind][getopt_common.optwhere++];
-	leading_colon = *optstring == ':';
+	leading_colon = ((*optstring == ':') ? 1 : 0);
 
 	optspec = hal_strchr(optstring, opt);
 	if (optspec == NULL) {
 		/* Unrecognized option */
 		optopt = opt;
-		if (opterr != 0 && leading_colon == 0) {
+		if ((opterr != 0) && (leading_colon == 0)) {
 			lib_printf("%s: illegal option -- %c\n", argv[0], opt);
 		}
-
 		if (argv[optind][getopt_common.optwhere] == '\0') {
 			optind++;
 			getopt_common.optwhere = 1;
 		}
-
 		return '?';
 	}
 
