@@ -45,7 +45,7 @@ int lib_getopt(int argc, char *const argv[], const char *optstring)
 	char *optspec;
 	int leading_colon;
 
-	if (optind == 0) {
+	if (optind <= 0) {
 		lib_getoptReset();
 	}
 
