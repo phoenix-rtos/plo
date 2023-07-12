@@ -130,12 +130,8 @@ __attribute__((section(".noxip"))) void hal_exceptionsDispatch(unsigned int n, s
 	hal_exceptionsDumpContext(buff, ctx, n);
 	hal_consolePrint(buff);
 
-#ifdef NDEBUG
-#ifdef CPU_STM32
-	_stm32_nvicSystemReset();
-#elif defined(CPU_IMXRT)
-	_imxrt_nvicSystemReset();
-#endif
+#ifndef NDEBUG
+	hal_cpuReset();
 #endif
 
 	for (;;) {
