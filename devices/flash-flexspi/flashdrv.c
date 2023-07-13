@@ -36,7 +36,7 @@ static inline int minorToInstance(unsigned int minor)
 		case 0:
 			return flexspi_instance1;
 
-#if defined(IMXRT106X) || defined(IMXRT117X)
+#if defined(__CPU_IMXRT106X) || defined(__CPU_IMXRT117X)
 		case 1:
 			return flexspi_instance2;
 #endif
@@ -53,12 +53,12 @@ static inline int minorToPortMask(unsigned int minor)
 		case 0:
 			return flexspi_slBusA1;
 
-#if defined(IMXRT106X)
+#if defined(__CPU_IMXRT106X)
 		case 1:
 			return flexspi_slBusA1;
 #endif
 
-#if defined(IMXRT117X)
+#if defined(__CPU_IMXRT117X)
 		case 1:
 			return flexspi_slBusA1 | flexspi_slBusA2;
 #endif
