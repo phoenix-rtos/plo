@@ -196,12 +196,8 @@ int imx6ull_setIOmux(int mux, char sion, char mode)
 	volatile u32 *base = imx6ull_common.iomux;
 
 	if (mux >= mux_boot_mode0 && mux <= mux_tamper9) {
-#ifdef CPU_IMX6UL
-		mux = (mux - mux_boot_mode0) + 5;
-#else
 		mux = (mux - mux_boot_mode0);
 		base = imx6ull_common.iomux_snvs;
-#endif
 	}
 	else if (mux < mux_jtag_mod || mux > mux_csi_d7)
 		return -1;
@@ -218,12 +214,8 @@ int imx6ull_setIOpad(int pad, char hys, char pus, char pue, char pke, char ode, 
 	volatile u32 *base = imx6ull_common.iomux;
 
 	if (pad >= pad_test_mode && pad <= pad_tamper9) {
-#ifdef CPU_IMX6UL
-		pad = (pad - pad_test_mode) + 163;
-#else
 		pad = pad - pad_test_mode + 12;
 		base = imx6ull_common.iomux_gpr;
-#endif
 	}
 	else if (pad < pad_jtag_mod || pad > pad_csi_d7)
 		return -1;

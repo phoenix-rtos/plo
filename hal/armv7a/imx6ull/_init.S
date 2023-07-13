@@ -161,12 +161,7 @@ initialize:
 	orr r1, r1, #0x40000
 	str r1, [r0, #0x80]
 
-
-#ifndef CPU_IMX6UL
 	mov r2, #3
-#else
-	mov r2, #2
-#endif
 
 	/* AIPS bridge should be programmed before usage */
 	ldr r0, =ADDR_AIPSTZ
