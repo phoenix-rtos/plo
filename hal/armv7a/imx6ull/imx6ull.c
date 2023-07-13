@@ -122,6 +122,10 @@ enum {
 };
 
 
+/* WDOG registers */
+enum { wdog_wcr = 0, wdog_wsr, wdog_wrsr, wdog_wicr, wdog_wmcr };
+
+
 /* Reserved slots */
 static const char ccm_reserved[] = { clk_asrc + 1, clk_ipsync_ip2apb_tzasc1_ipg + 1, clk_pxp + 1,
 	clk_mmdc_core_aclk_fast_core_p0 + 1, clk_iomux_snvs_gpr + 1, clk_usdhc2 + 1 };
@@ -137,7 +141,19 @@ struct {
 	volatile u32 *iomux_snvs;
 
 	volatile u32 *mmdc;
+
+	volatile u16 *wdog;
 } imx6ull_common;
+
+
+void _imx6ull_softRst(void)
+{
+	/* assert SRS signal by writing 0 to bit 4 and 1 to bit 2 (WDOG enable) */
+	*(imx6ull_common.wdog + wdog_wcr) = (1 << 2);
+	hal_cpuDataMemoryBarrier();
+	for (;;) {
+	}
+}
 
 
 static int imx6ull_isValidDev(int dev)
@@ -372,6 +388,8 @@ void imx6ull_init(void)
 	imx6ull_common.iomux = (void *)0x020e0000;
 	imx6ull_common.iomux_gpr = (void *)0x020e4000;
 	imx6ull_common.iomux_snvs = (void *)0x02290000;
+
+	imx6ull_common.wdog = (void *)0x020bc000;
 
 	imx6ull_pllInit();
 

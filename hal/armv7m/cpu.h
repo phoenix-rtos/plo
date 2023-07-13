@@ -87,7 +87,7 @@ extern void hal_invalDCacheAll(void);
 extern unsigned int hal_cpuID(void);
 
 
-extern void hal_cpuReset(void);
+extern void hal_cpuReboot(void);
 
 
 extern void hal_cpuInit(void);

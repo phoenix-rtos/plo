@@ -158,7 +158,14 @@ static void exceptions_defaultHandler(unsigned int n, exc_context_t *ctx)
 	hal_consolePrint(buff);
 	hal_consolePrint("\033[0m");
 	hal_interruptsDisableAll();
-	hal_cpuHalt();
+
+#ifdef NDEBUG
+	hal_cpuReboot();
+#endif
+
+	for (;;) {
+		hal_cpuHalt();
+	}
 }
 
 
