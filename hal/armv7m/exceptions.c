@@ -18,7 +18,7 @@
 
 #define SIZE_FPUCTX (16 * sizeof(u32))
 
-#ifdef CPU_IMXRT
+#if defined(__CPU_IMXRT106X) || defined(__CPU_IMXRT105X) || defined(__CPU_IMXRT117X)
 #define EXCRET_PSP 0xffffffed
 #else
 #define EXCRET_PSP 0xfffffffd

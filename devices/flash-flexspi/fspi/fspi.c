@@ -21,11 +21,11 @@
 
 
 /* Include platform dependent pin config */
-#if defined(IMXRT117X)
+#if defined(__CPU_IMXRT117X)
 #include "fspi_rt117x.h"
-#elif defined(IMXRT106X)
+#elif defined(__CPU_IMXRT106X)
 #include "fspi_rt106x.h"
-#elif defined(IMXRT105X)
+#elif defined(__CPU_IMXRT105X)
 #include "fspi_rt105x.h"
 #else
 #error "FlexSPI is not supported on this target"
