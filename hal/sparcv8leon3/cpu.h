@@ -54,13 +54,6 @@ static inline void hal_cpuDataStoreBarrier(void)
 }
 
 
-static inline void hal_cpuReset(void)
-{
-	/* TODO */
-	*(u32 *)(INT_CTRL_BASE + 128) = 0x00000001;
-}
-
-
 #endif /* __ASSEMBLY__ */
 
 

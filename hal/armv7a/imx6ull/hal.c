@@ -247,3 +247,11 @@ int hal_memoryGetNextEntry(addr_t start, addr_t end, mapent_t *entry)
 
 	return -1;
 }
+
+
+void hal_cpuReboot(void)
+{
+	_imx6ull_softRst();
+
+	__builtin_unreachable();
+}

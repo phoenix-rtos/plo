@@ -298,7 +298,7 @@ unsigned int hal_cpuID(void)
 }
 
 
-void hal_cpuReset(void)
+void hal_cpuReboot(void)
 {
 	hal_cpuDataSyncBarrier();
 	*(cpu_common.scb + scb_aircr) = ((0x5fa << 16) | (*(cpu_common.scb + scb_aircr) & (0x700)) | (1 << 0x02));

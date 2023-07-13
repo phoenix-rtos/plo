@@ -18,5 +18,6 @@
 void hal_cpuReboot(void)
 {
 	/* TODO */
+	/* *(u32 *)(INT_CTRL_BASE + 128) = 0x00000001; */
 	/* __builtin_unreachable(); */
 }

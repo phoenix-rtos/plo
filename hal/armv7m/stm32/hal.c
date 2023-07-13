@@ -171,13 +171,6 @@ int hal_memoryGetNextEntry(addr_t start, addr_t end, mapent_t *entry)
 }
 
 
-void hal_cpuReboot(void)
-{
-	hal_cpuReset();
-	__builtin_unreachable();
-}
-
-
 int hal_cpuJump(void)
 {
 	if (hal_common.entry == (addr_t)-1)

@@ -169,6 +169,9 @@ enum {
 #define CLK_SEL_QSPI1_PLL3_PFD2 5
 
 
+extern void _imx6ull_softRst(void);
+
+
 extern int imx6ull_setDevClock(int dev, unsigned int state);
 
 
