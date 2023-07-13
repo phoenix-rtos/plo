@@ -130,7 +130,7 @@ __attribute__((section(".noxip"))) void hal_exceptionsDispatch(unsigned int n, s
 	hal_exceptionsDumpContext(buff, ctx, n);
 	hal_consolePrint(buff);
 
-#ifndef NDEBUG
+#ifdef NDEBUG
 	hal_cpuReset();
 #endif
 
