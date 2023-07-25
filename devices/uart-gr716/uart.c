@@ -115,43 +115,6 @@ static int uart_irqHandler(unsigned int n, void *data)
 }
 
 
-static int uart_setPin(u8 pin)
-{
-	io_cfg_t uartCfg;
-	uartCfg.opt = 0x1;
-	uartCfg.pin = pin;
-	uartCfg.pullup = 0;
-	uartCfg.pulldn = 0;
-
-	switch (pin) {
-		case UART0_TX:
-		case UART1_TX:
-			/* pins used for SRAM */
-			return -1;
-		case UART2_TX:
-		case UART3_TX:
-		case UART4_TX:
-		case UART5_TX:
-			uartCfg.dir = GPIO_DIR_OUT;
-			break;
-		case UART0_RX:
-		case UART1_RX:
-			/* pins used for SRAM */
-			return -1;
-		case UART2_RX:
-		case UART3_RX:
-		case UART4_RX:
-		case UART5_RX:
-			uartCfg.dir = GPIO_DIR_IN;
-			break;
-		default:
-			return -1;
-	}
-
-	return _gr716_ioCfg(&uartCfg);
-}
-
-
 /* From datasheet:
  * appropriate formula to calculate the scaler for desired baudrate,
  * using integer division where the remainder is discarded:
@@ -294,6 +257,7 @@ static int uart_map(unsigned int minor, addr_t addr, size_t sz, int mode, addr_t
 static int uart_init(unsigned int minor)
 {
 	uart_t *uart;
+	iomux_cfg_t cfg;
 	/* When running external SRAM, UART0 and UART1 pins cannot be used */
 	if (minor == 0 || minor == 1) {
 		return EOK;
@@ -312,8 +276,14 @@ static int uart_init(unsigned int minor)
 
 	_gr716_cguClkEnable(cgu_primary, cgudev_apbuart0 + minor);
 
-	uart_setPin(info[minor].txPin);
-	uart_setPin(info[minor].rxPin);
+	cfg.opt = 0x1;
+	cfg.pullup = 0;
+	cfg.pulldn = 0;
+	cfg.pin = info[minor].txPin;
+	_gr716_iomuxCfg(&cfg);
+
+	cfg.pin = info[minor].rxPin;
+	_gr716_iomuxCfg(&cfg);
 
 	lib_cbufInit(&uart->cbuffRx, uart->dataRx, BUFFER_SIZE);
 

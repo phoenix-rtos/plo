@@ -41,16 +41,15 @@ cgudev_gradc3, cgudev_gradc4, cgudev_gradc5, cgudev_gradc6, cgudev_gradc7, cgude
 typedef struct {
 	u8 pin;
 	u8 opt; /* GR716 manual section 2.5 */
-	u8 dir;
 	u8 pullup;
 	u8 pulldn;
-} io_cfg_t;
+} iomux_cfg_t;
 
 
 extern void _gr716_softRst(void);
 
 
-extern int _gr716_ioCfg(io_cfg_t *io_cfg);
+extern int _gr716_iomuxCfg(iomux_cfg_t *ioCfg);
 
 
 extern void _gr716_cguClkEnable(u32 cgu, u32 device);
