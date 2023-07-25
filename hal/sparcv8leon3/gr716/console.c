@@ -53,31 +53,6 @@ void hal_consolePrint(const char *s)
 }
 
 
-static int console_setPin(u8 pin)
-{
-	int err = 0;
-	io_cfg_t uartCfg;
-	uartCfg.opt = 0x1;
-	uartCfg.pin = pin;
-	uartCfg.pullup = 0;
-	uartCfg.pulldn = 0;
-
-	switch (pin) {
-		case UART_CONSOLE_TX:
-			uartCfg.dir = GPIO_DIR_OUT;
-			break;
-		case UART_CONSOLE_RX:
-			uartCfg.dir = GPIO_DIR_IN;
-			break;
-		default:
-			err = -1;
-			break;
-	}
-
-	return err == 0 ? _gr716_ioCfg(&uartCfg) : err;
-}
-
-
 static u32 console_calcScaler(u32 baud)
 {
 	u32 scaler = (SYSCLK_FREQ / (baud * 8 + 7));
@@ -87,8 +62,17 @@ static u32 console_calcScaler(u32 baud)
 
 void console_init(void)
 {
-	console_setPin(UART_CONSOLE_TX);
-	console_setPin(UART_CONSOLE_RX);
+	iomux_cfg_t cfg;
+
+	cfg.opt = 0x1;
+	cfg.pullup = 0;
+	cfg.pulldn = 0;
+	cfg.pin = UART_CONSOLE_TX;
+	_gr716_iomuxCfg(&cfg);
+
+	cfg.pin = UART_CONSOLE_RX;
+	_gr716_iomuxCfg(&cfg);
+
 	_gr716_cguClkEnable(cgu_primary, UART_CONSOLE_CGU);
 	halconsole_common.uart = UART_CONSOLE_BASE;
 	*(halconsole_common.uart + uart_ctrl) = TX_EN;

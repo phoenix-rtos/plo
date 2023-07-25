@@ -138,18 +138,11 @@ static void _gr716_pllSetDefault(void)
 }
 
 
-/* Enable (1) / disable (0) interrupts from PLL and clock logic */
-void _gr716_pllIntCfg(u8 en)
-{
-	*(gr716_common.pll_base + pll_ctrl) = en;
-}
-
-
-int _gr716_ioCfg(io_cfg_t *ioCfg)
+int _gr716_iomuxCfg(iomux_cfg_t *ioCfg)
 {
 	vu32 oldCfg;
 
-	if (ioCfg->pin > 63 || gpio_setPinDir(ioCfg->pin, ioCfg->dir) < 0) {
+	if (ioCfg->pin > 63) {
 		return -1;
 	}
 
