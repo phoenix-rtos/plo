@@ -15,6 +15,7 @@
 
 
 #include "flashcfg.h"
+#include "qspi.h"
 #include <lib/errno.h>
 
 
@@ -47,125 +48,42 @@
 #define FLASH_CMD_BE         0x60 /* Chip erase */
 
 
-static void flashcfg_defaultCmds(flash_info_t *info)
-{
-	info->cmds[flash_cmd_rdid].opCode = FLASH_CMD_RDID;
-	info->cmds[flash_cmd_rdid].size = 1;
-	info->cmds[flash_cmd_rdid].dummyCyc = 24;
-
-	info->cmds[flash_cmd_rdsr1].opCode = FLASH_CMD_RDSR1;
-	info->cmds[flash_cmd_rdsr1].size = 1;
-	info->cmds[flash_cmd_rdsr1].dummyCyc = 8;
-
-	info->cmds[flash_cmd_wrdi].opCode = FLASH_CMD_WRDI;
-	info->cmds[flash_cmd_wrdi].size = 1;
-	info->cmds[flash_cmd_wrdi].dummyCyc = 0;
-
-	info->cmds[flash_cmd_wren].opCode = FLASH_CMD_WREN;
-	info->cmds[flash_cmd_wren].size = 1;
-	info->cmds[flash_cmd_wren].dummyCyc = 0;
-
-	info->cmds[flash_cmd_read].opCode = FLASH_CMD_READ;
-	info->cmds[flash_cmd_read].size = 4;
-	info->cmds[flash_cmd_read].dummyCyc = 0;
-
-	info->cmds[flash_cmd_4read].opCode = FLASH_CMD_4READ;
-	info->cmds[flash_cmd_4read].size = 5;
-	info->cmds[flash_cmd_4read].dummyCyc = 0;
-
-	info->cmds[flash_cmd_fast_read].opCode = FLASH_CMD_FAST_READ;
-	info->cmds[flash_cmd_fast_read].size = 4;
-	info->cmds[flash_cmd_fast_read].dummyCyc = 8;
-
-	info->cmds[flash_cmd_4fast_read].opCode = FLASH_CMD_4FAST_READ;
-	info->cmds[flash_cmd_4fast_read].size = 5;
-	info->cmds[flash_cmd_4fast_read].dummyCyc = 8;
-
-	info->cmds[flash_cmd_dor].opCode = FLASH_CMD_DOR;
-	info->cmds[flash_cmd_dor].size = 4;
-	info->cmds[flash_cmd_dor].dummyCyc = 8;
-
-	info->cmds[flash_cmd_4dor].opCode = FLASH_CMD_4DOR;
-	info->cmds[flash_cmd_4dor].size = 5;
-	info->cmds[flash_cmd_4dor].dummyCyc = 16;
-
-	info->cmds[flash_cmd_qor].opCode = FLASH_CMD_QOR;
-	info->cmds[flash_cmd_qor].size = 4;
-	info->cmds[flash_cmd_qor].dummyCyc = 8;
-
-	info->cmds[flash_cmd_4qor].opCode = FLASH_CMD_4QOR;
-	info->cmds[flash_cmd_4qor].size = 5;
-	info->cmds[flash_cmd_4qor].dummyCyc = 8;
-
-	info->cmds[flash_cmd_dior].opCode = FLASH_CMD_DIOR;
-	info->cmds[flash_cmd_dior].size = 4;
-	info->cmds[flash_cmd_dior].dummyCyc = 8;
-
-	info->cmds[flash_cmd_4dior].opCode = FLASH_CMD_4DIOR;
-	info->cmds[flash_cmd_4dior].size = 5;
-	info->cmds[flash_cmd_4dior].dummyCyc = 8;
-
-	info->cmds[flash_cmd_qior].opCode = FLASH_CMD_QIOR;
-	info->cmds[flash_cmd_qior].size = 4;
-	info->cmds[flash_cmd_qior].dummyCyc = 24;
-
-	info->cmds[flash_cmd_4qior].opCode = FLASH_CMD_4QIOR;
-	info->cmds[flash_cmd_4qior].size = 5;
-	info->cmds[flash_cmd_4qior].dummyCyc = 24;
-
-	info->cmds[flash_cmd_pp].opCode = FLASH_CMD_PP;
-	info->cmds[flash_cmd_pp].size = 4;
-	info->cmds[flash_cmd_pp].dummyCyc = 0;
-
-	info->cmds[flash_cmd_4pp].opCode = FLASH_CMD_4PP;
-	info->cmds[flash_cmd_4pp].size = 5;
-	info->cmds[flash_cmd_4pp].dummyCyc = 0;
-
-	info->cmds[flash_cmd_qpp].opCode = FLASH_CMD_QPP;
-	info->cmds[flash_cmd_qpp].size = 4;
-	info->cmds[flash_cmd_qpp].dummyCyc = 0;
-
-	info->cmds[flash_cmd_4qpp].opCode = FLASH_CMD_4QPP;
-	info->cmds[flash_cmd_4qpp].size = 5;
-	info->cmds[flash_cmd_4qpp].dummyCyc = 0;
-
-	info->cmds[flash_cmd_p4e].opCode = FLASH_CMD_P4E;
-	info->cmds[flash_cmd_p4e].size = 4;
-	info->cmds[flash_cmd_p4e].dummyCyc = 0;
-
-	info->cmds[flash_cmd_4p4e].opCode = FLASH_CMD_4P4E;
-	info->cmds[flash_cmd_4p4e].size = 5;
-	info->cmds[flash_cmd_4p4e].dummyCyc = 0;
-
-	info->cmds[flash_cmd_p64e].opCode = FLASH_CMD_SE;
-	info->cmds[flash_cmd_p64e].size = 4;
-	info->cmds[flash_cmd_p64e].dummyCyc = 0;
-
-	info->cmds[flash_cmd_4p64e].opCode = FLASH_CMD_4SE;
-	info->cmds[flash_cmd_4p64e].size = 5;
-	info->cmds[flash_cmd_4p64e].dummyCyc = 0;
-
-	info->cmds[flash_cmd_be].opCode = FLASH_CMD_BE;
-	info->cmds[flash_cmd_be].size = 1;
-	info->cmds[flash_cmd_be].dummyCyc = 0;
-}
-
-
-void flashcfg_jedecIDGet(flash_cmd_t *cmd)
-{
-	cmd->opCode = FLASH_CMD_RDID;
-	cmd->size = 1;
-	cmd->dummyCyc = 24;
-}
+static const flash_cmd_t flash_defCmds[flash_cmd_end] = {
+	{ FLASH_CMD_RDID, 1, 24, 1 },
+	{ FLASH_CMD_RDSR1, 1, 8, 1 },
+	{ FLASH_CMD_WRDI, 1, 0, 1 },
+	{ FLASH_CMD_WREN, 1, 0, 1 },
+	{ FLASH_CMD_READ, 4, 0, 1 },
+	{ FLASH_CMD_4READ, 5, 0, 1 },
+	{ FLASH_CMD_FAST_READ, 4, 8, 1 },
+	{ FLASH_CMD_4FAST_READ, 5, 8, 1 },
+	{ FLASH_CMD_DOR, 4, 4, 2 },
+	{ FLASH_CMD_4DOR, 5, 8, 2 },
+	{ FLASH_CMD_QOR, 4, 2, 4 },
+	{ FLASH_CMD_4QOR, 5, 2, 4 },
+	{ FLASH_CMD_DIOR, 4, 4, 2 },
+	{ FLASH_CMD_4DIOR, 5, 4, 2 },
+	{ FLASH_CMD_QIOR, 4, 6, 4 },
+	{ FLASH_CMD_4QIOR, 5, 6, 4 },
+	{ FLASH_CMD_PP, 4, 0, 1 },
+	{ FLASH_CMD_4PP, 5, 0, 1 },
+	{ FLASH_CMD_QPP, 4, 0, 4 },
+	{ FLASH_CMD_4QPP, 5, 0, 4 },
+	{ FLASH_CMD_P4E, 4, 0, 1 },
+	{ FLASH_CMD_4P4E, 5, 0, 1 },
+	{ FLASH_CMD_SE, 4, 0, 1 },
+	{ FLASH_CMD_4SE, 5, 0, 1 },
+	{ FLASH_CMD_BE, 1, 0, 1 }
+};
 
 
 static void flashcfg_spansion(flash_info_t *info)
 {
 	info->name = "Spansion s25fl256s1";
-	flashcfg_defaultCmds(info);
+	hal_memcpy(info->cmds, flash_defCmds, sizeof(flash_defCmds));
 
 	/* FIXME: s25fl256s1 should be able to operate in quad and dual mode for 4byte transactions.
-	          In the current implementation errors occur for the dual and the quad mode. */
+			  In the current implementation errors occur for the dual and the quad mode. */
 	info->readCmd = flash_cmd_4fast_read;
 	info->ppCmd = flash_cmd_4pp;
 }
@@ -191,15 +109,15 @@ static void flashcfg_micron(flash_info_t *info)
 	info->cfi.regs[0].count = 0xff;
 	info->cfi.regs[0].size = 0x100;
 
-	flashcfg_defaultCmds(info);
+	hal_memcpy(info->cmds, flash_defCmds, sizeof(flash_defCmds));
 
 	/* Specific configuration */
-	info->cmds[flash_cmd_dior].dummyCyc = 16;
-	info->cmds[flash_cmd_qior].dummyCyc = 32;
+	info->cmds[flash_cmd_dior].dummyCyc = 6;
+	info->cmds[flash_cmd_qior].dummyCyc = 10;
 
 	/* Default read and page program commands */
 	info->readCmd = flash_cmd_qior;
-	info->ppCmd = flash_cmd_pp;
+	info->ppCmd = flash_cmd_qpp;
 }
 
 
@@ -223,10 +141,18 @@ static void flashcfg_winbond(flash_info_t *info)
 	info->cfi.regs[0].count = 0xff;
 	info->cfi.regs[0].size = 0x100;
 
-	flashcfg_defaultCmds(info);
+	hal_memcpy(info->cmds, flash_defCmds, sizeof(flash_defCmds));
+
+	info->cmds[flash_cmd_qior].dummyCyc = 4;
 
 	info->readCmd = flash_cmd_qior;
-	info->ppCmd = flash_cmd_pp;
+	info->ppCmd = flash_cmd_qpp;
+}
+
+
+void flashcfg_jedecIDGet(flash_cmd_t *cmd)
+{
+	hal_memcpy(cmd, &flash_defCmds[flash_cmd_rdid], sizeof(*cmd));
 }
 
 
@@ -235,15 +161,15 @@ int flashcfg_infoResolve(flash_info_t *info)
 	int res = EOK;
 
 	/* Spansion s25fl256s1 */
-	if (info->cfi.vendorData[0] == 0x1 && info->cfi.vendorData[2] == 0x19) {
+	if ((info->cfi.vendorData[0] == 0x1) && (info->cfi.vendorData[2] == 0x19)) {
 		flashcfg_spansion(info);
 	}
 	/* Micron n25q128 */
-	else if (info->cfi.vendorData[0] == 0x20 && info->cfi.vendorData[1] == 0xbb && info->cfi.vendorData[2] == 0x18) {
+	else if ((info->cfi.vendorData[0] == 0x20) && (info->cfi.vendorData[1] == 0xbb) && (info->cfi.vendorData[2] == 0x18)) {
 		flashcfg_micron(info);
 	}
 	/* Winbond W25Q128JV - IM/JM */
-	else if (info->cfi.vendorData[0] == 0xef && info->cfi.vendorData[1] == 0x40 && info->cfi.vendorData[2] == 0x18) {
+	else if ((info->cfi.vendorData[0] == 0xef) && (info->cfi.vendorData[1] == 0x40) && (info->cfi.vendorData[2] == 0x18)) {
 		flashcfg_winbond(info);
 	}
 	else {
@@ -251,7 +177,7 @@ int flashcfg_infoResolve(flash_info_t *info)
 		res = -EINVAL;
 	}
 
-	info->addrMode = (info->cfi.chipSize > 24) ? flash_4byteAddr : flash_3byteAddr;
+	info->addrMode = (info->cfi.chipSize > 0x18) ? flash_4byteAddr : flash_3byteAddr;
 
 	return res;
 }
