@@ -317,7 +317,7 @@ static ssize_t flashdrv_pageProgram(addr_t offs, const void *buff, size_t len)
 static ssize_t flashdrv_read(unsigned int minor, addr_t offs, void *buff, size_t len, time_t timeout)
 {
 	ssize_t res;
-	size_t cmdSz, dataSz, transferSz, paddedCmdSz;
+	size_t cmdSz, dataSz, transferSz, paddedCmdSz, dummySz;
 	const flash_cmd_t cmd = fdrv_common.info.cmds[fdrv_common.info.readCmd];
 
 	if (len == 0) {
@@ -330,7 +330,12 @@ static ssize_t flashdrv_read(unsigned int minor, addr_t offs, void *buff, size_t
 
 	flashdrv_serializeTxCmd(fdrv_common.cmdTx, cmd, offs);
 
-	cmdSz = cmd.size + (cmd.dummyCyc * cmd.dataLines) / 8;
+	dummySz = (cmd.dummyCyc * cmd.dataLines) / 8;
+	cmdSz = cmd.size + dummySz;
+
+	/* Send 0xff as dummy byte as some flashes require dummy byte that starts with 0xf. */
+	hal_memset(fdrv_common.cmdTx + cmdSz, 0xff, dummySz);
+
 	/* Cmd size is rounded to 4 bytes, it includes dummy cycles [b]. */
 	paddedCmdSz = (cmdSz + 0x3) & ~0x3;
 
@@ -487,7 +492,7 @@ static ssize_t flashdrv_erase(unsigned int minor, addr_t addr, size_t len, unsig
 	/* Chips erase */
 	if (len == (size_t)-1) {
 		len = CFI_SIZE_FLASH(cfi->chipSize);
-		lib_printf("\nErasing all data from flash device ...");
+		log_info("\nErasing all data from flash device ...");
 		res = flashdrv_chipErase();
 		if (res < 0) {
 			return res;
@@ -527,7 +532,7 @@ static ssize_t flashdrv_erase(unsigned int minor, addr_t addr, size_t len, unsig
 	addr &= ~addr_mask;
 
 
-	lib_printf("\nErasing sectors from 0x%x to 0x%x ...", addr, end);
+	log_info("\nErasing sectors from 0x%x to 0x%x ...", addr, end);
 
 	len = 0;
 	while (addr < end) {
@@ -615,9 +620,17 @@ static int flashdrv_init(unsigned int minor)
 		}
 	}
 
+	if (info->init != NULL) {
+		res = info->init(info);
+		if (res < 0) {
+			return res;
+		}
+	}
+
 	/* Require data RXed due to dummy cycles to be byte aligned. */
 	/* This requirement is in place to simplify implementation of read. */
-	if (((info->cmds[info->readCmd].dummyCyc * info->cmds[info->readCmd].dataLines) % 8) != 0) {
+	if ((info->cmds[info->readCmd].dummyCyc == CFI_DUMMY_CYCLES_NOT_SET) ||
+		(((info->cmds[info->readCmd].dummyCyc * info->cmds[info->readCmd].dataLines) % 8) != 0)) {
 		return -EINVAL;
 	}
 

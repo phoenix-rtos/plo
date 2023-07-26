@@ -28,6 +28,7 @@
 #define CFI_SIZE_PAGE(val)                 (1u << val)
 #define CFI_SIZE_REGION(regSize, regCount) (CFI_SIZE_SECTION(regSize) * (size_t)(regCount + 1u))
 
+#define CFI_DUMMY_CYCLES_NOT_SET 0xff
 
 /* Order in command's table */
 enum {
@@ -112,6 +113,8 @@ typedef struct flash_info {
 	int readCmd; /* Default read command define for specific flash memory */
 	int ppCmd;   /* Default page program command define for specific flash memory */
 	const char *name;
+
+	int (*init)(const struct flash_info *info);
 } flash_info_t;
 
 
