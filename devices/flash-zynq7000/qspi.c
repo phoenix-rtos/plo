@@ -5,8 +5,8 @@
  *
  * Quad-SPI Controller driver
  *
- * Copyright 2021-2022 Phoenix Systems
- * Author: Hubert Buczynski
+ * Copyright 2021-2023 Phoenix Systems
+ * Author: Hubert Buczynski, Hubert Badocha
  *
  * This file is part of Phoenix-RTOS.
  *
@@ -14,13 +14,16 @@
  */
 
 #include "qspi.h"
-#include <lib/errno.h>
 
+#include <lib/lib.h>
 #include <board_config.h>
 
+
+/* clang-format off */
 enum { cr = 0, sr, ier, idr, imr, er, dr, txd00, rxd, sicr, txth, rxth, gpio,
 	   lpbk = 0xe, txd01 = 0x20, txd10, txd11,
 	   lqspi_cr = 0x28, lqspi_sr, modid = 0x3f };
+/* clang-format on */
 
 
 struct {
@@ -31,8 +34,9 @@ struct {
 void qspi_stop(void)
 {
 	/* Clean up RX Fifo */
-	while ((*(qspi_common.base + sr) & (1 << 4)))
+	while ((*(qspi_common.base + sr) & (1 << 4)) != 0) {
 		*(qspi_common.base + rxd);
+	}
 
 	*(qspi_common.base + cr) |= (1 << 10);
 	hal_cpuDataMemoryBarrier();
@@ -87,7 +91,7 @@ static unsigned int qspi_rxData(u8 *rxBuff, size_t size)
 		}
 	}
 
-	return (size < 4) ? size : 4;
+	return min(size, 4);
 }
 
 
@@ -127,25 +131,28 @@ ssize_t qspi_polledTransfer(const u8 *txBuff, u8 *rxBuff, size_t size, time_t ti
 
 	start = hal_timerGet();
 
-	while (txSz || rxSz) {
+	while ((txSz != 0) || (rxSz != 0)) {
 		/* Transmit data */
-		while (txSz) {
+		while (txSz != 0) {
 			/* Incomplete word has to be send and receive as a last transfer
 			 * otherwise there is an undefined behaviour.                   */
-			if ((txSz < sizeof(u32)) && (rxSz >= sizeof(u32)))
+			if ((txSz < sizeof(u32)) && (rxSz >= sizeof(u32))) {
 				break;
+			}
 
 			/* TX Fifo is full */
-			if ((*(qspi_common.base + sr) & (1 << 3)))
+			if ((*(qspi_common.base + sr) & (1 << 3)) != 0) {
 				break;
+			}
 
 			tempSz = qspi_txData(txBuff, txSz);
 
 			txSz -= tempSz;
 			rxSz += tempSz;
 
-			if (txBuff != NULL)
+			if (txBuff != NULL) {
 				txBuff += tempSz;
+			}
 		}
 
 		/* Start data transmission */
@@ -153,21 +160,24 @@ ssize_t qspi_polledTransfer(const u8 *txBuff, u8 *rxBuff, size_t size, time_t ti
 
 		/* Wait until TX Fifo is empty */
 		while ((*(qspi_common.base + sr) & (1 << 2)) == 0) {
-			if ((hal_timerGet() - start) >= timeout)
+			if ((hal_timerGet() - start) >= timeout) {
 				return -ETIME;
+			}
 		}
 
 		/* Receive data */
-		while (rxSz) {
+		while (rxSz != 0) {
 			/* RX Fifo is empty */
-			if ((*(qspi_common.base + sr) & (1 << 4)) == 0)
+			if ((*(qspi_common.base + sr) & (1 << 4)) == 0) {
 				break;
+			}
 
 			tempSz = qspi_rxData(rxBuff, rxSz);
 			rxSz -= tempSz;
 
-			if (rxBuff != NULL)
+			if (rxBuff != NULL) {
 				rxBuff += tempSz;
+			}
 		}
 	}
 
@@ -184,9 +194,15 @@ static int qspi_setPin(u32 pin)
 		return EOK;
 	}
 
+	if ((pin < mio_pin_01) && (pin > mio_pin_08)) {
+		return -EINVAL;
+	}
+
 	ctl.pin = pin;
 	ctl.l0 = 0x1;
-	ctl.l1 = ctl.l2 = ctl.l3 = 0;
+	ctl.l1 = 0;
+	ctl.l2 = 0;
+	ctl.l3 = 0;
 	ctl.pullup = 0;
 	ctl.speed = 0x1;
 	ctl.ioType = 0x1;
@@ -196,9 +212,6 @@ static int qspi_setPin(u32 pin)
 	if (pin == mio_pin_01) {
 		ctl.pullup = 1;
 		ctl.speed = 0x0;
-	}
-	else if (pin < mio_pin_01 && pin > mio_pin_08) {
-		return -EINVAL;
 	}
 
 	return _zynq_setMIO(&ctl);
@@ -276,7 +289,7 @@ static void qspi_IOMode(void)
 	/* Configure controller */
 
 	/* Set master mode, not Legacy mode */
-	*(qspi_common.base + cr) = 0x1 | (1 << 31);
+	*(qspi_common.base + cr) = 0x1 | (1u << 31);
 
 	/* Set baud rate to 100 MHz: 200 MHz / 2 */
 	*(qspi_common.base + cr) &= ~(0x7 << 3);
@@ -298,7 +311,7 @@ static void qspi_IOMode(void)
 
 	/* Loopback clock is used for high-speed read data capturing (>40MHz) */
 	if (QSPI_FCLK >= 0) {
-		*(qspi_common.base + lpbk) = *(qspi_common.base + lpbk) & ~0x3f;
+		*(qspi_common.base + lpbk) = (*(qspi_common.base + lpbk)) & ~0x3f;
 		*(qspi_common.base + lpbk) = (1 << 5);
 	}
 
@@ -323,12 +336,14 @@ int qspi_init(void)
 	qspi_common.base = (void *)0xe000d000;
 
 	res = _zynq_setAmbaClk(amba_lqspi_clk, clk_enable);
-	if (res < 0)
+	if (res < 0) {
 		return res;
+	}
 
 	res = qspi_initCtrlClk();
-	if (res < 0)
+	if (res < 0) {
 		return res;
+	}
 
 	qspi_setPin(QSPI_CS);
 	qspi_setPin(QSPI_IO0);
