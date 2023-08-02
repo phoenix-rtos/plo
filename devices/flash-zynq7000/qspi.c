@@ -31,11 +31,21 @@ struct {
 } qspi_common;
 
 
+static int qspi_rxFifoEmpty(void)
+{
+	/* Update of RX not empty bit is delayed, thus it should be read twice. */
+	/* https://support.xilinx.com/s/article/47575?language=en_US */
+	(void)*(qspi_common.base + sr);
+
+	return ((*(qspi_common.base + sr) & (1 << 4)) == 0) ? 1 : 0;
+}
+
+
 void qspi_stop(void)
 {
 	/* Clean up RX Fifo */
-	while ((*(qspi_common.base + sr) & (1 << 4)) != 0) {
-		*(qspi_common.base + rxd);
+	while (qspi_rxFifoEmpty() == 0) {
+		(void)*(qspi_common.base + rxd);
 	}
 
 	*(qspi_common.base + cr) |= (1 << 10);
@@ -124,34 +134,46 @@ static unsigned int qspi_txData(const u8 *txBuff, size_t size)
 }
 
 
+static int qspi_txFifoFull(void)
+{
+	return ((*(qspi_common.base + sr) & (1 << 3)) == 0) ? 0 : 1;
+}
+
+
+static int qspi_txFifoEmpty(void)
+{
+	return ((*(qspi_common.base + sr) & (1 << 2)) == 0) ? 0 : 1;
+}
+
+
 ssize_t qspi_polledTransfer(const u8 *txBuff, u8 *rxBuff, size_t size, time_t timeout)
 {
-	time_t start;
 	size_t tempSz, txSz = size, rxSz = 0;
+	time_t start = hal_timerGet();
 
-	start = hal_timerGet();
-
-	while ((txSz != 0) || (rxSz != 0)) {
-		/* Transmit data */
-		while (txSz != 0) {
-			/* Incomplete word has to be send and receive as a last transfer
-			 * otherwise there is an undefined behaviour.                   */
-			if ((txSz < sizeof(u32)) && (rxSz >= sizeof(u32))) {
-				break;
-			}
-
-			/* TX Fifo is full */
-			if ((*(qspi_common.base + sr) & (1 << 3)) != 0) {
-				break;
-			}
-
+	/* At the start of each iteration FIFOs are empty.
+	   Controller only transfers as much data as inserted onto TxFIFO,
+	   and each transmission is started manually. When no data is on TxFIFO SCLK is stopped.
+	   Thus, there's no potential of potential data loss. */
+	while (txSz != 0) {
+		/* Incomplete word can only be written onto an empty TxFIFO. */
+		if (txSz < sizeof(u32)) {
 			tempSz = qspi_txData(txBuff, txSz);
 
 			txSz -= tempSz;
 			rxSz += tempSz;
+		}
+		else {
+			/* Transmit data */
+			while ((txSz >= sizeof(u32)) && (qspi_txFifoFull() == 0)) {
+				tempSz = qspi_txData(txBuff, txSz);
 
-			if (txBuff != NULL) {
-				txBuff += tempSz;
+				txSz -= tempSz;
+				rxSz += tempSz;
+
+				if (txBuff != NULL) {
+					txBuff += tempSz;
+				}
 			}
 		}
 
@@ -159,7 +181,7 @@ ssize_t qspi_polledTransfer(const u8 *txBuff, u8 *rxBuff, size_t size, time_t ti
 		*(qspi_common.base + cr) |= (1 << 16);
 
 		/* Wait until TX Fifo is empty */
-		while ((*(qspi_common.base + sr) & (1 << 2)) == 0) {
+		while (qspi_txFifoEmpty() == 0) {
 			if ((hal_timerGet() - start) >= timeout) {
 				return -ETIME;
 			}
@@ -167,9 +189,9 @@ ssize_t qspi_polledTransfer(const u8 *txBuff, u8 *rxBuff, size_t size, time_t ti
 
 		/* Receive data */
 		while (rxSz != 0) {
-			/* RX Fifo is empty */
-			if ((*(qspi_common.base + sr) & (1 << 4)) == 0) {
-				break;
+			if (qspi_rxFifoEmpty() == 1) {
+				/* Invalid state. */
+				return -EIO;
 			}
 
 			tempSz = qspi_rxData(rxBuff, rxSz);
@@ -181,7 +203,7 @@ ssize_t qspi_polledTransfer(const u8 *txBuff, u8 *rxBuff, size_t size, time_t ti
 		}
 	}
 
-	return size - txSz;
+	return size;
 }
 
 
