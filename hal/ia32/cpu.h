@@ -18,6 +18,24 @@
 #define _CPU_H_
 
 
+static inline void hal_cpuDataMemoryBarrier(void)
+{
+	/* not supported */
+}
+
+
+static inline void hal_cpuDataSyncBarrier(void)
+{
+	/* not supported */
+}
+
+
+static inline void hal_cpuInstrBarrier(void)
+{
+	/* not supported */
+}
+
+
 static inline unsigned char hal_inb(void *addr)
 {
 	unsigned char val;
