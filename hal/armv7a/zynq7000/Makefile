@@ -16,7 +16,8 @@ CFLAGS += -DVADDR_KERNEL_INIT=$(VADDR_KERNEL_INIT)
 
 GCCLIB := $(shell $(CC) $(CFLAGS) -print-libgcc-file-name)
 
-PLO_COMMANDS = alias app bitstream call console copy dump echo erase go jffs2 help kernel map phfs reboot script test-ddr wait
+PLO_COMMANDS = alias app bitstream call console copy dump echo erase go help jffs2 kernel map mem \
+  phfs reboot script test-ddr wait
 
 include devices/gpio-zynq7000/Makefile
 include devices/usbc-cdc/Makefile

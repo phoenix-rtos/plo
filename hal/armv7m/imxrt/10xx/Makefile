@@ -14,7 +14,8 @@ CFLAGS+= -mfloat-abi=soft
 
 GCCLIB := $(shell $(CC) $(CFLAGS) -print-libgcc-file-name)
 
-PLO_COMMANDS = alias app bootrom call console copy dump echo erase go help kernel kernelimg map mpu otp phfs reboot script wait
+PLO_COMMANDS = alias app bootrom call console copy dump echo erase go help kernel kernelimg map \
+  mem mpu otp phfs reboot script wait
 
 include devices/usbc-cdc/Makefile
 include devices/uart-imxrt106x/Makefile
