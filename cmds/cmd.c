@@ -223,6 +223,10 @@ void cmd_prompt(void)
 				lib_printf("\n%s", PROMPT);
 				continue;
 			}
+			else if (c == '\t') {
+				/* skip */
+				continue;
+			}
 			else {
 				newline = 0;
 			}

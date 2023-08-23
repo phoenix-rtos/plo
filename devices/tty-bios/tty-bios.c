@@ -19,6 +19,11 @@
 #include <lib/errno.h>
 
 
+#ifndef TTYBIOS_TAB_WIDTH
+#define TTYBIOS_TAB_WIDTH 8u
+#endif
+
+
 /* ANSI escape sequence states */
 enum {
 	esc_init, /* normal */
@@ -246,6 +251,9 @@ static ssize_t ttybios_write(unsigned int minor, addr_t offs, const void *buff, 
 					}
 					break;
 
+				case '\t':
+					col += TTYBIOS_TAB_WIDTH - (col % TTYBIOS_TAB_WIDTH);
+					break;
 				case '\n':
 					row++;
 				case '\r':
