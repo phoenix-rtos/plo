@@ -54,6 +54,24 @@ static inline void hal_cpuDataStoreBarrier(void)
 }
 
 
+static inline void hal_cpuDataMemoryBarrier(void)
+{
+	__asm__ volatile("stbar");
+}
+
+
+static inline void hal_cpuDataSyncBarrier(void)
+{
+	__asm__ volatile("stbar");
+}
+
+
+static inline void hal_cpuInstrBarrier(void)
+{
+	/* not supported */
+}
+
+
 #endif /* __ASSEMBLY__ */
 
 
