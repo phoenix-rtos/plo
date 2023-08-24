@@ -14,7 +14,7 @@
  */
 
 #include "imxrt.h"
-#include "../../cpu.h"
+#include "../../../cpu.h"
 
 struct {
 	volatile u32 *gpio[5];
@@ -35,6 +35,9 @@ struct {
 	u32 xtaloscFreq;
 	u32 cpuclk;
 } imxrt_common;
+
+
+/* clang-format off */
 
 
 enum { gpio_dr = 0, gpio_gdir, gpio_psr, gpio_icr1, gpio_icr2, gpio_imr, gpio_isr, gpio_edge_sel };
@@ -91,6 +94,8 @@ enum { wdog_wcr = 0, wdog_wsr, wdog_wrsr, wdog_wicr, wdog_wmcr };
 
 
 enum { rtwdog_cs = 0, rtwdog_cnt, rtwdog_total, rtwdog_win };
+
+/* clang-format on */
 
 
 __attribute__((section(".noxip"))) static volatile u32 *_imxrt_IOmuxGetReg(int mux)
@@ -270,7 +275,6 @@ __attribute__((section(".noxip"))) int _imxrt_setDevClock(int dev, unsigned int 
 }
 
 
-
 static u32 _imxrt_ccmGetPeriphClkFreq(void)
 {
 	u32 freq;
@@ -331,11 +335,13 @@ void _imxrt_ccmInitExterlnalClk(void)
 {
 	/* Power up */
 	*(imxrt_common.ccm_analog + ccm_analog_misc0_clr) = 1 << 30;
-	while (!(*(imxrt_common.xtalosc + xtalosc_lowpwr_ctrl) & (1 << 16)));
+	while (!(*(imxrt_common.xtalosc + xtalosc_lowpwr_ctrl) & (1 << 16)))
+		;
 
 	/* Detect frequency */
 	*(imxrt_common.ccm_analog + ccm_analog_misc0_set) = 1 << 16;
-	while (!(*(imxrt_common.ccm_analog + ccm_analog_misc0) & (1 << 15)));
+	while (!(*(imxrt_common.ccm_analog + ccm_analog_misc0) & (1 << 15)))
+		;
 
 	*(imxrt_common.ccm_analog + ccm_analog_misc0_clr) = 1 << 16;
 }
@@ -486,7 +492,8 @@ void _imxrt_ccmInitArmPll(u32 div)
 {
 	*(imxrt_common.ccm_analog + ccm_analog_pll_arm) = (1 << 13) | (div & 0x7f);
 
-	while (!(*(imxrt_common.ccm_analog + ccm_analog_pll_arm) & (1 << 31)));
+	while (!(*(imxrt_common.ccm_analog + ccm_analog_pll_arm) & (1 << 31)))
+		;
 }
 
 
@@ -500,7 +507,8 @@ void _imxrt_ccmInitSysPll(u8 div)
 {
 	*(imxrt_common.ccm_analog + ccm_analog_pll_sys) = (1 << 13) | (div & 1);
 
-	while (!(*(imxrt_common.ccm_analog + ccm_analog_pll_sys) & (1 << 31)));
+	while (!(*(imxrt_common.ccm_analog + ccm_analog_pll_sys) & (1 << 31)))
+		;
 }
 
 
@@ -514,7 +522,8 @@ void _imxrt_ccmInitUsb1Pll(u8 div)
 {
 	*(imxrt_common.ccm_analog + ccm_analog_pll_usb1) = (1 << 13) | (1 << 12) | (1 << 6) | (div & 0x3);
 
-	while (!(*(imxrt_common.ccm_analog + ccm_analog_pll_usb1) & (1 << 31)));
+	while (!(*(imxrt_common.ccm_analog + ccm_analog_pll_usb1) & (1 << 31)))
+		;
 }
 
 
@@ -528,7 +537,8 @@ void _imxrt_ccmInitUsb2Pll(u8 div)
 {
 	*(imxrt_common.ccm_analog + ccm_analog_pll_usb2) = (1 << 13) | (1 << 12) | (1 << 6) | (div & 0x3);
 
-	while (!(*(imxrt_common.ccm_analog + ccm_analog_pll_usb2) & (1 << 31)));
+	while (!(*(imxrt_common.ccm_analog + ccm_analog_pll_usb2) & (1 << 31)))
+		;
 }
 
 
@@ -575,7 +585,8 @@ void _imxrt_ccmInitAudioPll(u8 loopdiv, u8 postdiv, u32 num, u32 denom)
 
 	*(imxrt_common.ccm_analog + ccm_analog_pll_audio) = pllAudio;
 
-	while (!(*(imxrt_common.ccm_analog + ccm_analog_pll_audio) & (1 << 31)));
+	while (!(*(imxrt_common.ccm_analog + ccm_analog_pll_audio) & (1 << 31)))
+		;
 }
 
 
@@ -622,7 +633,8 @@ void _imxrt_ccmInitVideoPll(u8 loopdiv, u8 postdiv, u32 num, u32 denom)
 
 	*(imxrt_common.ccm_analog + ccm_analog_pll_video) = pllVideo;
 
-	while (!(*(imxrt_common.ccm_analog + ccm_analog_pll_video) & (1 << 31)));
+	while (!(*(imxrt_common.ccm_analog + ccm_analog_pll_video) & (1 << 31)))
+		;
 }
 
 
@@ -647,7 +659,8 @@ void _imxrt_ccmInitEnetPll(u8 enclk0, u8 enclk1, u8 enclk2, u8 div0, u8 div1)
 
 	*(imxrt_common.ccm_analog + ccm_analog_pll_enet) = enet_pll;
 
-	while (!(*(imxrt_common.ccm_analog + ccm_analog_pll_enet) & (1 << 31)));
+	while (!(*(imxrt_common.ccm_analog + ccm_analog_pll_enet) & (1 << 31)))
+		;
 }
 
 
@@ -671,7 +684,7 @@ u32 _imxrt_ccmGetPllFreq(int pll)
 			freq = _imxrt_ccmGetOscFreq();
 
 			/* PLL output frequency = Fref * (DIV_SELECT + NUM/DENOM). */
-			tmp = ((u64)freq * (u64)*(imxrt_common.ccm_analog + ccm_analog_pll_sys_num)) / (u64)*(imxrt_common.ccm_analog + ccm_analog_pll_sys_denom);
+			tmp = ((u64)freq * (u64) * (imxrt_common.ccm_analog + ccm_analog_pll_sys_num)) / (u64) * (imxrt_common.ccm_analog + ccm_analog_pll_sys_denom);
 
 			if (*(imxrt_common.ccm_analog + ccm_analog_pll_sys) & 1)
 				freq *= 22;
@@ -689,7 +702,7 @@ u32 _imxrt_ccmGetPllFreq(int pll)
 			freq = _imxrt_ccmGetOscFreq();
 
 			divSel = *(imxrt_common.ccm_analog + ccm_analog_pll_audio) & 0x7f;
-			tmp = ((u64)freq * (u64)*(imxrt_common.ccm_analog + ccm_analog_pll_audio_num)) / (u64)*(imxrt_common.ccm_analog + ccm_analog_pll_audio_denom);
+			tmp = ((u64)freq * (u64) * (imxrt_common.ccm_analog + ccm_analog_pll_audio_num)) / (u64) * (imxrt_common.ccm_analog + ccm_analog_pll_audio_denom);
 			freq = freq * divSel + (u32)tmp;
 
 			switch ((*(imxrt_common.ccm_analog + ccm_analog_pll_audio) >> 19) & 0x3) {
@@ -717,7 +730,7 @@ u32 _imxrt_ccmGetPllFreq(int pll)
 
 			divSel = *(imxrt_common.ccm_analog + ccm_analog_pll_video) & 0x7F;
 
-			tmp = ((u64)freq * (u64)*(imxrt_common.ccm_analog + ccm_analog_pll_video_num)) / (u64)*(imxrt_common.ccm_analog + ccm_analog_pll_video_denom);
+			tmp = ((u64)freq * (u64) * (imxrt_common.ccm_analog + ccm_analog_pll_video_num)) / (u64) * (imxrt_common.ccm_analog + ccm_analog_pll_video_denom);
 
 			freq = freq * divSel + (u32)tmp;
 
@@ -903,7 +916,8 @@ __attribute__((section(".noxip"))) void _imxrt_ccmSetMux(int mux, u32 val)
 
 		case clk_mux_periph:
 			*(imxrt_common.ccm + ccm_cbcdr) = (*(imxrt_common.ccm + ccm_cbcdr) & ~(1 << 25)) | ((val & 1) << 25);
-			while (*(imxrt_common.ccm + ccm_cdhipr) & (1 << 5));
+			while (*(imxrt_common.ccm + ccm_cdhipr) & (1 << 5))
+				;
 			break;
 
 		case clk_mux_semcAlt:
@@ -932,10 +946,6 @@ __attribute__((section(".noxip"))) void _imxrt_ccmSetMux(int mux, u32 val)
 
 		case clk_mux_flexspi:
 			*(imxrt_common.ccm + ccm_cscmr1) = (*(imxrt_common.ccm + ccm_cscmr1) & ~(0x3 << 29)) | ((val & 0x3) << 29);
-			break;
-
-		case clk_mux_flexspi2:
-			*(imxrt_common.ccm + ccm_cbcmr) = (*(imxrt_common.ccm + ccm_cbcmr) & ~(0x3 << 8)) | ((val & 0x3) << 8);
 			break;
 
 		case clk_mux_usdhc2:
@@ -1054,10 +1064,6 @@ u32 _imxrt_ccmGetMux(int mux)
 			val = (*(imxrt_common.ccm + ccm_cscmr1) >> 29) & 0x3;
 			break;
 
-		case clk_mux_flexspi2:
-			val = (*(imxrt_common.ccm + ccm_cbcmr) >> 8) & 0x3;
-			break;
-
 		case clk_mux_usdhc2:
 			val = (*(imxrt_common.ccm + ccm_cscmr1) >> 17) & 1;
 			break;
@@ -1140,7 +1146,8 @@ __attribute__((section(".noxip"))) void _imxrt_ccmSetDiv(int div, u32 val)
 	switch (div) {
 		case clk_div_arm: /* CACRR */
 			*(imxrt_common.ccm + ccm_cacrr) = (*(imxrt_common.ccm + ccm_cacrr) & ~0x7) | (val & 0x7);
-			while (*(imxrt_common.ccm + ccm_cdhipr) & (1 << 16));
+			while (*(imxrt_common.ccm + ccm_cdhipr) & (1 << 16))
+				;
 			break;
 
 		case clk_div_periphclk2: /* CBCDR */
@@ -1149,12 +1156,14 @@ __attribute__((section(".noxip"))) void _imxrt_ccmSetDiv(int div, u32 val)
 
 		case clk_div_semc: /* CBCDR */
 			*(imxrt_common.ccm + ccm_cbcdr) = (*(imxrt_common.ccm + ccm_cbcdr) & ~(0x7 << 16)) | ((val & 0x7) << 16);
-			while (*(imxrt_common.ccm + ccm_cdhipr) & 1);
+			while (*(imxrt_common.ccm + ccm_cdhipr) & 1)
+				;
 			break;
 
 		case clk_div_ahb: /* CBCDR */
 			*(imxrt_common.ccm + ccm_cbcdr) = (*(imxrt_common.ccm + ccm_cbcdr) & ~(0x7 << 10)) | ((val & 0x7) << 10);
-			while (*(imxrt_common.ccm + ccm_cdhipr) & (1 << 1));
+			while (*(imxrt_common.ccm + ccm_cdhipr) & (1 << 1))
+				;
 			break;
 
 		case clk_div_ipg: /* CBCDR */
@@ -1616,7 +1625,8 @@ void _imxrt_init(void)
 	_imxrt_ccmDeinitUsb2Pll();
 
 	/* Wait for any pending CCM div/mux handshake process to complete */
-	while (*(imxrt_common.ccm + ccm_cdhipr) & 0x1002b);
+	while (*(imxrt_common.ccm + ccm_cdhipr) & 0x1002b)
+		;
 
 	/* Allow userspace applications to access hardware registers */
 	for (i = 0; i < sizeof(imxrt_common.aips) / sizeof(imxrt_common.aips[0]); ++i) {
