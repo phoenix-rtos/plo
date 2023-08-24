@@ -22,21 +22,21 @@
 #include "imxrt.h"
 #include "peripherals.h"
 
-#include "../types.h"
+#include "../../types.h"
 
 #include <phoenix/arch/syspage-imxrt.h>
 #include <phoenix/syspage.h>
 
-#include "../../cpu.h"
-#include "../../mpu.h"
+#include "../../../cpu.h"
+#include "../../../mpu.h"
 
-#define PATH_KERNEL "phoenix-armv7m7-imxrt106x.elf"
-#define CPU_INFO    "Cortex-M i.MX RT106x"
+#define PATH_KERNEL "phoenix-armv7m7-imxrt105x.elf"
+#define CPU_INFO    "Cortex-M i.MX RT105x"
 
 #endif
 
 
 /* Import platform specific definitions */
-#include "ld/armv7m7-imxrt106x.ldt"
+#include "ld/armv7m7-imxrt105x.ldt"
 
 #endif

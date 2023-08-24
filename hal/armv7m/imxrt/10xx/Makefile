@@ -1,24 +1,20 @@
 #
-# Makefile for Phoenix-RTOS loader (ARMv7M HAL imxrt10xx)
+# Makefile for Phoenix-RTOS loader (ARMv7M HAL imxrt)
 #
-# Copyright 2021 Phoenix Systems
+# Copyright 2021, 2023 Phoenix Systems
 #
 # %LICENSE%
 #
 
-LDFLAGS := $(filter-out -Tbss% , $(LDFLAGS))
-LDFLAGS := $(filter-out -Tdata% , $(LDFLAGS))
 
-CFLAGS := $(filter-out -mfloat-abi% , $(CFLAGS))
-CFLAGS += -mfloat-abi=soft
+ifneq (, $(findstring imxrt106x, $(TARGET_SUBFAMILY)))
+  include hal/armv7m/imxrt/10xx/106x/Makefile
+  CFLAGS += -Ihal/armv7m/imxrt/10xx/106x
+else ifneq (, $(findstring imxrt105x, $(TARGET_SUBFAMILY)))
+  include hal/armv7m/imxrt/10xx/105x/Makefile
+  CFLAGS += -Ihal/armv7m/imxrt/10xx/105x
+else
+  $(error Unsupported target)
+endif
 
-GCCLIB := $(shell $(CC) $(CFLAGS) -print-libgcc-file-name)
-
-PLO_COMMANDS = alias app bootrom call console copy dump echo erase go help kernel kernelimg map \
-  mem mpu otp phfs reboot script wait
-
-include devices/usbc-cdc/Makefile
-include devices/uart-imxrt106x/Makefile
-include devices/flash-flexspi/Makefile
-
-OBJS += $(addprefix $(PREFIX_O)hal/$(TARGET_SUFF)/imxrt/10xx/, _init.o imxrt.o timer.o console.o bootrom.o otp.o)
+OBJS += $(addprefix $(PREFIX_O)hal/$(TARGET_SUFF)/imxrt/10xx/, timer.o console.o otp.o)
