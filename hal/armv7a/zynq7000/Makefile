@@ -6,11 +6,11 @@
 # %LICENSE%
 #
 
-LDFLAGS:=$(filter-out -Tbss% , $(LDFLAGS))
-LDFLAGS:=$(filter-out -Tdata% , $(LDFLAGS))
+LDFLAGS := $(filter-out -Tbss% , $(LDFLAGS))
+LDFLAGS := $(filter-out -Tdata% , $(LDFLAGS))
 
-CFLAGS:=$(filter-out -mfloat-abi% , $(CFLAGS))
-CFLAGS:=$(filter-out -mfpu% , $(CFLAGS))
+CFLAGS := $(filter-out -mfloat-abi% , $(CFLAGS))
+CFLAGS := $(filter-out -mfpu% , $(CFLAGS))
 
 CFLAGS += -DVADDR_KERNEL_INIT=$(VADDR_KERNEL_INIT)
 
@@ -24,5 +24,5 @@ include devices/usbc-cdc/Makefile
 include devices/uart-zynq7000/Makefile
 include devices/flash-zynq7000/Makefile
 
-OBJS += $(addprefix $(PREFIX_O)hal/$(TARGET_SUFF)/$(TARGET_SUBFAMILY)/, _init.o hal.o zynq.o timer.o\
-		interrupts.o console.o)
+OBJS += $(addprefix $(PREFIX_O)hal/$(TARGET_SUFF)/$(TARGET_SUBFAMILY)/, _init.o hal.o zynq.o timer.o \
+  interrupts.o console.o)

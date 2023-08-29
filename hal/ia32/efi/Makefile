@@ -7,7 +7,7 @@ LD := $(CROSS)ld
 OBJCOPY := $(CROSS)objcopy
 
 CFLAGS = -m32 -march=i586 -g -Os -Wall -DHAL=\"hal.h\" \
-	-fpie -ffreestanding -fomit-frame-pointer -fno-asynchronous-unwind-tables -fshort-wchar
+  -fpie -ffreestanding -fomit-frame-pointer -fno-asynchronous-unwind-tables -fshort-wchar
 
 LDFLAGS = -T plo.lds -static
 
