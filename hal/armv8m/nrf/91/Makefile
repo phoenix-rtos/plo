@@ -6,11 +6,11 @@
 # %LICENSE%
 #
 
-LDFLAGS:=$(filter-out -Tbss% , $(LDFLAGS))
-LDFLAGS:=$(filter-out -Tdata% , $(LDFLAGS))
+LDFLAGS := $(filter-out -Tbss% , $(LDFLAGS))
+LDFLAGS := $(filter-out -Tdata% , $(LDFLAGS))
 
-CFLAGS:=$(filter-out -mfloat-abi% , $(CFLAGS))
-CFLAGS+= -mfloat-abi=soft
+CFLAGS := $(filter-out -mfloat-abi% , $(CFLAGS))
+CFLAGS += -mfloat-abi=soft
 
 GCCLIB := $(shell $(CC) $(CFLAGS) -print-libgcc-file-name)
 
