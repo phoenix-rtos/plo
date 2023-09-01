@@ -201,11 +201,6 @@ int _gr716_cguClkStatus(u32 cgu, u32 device)
 }
 
 
-void _gr716_softRst(void)
-{
-}
-
-
 void _gr716_init(void)
 {
 	gr716_common.grgpreg_base = GRGPREG_BASE;

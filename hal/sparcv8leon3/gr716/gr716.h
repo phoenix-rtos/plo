@@ -46,9 +46,6 @@ typedef struct {
 } iomux_cfg_t;
 
 
-extern void _gr716_softRst(void);
-
-
 extern int _gr716_iomuxCfg(iomux_cfg_t *ioCfg);
 
 
