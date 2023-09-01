@@ -21,6 +21,18 @@
 .extern _plo_load_addr
 .extern _plo_size
 
+#define IOCRAM_BASE 0x31000000
+
+#define WDOG_CTRL  0x80003078
+#define DIS_LVDS   0x8000d030
+#define CGU_UNLOCK 0x80006000
+#define CGU_ENABLE 0x80006004
+#define CGU_BO     0x08000000
+
+#define BOOTSTRAP_ADR  0x80008000
+#define BOOTSTRAP_SPIM 0x400BC003
+
+
 .section ".init", "ax"
 .align 4
 .global _init
@@ -30,11 +42,55 @@ _init:
 	call . + 8
 	nop
 	mov %o7, %g5
+
+	/* Disable watchdog */
+	set WDOG_CTRL, %g1
+	st %g0, [%g1]
+
+	/* Clear Brownout */
+	set CGU_UNLOCK, %l0
+	set CGU_ENABLE, %l2
+	set CGU_BO, %l3
+	/* Unlock */
+	ld [%l0], %g1
+	or %g1, %l3, %g1
+	st %g1, [%l0]
+	/* Disable */
+	ld [%l2], %g1
+	andn %g1, %l3, %g1
+	st %g1, [%l2]
+	/* Lock */
+	ld [%l0], %g1
+	andn %g1, %l3, %g1
+	st %g1, [%l0]
+
 	/* check where we're loaded */
 	set _plo_load_addr, %g2
 	cmp %g5, %g2
 	bge stage1
+	nop
 
+	set IOCRAM_BASE, %g2
+	cmp %g5, %g2
+	bge _sram_init
+	nop
+
+	/* We skipped bootloader and are executing in SPI, reboot to bootloader */
+
+	/* Disable LVDS */
+	set DIS_LVDS, %g1
+	set 0x00888888, %g2
+	st %g2, [%g1]
+
+	/* Reboot to SPIM */
+	set BOOTSTRAP_ADR, %g1
+	set BOOTSTRAP_SPIM, %g2
+	st %g2, [%g1]
+
+	jmp %g0
+	nop
+
+_sram_init:
 	/* Enable CGU for SRAM */
 	set 0x80006000, %g1 /* %g1 = cgu_unlock */
 	add %g1, 0x8, %g3   /* %g3 = cgu_core_reset */
@@ -68,16 +124,6 @@ _init:
 	st %g2, [%g1]
 
 	/* Initialize SRAM pins */
-	sethi %hi(0x8030C000), %g1
-	sethi %hi(0xFE1FFFFF), %g3
-	or %g3, %lo(0xFE1FFFFF), %g3
-	st %g3, [%g1]
-
-	sethi %hi(0x8030D000), %g1
-	sethi %hi(0x1E0000), %g3
-	or %g3, 7, %g3
-	st %g3, [%g1]
-
 	sethi %hi(0x8000D000), %g1
 	sethi %hi(0x22222000), %g2
 	or %g2, 0x222, %g4
@@ -112,6 +158,10 @@ _init:
 	set ((0xF << 9) | (1 << 7)), %g2
 	st %g2, [%g1]
 
+	/* Disable SRAM EDAC */
+	set 0x80000008, %g1
+	st %g0, [%g1]
+
 	/* Copy plo to SRAM */
 	set _plo_size, %g1
 	/* src = %g5 - 0x1000 */
@@ -130,6 +180,7 @@ copy:
 	nop
 
 stage1:
+	clr %g1
 	/* Set up trap table */
 	sethi %hi(_trap_table), %g1
 	wr %g1, %tbr
@@ -150,3 +201,4 @@ stage1:
 	sethi %hi(_startc), %g1
 	jmpl %g1 + %lo(_startc), %g0
 	mov %g0, %g1
+.size _init, . - _init
