@@ -5,7 +5,7 @@
  *
  * Console
  *
- * Copyright 2021 Phoenix Systems
+ * Copyright 2021-2023 Phoenix Systems
  * Authors: Hubert Buczynski, Gerard Swiderski
  *
  * This file is part of Phoenix-RTOS.
@@ -39,8 +39,34 @@ struct {
 } halconsole_common;
 
 
+/* clang-format off */
+
 enum { uart_verid = 0, uart_param, uart_global, uart_pincfg, uart_baud, uart_stat, uart_ctrl,
-	   uart_data, uart_match, uart_modir, uart_fifo, uart_water };
+	uart_data, uart_match, uart_modir, uart_fifo, uart_water };
+
+/* clang-format on */
+
+
+static int console_muxVal(int mux)
+{
+	switch (mux) {
+		case pctl_mux_gpio_b1_12:
+		case pctl_mux_gpio_b1_13:
+			return 1;
+
+		case pctl_mux_gpio_b0_08:
+		case pctl_mux_gpio_b0_09:
+			return 3;
+
+		case pctl_mux_gpio_sd_b1_00:
+		case pctl_mux_gpio_sd_b1_01:
+			return 4;
+
+		default: break;
+	}
+
+	return 2;
+}
 
 
 void hal_consolePrint(const char *s)
@@ -62,11 +88,13 @@ void console_init(void)
 	_imxrt_ccmControlGate(CONSOLE_CLK(UART_CONSOLE_PLO), clk_state_run_wait);
 
 	/* tx */
-	_imxrt_setIOmux(CONSOLE_MUX(UART_CONSOLE_PLO, TX_PIN), 0, 2);
+	_imxrt_setIOmux(CONSOLE_MUX(UART_CONSOLE_PLO, TX_PIN), 0,
+		console_muxVal(CONSOLE_MUX(UART_CONSOLE_PLO, TX_PIN)));
 	_imxrt_setIOpad(CONSOLE_PAD(UART_CONSOLE_PLO, TX_PIN), 0, 0, 0, 1, 0, 2, 6, 0);
 
 	/* rx */
-	_imxrt_setIOmux(CONSOLE_MUX(UART_CONSOLE_PLO, RX_PIN), 0, 2);
+	_imxrt_setIOmux(CONSOLE_MUX(UART_CONSOLE_PLO, RX_PIN), 0,
+		console_muxVal(CONSOLE_MUX(UART_CONSOLE_PLO, RX_PIN)));
 	_imxrt_setIOpad(CONSOLE_PAD(UART_CONSOLE_PLO, RX_PIN), 0, 0, 0, 1, 0, 2, 6, 0);
 
 #if (UART_CONSOLE_PLO >= 2) && (UART_CONSOLE_PLO <= 8)
