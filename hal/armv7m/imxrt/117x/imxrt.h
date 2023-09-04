@@ -22,6 +22,11 @@
 #include "../types.h"
 
 
+/* clang-format off */
+
+enum { gpio1 = 0, gpio2, gpio3, gpio4, gpio5, gpio6, gpio7, gpio8, gpio9, gpio10, gpio11, gpio12, gpio13 };
+
+
 /* CCM - Root Clocks */
 enum { pctl_clk_cm7 = 0, pctl_clk_cm4, pctl_clk_bus, pctl_clk_bus_lpsr, pctl_clk_semc, pctl_clk_cssys,
 	pctl_clk_cstrace, pctl_clk_m4_systick, pctl_clk_m7_systick, pctl_clk_adc1, pctl_clk_adc2, pctl_clk_acmp,
@@ -315,6 +320,8 @@ enum { cti0_err_irq = 17 + 16, cti1_err_irq, core_irq, lpuart1_irq, lpuart2_irq,
 	xecc_flexspi1_fatal_irq, xecc_flexspi2_irq, xecc_flexspi2_fatal_irq, xecc_semc_irq, xecc_semc_fatal_irq, enet_qos_irq,
 	enet_pmt_irq };
 
+/* clang-format on */
+
 
 extern int _imxrt_setIOmux(int mux, char sion, char mode);
 
@@ -323,6 +330,21 @@ extern int _imxrt_setIOpad(int pad, char sre, char dse, char pue, char pus, char
 
 
 extern int _imxrt_setIOisel(int isel, char daisy);
+
+
+extern int _imxrt_gpioConfig(unsigned int d, u8 pin, u8 dir);
+
+
+extern int _imxrt_gpioSet(unsigned int d, u8 pin, u8 val);
+
+
+extern int _imxrt_gpioSetPort(unsigned int d, u32 val);
+
+
+extern int _imxrt_gpioGet(unsigned int d, u8 pin, u8 *val);
+
+
+extern int _imxrt_gpioGetPort(unsigned int d, u32 *val);
 
 
 extern int _imxrt_getDevClock(int clock, int *div, int *mux, int *mfd, int *mfn, int *state);
