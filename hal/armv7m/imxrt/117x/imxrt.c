@@ -24,6 +24,10 @@ enum { stk_ctrl = 0, stk_load, stk_val, stk_calib };
 enum { aipstz_mpr = 0, aipstz_opacr = 16, aipstz_opacr1, aipstz_opacr2, aipstz_opacr3, aipstz_opacr4 };
 
 
+enum { gpio_dr = 0, gpio_gdir, gpio_psr, gpio_icr1, gpio_icr2, gpio_imr, gpio_isr, gpio_edge_sel, gpio_dr_set,
+	gpio_dr_clear, gpio_dr_toggle };
+
+
 enum { src_scr = 0, src_srmr, src_sbmr1, src_sbmr2, src_srsr,
 	src_gpr1, src_gpr2, src_gpr3, src_gpr4, src_gpr5,
 	src_gpr6, src_gpr7, src_gpr8, src_gpr9, src_gpr10,
@@ -49,6 +53,7 @@ struct {
 	volatile u32 *iomuxc_lpsr_gpr;
 	volatile u32 *iomuxc_gpr;
 	volatile u32 *iomuxc;
+	volatile u32 *gpio[13];
 	volatile u32 *ccm;
 
 	u32 cpuclk;
@@ -220,6 +225,91 @@ __attribute__((section(".noxip"))) int _imxrt_setIOisel(int isel, char daisy)
 }
 
 
+/* GPIO */
+
+
+static volatile u32 *_imxrt_gpioGetReg(unsigned int d)
+{
+	return (d < sizeof(imxrt_common.gpio) / sizeof(imxrt_common.gpio[0])) ? imxrt_common.gpio[d] : NULL;
+}
+
+
+int _imxrt_gpioConfig(unsigned int d, u8 pin, u8 dir)
+{
+	volatile u32 *reg = _imxrt_gpioGetReg(d);
+	u32 register clr;
+
+	if ((reg == NULL) || (pin > 31u)) {
+		return -1;
+	}
+
+	clr = *(reg + gpio_gdir) & ~(1u << pin);
+	dir = (dir != 0u) ? 1u : 0u;
+	*(reg + gpio_gdir) = clr | (dir << pin);
+
+	return 0;
+}
+
+
+int _imxrt_gpioSet(unsigned int d, u8 pin, u8 val)
+{
+	volatile u32 *reg = _imxrt_gpioGetReg(d);
+	u32 register clr;
+
+	if ((reg == NULL) || (pin > 31u)) {
+		return -1;
+	}
+
+	clr = *(reg + gpio_dr) & ~(1u << pin);
+	val = (val != 0u) ? 1u : 0u;
+	*(reg + gpio_dr) = clr | (val << pin);
+
+	return 0;
+}
+
+
+int _imxrt_gpioSetPort(unsigned int d, u32 val)
+{
+	volatile u32 *reg = _imxrt_gpioGetReg(d);
+
+	if (reg == NULL) {
+		return -1;
+	}
+
+	*(reg + gpio_dr) = val;
+
+	return 0;
+}
+
+
+int _imxrt_gpioGet(unsigned int d, u8 pin, u8 *val)
+{
+	volatile u32 *reg = _imxrt_gpioGetReg(d);
+
+	if ((reg == NULL) || (pin > 31)) {
+		return -1;
+	}
+
+	*val = ((*(reg + gpio_psr) & (1u << pin)) != 0u) ? 1u : 0u;
+
+	return 0;
+}
+
+
+int _imxrt_gpioGetPort(unsigned int d, u32 *val)
+{
+	volatile u32 *reg = _imxrt_gpioGetReg(d);
+
+	if (reg == NULL) {
+		return -1;
+	}
+
+	*val = *(reg + gpio_psr);
+
+	return 0;
+}
+
+
 /* CCM */
 
 __attribute__((section(".noxip"))) int _imxrt_getDevClock(int clock, int *div, int *mux, int *mfd, int *mfn, int *state)
@@ -372,6 +462,20 @@ void _imxrt_init(void)
 	imxrt_common.iomuxc_gpr = (void *)0x400e4000;
 	imxrt_common.iomuxc = (void *)0x400e8000;
 	imxrt_common.ccm = (void *)0x40cc0000;
+
+	imxrt_common.gpio[0] = (void *)0x4012c000;
+	imxrt_common.gpio[1] = (void *)0x40130000;
+	imxrt_common.gpio[2] = (void *)0x40134000;
+	imxrt_common.gpio[3] = (void *)0x40138000;
+	imxrt_common.gpio[4] = (void *)0x4013c000;
+	imxrt_common.gpio[5] = (void *)0x40140000;
+	imxrt_common.gpio[6] = (void *)0x40c5c000;
+	imxrt_common.gpio[7] = (void *)0x40c60000;
+	imxrt_common.gpio[8] = (void *)0x40c64000;
+	imxrt_common.gpio[9] = (void *)0x40c68000;
+	imxrt_common.gpio[10] = (void *)0x40c6c000;
+	imxrt_common.gpio[11] = (void *)0x40c70000;
+	imxrt_common.gpio[12] = (void *)0x40ca0000;
 
 	imxrt_common.cpuclk = 640000000;
 
