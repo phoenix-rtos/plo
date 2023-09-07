@@ -15,6 +15,7 @@
 
 #include <hal/hal.h>
 #include <lib/errno.h>
+#include <board_config.h>
 
 #include "uart-16550.h"
 
@@ -26,7 +27,7 @@ typedef struct {
 
 
 static const uarthw_context_t uarts[] = {
-	{ (void *)0x10000000, 10 }
+	{ (void *)UART16550_BASE, UART16550_IRQ }
 };
 
 
@@ -50,15 +51,17 @@ unsigned int uarthw_irq(void *hwctx)
 
 int uarthw_init(unsigned int n, void *hwctx, unsigned int *baud)
 {
-	if (n >= sizeof(uarts) / sizeof(uarts[0]))
+	if (n >= sizeof(uarts) / sizeof(uarts[0])) {
 		return -EINVAL;
+	}
 
 	/* Set UART hardware context */
 	*(uarthw_context_t *)hwctx = uarts[n];
 
 	/* Set preferred baudrate */
-	if (baud != NULL)
+	if (baud != NULL) {
 		*baud = bps_115200;
+	}
 
 	return EOK;
 }

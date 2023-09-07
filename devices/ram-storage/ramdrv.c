@@ -22,8 +22,8 @@
 
 
 static const struct {
-	u32 start;
-	u32 end;
+	addr_t start;
+	addr_t end;
 } ramParams[RAM_NO] = {
 	{ RAM_ADDR, RAM_ADDR + RAM_BANK_SIZE }
 };
