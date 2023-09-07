@@ -9,7 +9,7 @@
 CFLAGS += -DVADDR_KERNEL_BASE=$(VADDR_KERNEL_BASE)
 CFLAGS += -Ihal/ia32
 
-PLO_COMMANDS := alias app call console copy dump echo go help kernel map mem phfs script reboot syspage wait
+PLO_COMMANDS := alias app call console copy dump echo go help kernel lspci map mem phfs script reboot syspage wait
 
 include devices/disk-bios/Makefile
 include devices/tty-bios/Makefile
