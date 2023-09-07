@@ -15,7 +15,7 @@ include devices/disk-bios/Makefile
 include devices/tty-bios/Makefile
 include devices/uart-16550/Makefile
 
-OBJS += $(addprefix $(PREFIX_O)hal/$(TARGET_SUFF)/, _exceptions.o _init.o _interrupts.o cpu.o exceptions.o hal.o interrupts.o memory.o string.o timer.o)
+OBJS += $(addprefix $(PREFIX_O)hal/$(TARGET_SUFF)/, _exceptions.o _init.o _interrupts.o cpu.o exceptions.o hal.o interrupts.o memory.o pci.o string.o timer.o)
 
 ifeq ($(CONSOLE), serial)
   OBJS += $(PREFIX_O)hal/$(TARGET_SUFF)/console-serial.o
