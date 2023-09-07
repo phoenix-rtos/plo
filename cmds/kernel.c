@@ -22,6 +22,17 @@
 #include <syspage.h>
 
 
+#ifdef __TARGET_RISCV64
+#define ELF_WORD Elf64_Word
+#define ELF_EHDR Elf64_Ehdr
+#define ELF_PHDR Elf64_Phdr
+#else
+#define ELF_WORD Elf32_Word
+#define ELF_EHDR Elf32_Ehdr
+#define ELF_PHDR Elf32_Phdr
+#endif
+
+
 static void cmd_kernelInfo(void)
 {
 	lib_printf("loads Phoenix-RTOS, usage: kernel [<dev> [name]]");
@@ -38,27 +49,29 @@ static int cmd_kernel(int argc, char *argv[])
 
 	size_t elfOffs = 0, segOffs;
 
-	Elf32_Word i;
-	Elf32_Ehdr hdr;
-	Elf32_Phdr phdr;
+	ELF_WORD i;
+	ELF_EHDR hdr;
+	ELF_PHDR phdr;
 
 	const mapent_t *entry;
 
 	/* Parse arguments */
-	if (argc == 1 || argc > 3) {
+	if ((argc == 1) || (argc > 3)) {
 		log_error("\n%s: Wrong argument count", argv[0]);
 		return -EINVAL;
 	}
 
 	kname = (argc == 3) ? argv[2] : PATH_KERNEL;
 
-	if ((res = phfs_open(argv[1], kname, 0, &handler)) < 0) {
+	res = phfs_open(argv[1], kname, 0, &handler);
+	if (res < 0) {
 		log_error("\nCannot open %s, on %s", kname, argv[1]);
 		return res;
 	}
 
 	/* Read ELF header */
-	if ((res = phfs_read(handler, elfOffs, &hdr, sizeof(Elf32_Ehdr))) < 0) {
+	res = phfs_read(handler, elfOffs, &hdr, sizeof(ELF_EHDR));
+	if (res < 0) {
 		log_error("\nCan't read %s, on %s", kname, argv[1]);
 		return res;
 	}
@@ -70,26 +83,30 @@ static int cmd_kernel(int argc, char *argv[])
 
 	/* Read program segments */
 	for (i = 0; i < hdr.e_phnum; i++) {
-		elfOffs = hdr.e_phoff + i * sizeof(Elf32_Phdr);
-		if ((res = phfs_read(handler, elfOffs, &phdr, sizeof(Elf32_Phdr))) < 0) {
+		elfOffs = hdr.e_phoff + i * sizeof(ELF_PHDR);
+		res = phfs_read(handler, elfOffs, &phdr, sizeof(ELF_PHDR));
+		if (res < 0) {
 			log_error("\nCan't read %s, on %s", kname, argv[1]);
 			return res;
 		}
 
-		if ((phdr.p_type == PHT_LOAD)) {
-			if ((entry = syspage_entryAdd(NULL, hal_kernelGetAddress((addr_t)phdr.p_vaddr), phdr.p_memsz, phdr.p_align)) == NULL) {
+		if (phdr.p_type == (ELF_WORD)PHT_LOAD) {
+			entry = syspage_entryAdd(NULL, hal_kernelGetAddress((addr_t)phdr.p_vaddr), phdr.p_memsz, phdr.p_align);
+			if (entry == NULL) {
 				log_error("\nCannot allocate memory for '%s'", kname);
 				return -ENOMEM;
 			}
 
 			/* Save kernel's beginning address */
-			if (phdr.p_flags == (PHF_R | PHF_X))
+			if (phdr.p_flags == (ELF_WORD)(PHF_R | PHF_X)) {
 				kernelPAddr = entry->start;
+			}
 
 			elfOffs = phdr.p_offset;
 
 			for (segOffs = 0; segOffs < phdr.p_filesz; elfOffs += res, segOffs += res) {
-				if ((res = phfs_read(handler, elfOffs, buff, min(sizeof(buff), phdr.p_filesz - segOffs))) < 0) {
+				res = phfs_read(handler, elfOffs, buff, min(sizeof(buff), phdr.p_filesz - segOffs));
+				if (res < 0) {
 					log_error("\nCan't read %s, on %s", kname, argv[1]);
 					return res;
 				}
@@ -98,7 +115,6 @@ static int cmd_kernel(int argc, char *argv[])
 			}
 		}
 	}
-
 
 	hal_kernelEntryPoint(hal_kernelGetAddress(hdr.e_entry));
 	syspage_kernelPAddrAdd(kernelPAddr);
