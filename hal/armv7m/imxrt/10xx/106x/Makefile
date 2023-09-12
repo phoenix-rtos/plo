@@ -19,6 +19,6 @@ PLO_COMMANDS = alias app bootrom call console copy dump echo erase go help kerne
 
 include devices/usbc-cdc/Makefile
 include devices/uart-imxrt106x/Makefile
-include devices/flash-flexspi/Makefile
+include devices/flash-imxrt/Makefile
 
 OBJS += $(addprefix $(PREFIX_O)hal/$(TARGET_SUFF)/imxrt/10xx/106x/, _init.o imxrt.o bootrom.o)
