@@ -19,6 +19,6 @@ PLO_COMMANDS = alias app bootcm4 bootrom call console copy dump echo erase go he
 
 include devices/usbc-cdc/Makefile
 include devices/uart-imxrt117x/Makefile
-include devices/flash-flexspi/Makefile
+include devices/flash-imxrt/Makefile
 
 OBJS += $(addprefix $(PREFIX_O)hal/$(TARGET_SUFF)/imxrt/117x/, _init.o imxrt.o timer.o console.o bootrom.o otp.o)

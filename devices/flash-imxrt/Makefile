@@ -1,5 +1,5 @@
 #
-# Makefile for flash-flexspi
+# Makefile for flash-imxrt
 #
 # Copyright 2021-2022 Phoenix Systems
 #
@@ -16,4 +16,4 @@ else ifneq (, $(findstring imxrt105x, $(TARGET_SUBFAMILY)))
   FLEXSPI_OBJS += flashdrv.o nor/nor.o nor/nor_mx.o hyperbus/hyper.o
 endif
 
-OBJS += $(addprefix $(PREFIX_O)devices/flash-flexspi/, $(FLEXSPI_OBJS))
+OBJS += $(addprefix $(PREFIX_O)devices/flash-imxrt/, $(FLEXSPI_OBJS))
