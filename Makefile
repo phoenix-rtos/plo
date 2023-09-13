@@ -74,12 +74,12 @@ $(PREFIX_O)/script-ram.o.plo: $(PREFIX_O)cmds/cmd.o $(PLO_SCRIPT_DIR)/script-ram
 
 $(PREFIX_PROG)plo-$(TARGET_FAMILY)-$(TARGET_SUBFAMILY).elf: $(PREFIX_O)/$(TARGET_FAMILY)-$(TARGET_SUBFAMILY).ld $(OBJS) $(PREFIX_O)/script.o.plo | $(PREFIX_PROG)/.
 	@echo "LD  $(@F)"
-	$(SIL)$(LD) $(LDFLAGS) -Map=$<.map -o $@ -T $^ $(GCCLIB)
+	$(SIL)$(LD) $(CFLAGS) $(LDFLAGS) -Wl,-Map=$<.map -o $@ -Wl,-T,$^ -nostdlib -lgcc
 
 
 $(PREFIX_PROG)plo-ram-$(TARGET_FAMILY)-$(TARGET_SUBFAMILY).elf: $(PREFIX_O)/$(TARGET_FAMILY)-$(TARGET_SUBFAMILY)-ram.ld $(OBJS) $(PREFIX_O)/script-ram.o.plo | $(PREFIX_PROG)/.
 	@echo "LD  $(@F)"
-	$(SIL)$(LD) $(LDFLAGS) -Map=$<.map -o $@ -T $^ $(GCCLIB)
+	$(SIL)$(LD) $(CFLAGS) $(LDFLAGS) -Wl,-Map=$<.map -o $@ -Wl,-T,$^ -nostdlib -lgcc
 
 
 $(PREFIX_PROG_STRIPPED)%.hex: $(PREFIX_PROG_STRIPPED)%.elf

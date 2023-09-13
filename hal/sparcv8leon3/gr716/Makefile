@@ -15,9 +15,7 @@ CFLAGS:=$(filter-out -mfpu% , $(CFLAGS))
 
 CFLAGS += -DVADDR_KERNEL_INIT=$(VADDR_KERNEL_INIT)
 
-GCCLIB := $(shell $(CC) $(CFLAGS) -print-libgcc-file-name)
-
-PLO_COMMANDS = alias app call console copy dump echo go help kernel map mem phfs reboot script wait
+PLO_COMMANDS := alias app call console copy dump echo go help kernel map mem phfs reboot script wait
 
 include devices/gpio-gr716/Makefile
 include devices/uart-gr716/Makefile
