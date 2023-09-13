@@ -12,9 +12,7 @@ LDFLAGS := $(filter-out -Tdata% , $(LDFLAGS))
 CFLAGS := $(filter-out -mfloat-abi% , $(CFLAGS))
 CFLAGS += -mfloat-abi=soft
 
-GCCLIB := $(shell $(CC) $(CFLAGS) -print-libgcc-file-name)
-
-PLO_COMMANDS = alias app bankswitch call console copy dump echo go help kernelimg map mem mpu \
+PLO_COMMANDS := alias app bankswitch call console copy dump echo go help kernelimg map mem mpu \
   phfs reboot script wait
 
 include devices/uart-stm32l4x6/Makefile

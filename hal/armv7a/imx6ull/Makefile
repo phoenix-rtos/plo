@@ -11,16 +11,14 @@ INIT_FLASH = 0x0
 
 LDFLAGS:=$(filter-out -Tbss% , $(LDFLAGS))
 LDFLAGS:=$(filter-out -Tdata% , $(LDFLAGS))
-LDFLAGS+=--defsym _plo_bss=__bss_start
+LDFLAGS+=-Wl,--defsym,_plo_bss=__bss_start
 
 CFLAGS:=$(filter-out -mfloat-abi% , $(CFLAGS))
 CFLAGS:=$(filter-out -mfpu% , $(CFLAGS))
 
 CFLAGS += -DVADDR_KERNEL_INIT=$(VADDR_KERNEL_INIT)
 
-GCCLIB := $(shell $(CC) $(CFLAGS) -print-libgcc-file-name)
-
-PLO_COMMANDS = alias app call console copy dump echo erase go help jffs2 kernel map mem phfs script \
+PLO_COMMANDS := alias app call console copy dump echo erase go help jffs2 kernel map mem phfs script \
   test-dev test-ddr wait
 
 ifeq ($(PLO_NAND), y)
