@@ -72,10 +72,9 @@ void timer_init(void)
 
 	/* FIXME */
 	//freq = _imxrt_ccmGetFreq(clk_ipg) / 2;
-	freq = 400 * 1000 * 1000;
+	freq = 24 * 1000 * 1000;
 	ticksPerMs = freq / 1000;
-
-	_imxrt_setDevClock(GPT1_CLK, 0, 2, 0, 0, 1);
+	/* NOTE: clock initialized during clock root setup in hal */
 
 	*(timer_common.base + gpt_cr) |= 1 << 15;
 
