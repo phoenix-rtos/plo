@@ -55,8 +55,9 @@ void *syspage_alloc(size_t size)
 
 	newTop = (void *)ALIGN_ADDR((addr_t)syspage_common.heapTop + size, sizeof(long long));
 
-	if (newTop >= syspage_common.heapEnd)
+	if (newTop >= syspage_common.heapEnd) {
 		return NULL;
+	}
 
 	addr = syspage_common.heapTop;
 
@@ -79,13 +80,16 @@ static const syspage_map_t *syspage_mapGet(const char *name)
 {
 	const syspage_map_t *map = syspage_common.syspage->maps;
 
-	if (map == NULL)
+	if (map == NULL) {
 		return NULL;
+	}
 
 	do {
-		if (hal_strcmp(name, map->name) == 0)
+		if (hal_strcmp(name, map->name) == 0) {
 			return map;
-	} while ((map = map->next) != syspage_common.syspage->maps);
+		}
+		map = map->next;
+	} while (map != syspage_common.syspage->maps);
 
 	return NULL;
 }
@@ -105,10 +109,10 @@ static const char *syspage_etype2str(unsigned int type)
 
 static int syspage_strAttr2ui(const char *str, unsigned int *attr)
 {
-	int i;
+	size_t i;
 
 	*attr = 0;
-	for (i = 0; str[i]; ++i) {
+	for (i = 0; str[i] != '\0'; ++i) {
 		switch (str[i]) {
 			case 'r':
 				*attr |= mAttrRead;
@@ -140,8 +144,7 @@ static int syspage_strAttr2ui(const char *str, unsigned int *attr)
 
 static void syspage_uiAttr2str(unsigned int attr, char *str)
 {
-	unsigned int i = 0;
-	unsigned int pos = 0;
+	size_t i, pos = 0;
 
 	for (i = 0; i < 32; ++i) {
 		switch (attr & (1 << i)) {
@@ -172,9 +175,9 @@ static void syspage_uiAttr2str(unsigned int attr, char *str)
 
 static void syspage_sortedInsert(syspage_map_t *map, mapent_t *newEntry)
 {
-	mapent_t *e;
+	mapent_t *e = map->entries;
 
-	if ((e = map->entries) == NULL) {
+	if (e == NULL) {
 		newEntry->next = newEntry;
 		newEntry->prev = newEntry;
 		map->entries = newEntry;
@@ -190,12 +193,14 @@ static void syspage_sortedInsert(syspage_map_t *map, mapent_t *newEntry)
 			e->prev = newEntry;
 
 			/* Update head of the list */
-			if (e == map->entries)
+			if (e == map->entries) {
 				map->entries = newEntry;
+			}
 
 			break;
 		}
-	} while ((e = e->next) != map->entries);
+		e = e->next;
+	} while (e != map->entries);
 
 	/* Add entry at the end of the list */
 	if (e == map->entries) {
@@ -220,19 +225,28 @@ int syspage_mapAdd(const char *name, addr_t start, addr_t end, const char *attr)
 	/* Check whether map's name exists or map overlaps with other maps */
 	if (map != NULL) {
 		do {
-			if (((map->start < end) && (map->end > start)) ||
-					(hal_strcmp(name, map->name) == 0))
+			if (((map->start < end) && (map->end > start)) || (hal_strcmp(name, map->name) == 0)) {
 				return -EINVAL;
-		} while ((map = map->next) != syspage_common.syspage->maps);
+			}
+			map = map->next;
+		} while (map != syspage_common.syspage->maps);
 	}
 
 	len = hal_strlen(name);
-	if ((map = syspage_alloc(sizeof(syspage_map_t))) == NULL ||
-			(map->name = syspage_alloc(len + 1)) == NULL)
+	map = syspage_alloc(sizeof(syspage_map_t));
+	if (map != NULL) {
+		map->name = syspage_alloc(len + 1);
+		if (map->name == NULL) {
+			return -ENOMEM;
+		}
+	}
+	else {
 		return -ENOMEM;
-
-	if ((res = syspage_strAttr2ui(attr, &iattr)) < 0)
+	}
+	res = syspage_strAttr2ui(attr, &iattr);
+	if (res < 0) {
 		return res;
+	}
 
 	map->attr = iattr;
 	map->entries = NULL;
@@ -259,8 +273,10 @@ int syspage_mapAdd(const char *name, addr_t start, addr_t end, const char *attr)
 
 	/* Get entries from hal */
 	while (hal_memoryGetNextEntry(start, end, &tempEntry) >= 0) {
-		if ((entry = syspage_alloc(sizeof(mapent_t))) == NULL)
+		entry = syspage_alloc(sizeof(mapent_t));
+		if (entry == NULL) {
 			return -ENOMEM;
+		}
 
 		entry->type = tempEntry.type;
 		entry->start = tempEntry.start;
@@ -269,9 +285,10 @@ int syspage_mapAdd(const char *name, addr_t start, addr_t end, const char *attr)
 		syspage_sortedInsert(map, entry);
 		start = entry->end;
 	}
-
-	if ((res = hal_memoryAddMap(map->start, map->end, map->attr, map->id)) < 0)
+	res = hal_memoryAddMap(map->start, map->end, map->attr, map->id);
+	if (res < 0) {
 		return res;
+	}
 
 	return EOK;
 }
@@ -285,7 +302,8 @@ static int syspage_bestFit(const syspage_map_t *map, size_t size, unsigned int a
 	size_t bestSz = (size_t)-1, tempSz;
 
 	tempStart = ALIGN_ADDR(map->start, align);
-	if ((e = map->entries) != NULL) {
+	e = map->entries;
+	if (e != NULL) {
 		do {
 			if (!((e->start < tempStart + size) && (e->end > tempStart))) {
 				tempSz = e->start - tempStart;
@@ -295,7 +313,8 @@ static int syspage_bestFit(const syspage_map_t *map, size_t size, unsigned int a
 				}
 			}
 			tempStart = ALIGN_ADDR(e->end, align);
-		} while ((e = e->next) != map->entries);
+			e = e->next;
+		} while (e != map->entries);
 
 		/* Check map's area after the last entry */
 		tempStart = ALIGN_ADDR(map->entries->prev->end, align);
@@ -305,8 +324,9 @@ static int syspage_bestFit(const syspage_map_t *map, size_t size, unsigned int a
 			bestStart = tempStart;
 		}
 
-		if (bestSz == (size_t)-1 || bestStart == (addr_t)-1)
+		if ((bestSz == (size_t)-1) || (bestStart == (addr_t)-1)) {
 			return -EFAULT;
+		}
 
 		tempStart = bestStart;
 	}
@@ -330,36 +350,43 @@ mapent_t *syspage_entryAdd(const char *mapName, addr_t start, size_t size, unsig
 					map = iterMap;
 					break;
 				}
-			} while ((iterMap = iterMap->next) != syspage_common.syspage->maps);
+				iterMap = iterMap->next;
+			} while (iterMap != syspage_common.syspage->maps);
 		}
 	}
 	else {
 		map = syspage_mapGet(mapName);
 	}
 
-	if (map == NULL)
+	if (map == NULL) {
 		return NULL;
+	}
 
 	/* Find the best fit in the defined map */
-	if (mapName != NULL && start == (addr_t)-1) {
-		if (syspage_bestFit(map, size, align, &start) < 0)
+	if ((mapName != NULL) && (start == (addr_t)-1)) {
+		if (syspage_bestFit(map, size, align, &start) < 0) {
 			return NULL;
+		}
 	}
 	else {
 		/* Add entry to specific area of memory or specific address in the defined map */
 		start = ALIGN_ADDR((mapName == NULL) ? start : map->start + start, align);
 
 		/* Check overlapping with existing entries */
-		if ((entry = map->entries) != NULL) {
+		entry = map->entries;
+		if (entry != NULL) {
 			do {
-				if (((entry->start < start + size) && (entry->end > start)))
+				if (((entry->start < start + size) && (entry->end > start))) {
 					return NULL;
-			} while ((entry = entry->next) != map->entries);
+				}
+				entry = entry->next;
+			} while (entry != map->entries);
 		}
 	}
-
-	if ((newEntry = syspage_alloc(sizeof(mapent_t))) == NULL)
+	newEntry = syspage_alloc(sizeof(mapent_t));
+	if (newEntry == NULL) {
 		return NULL;
+	}
 
 	newEntry->start = start;
 	newEntry->end = start + size;
@@ -374,9 +401,9 @@ mapent_t *syspage_entryAdd(const char *mapName, addr_t start, size_t size, unsig
 
 int syspage_mapAttrResolve(const char *name, unsigned int *attr)
 {
-	const syspage_map_t *map;
+	const syspage_map_t *map = syspage_mapGet(name);
 
-	if ((map = syspage_mapGet(name)) == NULL) {
+	if (map == NULL) {
 		log_error("\nsyspage: %s does not exist", name);
 		return -EINVAL;
 	}
@@ -389,9 +416,9 @@ int syspage_mapAttrResolve(const char *name, unsigned int *attr)
 
 int syspage_mapNameResolve(const char *name, u8 *id)
 {
-	const syspage_map_t *map;
+	const syspage_map_t *map = syspage_mapGet(name);
 
-	if ((map = syspage_mapGet(name)) == NULL) {
+	if (map == NULL) {
 		log_error("\nsyspage: %s does not exist", name);
 		return -EINVAL;
 	}
@@ -404,9 +431,9 @@ int syspage_mapNameResolve(const char *name, u8 *id)
 
 int syspage_mapRangeResolve(const char *name, addr_t *start, addr_t *end)
 {
-	const syspage_map_t *map;
+	const syspage_map_t *map = syspage_mapGet(name);
 
-	if ((map = syspage_mapGet(name)) == NULL) {
+	if (map == NULL) {
 		log_error("\nsyspage: %s does not exist", name);
 		return -EINVAL;
 	}
@@ -440,13 +467,15 @@ unsigned int syspage_mapRangeCheck(addr_t start, addr_t end, unsigned int *attrO
 
 const char *syspage_mapName(u8 id)
 {
-	const syspage_map_t *map;
+	const syspage_map_t *map = syspage_common.syspage->maps;
 
-	if ((map = syspage_common.syspage->maps) != NULL) {
+	if (map != NULL) {
 		do {
-			if (map->id == id)
+			if (map->id == id) {
 				return map->name;
-		} while ((map = map->next) != syspage_common.syspage->maps);
+			}
+			map = map->next;
+		} while (map != syspage_common.syspage->maps);
 	}
 
 	return NULL;
@@ -464,12 +493,20 @@ syspage_prog_t *syspage_progAdd(const char *argv, u32 flags)
 	len = hal_strlen(argv);
 	size = isExec + len + 1; /* [X] + argv + '\0' */
 
-	if ((prog = syspage_alloc(sizeof(syspage_prog_t))) == NULL ||
-		(prog->argv = syspage_alloc(size)) == NULL)
+	prog = syspage_alloc(sizeof(syspage_prog_t));
+	if (prog != NULL) {
+		prog->argv = syspage_alloc(size);
+		if (prog->argv == NULL) {
+			return NULL;
+		}
+	}
+	else {
 		return NULL;
+	}
 
-	if (isExec)
+	if (isExec != 0) {
 		prog->argv[0] = 'X';
+	}
 
 	hal_memcpy(prog->argv + isExec, argv, len);
 	prog->argv[size - 1] = '\0';
@@ -507,15 +544,17 @@ void syspage_consoleSet(unsigned int id)
 static void syspage_entriesShow(const syspage_map_t *map)
 {
 	const char *str;
-	const mapent_t *e;
+	const mapent_t *e = map->entries;
 
-	if ((e = map->entries) == NULL)
+	if (e == NULL) {
 		return;
+	}
 
 	do {
 		str = syspage_etype2str(e->type);
 		lib_printf("%-13s 0x%08x%4s 0x%08x%2s - %s\n", "", e->start, "", e->end, "", str == NULL ? "null" : str);
-	} while ((e = e->next) != map->entries);
+		e = e->next;
+	} while (e != map->entries);
 
 	lib_printf("%-13s -------------------------\n", "");
 }
@@ -539,24 +578,29 @@ void syspage_mapShow(void)
 		lib_printf("%d%-3s %-8s 0x%08x%4s 0x%08x%4s %s\n", map->id, "", map->name,
 			map->start, "", map->end, "", attr);
 		syspage_entriesShow(map);
-	} while ((map = map->next) != syspage_common.syspage->maps);
+		map = map->next;
+	} while (map != syspage_common.syspage->maps);
 }
 
 
 static void syspage_progMapsShow(const syspage_prog_t *prog)
 {
-	unsigned int i;
+	size_t i;
 
-	for (i = 0; i < prog->imapSz || i < prog->dmapSz; ++i) {
-		if (i)
+	for (i = 0; (i < prog->imapSz) || (i < prog->dmapSz); ++i) {
+		if (i != 0) {
 			lib_printf("\n%42s", "");
-		if (i < prog->imapSz)
+		}
+		if (i < prog->imapSz) {
 			lib_printf("%4s %-14s", "", syspage_mapName(prog->imaps[i]));
-		else
+		}
+		else {
 			lib_printf("%4s ", "");
+		}
 
-		if (i < prog->dmapSz)
+		if (i < prog->dmapSz) {
 			lib_printf(" %-14s", syspage_mapName(prog->dmaps[i]));
+		}
 	}
 }
 
@@ -578,5 +622,6 @@ void syspage_progShow(void)
 		lib_printf("%-16s 0x%08x%4s 0x%08x", name, prog->start, "", prog->end);
 		syspage_progMapsShow(prog);
 		lib_printf("\n");
-	} while ((prog = prog->next) != syspage_common.syspage->progs);
+		prog = prog->next;
+	} while (prog != syspage_common.syspage->progs);
 }
