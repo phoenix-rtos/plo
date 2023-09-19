@@ -15,6 +15,7 @@
  */
 
 #include <hal/hal.h>
+#include "acpi.h"
 
 struct {
 	hal_syspage_t *hs;
@@ -46,6 +47,7 @@ void hal_syspageSet(hal_syspage_t *hs)
 	memory_common.hs->stack = (addr_t)__stack_top;
 
 	memory_common.hs->stacksz = __stack_top - __stack_limit;
+	hal_acpiInit(hs);
 }
 
 
@@ -118,7 +120,6 @@ static void hal_getMinOverlappedRange(addr_t start, addr_t end, mapent_t *entry,
 		}
 	}
 }
-
 
 int hal_memoryGetNextEntry(addr_t start, addr_t end, mapent_t *entry)
 {
@@ -197,6 +198,7 @@ int hal_memoryGetNextEntry(addr_t start, addr_t end, mapent_t *entry)
 
 		return 0;
 	}
+	/* Get ACPI memory map */
 
 	return -1;
 }
