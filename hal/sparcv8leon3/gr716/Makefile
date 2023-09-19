@@ -6,9 +6,11 @@
 # %LICENSE%
 #
 
+comma := ,
+
 LDFLAGS:=$(filter-out -Tbss% , $(LDFLAGS))
 LDFLAGS:=$(filter-out -Tdata% , $(LDFLAGS))
-LDFLAGS:=$(filter-out --section-start% , $(LDFLAGS))
+LDFLAGS:=$(filter-out -Wl$(comma)--section-start% , $(LDFLAGS))
 
 CFLAGS:=$(filter-out -mfloat-abi% , $(CFLAGS))
 CFLAGS:=$(filter-out -mfpu% , $(CFLAGS))
