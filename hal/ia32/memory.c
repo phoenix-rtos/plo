@@ -103,11 +103,13 @@ int hal_memoryGetEntry(unsigned int *offs, mapent_t *entry, unsigned int *biosTy
 static void hal_getMinOverlappedRange(addr_t start, addr_t end, mapent_t *entry, mapent_t *minEntry)
 {
 	if ((start < entry->end) && (end > entry->start)) {
-		if (start > entry->start)
+		if (start > entry->start) {
 			entry->start = start;
+		}
 
-		if (end < entry->end)
+		if (end < entry->end) {
 			entry->end = end;
+		}
 
 		if (entry->start < minEntry->start) {
 			minEntry->start = entry->start;
@@ -138,8 +140,9 @@ int hal_memoryGetNextEntry(addr_t start, addr_t end, mapent_t *entry)
 		{ .start = ADDR_RCACHE, .end = ADDR_RCACHE + SIZE_RCACHE + SIZE_WCACHE, .type = hal_entryTemp },
 	};
 
-	if (start == end)
+	if (start == end) {
 		return -1;
+	}
 
 	hal_memset(&tempEntry, 0, sizeof(tempEntry));
 	hal_memset(&prevEntry, 0, sizeof(prevEntry));
@@ -153,8 +156,9 @@ int hal_memoryGetNextEntry(addr_t start, addr_t end, mapent_t *entry)
 	hal_getMinOverlappedRange(start, end, &tempEntry, &minEntry);
 
 	for (i = 0; i < sizeof(entries) / sizeof(entries[0]); ++i) {
-		if (entries[i].start >= entries[i].end)
+		if (entries[i].start >= entries[i].end) {
 			continue;
+		}
 		hal_memcpy(&tempEntry, &entries[i], sizeof(mapent_t));
 		hal_getMinOverlappedRange(start, end, &tempEntry, &minEntry);
 	}
@@ -162,12 +166,14 @@ int hal_memoryGetNextEntry(addr_t start, addr_t end, mapent_t *entry)
 	/* Get BIOS e820 memory map */
 	offs = 0;
 	while (1) {
-		if (hal_memoryGetEntry(&offs, &tempEntry, &biosType) != 0)
+		if (hal_memoryGetEntry(&offs, &tempEntry, &biosType) != 0) {
 			return -1;
+		}
 
 		/* BIOS areas of different type than FREE are added to map's entries list */
-		if (biosType != 0x1)
+		if (biosType != 0x1) {
 			hal_getMinOverlappedRange(start, end, &tempEntry, &minEntry);
+		}
 
 		/* The gap between BIOS entries is assigned as invalid entry */
 		if (prevEntry.end != tempEntry.start) {
@@ -179,8 +185,9 @@ int hal_memoryGetNextEntry(addr_t start, addr_t end, mapent_t *entry)
 
 		hal_memcpy(&prevEntry, &tempEntry, sizeof(mapent_t));
 
-		if (!offs)
+		if (offs == 0) {
 			break;
+		}
 	}
 
 	if (minEntry.start != (addr_t)-1) {
