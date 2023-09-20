@@ -16,7 +16,7 @@
 #define __ASSEMBLY__
 
 #include "config.h"
-#include "../cpu.h"
+#include "../../cpu.h"
 
 .extern _plo_load_addr
 .extern _plo_size

@@ -6,8 +6,6 @@
 # %LICENSE%
 #
 
-include hal/sparcv8leon3/$(TARGET_SUBFAMILY)/Makefile
+include hal/sparcv8leon3/gaisler/Makefile
 
-CFLAGS += -Ihal/sparcv8leon3/$(TARGET_SUBFAMILY)
-
-OBJS += $(addprefix $(PREFIX_O)hal/$(TARGET_SUFF)/, cpu.o string.o interrupts.o exceptions.o _init.o _interrupts.o _traps.o)
+OBJS += $(addprefix $(PREFIX_O)hal/$(TARGET_SUFF)/, string.o interrupts.o exceptions.o _interrupts.o _traps.o)

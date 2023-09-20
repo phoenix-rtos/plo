@@ -5,7 +5,7 @@
  *
  * Hardware Abstraction Layer
  *
- * Copyright 2022 Phoenix Systems
+ * Copyright 2022-2023 Phoenix Systems
  * Author: Lukasz Leczkowski
  *
  * This file is part of Phoenix-RTOS.
@@ -14,6 +14,10 @@
  */
 
 #include <hal/hal.h>
+
+
+#define BOOTSTRAP_ADDR 0x80008000
+#define BOOTSTRAP_SPIM 0x400BC003
 
 
 static struct {
@@ -175,6 +179,18 @@ int hal_memoryGetNextEntry(addr_t start, addr_t end, mapent_t *entry)
 }
 
 
+void hal_cpuFlushDCache(void)
+{
+	/* No cache */
+}
+
+
+void hal_cpuFlushICache(void)
+{
+	/* No cache */
+}
+
+
 int hal_cpuJump(void)
 {
 	if (hal_common.entry == (addr_t)-1) {
@@ -190,4 +206,24 @@ int hal_cpuJump(void)
 		:);
 
 	return 0;
+}
+
+
+void hal_cpuReboot(void)
+{
+	/* Reset to the built-in bootloader */
+	hal_interruptsDisableAll();
+
+	/* Reboot to SPIM */
+	*(vu32 *)(BOOTSTRAP_ADDR) = BOOTSTRAP_SPIM;
+
+	/* clang-format off */
+	__asm__ volatile (
+		"jmp %%g0\n\t"
+		"nop\n\t"
+		:::
+	);
+	/* clang-format on */
+
+	__builtin_unreachable();
 }

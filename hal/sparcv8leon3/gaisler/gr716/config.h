@@ -19,10 +19,11 @@
 
 #ifndef __ASSEMBLY__
 
+#include "../types.h"
 #include "gr716.h"
-#include "types.h"
 #include "peripherals.h"
-#include "../cpu.h"
+#include "../gaisler.h"
+#include "../../cpu.h"
 
 #include <phoenix/arch/syspage-sparcv8leon3.h>
 #include <phoenix/syspage.h>
@@ -34,7 +35,7 @@
 #endif /* __ASSEMBLY__ */
 
 
-#define NWINDOWS    31
+#define NWINDOWS 31
 
 /* Import platform specific definitions */
 #include "ld/sparcv8leon3-gr716.ldt"

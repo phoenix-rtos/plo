@@ -12,9 +12,6 @@ LDFLAGS:=$(filter-out -Tbss% , $(LDFLAGS))
 LDFLAGS:=$(filter-out -Tdata% , $(LDFLAGS))
 LDFLAGS:=$(filter-out -Wl$(comma)--section-start% , $(LDFLAGS))
 
-CFLAGS:=$(filter-out -mfloat-abi% , $(CFLAGS))
-CFLAGS:=$(filter-out -mfpu% , $(CFLAGS))
-
 CFLAGS += -DVADDR_KERNEL_INIT=$(VADDR_KERNEL_INIT)
 
 PLO_COMMANDS := alias app call console copy dump echo go help kernel map mem phfs reboot script wait
@@ -25,4 +22,4 @@ ifeq ($(TARGET_PROJECT), mini)
   include devices/flash-gr716/Makefile
 endif
 
-OBJS += $(addprefix $(PREFIX_O)hal/$(TARGET_SUFF)/$(TARGET_SUBFAMILY)/, hal.o gr716.o timer.o console.o)
+OBJS += $(addprefix $(PREFIX_O)hal/$(TARGET_SUFF)/gaisler/$(TARGET_SUBFAMILY)/, _init.o hal.o gr716.o)

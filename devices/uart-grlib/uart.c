@@ -243,7 +243,9 @@ static int uart_done(unsigned int minor)
 	*(uart->base + uart_scaler) = 0;
 	hal_cpuDataStoreBarrier();
 
+#ifdef __CPU_GR716
 	_gr716_cguClkDisable(cgu_primary, cgudev_apbuart0 + minor);
+#endif
 
 	hal_interruptsSet(uart->irq, NULL, NULL);
 
@@ -290,16 +292,18 @@ static int uart_init(unsigned int minor)
 
 	uart_done(minor);
 
+#ifdef __CPU_GR716
 	_gr716_cguClkEnable(cgu_primary, cgudev_apbuart0 + minor);
+#endif
 
 	cfg.opt = 0x1;
 	cfg.pullup = 0;
 	cfg.pulldn = 0;
 	cfg.pin = info[minor].txPin;
-	_gr716_iomuxCfg(&cfg);
+	gaisler_iomuxCfg(&cfg);
 
 	cfg.pin = info[minor].rxPin;
-	_gr716_iomuxCfg(&cfg);
+	gaisler_iomuxCfg(&cfg);
 
 	lib_cbufInit(&uart->cbuffRx, uart->dataRx, BUFFER_SIZE);
 
