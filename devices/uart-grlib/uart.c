@@ -67,13 +67,14 @@ static const struct {
 	unsigned int irq;
 	unsigned int txPin;
 	unsigned int rxPin;
+	unsigned int active;
 } info[UART_MAX_CNT] = {
-	{ UART0_BASE, UART0_IRQ, UART0_TX, UART0_RX },
-	{ UART1_BASE, UART1_IRQ, UART1_TX, UART1_RX },
-	{ UART2_BASE, UART2_IRQ, UART2_TX, UART2_RX },
-	{ UART3_BASE, UART3_IRQ, UART3_TX, UART3_RX },
-	{ UART4_BASE, UART4_IRQ, UART4_TX, UART4_RX },
-	{ UART5_BASE, UART5_IRQ, UART5_TX, UART5_RX }
+	{ UART0_BASE, UART0_IRQ, UART0_TX, UART0_RX, UART0_ACTIVE },
+	{ UART1_BASE, UART1_IRQ, UART1_TX, UART1_RX, UART1_ACTIVE },
+	{ UART2_BASE, UART2_IRQ, UART2_TX, UART2_RX, UART2_ACTIVE },
+	{ UART3_BASE, UART3_IRQ, UART3_TX, UART3_RX, UART3_ACTIVE },
+	{ UART4_BASE, UART4_IRQ, UART4_TX, UART4_RX, UART4_ACTIVE },
+	{ UART5_BASE, UART5_IRQ, UART5_TX, UART5_RX, UART5_ACTIVE }
 };
 
 
@@ -139,6 +140,10 @@ static ssize_t uart_read(unsigned int minor, addr_t offs, void *buff, size_t len
 		return -EINVAL;
 	}
 
+	if (info[minor].active == 0) {
+		return -ENOSYS;
+	}
+
 	uart = &uart_common.uarts[minor];
 	start = hal_timerGet();
 	while (lib_cbufEmpty(&uart->cbuffRx) != 0) {
@@ -160,6 +165,10 @@ static ssize_t uart_write(unsigned int minor, const void *buff, size_t len)
 
 	if (minor >= UART_MAX_CNT) {
 		return -EINVAL;
+	}
+
+	if (info[minor].active == 0) {
+		return -ENOSYS;
 	}
 
 	uart = &uart_common.uarts[minor];
@@ -191,12 +200,12 @@ static int uart_sync(unsigned int minor)
 {
 	uart_t *uart;
 
-	if (minor == 0 || minor == 1) {
-		return EOK;
-	}
-
 	if (minor >= UART_MAX_CNT) {
 		return -EINVAL;
+	}
+
+	if (info[minor].active == 0) {
+		return -ENOSYS;
 	}
 
 	uart = &uart_common.uarts[minor];
@@ -214,8 +223,12 @@ static int uart_done(unsigned int minor)
 	int res;
 	uart_t *uart;
 
-	if (minor == 0 || minor == 1) {
-		return EOK;
+	if (minor >= UART_MAX_CNT) {
+		return -EINVAL;
+	}
+
+	if (info[minor].active == 0) {
+		return -ENOSYS;
 	}
 
 	res = uart_sync(minor);
@@ -240,17 +253,20 @@ static int uart_done(unsigned int minor)
 
 static int uart_map(unsigned int minor, addr_t addr, size_t sz, int mode, addr_t memaddr, size_t memsz, int memmode, addr_t *a)
 {
-	/* UART is not mappable to any region */
-	int err = dev_isNotMappable;
-
 	if (minor >= UART_MAX_CNT) {
-		err = -EINVAL;
+		return -EINVAL;
 	}
+
+	if (info[minor].active == 0) {
+		return -ENOSYS;
+	}
+
 	/* Device mode cannot be higher than map mode to copy data */
-	else if ((mode & memmode) != mode) {
-		err = -EINVAL;
+	if ((mode & memmode) != mode) {
+		return -EINVAL;
 	}
-	return err;
+	/* UART is not mappable to any region */
+	return dev_isNotMappable;
 }
 
 
@@ -258,13 +274,13 @@ static int uart_init(unsigned int minor)
 {
 	uart_t *uart;
 	iomux_cfg_t cfg;
-	/* When running external SRAM, UART0 and UART1 pins cannot be used */
-	if (minor == 0 || minor == 1) {
-		return EOK;
-	}
 
 	if (minor >= UART_MAX_CNT) {
 		return -EINVAL;
+	}
+
+	if (info[minor].active == 0) {
+		return -ENOSYS;
 	}
 
 	uart = &uart_common.uarts[minor];
