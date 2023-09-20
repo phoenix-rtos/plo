@@ -16,7 +16,7 @@
 #ifndef _GR716_H_
 #define _GR716_H_
 
-#include "types.h"
+#include "../types.h"
 
 /* clang-format off */
 
@@ -38,27 +38,24 @@ cgudev_gradc3, cgudev_gradc4, cgudev_gradc5, cgudev_gradc6, cgudev_gradc7, cgude
 
 /* clang-format on */
 
-typedef struct {
-	u8 pin;
-	u8 opt; /* GR716 manual section 2.5 */
-	u8 pullup;
-	u8 pulldn;
-} iomux_cfg_t;
+
+static inline void hal_cpuHalt(void)
+{
+	/* must be performed in supervisor mode with int enabled */
+	__asm__ volatile("wr %g0, %asr19");
+}
 
 
-extern int _gr716_iomuxCfg(iomux_cfg_t *ioCfg);
+void _gr716_cguClkEnable(u32 cgu, u32 device);
 
 
-extern void _gr716_cguClkEnable(u32 cgu, u32 device);
+void _gr716_cguClkDisable(u32 cgu, u32 device);
 
 
-extern void _gr716_cguClkDisable(u32 cgu, u32 device);
+int _gr716_cguClkStatus(u32 cgu, u32 device);
 
 
-extern int _gr716_cguClkStatus(u32 cgu, u32 device);
-
-
-extern void _gr716_init(void);
+void _gr716_init(void);
 
 
 #endif

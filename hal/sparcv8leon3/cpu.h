@@ -41,13 +41,6 @@
 #include <peripherals.h>
 
 
-static inline void hal_cpuHalt(void)
-{
-	/* must be performed in supervisor mode with int enabled */
-	__asm__ volatile("wr %g0, %asr19");
-}
-
-
 static inline void hal_cpuDataStoreBarrier(void)
 {
 	__asm__ volatile("stbar");
@@ -70,6 +63,12 @@ static inline void hal_cpuInstrBarrier(void)
 {
 	/* not supported */
 }
+
+
+void hal_cpuFlushDCache(void);
+
+
+void hal_cpuFlushICache(void);
 
 
 #endif /* __ASSEMBLY__ */

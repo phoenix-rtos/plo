@@ -1,0 +1,48 @@
+/*
+ * Phoenix-RTOS
+ *
+ * Operating system loader
+ *
+ * Linker Template and Platform Config for SPARC V8 LEON3 GR712RC
+ *
+ * Copyright 2023 Phoenix Systems
+ * Author: Lukasz Leczkowski
+ *
+ * This file is part of Phoenix-RTOS.
+ *
+ * %LICENSE%
+ */
+
+#ifndef LEON3_GR712RC_LDT
+#define LEON3_GR712RC_LDT
+
+#define SIZE_PAGE 0x1000
+#define SIZE_STACK (SIZE_PAGE)
+#define SIZE_HEAP  (SIZE_PAGE)
+
+#define ADDR_SRAM 0x40000000
+
+#define SIZE_SRAM (128 * 1024 * 1024)
+#define SIZE_PLO  (4 * 1024 * 1024)
+
+#if defined(__LINKER__)
+
+/* Memory map setup */
+MEMORY
+{
+	m_prom    (rx)  : ORIGIN = 0x00000000, LENGTH = 64M
+	m_sram    (rwx) : ORIGIN = ADDR_SRAM + SIZE_SRAM - SIZE_PLO, LENGTH = SIZE_PLO
+}
+
+REGION_ALIAS("PLO_IMAGE", m_sram)
+REGION_ALIAS("RODATA", m_sram)
+REGION_ALIAS("DATA", m_sram)
+REGION_ALIAS("BSS", m_sram)
+REGION_ALIAS("HEAP", m_sram)
+REGION_ALIAS("STACK", m_sram)
+
+#include "common/plo-sparc.lds"
+
+#endif /* __LINKER__ */
+
+#endif

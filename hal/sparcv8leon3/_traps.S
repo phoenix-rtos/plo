@@ -18,6 +18,7 @@
 
 #include <config.h>
 #include "cpu.h"
+#include "gaisler/grlib-tn-0018.h"
 
 
 #define BAD_TRAP \
@@ -118,7 +119,11 @@ _start:
 	BAD_TRAP
 	BAD_TRAP
 	BAD_TRAP                  /* 0x2a - division by zero */
-	BAD_TRAP                  /* 0x2b - data store error */
+#ifdef __CPU_GR716
+	BAD_TRAP
+#else
+	TRAP(_traps_stErrHandler) /* 0x2b - data store error */
+#endif
 	BAD_TRAP
 	BAD_TRAP
 	BAD_TRAP
@@ -155,6 +160,32 @@ _start:
 
 .section ".text"
 .align 4
+
+#ifndef __CPU_GR716
+
+/* Data store error handler */
+
+.type _traps_stErrHandler, #function
+_traps_stErrHandler:
+	sta %g0, [%g0] ASI_CCTRL
+
+	TN_0018_WAIT_ICACHE(%l3, %l4)
+
+	/* restore %psr */
+	wr %l0, %psr
+	nop
+	nop
+	nop
+
+	TN_0018_FIX(%l3, %l4)
+
+	jmp %l1
+	rett %l2
+.size _traps_stErrHandler, . - _traps_stErrHandler
+
+#endif
+
+/* Underflow/overflow traps never return directly to 'jmpl' instruction - no TN-0018 fix needed */
 
 /* Window underflow handler
 * on entry:
@@ -236,6 +267,7 @@ _traps_setPil:
 	nop
 	nop
 	nop
+	/* TN-0018 fix done after 'ta' instruction */
 	jmp %l2
 	rett %l2 + 4
 .size _traps_setPil, . - _traps_setPil
@@ -307,7 +339,8 @@ _exceptions_dispatch:
 	nop
 
 	/* trap type */
-	and %g1, TBR_TT_MSK, %o0
+	set TBR_TT_MSK, %g2
+	and %g1, %g2, %o0
 	srl %o0, TBR_TT_SHIFT, %o0
 
 	/* void exceptions_dispatch(unsigned int n, exc_context_t *ctx) */

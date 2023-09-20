@@ -14,18 +14,19 @@
  */
 
 #include <hal/hal.h>
-#include <devices/gpio-gr716/gpio.h>
-
 
 /* UART control bits */
 #define TX_EN        (1 << 1)
 #define TX_FIFO_FULL (1 << 9)
 
+#define CONCAT_(a, b) a##b
+#define CONCAT(a, b)  CONCAT_(a, b)
+
 /* Console config */
-#define UART_CONSOLE_RX   UART2_RX
-#define UART_CONSOLE_TX   UART2_TX
-#define UART_CONSOLE_BASE UART2_BASE
-#define UART_CONSOLE_CGU  cgudev_apbuart2
+#define UART_CONSOLE_RX   CONCAT(UART, CONCAT(UART_CONSOLE_PLO, _RX))
+#define UART_CONSOLE_TX   CONCAT(UART, CONCAT(UART_CONSOLE_PLO, _TX))
+#define UART_CONSOLE_BASE CONCAT(UART, CONCAT(UART_CONSOLE_PLO, _BASE))
+#define UART_CONSOLE_CGU  CONCAT(cgudev_apbuart, UART_CONSOLE_PLO)
 
 
 enum {
@@ -68,12 +69,15 @@ void console_init(void)
 	cfg.pullup = 0;
 	cfg.pulldn = 0;
 	cfg.pin = UART_CONSOLE_TX;
-	_gr716_iomuxCfg(&cfg);
+	gaisler_iomuxCfg(&cfg);
 
 	cfg.pin = UART_CONSOLE_RX;
-	_gr716_iomuxCfg(&cfg);
+	gaisler_iomuxCfg(&cfg);
 
+#ifdef __CPU_GR716
 	_gr716_cguClkEnable(cgu_primary, UART_CONSOLE_CGU);
+#endif
+
 	halconsole_common.uart = UART_CONSOLE_BASE;
 	*(halconsole_common.uart + uart_ctrl) = TX_EN;
 	*(halconsole_common.uart + uart_scaler) = console_calcScaler(UART_BAUDRATE);

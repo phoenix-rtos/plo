@@ -14,7 +14,7 @@
  */
 
 #include "gr716.h"
-#include "../cpu.h"
+#include "../../cpu.h"
 
 #include <devices/gpio-gr716/gpio.h>
 
@@ -23,7 +23,6 @@
 #define PLL_BASE     ((void *)0x8010D000)
 #define CGU_BASE0    ((void *)0x80006000)
 #define CGU_BASE1    ((void *)0x80007000)
-#define MCTRL0_BASE  ((void *)0x80000000)
 
 /*    Oscillator frequency   *  PLL Multiplier (for 400 MHz) */
 /*---------------------------|-------------------------------*/
@@ -88,23 +87,12 @@ enum {
 	cgu_override,   /* Override register - only primary CGU : 0x0C */
 };
 
-/* External PROM & SRAM */
-
-enum {
-	mctrl_cfg1 = 0, /* ROM timing and IO    : 0x00 */
-	mctrl_cfg2,     /* SRAM timing and IO   : 0x04 */
-	mctrl_cfg3,     /* EDAC control         : 0x08 */
-	mctrl_cfg5 = 4, /* ROM lead out cycles  : 0x10 */
-	mctrl_cfg6,     /* SRAM lead out cycles : 0x14 */
-};
-
 
 static struct {
 	vu32 *grgpreg_base;
 	vu32 *pll_base;
 	vu32 *cgu_base0;
 	vu32 *cgu_base1;
-	vu32 *mctrl0_base;
 } gr716_common;
 
 
@@ -138,7 +126,7 @@ static void _gr716_pllSetDefault(void)
 }
 
 
-int _gr716_iomuxCfg(iomux_cfg_t *ioCfg)
+int gaisler_iomuxCfg(iomux_cfg_t *ioCfg)
 {
 	vu32 oldCfg;
 
@@ -207,7 +195,6 @@ void _gr716_init(void)
 	gr716_common.pll_base = PLL_BASE;
 	gr716_common.cgu_base0 = CGU_BASE0;
 	gr716_common.cgu_base1 = CGU_BASE1;
-	gr716_common.mctrl0_base = MCTRL0_BASE;
 
 	_gr716_pllSetDefault();
 }
