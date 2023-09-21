@@ -35,7 +35,6 @@
 
 
 #define NWINDOWS    31
-#define SYSCLK_FREQ 50000000 /* Hz */
 
 /* Import platform specific definitions */
 #include "ld/sparcv8leon3-gr716.ldt"
