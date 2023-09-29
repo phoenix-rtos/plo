@@ -16,8 +16,6 @@ include ../phoenix-rtos-build/Makefile.common
 
 LDGEN ?= $(CC)
 
-# TODO: replace BOARD_CONFIG usage with board_config.h
-CFLAGS += $(BOARD_CONFIG)
 CFLAGS += -I.
 CPPFLAGS += -DVERSION=\"$(VERSION)\"
 
