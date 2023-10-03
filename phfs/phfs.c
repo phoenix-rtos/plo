@@ -36,7 +36,7 @@ typedef struct {
 
 
 typedef struct {
-	char alias[32];
+	char alias[34];
 	addr_t addr;
 	size_t size;
 } phfs_file_t;
