@@ -145,7 +145,11 @@ static int cmd_jffs2(int argc, char *argv[])
 
 	cleanmarker.hdr_crc = lib_crc32((const u8 *)&cleanmarker, sizeof(struct jffs2_cleanmarker_node) - 4u, 0);
 
+	log_info("\n");
 	for (i = 0; i < numBlocks; i++) {
+		/* FIXME should be: log_info("\rjffs2: block %lu/%lu", i, numBlocks); */
+		lib_printf("\rjffs2: block %lu/%lu", i, numBlocks);
+
 		if (erase != 0) {
 			err = devs_erase(major, minor, (startBlock + i) * blockSize, blockSize, 0);
 			if (err < 0) {
