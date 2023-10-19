@@ -134,5 +134,7 @@ SECTIONS
 	_plo_size = LOADADDR(.data) + SIZEOF(.data) - ORIGIN(PLO_IMAGE);
 	_plo_load_addr = ORIGIN(PLO_IMAGE);
 
+	_plo_seg16 = LOADADDR(.text) >> 4;
+
 	/DISCARD/ : { *(.note.GNU-stack) *(.gnu_debuglink) *(.gnu.lto_*) }
 }

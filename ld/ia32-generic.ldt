@@ -33,8 +33,6 @@
 #define ADDR_PDIR   0x3000
 #define ADDR_PTABLE 0x4000
 
-#define ADDR_PLO 0x7c00
-
 /* Disk caches (below upper memory starting at 0x80000) */
 #define ADDR_RCACHE 0x78000
 #define SIZE_RCACHE 0x4000

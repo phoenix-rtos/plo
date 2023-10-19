@@ -379,7 +379,7 @@ static int diskbios_sync(unsigned int minor)
 	if ((diskbios_common.lwb != diskbios_common.lwe) && (disk->dn == diskbios_common.lwdn)) {
 		if (diskbios_access(disk, DISK_WRITE,
 				diskbios_common.lwc, diskbios_common.lwh, diskbios_common.lwp + diskbios_common.lwb + 1,
-				diskbios_common.lwe - diskbios_common.lwb, wcache + diskbios_common.lwb * SIZE_BLOCK)) {
+				diskbios_common.lwe - diskbios_common.lwb, wcache + diskbios_common.lwb * SIZE_BLOCK) != 0) {
 			return -EIO;
 		}
 
@@ -431,7 +431,7 @@ static int diskbios_init(unsigned int minor)
 	}
 
 	/* Check disk LBA support */
-	disk->lba = !diskbios_lba(disk);
+	disk->lba = (diskbios_lba(disk) != 0) ? 0 : 1;
 
 	/* Get disk geometry */
 	if (diskbios_geometry(disk)) {

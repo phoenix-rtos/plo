@@ -28,6 +28,7 @@ extern char __data_start[], __data_end[];
 extern char __bss_start[], __bss_end[];
 extern char __heap_base[], __heap_limit[];
 extern char __stack_top[], __stack_limit[];
+extern char __init_start[];
 
 
 void hal_syspageSet(hal_syspage_t *hs)
@@ -219,7 +220,7 @@ static int checkA20Line(void)
 	int result = 0;
 	/* Set base to some address in the first 1MiB that can be overwritten */
 	/* Address of the magic number at the end of MBR (0xAA55) */
-	volatile u16 *const base = (void *)((ADDR_PLO) + 512 - 2);
+	volatile u16 *const base = (void *)(__init_start + 512 - 2);
 	/* Some values that should be equal, if A20 is off */
 	u16 v1 = *(base + (0x100000 / sizeof(*base)));
 	u16 v2 = *base;
