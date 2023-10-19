@@ -25,6 +25,7 @@
 
 /* External variables */
 .extern _plo_size
+.extern _plo_seg16
 .extern _stack
 .extern _stacksz
 .extern _startc
@@ -91,7 +92,7 @@ _plo_chs:
 
 _plo_load:
 	/* Load high level part into memory */
-	movw $((ADDR_PLO + 0x200) >> 4), %bx
+	movw $(_plo_seg16), %bx
 	movw %bx, %es
 	xorw %bx, %bx
 	movb _plo_bdn, %dl
