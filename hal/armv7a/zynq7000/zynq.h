@@ -107,6 +107,14 @@ extern int _zynq_setMIO(const ctl_mio_t *mio);
 extern int _zynq_getMIO(ctl_mio_t *mio);
 
 
+/* Function sets WP and CD pins for the SDIO controller */
+extern int _zynq_setSDWpCd(char dev, unsigned char wpPin, unsigned char cdPin);
+
+
+/* Function returns WP and CD pins that were set for the SDIO controller */
+extern int _zynq_getSDWpCd(char dev, unsigned char *wpPin, unsigned char *cdPin);
+
+
 /* Function loads bitstream data from specific memory address   */
 extern int _zynq_loadPL(u32 srcAddr, u32 srcLen);
 
