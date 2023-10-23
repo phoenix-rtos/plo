@@ -372,6 +372,37 @@ int _zynq_getMIO(ctl_mio_t *mio)
 }
 
 
+int _zynq_setSDWpCd(char dev, unsigned char wpPin, unsigned char cdPin)
+{
+	if ((dev != 0) && (dev != 1)) {
+		return -1;
+	}
+
+	if ((cdPin > 63) || (wpPin > 63)) {
+		return -1;
+	}
+
+	_zynq_slcrUnlock();
+	*(zynq_common.slcr + slcr_sd0_wp_cd_sel + dev) = ((u32)cdPin << 16) | (wpPin);
+	_zynq_slcrLock();
+	return 0;
+}
+
+
+int _zynq_getSDWpCd(char dev, unsigned char *wpPin, unsigned char *cdPin)
+{
+	u32 val = 0;
+	if ((dev != 0) && (dev != 1)) {
+		return -1;
+	}
+
+	val = *(zynq_common.slcr + slcr_sd0_wp_cd_sel + dev);
+	*wpPin = val & 0x3f;
+	*cdPin = (val >> 16) & 0x3f;
+	return 0;
+}
+
+
 int _zynq_loadPL(u32 srcAddr, u32 srcLen)
 {
 	u32 cnt;
