@@ -30,8 +30,16 @@ static const u32 seq_genericReadID[NOR_LUTSEQSZ] = {
 };
 
 /* Read Fast Quad (3-byte address) */
-static const u32 seq_genericReadData[NOR_LUTSEQSZ] = {
+static const u32 seq_genericReadData3Byte[NOR_LUTSEQSZ] = {
 	LUT_SEQ(lutCmd_SDR, lutPad1, FLASH_CMD_QIOR, lutCmdRADDR_SDR, lutPad4, 0x18),
+	LUT_SEQ(lutCmdMODE8_SDR, lutPad4, 0x00, lutCmdDUMMY_SDR, lutPad4, 0x04),
+	LUT_SEQ(lutCmdREAD_SDR, lutPad4, 0x04, lutCmdSTOP, lutPad1, 0),
+	0
+};
+
+/* Read Fast Quad (4-byte address) */
+static const u32 seq_genericReadData4Byte[NOR_LUTSEQSZ] = {
+	LUT_SEQ(lutCmd_SDR, lutPad1, FLASH_CMD_4QIOR, lutCmdRADDR_SDR, lutPad4, 0x20),
 	LUT_SEQ(lutCmdMODE8_SDR, lutPad4, 0x00, lutCmdDUMMY_SDR, lutPad4, 0x04),
 	LUT_SEQ(lutCmdREAD_SDR, lutPad4, 0x04, lutCmdSTOP, lutPad1, 0),
 	0
@@ -64,15 +72,29 @@ static const u32 seq_genericWriteDisable[NOR_LUTSEQSZ] = {
 };
 
 /* Sector Erase (3-byte address) */
-static const u32 seq_genericEraseSector[NOR_LUTSEQSZ] = {
+static const u32 seq_genericEraseSector3Byte[NOR_LUTSEQSZ] = {
 	LUT_SEQ(lutCmd_SDR, lutPad1, FLASH_CMD_P4E, lutCmdRADDR_SDR, lutPad1, 0x18),
 	LUT_SEQ(lutCmdSTOP, lutPad1, 0, 0, 0, 0),
 	0, 0
 };
 
+/* Sector Erase (4-byte address) */
+static const u32 seq_genericEraseSector4Byte[NOR_LUTSEQSZ] = {
+	LUT_SEQ(lutCmd_SDR, lutPad1, FLASH_CMD_4P4E, lutCmdRADDR_SDR, lutPad1, 0x20),
+	LUT_SEQ(lutCmdSTOP, lutPad1, 0, 0, 0, 0),
+	0, 0
+};
+
 /* Block Erase (3-byte address) */
-static const u32 seq_genericEraseBlock[NOR_LUTSEQSZ] = {
+static const u32 seq_genericEraseBlock3Byte[NOR_LUTSEQSZ] = {
 	LUT_SEQ(lutCmd_SDR, lutPad1, FLASH_CMD_SE, lutCmdRADDR_SDR, lutPad1, 0x18),
+	LUT_SEQ(lutCmdSTOP, lutPad1, 0, 0, 0, 0),
+	0, 0
+};
+
+/* Block Erase (4-byte address) */
+static const u32 seq_genericEraseBlock4Byte[NOR_LUTSEQSZ] = {
+	LUT_SEQ(lutCmd_SDR, lutPad1, FLASH_CMD_4SE, lutCmdRADDR_SDR, lutPad1, 0x20),
 	LUT_SEQ(lutCmdSTOP, lutPad1, 0, 0, 0, 0),
 	0, 0
 };
@@ -84,8 +106,15 @@ static const u32 seq_genericEraseChip[NOR_LUTSEQSZ] = {
 };
 
 /* Quad Input Page Program (3-byte address) */
-static const u32 seq_genericProgramQPP[NOR_LUTSEQSZ] = {
+static const u32 seq_genericProgramQPP3Byte[NOR_LUTSEQSZ] = {
 	LUT_SEQ(lutCmd_SDR, lutPad1, FLASH_CMD_QPP, lutCmdRADDR_SDR, lutPad1, 0x18),
+	LUT_SEQ(lutCmdWRITE_SDR, lutPad4, 0x04, lutCmdSTOP, lutPad1, 0),
+	0, 0
+};
+
+/* Quad Input Page Program (4-byte address) */
+static const u32 seq_genericProgramQPP4Byte[NOR_LUTSEQSZ] = {
+	LUT_SEQ(lutCmd_SDR, lutPad1, FLASH_CMD_4QPP, lutCmdRADDR_SDR, lutPad1, 0x20),
 	LUT_SEQ(lutCmdWRITE_SDR, lutPad4, 0x04, lutCmdSTOP, lutPad1, 0),
 	0, 0
 };
@@ -152,17 +181,31 @@ static const u32 seq_micronExit4Byte[NOR_LUTSEQSZ] = {
 };
 
 
-/* Generic chips: ISSI, Winbond, Macronix */
-static const u32 *lutGeneric[LUT_ENTRIES] = {
-	[fspi_readData] = seq_genericReadData,
+/* Generic chips: ISSI, Winbond, Macronix (3-byte address) */
+static const u32 *lutGeneric3Byte[LUT_ENTRIES] = {
+	[fspi_readData] = seq_genericReadData3Byte,
 	[fspi_readStatus] = seq_genericReadStatus,
 	[fspi_writeStatus] = seq_genericWriteStatus,
 	[fspi_writeEnable] = seq_genericWriteEnable,
 	[fspi_writeDisable] = seq_genericWriteDisable,
-	[fspi_eraseSector] = seq_genericEraseSector,
-	[fspi_eraseBlock] = seq_genericEraseBlock,
+	[fspi_eraseSector] = seq_genericEraseSector3Byte,
+	[fspi_eraseBlock] = seq_genericEraseBlock3Byte,
 	[fspi_eraseChip] = seq_genericEraseChip,
-	[fspi_programQPP] = seq_genericProgramQPP,
+	[fspi_programQPP] = seq_genericProgramQPP3Byte,
+	[fspi_readID] = seq_genericReadID,
+};
+
+/* Generic chips: ISSI, Winbond, Macronix (4-byte address) */
+static const u32 *lutGeneric4Byte[LUT_ENTRIES] = {
+	[fspi_readData] = seq_genericReadData4Byte,
+	[fspi_readStatus] = seq_genericReadStatus,
+	[fspi_writeStatus] = seq_genericWriteStatus,
+	[fspi_writeEnable] = seq_genericWriteEnable,
+	[fspi_writeDisable] = seq_genericWriteDisable,
+	[fspi_eraseSector] = seq_genericEraseSector4Byte,
+	[fspi_eraseBlock] = seq_genericEraseBlock4Byte,
+	[fspi_eraseChip] = seq_genericEraseChip,
+	[fspi_programQPP] = seq_genericProgramQPP4Byte,
 	[fspi_readID] = seq_genericReadID,
 };
 

@@ -38,18 +38,18 @@ static const char *nor_vendors[] = {
 
 static const struct nor_info flashInfo[] = {
 	/* Winbond */
-	{ FLASH_ID(0xef, 0x4015), "W25Q16", 2 * 1024 * 1024, 0x100, 0x1000, NOR_CAPS_GENERIC, lutGeneric, NULL },
-	{ FLASH_ID(0xef, 0x4016), "W25Q32", 4 * 1024 * 1024, 0x100, 0x1000, NOR_CAPS_GENERIC, lutGeneric, NULL },
-	{ FLASH_ID(0xef, 0x4017), "W25Q64", 8 * 1024 * 1024, 0x100, 0x1000, NOR_CAPS_GENERIC, lutGeneric, NULL },
-	{ FLASH_ID(0xef, 0x4018), "W25Q128", 16 * 1024 * 1024, 0x100, 0x1000, NOR_CAPS_GENERIC, lutGeneric, NULL },
-	{ FLASH_ID(0xef, 0x4019), "W25Q256JVEIQ", 32 * 1024 * 1024, 0x100, 0x1000, NOR_CAPS_GENERIC, lutGeneric, NULL },
-	{ FLASH_ID(0xef, 0x6019), "W25Q256JW-Q", 32 * 1024 * 1024, 0x100, 0x1000, NOR_CAPS_GENERIC, lutGeneric, NULL },
-	{ FLASH_ID(0xef, 0x8019), "W25Q256JW-M", 32 * 1024 * 1024, 0x100, 0x1000, NOR_CAPS_GENERIC, lutGeneric, NULL },
+	{ FLASH_ID(0xef, 0x4015), "W25Q16", 2 * 1024 * 1024, 0x100, 0x1000, NOR_CAPS_GENERIC, lutGeneric3Byte, NULL },
+	{ FLASH_ID(0xef, 0x4016), "W25Q32", 4 * 1024 * 1024, 0x100, 0x1000, NOR_CAPS_GENERIC, lutGeneric3Byte, NULL },
+	{ FLASH_ID(0xef, 0x4017), "W25Q64", 8 * 1024 * 1024, 0x100, 0x1000, NOR_CAPS_GENERIC, lutGeneric3Byte, NULL },
+	{ FLASH_ID(0xef, 0x4018), "W25Q128", 16 * 1024 * 1024, 0x100, 0x1000, NOR_CAPS_GENERIC, lutGeneric3Byte, NULL },
+	{ FLASH_ID(0xef, 0x4019), "W25Q256JVEIQ", 32 * 1024 * 1024, 0x100, 0x1000, NOR_CAPS_GENERIC, lutGeneric4Byte, NULL },
+	{ FLASH_ID(0xef, 0x6019), "W25Q256JW-Q", 32 * 1024 * 1024, 0x100, 0x1000, NOR_CAPS_GENERIC, lutGeneric4Byte, NULL },
+	{ FLASH_ID(0xef, 0x8019), "W25Q256JW-M", 32 * 1024 * 1024, 0x100, 0x1000, NOR_CAPS_GENERIC, lutGeneric4Byte, NULL },
 
 	/* ISSI */
-	{ FLASH_ID(0x9d, 0x7016), "IS25WP032", 4 * 1024 * 1024, 0x100, 0x1000, NOR_CAPS_GENERIC, lutGeneric, NULL },
-	{ FLASH_ID(0x9d, 0x7017), "IS25WP064", 8 * 1024 * 1024, 0x100, 0x1000, NOR_CAPS_GENERIC, lutGeneric, NULL },
-	{ FLASH_ID(0x9d, 0x7018), "IS25WP128", 16 * 1024 * 1024, 0x100, 0x1000, NOR_CAPS_GENERIC, lutGeneric, NULL },
+	{ FLASH_ID(0x9d, 0x7016), "IS25WP032", 4 * 1024 * 1024, 0x100, 0x1000, NOR_CAPS_GENERIC, lutGeneric3Byte, NULL },
+	{ FLASH_ID(0x9d, 0x7017), "IS25WP064", 8 * 1024 * 1024, 0x100, 0x1000, NOR_CAPS_GENERIC, lutGeneric3Byte, NULL },
+	{ FLASH_ID(0x9d, 0x7018), "IS25WP128", 16 * 1024 * 1024, 0x100, 0x1000, NOR_CAPS_GENERIC, lutGeneric3Byte, NULL },
 
 	/* Micron */
 	{ FLASH_ID(0x20, 0xba19), "MT25QL256", 32 * 1024 * 1024, 0x100, 0x1000, NOR_CAPS_GENERIC | NOR_CAPS_EN4B, lutMicronMono, NULL },
@@ -58,7 +58,7 @@ static const struct nor_info flashInfo[] = {
 	{ FLASH_ID(0x20, 0xba22), "MT25QL02G", 256 * 1024 * 1024, 0x100, 0x1000, NOR_CAPS_DIE4 | NOR_CAPS_EN4B, lutMicronDie, NULL },
 
 	/* Macronix (MXIX) */
-	{ FLASH_ID(0xc2, 0x2016), "MX25L3233", 4 * 1024 * 1024, 0x100, 0x1000, NOR_CAPS_GENERIC, lutGeneric, nor_mxQuadEnable },
+	{ FLASH_ID(0xc2, 0x2016), "MX25L3233", 4 * 1024 * 1024, 0x100, 0x1000, NOR_CAPS_GENERIC, lutGeneric3Byte, nor_mxQuadEnable },
 };
 
 
