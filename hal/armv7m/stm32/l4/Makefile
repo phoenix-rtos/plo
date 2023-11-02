@@ -17,6 +17,6 @@ PLO_COMMANDS := alias app bankswitch call console copy dump echo go help kerneli
 
 include devices/uart-stm32l4x6/Makefile
 include devices/flash-stm32/Makefile
-include devices/ram-stm32/Makefile
+include devices/ram-storage/Makefile
 
 OBJS += $(addprefix $(PREFIX_O)hal/$(TARGET_SUFF)/stm32/l4/, _init.o stm32l4.o timer.o console.o)
