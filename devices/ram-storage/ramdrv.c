@@ -3,7 +3,7 @@
  *
  * plo - operating system loader
  *
- * STM32 RAM driver - based on the flash driver implementation
+ * RAM driver - based on the flash driver implementation
  *
  * Copyright 2020, 2022 Phoenix Systems
  * Author: Aleksander Kaminski, Damian Loewnau
@@ -67,6 +67,10 @@ static ssize_t ramdrv_read(unsigned int minor, addr_t offs, void *buff, size_t l
 
 static ssize_t ramdrv_write(unsigned int minor, addr_t offs, const void *buff, size_t len)
 {
+	if (ramdrv_isValidMinor(minor) == 0) {
+		return -EINVAL;
+	}
+
 	/* Not supported. TODO? */
 	return -ENOSYS;
 }
