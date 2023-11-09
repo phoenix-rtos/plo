@@ -65,7 +65,7 @@ static inline int _hal_checksumVerify(const void *data, const size_t size)
 static void _hal_acpiMadtHandler(hal_syspage_t *hs, sdt_header_t *header)
 {
 	if (_hal_checksumVerify(header, header->length) != 0) {
-		hs->madt = (unsigned int)header;
+		hs->madt = (unsigned long)header; /* FIXME - should be addr_t */
 		hs->madtLength = header->length;
 	}
 }
@@ -74,17 +74,28 @@ static void _hal_acpiMadtHandler(hal_syspage_t *hs, sdt_header_t *header)
 static void _hal_acpiFadtHandler(hal_syspage_t *hs, sdt_header_t *header)
 {
 	if (_hal_checksumVerify(header, header->length) != 0) {
-		hs->fadt = (unsigned int)header;
+		hs->fadt = (unsigned long)header; /* FIXME - should be addr_t */
 		hs->fadtLength = header->length;
 	}
 }
+
+
+static void _hal_acpiHpetHandler(hal_syspage_t *hs, sdt_header_t *header)
+{
+	if (_hal_checksumVerify(header, header->length) != 0) {
+		hs->hpet = (unsigned long)header; /* FIXME - should be addr_t */
+		hs->hpetLength = header->length;
+	}
+}
+
 
 static const struct {
 	const char magic[4];
 	void (*handler)(hal_syspage_t *hs, sdt_header_t *);
 } acpi_knownTables[] = {
 	{ .magic = "APIC", .handler = _hal_acpiMadtHandler },
-	{ .magic = "FACP", .handler = _hal_acpiFadtHandler }
+	{ .magic = "FACP", .handler = _hal_acpiFadtHandler },
+	{ .magic = "HPET", .handler = _hal_acpiHpetHandler }
 };
 
 
@@ -158,6 +169,8 @@ void hal_acpiInit(hal_syspage_t *hs)
 	hs->madtLength = 0;
 	hs->fadt = 0;
 	hs->fadtLength = 0;
+	hs->hpet = 0;
+	hs->hpetLength = 0;
 
 	rsdp_t *rsdp = _hal_acpiFindRsdp(hs);
 	if (rsdp != NULL) {
