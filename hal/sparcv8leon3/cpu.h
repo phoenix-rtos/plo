@@ -17,6 +17,10 @@
 #define _CPU_H_
 
 
+/* Address space identifiers */
+#define ASI_CACHE_MISS 0x01
+#define ASI_CCTRL      0x02
+
 /* Processor State Register */
 #define PSR_CWP 0x1f       /* Current window pointer */
 #define PSR_ET  (1 << 5)   /* Enable traps */
@@ -62,6 +66,16 @@ static inline void hal_cpuDataSyncBarrier(void)
 static inline void hal_cpuInstrBarrier(void)
 {
 	/* not supported */
+}
+
+
+static inline u8 hal_cpuLoadAlternate8(const u8 *addr, int asi)
+{
+	u8 val;
+	/* clang-format off */
+	__asm__ volatile("lduba [%1] %c2, %0" : "=r"(val) : "r"(addr), "i"(asi));
+	/* clang-format on */
+	return val;
 }
 
 
