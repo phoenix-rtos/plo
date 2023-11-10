@@ -35,8 +35,6 @@
 
 #define NWINDOWS 8
 
-#define ASI_CCTRL 0x02
-
 /* Import platform specific definitions */
 #include "ld/sparcv8leon3-gr712rc.ldt"
 
