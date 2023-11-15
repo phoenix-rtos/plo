@@ -16,6 +16,9 @@
 #include <hal/hal.h>
 
 
+#define ASI_FLUSH_DCACHE 0x11
+
+
 static struct {
 	hal_syspage_t *hs;
 	addr_t entry;
@@ -180,7 +183,7 @@ void hal_cpuFlushDCache(void)
 	__asm__ volatile(
 		"sta %%g0, [%%g0] %c0\n\t"
 		:
-		: "i"(ASI_CCTRL)
+		: "i"(ASI_FLUSH_DCACHE)
 	);
 	/* clang-format on */
 }
