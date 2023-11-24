@@ -130,7 +130,7 @@ void interrupts_dispatch(void)
 	if (interrupts_common.handlers[n].f != NULL)
 		interrupts_common.handlers[n].f(n, interrupts_common.handlers[n].data);
 
-	*(interrupts_common.mpcore + ceoir) = (*(interrupts_common.mpcore + ceoir) & ~0x3ff) | n;
+	*(interrupts_common.mpcore + ceoir) = n;
 
 	return;
 }
