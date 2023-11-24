@@ -89,7 +89,7 @@ void interrupts_dispatch(void)
 		interrupts_common.handlers[n].f(n, interrupts_common.handlers[n].data);
 
 	/* Update End of Interrupt register with original value from iar */
-	*(interrupts_common.gic + gicv_eoir) = (*(interrupts_common.gic + gicv_eoir) & 0x03ff) | iar;
+	*(interrupts_common.gic + gicv_eoir) = iar;
 
 	return;
 }
