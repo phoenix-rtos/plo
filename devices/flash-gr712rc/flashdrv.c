@@ -281,7 +281,20 @@ static int flashdrv_map(unsigned int minor, addr_t addr, size_t sz, int mode, ad
 
 static int flashdrv_done(unsigned int minor)
 {
-	return flashdrv_sync(minor);
+	flash_device_t *dev;
+
+	if (minor >= FLASH_NO) {
+		return -ENXIO;
+	}
+
+	dev = &fdrv_common.dev[minor];
+
+	(void)flashdrv_sync(minor);
+	ftmctrl_WrEn();
+	flash_read(dev, 0, NULL, 0);
+	ftmctrl_WrDis();
+
+	return EOK;
 }
 
 
