@@ -85,7 +85,7 @@ u32 lib_crc32(const u8 *buf, u32 len, u32 base)
 #else
 	int i;
 	while (len--) {
-		crc = (crc ^ (*buf++ & 0xFF));
+		crc = (crc ^ (*buf++));
 		for (i = 0; i < 8; i++) {
 			crc = (crc >> 1) ^ ((crc & 1) ? CRC32POLY_LE : 0);
 		}
