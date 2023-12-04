@@ -31,6 +31,7 @@
 
 struct {
 	volatile u32 *uart;
+	ssize_t (*writeHook)(int, const void *, size_t);
 } halconsole_common;
 
 
@@ -40,14 +41,25 @@ enum {
 };
 
 
+void hal_consoleSetHooks(ssize_t (*writeHook)(int, const void *, size_t))
+{
+	halconsole_common.writeHook = writeHook;
+}
+
+
 void hal_consolePrint(const char *s)
 {
-	for (; *s; s++) {
-		/* Wait until TX fifo is empty */
-		while (!(*(halconsole_common.uart + sr) & (1 << 3)))
-			;
+	const char *ptr;
 
-		*(halconsole_common.uart + fifo) = *s;
+	for (ptr = s; *ptr != '\0'; ++ptr) {
+		/* Wait until TX fifo is empty */
+		while ((*(halconsole_common.uart + sr) & (1 << 3)) == 0) {
+		}
+		*(halconsole_common.uart + fifo) = *ptr;
+	}
+
+	if (halconsole_common.writeHook != NULL) {
+		(void)halconsole_common.writeHook(0, s, ptr - s);
 	}
 }
 

@@ -93,6 +93,10 @@ extern int hal_interruptsSet(unsigned int irq, int (*isr)(unsigned int, void *),
 extern time_t hal_timerGet(void);
 
 
+/* Function sets early console hooks */
+extern void hal_consoleSetHooks(ssize_t (*writeHook)(int, const void *, size_t));
+
+
 /* Function writes data to uart controller */
 extern void hal_consolePrint(const char *s);
 

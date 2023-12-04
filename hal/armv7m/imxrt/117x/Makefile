@@ -15,6 +15,7 @@ CFLAGS += -mfloat-abi=soft
 PLO_COMMANDS := alias app bootcm4 bootrom call console copy dump echo erase go help kernel kernelimg \
   map mem mpu otp phfs reboot script wait
 
+include devices/pipe-rtt/Makefile
 include devices/usbc-cdc/Makefile
 include devices/uart-imxrt117x/Makefile
 include devices/flash-imxrt/Makefile

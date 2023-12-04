@@ -36,6 +36,7 @@
 
 struct {
 	volatile u32 *uart;
+	ssize_t (*writeHook)(int, const void *, size_t);
 } halconsole_common;
 
 
@@ -133,12 +134,24 @@ static int console_muxVal(int uart, int mux)
 }
 
 
+void hal_consoleSetHooks(ssize_t (*writeHook)(int, const void *, size_t))
+{
+	halconsole_common.writeHook = writeHook;
+}
+
+
 void hal_consolePrint(const char *s)
 {
-	while (*s) {
-		while (!(*(halconsole_common.uart + uart_stat) & (1 << 23)))
-			;
-		*(halconsole_common.uart + uart_data) = *(s++);
+	const char *ptr;
+
+	for (ptr = s; *ptr != '\0'; ++ptr) {
+		while ((*(halconsole_common.uart + uart_stat) & (1uL << 23)) == 0uL) {
+		}
+		*(halconsole_common.uart + uart_data) = *ptr;
+	}
+
+	if (halconsole_common.writeHook != NULL) {
+		(void)halconsole_common.writeHook(0, s, ptr - s);
 	}
 }
 

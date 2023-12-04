@@ -35,6 +35,7 @@ enum {
 
 struct {
 	volatile u8 *base;
+	ssize_t (*writeHook)(int, const void *, size_t);
 } halconsole_common;
 
 
@@ -66,13 +67,25 @@ static void console_write(unsigned int reg, unsigned char val)
 }
 
 
+void hal_consoleSetHooks(ssize_t (*writeHook)(int, const void *, size_t))
+{
+	halconsole_common.writeHook = writeHook;
+}
+
+
 void hal_consolePrint(const char *s)
 {
-	for (; *s; s++) {
+	const char *ptr;
+
+	for (ptr = s; *ptr != '\0'; ++ptr) {
 		/* Wait until TX fifo is empty */
-		while (!(console_read(lsr) & 0x20))
-			;
-		console_write(thr, *s);
+		while ((console_read(lsr) & 0x20) == 0) {
+		}
+		console_write(thr, *ptr);
+	}
+
+	if (halconsole_common.writeHook != NULL) {
+		(void)halconsole_common.writeHook(0, s, ptr - s);
 	}
 }
 

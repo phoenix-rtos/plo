@@ -26,6 +26,7 @@ static struct {
 	volatile u32 *base;
 	u32 txDma;
 	s32 txDmaSize;
+	ssize_t (*writeHook)(int, const void *, size_t);
 } halconsole_common;
 
 
@@ -40,35 +41,47 @@ enum { uarte_startrx = 0, uarte_stoprx, uarte_starttx, uarte_stoptx, uarte_flush
 /* clang-format on */
 
 
-/* Maximum number of characters that will be sent is specified by TX_DMA_SIZE_MAX */
+void hal_consoleSetHooks(ssize_t (*writeHook)(int, const void *, size_t))
+{
+	halconsole_common.writeHook = writeHook;
+}
+
+
 void hal_consolePrint(const char *s)
 {
 	volatile char *tx_dma_buff = (volatile char *)halconsole_common.txDma;
-	int cnt = 0;
+	const char *ptr = s;
+	int cnt;
 
 	do {
-		tx_dma_buff[cnt] = s[cnt];
-		cnt++;
-	} while (s[cnt - 1] != '\0');
+		cnt = 0;
+		while ((*ptr != '\0') && (cnt < halconsole_common.txDmaSize)) {
+			tx_dma_buff[cnt] = *ptr;
+			ptr++;
+			cnt++;
+		}
 
-	if (cnt > halconsole_common.txDmaSize) {
-		cnt = halconsole_common.txDmaSize;
+		if (cnt == 0) {
+			break;
+		}
+
+		*(halconsole_common.base + uarte_txd_ptr) = halconsole_common.txDma;
+		*(halconsole_common.base + uarte_txd_maxcnt) = cnt;
+		*(halconsole_common.base + uarte_starttx) = 1u;
+
+		while (*(halconsole_common.base + uarte_events_txstarted) != 1u) {
+		}
+		*(halconsole_common.base + uarte_events_txstarted) = 0u;
+
+		while (*(halconsole_common.base + uarte_events_endtx) != 1u) {
+		}
+		*(halconsole_common.base + uarte_events_endtx) = 0u;
+
+	} while (*ptr != '\0');
+
+	if (halconsole_common.writeHook != NULL) {
+		(void)halconsole_common.writeHook(0, s, ptr - s);
 	}
-
-	*(halconsole_common.base + uarte_txd_ptr) = halconsole_common.txDma;
-	*(halconsole_common.base + uarte_txd_maxcnt) = cnt;
-	*(halconsole_common.base + uarte_starttx) = 1u;
-	while (*(halconsole_common.base + uarte_events_txstarted) != 1u) {
-		;
-	}
-
-	*(halconsole_common.base + uarte_events_txstarted) = 0u;
-
-	while (*(halconsole_common.base + uarte_events_endtx) != 1u) {
-		;
-	}
-
-	*(halconsole_common.base + uarte_events_endtx) = 0u;
 }
 
 

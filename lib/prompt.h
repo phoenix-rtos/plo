@@ -18,7 +18,7 @@
 
 
 /* Prompt the user with a message to confirm next action by typing an answer */
-extern int lib_promptConfirm(const char *message, const char *answer);
+extern int lib_promptConfirm(const char *message, const char *answer, time_t timeout);
 
 
 #endif
