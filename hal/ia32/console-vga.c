@@ -49,6 +49,7 @@ struct {
 	unsigned char esc;       /* Escape sequence state */
 	unsigned char parmi;     /* Escape sequence parameter index */
 	unsigned char parms[10]; /* Escape sequence parameters buffer */
+	ssize_t (*writeHook)(int, const void *, size_t);
 } halconsole_common;
 
 
@@ -58,6 +59,12 @@ static void console_memset(volatile u16 *vram, u16 val, unsigned int n)
 
 	for (i = 0; i < n; i++)
 		*(vram + i) = val;
+}
+
+
+void hal_consoleSetHooks(ssize_t (*writeHook)(int, const void *, size_t))
+{
+	halconsole_common.writeHook = writeHook;
 }
 
 
@@ -78,6 +85,7 @@ static void console_memmove(volatile u16 *dst, volatile u16 *src, unsigned int n
 
 void hal_consolePrint(const char *s)
 {
+	const char *ptr = s;
 	unsigned int i, row, col, pos;
 	char c;
 
@@ -89,7 +97,12 @@ void hal_consolePrint(const char *s)
 	row = pos / halconsole_common.cols;
 	col = pos % halconsole_common.cols;
 
-	while ((c = *s++)) {
+	for (;;) {
+		c = *(ptr++);
+		if (c == 0) {
+			break;
+		}
+
 		/* Control character */
 		if ((c < ' ') || (c == '\177')) {
 			switch (c) {
@@ -310,6 +323,10 @@ void hal_consolePrint(const char *s)
 		hal_outb(halconsole_common.crtc, 0x0f);
 		hal_outb((void *)((addr_t)halconsole_common.crtc + 1), i);
 		*((u8 *)(halconsole_common.vram + i) + 1) = halconsole_common.attr;
+	}
+
+	if (halconsole_common.writeHook != NULL) {
+		(void)halconsole_common.writeHook(0, s, ptr - s);
 	}
 }
 

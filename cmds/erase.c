@@ -5,7 +5,7 @@
  *
  * Erase sectors or all data from flash device
  *
- * Copyright 2022 Phoenix Systems
+ * Copyright 2022-2024 Phoenix Systems
  * Author: Gerard Swiderski
  *
  * This file is part of Phoenix-RTOS.
@@ -60,7 +60,7 @@ static int cmd_erase(int argc, char *argv[])
 		return res;
 	}
 
-	res = lib_promptConfirm("\nWARNING!\nSerious risk of data loss, type %s to proceed.\n", "YES!");
+	res = lib_promptConfirm("\nWARNING!\nSerious risk of data loss, type %s to proceed.\n", "YES!", 10 * 1000);
 	if (res != 1) {
 		lib_printf("Aborted.\n");
 		return EOK;

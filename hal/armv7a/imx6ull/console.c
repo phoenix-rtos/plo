@@ -22,21 +22,33 @@ enum { urxd = 0, utxd = 16, ucr1 = 32, ucr2, ucr3, ucr4, ufcr, usr1, usr2,
 
 struct {
 	volatile u32 *uart;
+	ssize_t (*writeHook)(int, const void *, size_t);
 } halconsole_common;
+
+
+void hal_consoleSetHooks(ssize_t (*writeHook)(int, const void *, size_t))
+{
+	halconsole_common.writeHook = writeHook;
+}
 
 
 void hal_consolePrint(const char *s)
 {
-	for (; *s; s++) {
-		/* Wait for transmitter readiness */
-		while (!(*(halconsole_common.uart + usr1) & 0x2000))
-			;
+	const char *ptr;
 
-		*(halconsole_common.uart + utxd) = *s;
+	for (ptr = s; *ptr != '\0'; ++ptr) {
+		/* Wait for transmitter readiness */
+		while ((*(halconsole_common.uart + usr1) & 0x2000) == 0) {
+		}
+		*(halconsole_common.uart + utxd) = *ptr;
 	}
 
-	while (!(*(halconsole_common.uart + usr1) & 0x2000))
-		;
+	while ((*(halconsole_common.uart + usr1) & 0x2000) == 0) {
+	}
+
+	if (halconsole_common.writeHook != NULL) {
+		(void)halconsole_common.writeHook(0, s, ptr - s);
+	}
 }
 
 

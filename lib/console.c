@@ -23,17 +23,33 @@ struct {
 	int init;
 	unsigned int major;
 	unsigned int minor;
-} console_common;
+	ssize_t (*readHook)(int, void *, size_t);
+	ssize_t (*writeHook)(int, const void *, size_t);
+} console_common = { 0 };
+
+
+void lib_consoleSetHooks(ssize_t (*rd)(int, void *, size_t), ssize_t (*wr)(int, const void *, size_t))
+{
+	console_common.readHook = rd;
+	console_common.writeHook = wr;
+}
 
 
 void lib_consolePuts(const char *s)
 {
-	if (!console_common.init) {
+	size_t len;
+
+	if (console_common.init == 0) {
 		hal_consolePrint(s);
 		return;
 	}
 
-	devs_write(console_common.major, console_common.minor, 0, s, hal_strlen(s));
+	len = hal_strlen(s);
+	if (console_common.writeHook != NULL) {
+		console_common.writeHook(0, s, len);
+	}
+
+	devs_write(console_common.major, console_common.minor, 0, s, len);
 }
 
 
@@ -46,18 +62,34 @@ void lib_consolePutc(char c)
 		return;
 	}
 
+	if (console_common.writeHook != NULL) {
+		console_common.writeHook(0, &data, 1);
+	}
+
 	devs_write(console_common.major, console_common.minor, 0, &data, 1);
 }
 
 
 int lib_consoleGetc(char *c, time_t timeout)
 {
-	if (!console_common.init) {
+	*c = 0;
+	if (console_common.readHook != 0) {
+		if (console_common.readHook(0, c, 1) > 0) {
+			return 1;
+		}
+		if (timeout == (time_t)-1) {
+			/* override infinite timeout to allow polling by the read hook */
+			timeout = 20;
+		}
+	}
+
+	if (console_common.init == 0) {
 		lib_consolePuts(CONSOLE_RED);
 		lib_consolePuts("\rCan't get data from console.");
 		lib_consolePuts("\nPlease reset plo and set console to device.");
-		for (;;)
-			;
+		for (;;) {
+			hal_cpuHalt();
+		}
 	}
 
 	return devs_read(console_common.major, console_common.minor, 0, c, 1, timeout);

@@ -34,6 +34,9 @@ extern char __stack_top[], __stack_limit[];
 extern void timer_init(void);
 extern void timer_done(void);
 
+/* RTT pipes */
+extern void rtt_init(void *addr);
+
 /* Console */
 extern void console_init(void);
 
@@ -50,6 +53,11 @@ void hal_init(void)
 	mpu_init();
 	timer_init();
 	otp_init();
+
+#ifdef RTT_ADDR
+	rtt_init((void *)RTT_ADDR);
+#endif
+
 	console_init();
 
 	hal_common.entry = (addr_t)-1;

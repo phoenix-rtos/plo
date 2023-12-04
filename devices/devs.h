@@ -5,7 +5,7 @@
  *
  * Devices Interface
  *
- * Copyright 2021-2022 Phoenix Systems
+ * Copyright 2021-2024 Phoenix Systems
  * Author: Hubert Buczynski, Gerard Swiderski
  *
  * This file is part of Phoenix-RTOS.
@@ -26,6 +26,7 @@
 #define DEV_NAND_DATA 5
 #define DEV_NAND_META 6
 #define DEV_NAND_RAW  7
+#define DEV_PIPE      8
 
 
 /* clang-format off */

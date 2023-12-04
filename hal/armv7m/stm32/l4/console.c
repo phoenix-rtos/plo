@@ -20,25 +20,37 @@
 static struct {
 	volatile u32 *base;
 	unsigned cpufreq;
+	ssize_t (*writeHook)(int, const void *, size_t);
 } halconsole_common;
 
 
 enum { cr1 = 0, cr2, cr3, brr, gtpr, rtor, rqr, isr, icr, rdr, tdr };
 
 
+void hal_consoleSetHooks(ssize_t (*writeHook)(int, const void *, size_t))
+{
+	halconsole_common.writeHook = writeHook;
+}
+
+
 void hal_consolePrint(const char *s)
 {
-	while (*s) {
-		if (~(*(halconsole_common.base + isr)) & 0x80)
-			continue;
+	const char *ptr;
 
-		*(halconsole_common.base + tdr) = *(s++);
+	for (ptr = s; *ptr != '\0'; ++ptr) {
+		/* Wait until transmit data register is empty */
+		while (((*(halconsole_common.base + isr)) & 0x80) == 0) {
+		}
+		*(halconsole_common.base + tdr) = *ptr;
 	}
 
-	while (~(*(halconsole_common.base + isr)) & 0x40)
-		;
+	/* Wait until transmission is complete */
+	while (((*(halconsole_common.base + isr)) & 0x40) == 0) {
+	}
 
-	return;
+	if (halconsole_common.writeHook != NULL) {
+		(void)halconsole_common.writeHook(0, s, ptr - s);
+	}
 }
 
 

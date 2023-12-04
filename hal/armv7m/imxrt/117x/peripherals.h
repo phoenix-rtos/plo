@@ -22,9 +22,19 @@
 /* Interrupts */
 #define SIZE_INTERRUPTS (217 + 16)
 
-#define UART_MAX_CNT 12
+
+/* DEBUG - RTT PIPE */
+
+#ifndef RTT_ADDR
+/* RTT descriptors location, last 256 bytes of DTCM */
+#define RTT_ADDR (0x20040000 - 0x100)
+#endif
+
 
 /* UART */
+
+#define UART_MAX_CNT 12
+
 #ifndef UART1
 #define UART1 1
 #endif

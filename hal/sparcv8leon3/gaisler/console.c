@@ -40,16 +40,28 @@ enum {
 
 static struct {
 	volatile u32 *uart;
+	void (*writeHook)(int, const void *, size_t);
 } halconsole_common;
+
+
+void hal_consoleHook(void (*writeHook)(int, const void *, size_t))
+{
+	halconsole_common.writeHook = writeHook;
+}
 
 
 void hal_consolePrint(const char *s)
 {
-	for (; *s; s++) {
+	const char *ptr = s;
+	for (ptr = s; *ptr != '\0'; ++ptr) {
 		/* Wait until TX fifo is not full */
 		while ((*(halconsole_common.uart + uart_status) & TX_FIFO_FULL) != 0) {
 		}
-		*(halconsole_common.uart + uart_data) = *s;
+		*(halconsole_common.uart + uart_data) = *ptr;
+	}
+
+	if (halconsole_common.writeHook != NULL) {
+		halconsole_common.writeHook(0, s, ptr - s);
 	}
 }
 

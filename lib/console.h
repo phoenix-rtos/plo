@@ -38,6 +38,10 @@
 extern void lib_consoleSet(unsigned major, unsigned minor);
 
 
+/* Registers console read & write hooks (for use with debugger, RTT) */
+void lib_consoleSetHooks(ssize_t (*rd)(int, void *, size_t), ssize_t (*wr)(int, const void *, size_t));
+
+
 /* Prints string */
 extern void lib_consolePuts(const char *s);
 

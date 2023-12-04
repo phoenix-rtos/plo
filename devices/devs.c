@@ -5,7 +5,7 @@
  *
  * Device Interface
  *
- * Copyright 2021-2022 Phoenix Systems
+ * Copyright 2021-2024 Phoenix Systems
  * Author: Hubert Buczynski, Gerard Swiderski
  *
  * This file is part of Phoenix-RTOS.
@@ -17,7 +17,7 @@
 
 #include <lib/errno.h>
 
-#define SIZE_MAJOR 8
+#define SIZE_MAJOR 9
 #define SIZE_MINOR 16
 
 
