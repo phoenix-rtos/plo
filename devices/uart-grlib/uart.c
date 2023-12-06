@@ -68,7 +68,7 @@ static const struct {
 	unsigned int txPin;
 	unsigned int rxPin;
 	unsigned int active;
-} info[UART_MAX_CNT] = {
+} info[] = {
 	{ UART0_BASE, UART0_IRQ, UART0_TX, UART0_RX, UART0_ACTIVE },
 	{ UART1_BASE, UART1_IRQ, UART1_TX, UART1_RX, UART1_ACTIVE },
 	{ UART2_BASE, UART2_IRQ, UART2_TX, UART2_RX, UART2_ACTIVE },
