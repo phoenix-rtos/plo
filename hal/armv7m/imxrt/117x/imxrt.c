@@ -243,7 +243,7 @@ int _imxrt_gpioConfig(unsigned int d, u8 pin, u8 dir)
 		return -1;
 	}
 
-	clr = *(reg + gpio_gdir) & ~(1u << pin);
+	clr = *(reg + gpio_gdir) & ~(1uL << pin);
 	dir = (dir != 0u) ? 1u : 0u;
 	*(reg + gpio_gdir) = clr | (dir << pin);
 
@@ -260,7 +260,7 @@ int _imxrt_gpioSet(unsigned int d, u8 pin, u8 val)
 		return -1;
 	}
 
-	clr = *(reg + gpio_dr) & ~(1u << pin);
+	clr = *(reg + gpio_dr) & ~(1uL << pin);
 	val = (val != 0u) ? 1u : 0u;
 	*(reg + gpio_dr) = clr | (val << pin);
 
@@ -290,7 +290,7 @@ int _imxrt_gpioGet(unsigned int d, u8 pin, u8 *val)
 		return -1;
 	}
 
-	*val = ((*(reg + gpio_psr) & (1u << pin)) != 0u) ? 1u : 0u;
+	*val = ((*(reg + gpio_psr) & (1uL << pin)) != 0u) ? 1u : 0u;
 
 	return 0;
 }
@@ -405,11 +405,11 @@ int _imxrt_setVtorCM4(int dwpLock, int dwp, addr_t vtor)
 	tmp |= *(imxrt_common.iomuxc_lpsr_gpr + 1u);
 
 	/* is DWP locked or CM7 forbidden ? */
-	if ((tmp & (0xdu << 28)) != 0u) {
+	if ((tmp & (0xduL << 28u)) != 0u) {
 		return -1;
 	}
 
-	tmp = ((((u32)dwpLock & 3u) << 30) | (((u32)dwp & 3u) << 28));
+	tmp = ((((u32)dwpLock & 3u) << 30u) | (((u32)dwp & 3u) << 28u));
 
 	*(imxrt_common.iomuxc_lpsr_gpr + 0u) = (tmp | (vtor & 0xfff8u));
 	*(imxrt_common.iomuxc_lpsr_gpr + 1u) = (tmp | ((vtor >> 16) & 0xffffu));
@@ -425,7 +425,7 @@ int _imxrt_setVtorCM4(int dwpLock, int dwp, addr_t vtor)
 void _imxrt_runCM4(void)
 {
 	/* CM7 is allowed to reset system, CM4 is disallowed */
-	*(imxrt_common.src + src_srmr) |= ((3u << 10) | (3u << 6));
+	*(imxrt_common.src + src_srmr) |= ((3uL << 10u) | (3uL << 6u));
 	hal_cpuDataMemoryBarrier();
 
 	/* Release CM4 reset */
