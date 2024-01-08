@@ -110,11 +110,11 @@ static int cmd_alias(int argc, char *argv[])
 	}
 
 	if (phfs_aliasReg(argv[optind], addr, sz) < 0) {
-		log_error("\nCan't register file %s", argv[1]);
+		log_error("\n%s: Can't register file %s", argv[0], argv[optind]);
 		return CMD_EXIT_FAILURE;
 	}
 
-	log_info("\nRegistering file %s ", argv[1]);
+	log_info("\n%s: Registering file %s ", argv[0], argv[optind]);
 
 	return CMD_EXIT_SUCCESS;
 }
