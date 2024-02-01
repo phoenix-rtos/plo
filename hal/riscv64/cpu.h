@@ -29,6 +29,10 @@
 
 #ifndef __ASSEMBLY__
 
+
+#include "sbi.h"
+
+
 /* clang-format off */
 
 #define csr_set(csr, val) \
@@ -90,10 +94,9 @@ static inline void hal_cpuInstrBarrier(void)
 
 static inline void hal_cpuReboot(void)
 {
-	/* TODO */
-	for (;;) {
-	}
+	sbi_reset(SBI_RESET_TYPE_COLD, SBI_RESET_REASON_NONE);
 }
+
 
 #endif /* __ASSEMBLY__ */
 
