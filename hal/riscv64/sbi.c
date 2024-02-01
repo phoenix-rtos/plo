@@ -27,9 +27,12 @@
 #define SBI_BASE_GET_MIMPLID   0x6
 
 /* Timer extension */
-#define SBI_EXT_TIME 0x54494D45
-
+#define SBI_EXT_TIME      0x54494D45
 #define SBI_TIME_SETTIMER 0x0
+
+/* System reset extension */
+#define SBI_EXT_SRST   0x53525354
+#define SBI_SRST_RESET 0x0
 
 /* Legacy extensions */
 #define SBI_LEGACY_SETTIMER               0x0
@@ -126,16 +129,23 @@ void sbi_setTimer(u64 stime)
 }
 
 
+__attribute__((noreturn)) void sbi_reset(u32 type, u32 reason)
+{
+	if (sbi_probeExtension(SBI_EXT_SRST).error == 0) {
+		sbi_ecall(SBI_EXT_SRST, SBI_SRST_RESET, type, reason, 0, 0, 0, 0);
+	}
+
+	/* Reset not available/failed, halt the system */
+	for (;;) {
+	}
+}
+
+
 void sbi_init(void)
 {
 	sbiret_t ret = sbi_getSpecVersion();
 	sbi_common.specVersion = ret.value;
 
 	ret = sbi_probeExtension(SBI_EXT_TIME);
-	if (ret.error == 0) {
-		sbi_common.setTimer = sbi_setTimerv02;
-	}
-	else {
-		sbi_common.setTimer = sbi_setTimerv01;
-	}
+	sbi_common.setTimer = (ret.error == 0) ? sbi_setTimerv02 : sbi_setTimerv01;
 }
