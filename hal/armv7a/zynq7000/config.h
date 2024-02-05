@@ -23,7 +23,7 @@
 #include "types.h"
 #include "peripherals.h"
 
-#include <phoenix/arch/syspage-zynq7000.h>
+#include <phoenix/arch/armv7a/zynq7000/syspage.h>
 #include <phoenix/syspage.h>
 
 #include "../cpu.h"

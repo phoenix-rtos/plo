@@ -25,7 +25,7 @@
 #include "../gaisler.h"
 #include "../../cpu.h"
 
-#include <phoenix/arch/syspage-sparcv8leon3.h>
+#include <phoenix/arch/sparcv8leon3/syspage.h>
 #include <phoenix/syspage.h>
 
 #include <devices/gpio-gr716/gpio.h>

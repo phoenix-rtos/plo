@@ -24,7 +24,7 @@
 
 #include "../../types.h"
 
-#include <phoenix/arch/syspage-imxrt.h>
+#include <phoenix/arch/armv7m/imxrt/syspage.h>
 #include <phoenix/syspage.h>
 
 #include "../../../cpu.h"

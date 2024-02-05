@@ -26,7 +26,7 @@
 #include "hal/riscv64/sbi.h"
 #include "hal/riscv64/dtb.h"
 
-#include <phoenix/arch/syspage-riscv64.h>
+#include <phoenix/arch/riscv64/syspage.h>
 #include <phoenix/syspage.h>
 
 #define PATH_KERNEL "phoenix-riscv64-generic.elf"
