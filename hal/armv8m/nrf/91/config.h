@@ -23,7 +23,7 @@
 #include "peripherals.h"
 #include "../types.h"
 
-#include <phoenix/arch/syspage-nrf91.h>
+#include <phoenix/arch/armv8m/nrf/syspage.h>
 #include <phoenix/syspage.h>
 
 #include "../../cpu.h"

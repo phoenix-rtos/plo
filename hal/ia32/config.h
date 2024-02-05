@@ -23,7 +23,7 @@
 #include "peripherals.h"
 #include "types.h"
 
-#include <phoenix/arch/syspage-ia32.h>
+#include <phoenix/arch/ia32/syspage.h>
 #include <phoenix/syspage.h>
 
 

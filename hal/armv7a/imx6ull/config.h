@@ -23,7 +23,7 @@
 #include "imx6ull.h"
 #include "../cpu.h"
 
-#include <phoenix/arch/syspage-imx6ull.h>
+#include <phoenix/arch/armv7a/imx6ull/syspage.h>
 #include <phoenix/syspage.h>
 
 #define PATH_KERNEL "phoenix-armv7a7-imx6ull.elf"
