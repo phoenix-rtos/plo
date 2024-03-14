@@ -627,8 +627,6 @@ static int uart_init(unsigned int minor)
 __attribute__((constructor)) static void uart_reg(void)
 {
 	static const dev_ops_t opsUartIMXRT106X = {
-		.init = uart_init,
-		.done = uart_done,
 		.read = uart_read,
 		.write = uart_safeWrite,
 		.erase = NULL,
@@ -638,6 +636,8 @@ __attribute__((constructor)) static void uart_reg(void)
 
 	static const dev_t devUartIMXRT106X = {
 		.name = "uart-imxrt106x",
+		.init = uart_init,
+		.done = uart_done,
 		.ops = &opsUartIMXRT106X,
 	};
 

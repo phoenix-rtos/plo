@@ -452,12 +452,12 @@ __attribute__((constructor)) static void diskbios_register(void)
 		.erase = NULL,
 		.sync = diskbios_sync,
 		.map = diskbios_map,
-		.done = diskbios_done,
-		.init = diskbios_init,
 	};
 
 	static const dev_t devDiskBIOS = {
 		.name = "disk-bios",
+		.init = diskbios_init,
+		.done = diskbios_done,
 		.ops = &opsDiskBIOS,
 	};
 

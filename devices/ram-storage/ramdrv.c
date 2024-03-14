@@ -140,8 +140,6 @@ static int ramdrv_init(unsigned int minor)
 __attribute__((constructor)) static void ramdrv_reg(void)
 {
 	static const dev_ops_t opsRamStorage = {
-		.init = ramdrv_init,
-		.done = ramdrv_done,
 		.read = ramdrv_read,
 		.write = ramdrv_write,
 		.erase = NULL,
@@ -151,6 +149,8 @@ __attribute__((constructor)) static void ramdrv_reg(void)
 
 	static const dev_t devRamStorage = {
 		.name = "ram-storage",
+		.init = ramdrv_init,
+		.done = ramdrv_done,
 		.ops = &opsRamStorage,
 	};
 

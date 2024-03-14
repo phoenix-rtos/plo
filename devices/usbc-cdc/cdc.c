@@ -495,8 +495,6 @@ static int cdc_init(unsigned int minor)
 __attribute__((constructor)) static void cdc_reg(void)
 {
 	static const dev_ops_t opsUsbDeviceCDC = {
-		.init = cdc_init,
-		.done = cdc_done,
 		.read = cdc_recv,
 		.write = cdc_send,
 		.erase = NULL,
@@ -506,6 +504,8 @@ __attribute__((constructor)) static void cdc_reg(void)
 
 	static const dev_t devUsbDeviceCDC = {
 		.name = "usbc-cdc",
+		.init = cdc_init,
+		.done = cdc_done,
 		.ops = &opsUsbDeviceCDC,
 	};
 

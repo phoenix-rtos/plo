@@ -166,13 +166,13 @@ __attribute__((constructor)) static void meta_register(void)
 		.write = meta_write,
 		.sync = meta_sync,
 		.map = NULL,
-		.done = meta_done,
-		.init = meta_init,
 		.erase = NULL,
 	};
 
 	static const dev_t devMetaNandIMX6ULL = {
 		.name = "nand-imx6ull-meta",
+		.init = meta_init,
+		.done = meta_done,
 		.ops = &opsMetaNandIMX6ULL,
 	};
 

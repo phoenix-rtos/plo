@@ -531,12 +531,12 @@ __attribute__((constructor)) static void ttybios_register(void)
 		.erase = NULL,
 		.sync = ttybios_sync,
 		.map = ttybios_map,
-		.done = ttybios_done,
-		.init = ttybios_init,
 	};
 
 	static const dev_t devBiosTTY = {
 		.name = "tty-bios",
+		.init = ttybios_init,
+		.done = ttybios_done,
 		.ops = &opsBiosTTY,
 	};
 

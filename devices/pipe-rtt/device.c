@@ -84,8 +84,6 @@ static int pipe_init(unsigned int minor)
 __attribute__((constructor)) static void pipe_reg(void)
 {
 	static const dev_ops_t opsPipeRTT = {
-		.init = pipe_init,
-		.done = pipe_done,
 		.read = pipe_read,
 		.write = pipe_write,
 		.erase = NULL,
@@ -95,6 +93,8 @@ __attribute__((constructor)) static void pipe_reg(void)
 
 	static const dev_t devPipeRTT = {
 		.name = "pipe-rtt",
+		.init = pipe_init,
+		.done = pipe_done,
 		.ops = &opsPipeRTT,
 	};
 

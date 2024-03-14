@@ -139,8 +139,6 @@ static int flashdrv_init(unsigned int minor)
 __attribute__((constructor)) static void flashdrv_reg(void)
 {
 	static const dev_ops_t opsFlashSTM32 = {
-		.init = flashdrv_init,
-		.done = flashdrv_done,
 		.read = flashdrv_read,
 		.write = flashdrv_write,
 		.erase = NULL, /* TODO */
@@ -150,6 +148,8 @@ __attribute__((constructor)) static void flashdrv_reg(void)
 
 	static const dev_t devFlashSTM32 = {
 		.name = "flash-stm32",
+		.init = flashdrv_init,
+		.done = flashdrv_done,
 		.ops = &opsFlashSTM32,
 	};
 

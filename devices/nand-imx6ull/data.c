@@ -448,13 +448,13 @@ __attribute__((constructor)) static void data_register(void)
 		.write = data_write,
 		.sync = data_sync,
 		.map = data_map,
-		.done = data_done,
-		.init = data_init,
 		.erase = data_erase,
 	};
 
 	static const dev_t devDataNandIMX6ULL = {
 		.name = "nand-imx6ull-data",
+		.init = data_init,
+		.done = data_done,
 		.ops = &opsDataNandIMX6ULL,
 	};
 

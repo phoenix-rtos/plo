@@ -328,8 +328,6 @@ static int flashdrv_init(unsigned int minor)
 __attribute__((constructor)) static void flashdrv_reg(void)
 {
 	static const dev_ops_t opsFlashGR712RC = {
-		.init = flashdrv_init,
-		.done = flashdrv_done,
 		.read = flashdrv_read,
 		.write = flashdrv_write,
 		.erase = flashdrv_erase,
@@ -339,6 +337,8 @@ __attribute__((constructor)) static void flashdrv_reg(void)
 
 	static const dev_t devFlashGR712RC = {
 		.name = "flash-gr712rc",
+		.init = flashdrv_init,
+		.done = flashdrv_done,
 		.ops = &opsFlashGR712RC,
 	}
 

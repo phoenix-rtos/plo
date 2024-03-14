@@ -330,12 +330,12 @@ __attribute__((constructor)) static void uart_register(void)
 		.erase = NULL,
 		.sync = uart_sync,
 		.map = uart_map,
-		.done = uart_done,
-		.init = uart_init,
 	};
 
 	static const dev_t devUart16550 = {
 		.name = "uart-16550",
+		.init = uart_init,
+		.done = uart_done,
 		.ops = &opsUart16550,
 	};
 
