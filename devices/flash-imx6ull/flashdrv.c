@@ -418,7 +418,7 @@ static int flashdrv_init(unsigned int minor)
 
 __attribute__((constructor)) static void flashdrv_reg(void)
 {
-	static const dev_handler_t h = {
+	static const dev_ops_t opsFlashIMX6ULL = {
 		.init = flashdrv_init,
 		.done = flashdrv_done,
 		.read = flashdrv_read,
@@ -428,7 +428,12 @@ __attribute__((constructor)) static void flashdrv_reg(void)
 		.map = flashdrv_map,
 	};
 
+	static const dev_t devFlashIMX6ULL = {
+		.name = "flash-imx6ull",
+		.ops = &opsFlashIMX6ULL,
+	};
+
 	hal_memset(&fdrv_common, 0, sizeof(fdrv_common));
 
-	devs_register(DEV_STORAGE, FLASH_NO, &h);
+	devs_register(DEV_STORAGE, FLASH_NO, &devFlashIMX6ULL);
 }

@@ -643,7 +643,7 @@ static int flashdrv_init(unsigned int minor)
 
 __attribute__((constructor)) static void flashdrv_reg(void)
 {
-	static const dev_handler_t h = {
+	static const dev_ops_t opsFlashZYNQ7K = {
 		.init = flashdrv_init,
 		.done = flashdrv_done,
 		.read = flashdrv_read,
@@ -653,5 +653,10 @@ __attribute__((constructor)) static void flashdrv_reg(void)
 		.map = flashdrv_map,
 	};
 
-	devs_register(DEV_STORAGE, 1, &h);
+	static const dev_t devFlashZYNQ7K = {
+		.name = "flash-zynq7000",
+		.ops = &opsFlashZYNQ7K,
+	};
+
+	devs_register(DEV_STORAGE, 1, &devFlashZYNQ7K);
 }

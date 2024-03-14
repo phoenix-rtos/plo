@@ -657,7 +657,7 @@ static int uart_init(unsigned int minor)
 
 __attribute__((constructor)) static void uart_reg(void)
 {
-	static const dev_handler_t h = {
+	static const dev_ops_t opsUartIMXRT117X = {
 		.init = uart_init,
 		.done = uart_done,
 		.read = uart_read,
@@ -667,5 +667,10 @@ __attribute__((constructor)) static void uart_reg(void)
 		.map = uart_map,
 	};
 
-	devs_register(DEV_UART, UART_MAX_CNT, &h);
+	static const dev_t devUartIMXRT117X = {
+		.name = "uart-imxrt117x",
+		.ops = &opsUartIMXRT117X,
+	};
+
+	devs_register(DEV_UART, UART_MAX_CNT, &devUartIMXRT117X);
 }

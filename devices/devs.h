@@ -34,6 +34,7 @@ enum { dev_isMappable = 0, dev_isNotMappable };
 /* clang-format on */
 
 
+/* Device operations */
 typedef struct {
 	int (*init)(unsigned int minor);
 	int (*done)(unsigned int minor);
@@ -43,12 +44,19 @@ typedef struct {
 	ssize_t (*read)(unsigned int minor, addr_t offs, void *buff, size_t len, time_t timeout);
 	ssize_t (*write)(unsigned int minor, addr_t offs, const void *buff, size_t len);
 	ssize_t (*erase)(unsigned int minor, addr_t offs, size_t len, unsigned int flags);
-} dev_handler_t;
+} dev_ops_t;
+
+
+/* Device enclosure */
+typedef struct _dev_t {
+	const char *name;
+	const dev_ops_t *ops;
+} dev_t;
 
 
 /* This function should be called only before devs_init(),
  * preferably from device drivers constructors */
-extern void devs_register(unsigned int major, unsigned int nb, const dev_handler_t *h);
+extern void devs_register(unsigned int major, unsigned int nb, const dev_t *dev);
 
 
 /* Initialize registered devices */

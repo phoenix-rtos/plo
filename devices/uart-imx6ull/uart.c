@@ -396,7 +396,7 @@ static int uart_init(unsigned int minor)
 
 __attribute__((constructor)) static void uart_reg(void)
 {
-	static const dev_handler_t h = {
+	static const dev_ops_t opsUartIMX6ULL = {
 		.init = uart_init,
 		.done = uart_done,
 		.read = uart_read,
@@ -406,5 +406,10 @@ __attribute__((constructor)) static void uart_reg(void)
 		.map = uart_map,
 	};
 
-	devs_register(DEV_UART, UARTS_MAX_CNT, &h);
+	static const dev_t devUartIMX6ULL = {
+		.name = "uart-imx6ull",
+		.ops = &opsUartIMX6ULL,
+	};
+
+	devs_register(DEV_UART, UARTS_MAX_CNT, &devUartIMX6ULL);
 }

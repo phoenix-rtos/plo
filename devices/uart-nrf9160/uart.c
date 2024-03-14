@@ -370,7 +370,7 @@ static int uart_init(unsigned int minor)
 
 __attribute__((constructor)) static void uart_reg(void)
 {
-	static const dev_handler_t h = {
+	static const dev_ops_t opsUartNRF9160 = {
 		.init = uart_init,
 		.done = uart_done,
 		.read = uart_read,
@@ -380,5 +380,10 @@ __attribute__((constructor)) static void uart_reg(void)
 		.map = uart_map,
 	};
 
-	devs_register(DEV_UART, UART_MAX_CNT, &h);
+	static const dev_t devUartNRF9160 = {
+		.name = "uart-nrf9160",
+		.ops = &opsUartNRF9160,
+	};
+
+	devs_register(DEV_UART, UART_MAX_CNT, &devUartNRF9160);
 }

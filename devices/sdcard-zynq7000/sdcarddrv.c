@@ -238,7 +238,7 @@ static int sdcarddrv_map(unsigned int minor, addr_t addr, size_t sz, int mode, a
 
 __attribute__((constructor)) static void sdcarddrv_reg(void)
 {
-	static const dev_handler_t h = {
+	static const dev_ops_t opsSdCardZYNQ7K = {
 		.init = sdcarddrv_init,
 		.done = sdcarddrv_done,
 		.read = sdcarddrv_read,
@@ -248,5 +248,10 @@ __attribute__((constructor)) static void sdcarddrv_reg(void)
 		.map = sdcarddrv_map,
 	};
 
-	devs_register(DEV_STORAGE, 1, &h);
+	static const dev_t devSdCardZYNQ7K = {
+		.name = "sdcard-zynq7000",
+		.ops = &opsSdCardZYNQ7K,
+	};
+
+	devs_register(DEV_STORAGE, 1, &devSdCardZYNQ7K);
 }

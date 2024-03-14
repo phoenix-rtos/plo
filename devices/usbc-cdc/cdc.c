@@ -494,7 +494,7 @@ static int cdc_init(unsigned int minor)
 
 __attribute__((constructor)) static void cdc_reg(void)
 {
-	static const dev_handler_t h = {
+	static const dev_ops_t opsUsbDeviceCDC = {
 		.init = cdc_init,
 		.done = cdc_done,
 		.read = cdc_recv,
@@ -504,5 +504,10 @@ __attribute__((constructor)) static void cdc_reg(void)
 		.map = cdc_map,
 	};
 
-	devs_register(DEV_USB, SIZE_USB_ENDPTS, &h);
+	static const dev_t devUsbDeviceCDC = {
+		.name = "usbc-cdc",
+		.ops = &opsUsbDeviceCDC,
+	};
+
+	devs_register(DEV_USB, SIZE_USB_ENDPTS, &devUsbDeviceCDC);
 }
