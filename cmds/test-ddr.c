@@ -227,7 +227,7 @@ static int cmd_ddr(int argc, char *argv[])
 
 	if (argc != 1) {
 		log_error("\n%s: Command does not accept arguments", argv[0]);
-		return -EINVAL;
+		return CMD_EXIT_FAILURE;
 	}
 
 	lib_printf(CONSOLE_BOLD "\nTest are executing, please wait ...");
@@ -243,7 +243,7 @@ static int cmd_ddr(int argc, char *argv[])
 	err = cmd_ddrBitChargeLeakage(ADDR_DDR);
 	cmd_errPrint(err);
 
-	return EOK;
+	return CMD_EXIT_SUCCESS;
 }
 
 

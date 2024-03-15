@@ -36,12 +36,12 @@ static int cmd_echo(int argc, char *argv[])
 			lib_printf("\nEcho is 'off'");
 		}
 
-		return EOK;
+		return CMD_EXIT_SUCCESS;
 	}
 
 	if (argc != 2) {
 		log_error("\n%s: Wrong arguments", argv[0]);
-		return -EINVAL;
+		return CMD_EXIT_FAILURE;
 	}
 
 	/* Set echo */
@@ -53,10 +53,10 @@ static int cmd_echo(int argc, char *argv[])
 	}
 	else {
 		log_error("\n%s: Wrong arguments", argv[0]);
-		return -EINVAL;
+		return CMD_EXIT_FAILURE;
 	}
 
-	return EOK;
+	return CMD_EXIT_SUCCESS;
 }
 
 

@@ -55,6 +55,7 @@ static int cmd_call(int argc, char *argv[])
 	len = phfs_read(h, offs, buff, SIZE_MAGIC_NB);
 	if (len != SIZE_MAGIC_NB) {
 		log_error("\nCan't read %s from %s", argv[2], argv[1]);
+		phfs_close(h);
 		return (len < 0) ? len : -EIO;
 	}
 	offs += len;
@@ -63,6 +64,7 @@ static int cmd_call(int argc, char *argv[])
 	/* Check magic number, don't return error, as there might be a next script */
 	if (hal_strcmp(buff, argv[3]) != 0) {
 		log_error("\nMagic number for %s is wrong.", argv[2]);
+		phfs_close(h);
 		return CMD_EXIT_SUCCESS;
 	}
 
@@ -73,11 +75,12 @@ static int cmd_call(int argc, char *argv[])
 		len = phfs_read(h, offs, &c, 1);
 		if (len < 0) {
 			log_error("\nCan't read %s from %s", argv[2], argv[1]);
+			phfs_close(h);
 			return len;
 		}
 
 		offs += len;
-		if ((len == 0) || (c == '\n')) {
+		if ((len == 0) || (c == '\n') || (c == '\0' /* EOF */)) {
 			buff[i] = '\0';
 			res = cmd_parse(buff);
 			if (res != CMD_EXIT_SUCCESS) {
@@ -89,13 +92,15 @@ static int cmd_call(int argc, char *argv[])
 
 		if (i == (sizeof(buff) - 1)) {
 			log_error("\nLine in %s exceeds buffer size", argv[2]);
+			phfs_close(h);
 			return -ENOMEM;
 		}
 
 		buff[i++] = c;
 	} while (len > 0);
 
-	return EOK;
+	phfs_close(h);
+	return CMD_EXIT_SUCCESS;
 }
 
 

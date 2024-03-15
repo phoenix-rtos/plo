@@ -29,7 +29,7 @@ static int cmd_help(int argc, char *argv[])
 
 	if (argc != 1) {
 		log_error("\n%s: Command does not accept arguments", argv[0]);
-		return -EINVAL;
+		return CMD_EXIT_FAILURE;
 	}
 
 	while ((cmd = cmd_getCmd(i++)) != NULL) {
@@ -37,7 +37,7 @@ static int cmd_help(int argc, char *argv[])
 		cmd->info();
 	}
 
-	return EOK;
+	return CMD_EXIT_SUCCESS;
 }
 
 

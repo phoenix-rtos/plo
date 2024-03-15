@@ -27,7 +27,7 @@ static void cmd_bankswitchInfo(void)
 
 static int cmd_bankswitch(int argc, char *argv[])
 {
-	int targetBank, err = EOK;
+	int targetBank, err = CMD_EXIT_SUCCESS;
 
 	if (argc == 1) {
 		targetBank = (_stm32_getFlashBank() == 0) ? 1 : 0;
@@ -37,10 +37,10 @@ static int cmd_bankswitch(int argc, char *argv[])
 	}
 	else {
 		log_error("\n%s: Wrong argument count", argv[0]);
-		err = -EINVAL;
+		err = CMD_EXIT_FAILURE;
 	}
 
-	if (err == EOK) {
+	if (err == CMD_EXIT_SUCCESS) {
 		_stm32_switchFlashBank(targetBank);
 		log_info("\n%s: Bank switch successful (%d -> %d)", argv[0],
 			(targetBank == 0) ? 1 : 0, targetBank);

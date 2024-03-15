@@ -40,8 +40,10 @@ static int cmd_wait(int argc, char *argv[])
 			lib_printf("\r%*s \r%s ", sizeof(prompt) + 4, "", prompt);
 			for (i = 0; i < 3; ++i) {
 				lib_printf(".");
-				if (lib_consoleGetc(&c, 500) > 0)
+				if (lib_consoleGetc(&c, 500) > 0) {
+					/* FIXME: this is not an error, break to console */
 					return -1;
+				}
 			}
 		}
 	}
@@ -50,19 +52,21 @@ static int cmd_wait(int argc, char *argv[])
 	time = lib_strtoul(argv[1], &endptr, 0);
 	if (*endptr) {
 		log_error("\n%s: Wrong argument count", argv[0]);
-		return -EINVAL;
+		return CMD_EXIT_FAILURE;
 	}
 
 	while (time > 0) {
 		step = time >= 100 ? 100 : time;
 		time -= step;
 		lib_printf("\r%*s \r%s, %5d [ms]", sizeof(prompt) + 14, "", prompt, time);
-		if (lib_consoleGetc(&c, step) > 0)
+		if (lib_consoleGetc(&c, step) > 0) {
+			/* FIXME: this is not an error, break to console */
 			return -1;
+		}
 	}
 	lib_printf("\r%*s \r%s, %5d [ms]\n", sizeof(prompt) + 14, "", prompt, 0);
 
-	return EOK;
+	return CMD_EXIT_SUCCESS;
 }
 
 

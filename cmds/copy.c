@@ -128,15 +128,16 @@ static int cmd_copy(int argc, char *argv[])
 	/* Parse all comand's arguments */
 	if (argc < 5) {
 		log_error("\n%s: Wrong argument count", argv[0]);
-		return -EINVAL;
+		return CMD_EXIT_FAILURE;
 	}
 
-	if ((res = cmd_devParse(&h[0], &offs[0], &sz[0], argc, argv, 0, &argvID, &file[0])) < 0)
-		return res;
+	if (cmd_devParse(&h[0], &offs[0], &sz[0], argc, argv, 0, &argvID, &file[0]) < 0) {
+		return CMD_EXIT_FAILURE;
+	}
 
-	if ((res = cmd_devParse(&h[1], &offs[1], &sz[1], argc, argv, 1, &argvID, &file[1])) < 0) {
+	if (cmd_devParse(&h[1], &offs[1], &sz[1], argc, argv, 1, &argvID, &file[1]) < 0) {
 		phfs_close(h[0]);
-		return res;
+		return CMD_EXIT_FAILURE;
 	}
 
 	/* Copy data between devices */
@@ -148,15 +149,14 @@ static int cmd_copy(int argc, char *argv[])
 
 	if (res < 0) {
 		log_error("\nCopying failed");
-		return res;
+		return CMD_EXIT_FAILURE;
 	}
 
 	log_info("\nFinished copying");
 
-	if ((res = phfs_aliasReg((file[1] == NULL) ? file[0] : file[1], offs[1], res)) < 0)
-		return res;
+	res = phfs_aliasReg((file[1] == NULL) ? file[0] : file[1], offs[1], res);
 
-	return EOK;
+	return (res < 0) ? CMD_EXIT_FAILURE : CMD_EXIT_SUCCESS;
 }
 
 

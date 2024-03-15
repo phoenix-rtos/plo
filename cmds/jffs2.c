@@ -135,7 +135,7 @@ static int cmd_jffs2(int argc, char *argv[])
 	err = devs_check(major, minor);
 	if (err < 0) {
 		log_error("\nInvalid device %d\n", err);
-		return -1;
+		return CMD_EXIT_FAILURE;
 	}
 
 	cleanmarker.magic = JFFS2_MAGIC_BITMASK;
