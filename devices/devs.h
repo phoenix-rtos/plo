@@ -38,6 +38,7 @@ enum { dev_isMappable = 0, dev_isNotMappable };
 typedef struct {
 	int (*sync)(unsigned int minor);
 	int (*map)(unsigned int minor, addr_t addr, size_t sz, int mode, addr_t memaddr, size_t memsz, int memmode, addr_t *a);
+	int (*control)(unsigned int minor, int cmd, void *args);
 	ssize_t (*read)(unsigned int minor, addr_t offs, void *buff, size_t len, time_t timeout);
 	ssize_t (*write)(unsigned int minor, addr_t offs, const void *buff, size_t len);
 	ssize_t (*erase)(unsigned int minor, addr_t offs, size_t len, unsigned int flags);
@@ -72,6 +73,10 @@ extern int devs_sync(unsigned int major, unsigned int minor);
 
 /* Check whether device's region is mappable to map's region. If device is mappable, the device address in memory map is written to a */
 extern int devs_map(unsigned int major, unsigned int minor, addr_t addr, size_t sz, int mode, addr_t memaddr, size_t memsz, int memmode, addr_t *a);
+
+
+/* Control and manipulate the underlying device functions, parameters */
+extern int devs_control(unsigned int major, unsigned int minor, int cmd, void *args);
 
 
 /* Read data from device */
