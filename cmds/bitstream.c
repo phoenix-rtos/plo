@@ -78,9 +78,6 @@ static int cmd_bitstream(int argc, char *argv[])
 }
 
 
-__attribute__((constructor)) static void cmd_appreg(void)
-{
-	const static cmd_t app_cmd = { .name = "bitstream", .run = cmd_bitstream, .info = cmd_bistreamInfo };
-
-	cmd_reg(&app_cmd);
-}
+static const cmd_t bitstream_cmd __attribute__((section("commands"), used)) = {
+	.name = "bitstream", .run = cmd_bitstream, .info = cmd_bistreamInfo
+};

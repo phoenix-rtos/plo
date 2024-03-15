@@ -88,8 +88,6 @@ static int cmd_script(int argc, char *argv[])
 }
 
 
-__attribute__((constructor)) static void cmd_scriptReg(void)
-{
-	const static cmd_t app_cmd = { .name = "script", .run = cmd_script, .info = cmd_scriptInfo };
-	cmd_reg(&app_cmd);
-}
+static const cmd_t script_cmd __attribute__((section("commands"), used)) = {
+	.name = "script", .run = cmd_script, .info = cmd_scriptInfo
+};

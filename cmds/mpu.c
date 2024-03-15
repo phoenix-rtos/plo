@@ -135,9 +135,6 @@ static int cmd_mpu(int argc, char *argv[])
 }
 
 
-__attribute__((constructor)) static void cmd_mpuReg(void)
-{
-	const static cmd_t app_cmd = { .name = "mpu", .run = cmd_mpu, .info = cmd_mpuInfo };
-
-	cmd_reg(&app_cmd);
-}
+static const cmd_t mpu_cmd __attribute__((section("commands"), used)) = {
+	.name = "mpu", .run = cmd_mpu, .info = cmd_mpuInfo
+};

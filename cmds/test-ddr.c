@@ -247,9 +247,6 @@ static int cmd_ddr(int argc, char *argv[])
 }
 
 
-__attribute__((constructor)) static void cmd_ddrReg(void)
-{
-	const static cmd_t ddrCmd = { .name = "test-ddr", .run = cmd_ddr, .info = cmd_ddrInfo };
-
-	cmd_reg(&ddrCmd);
-}
+static const cmd_t testddr_cmd __attribute__((section("commands"), used)) = {
+	.name = "test-ddr", .run = cmd_ddr, .info = cmd_ddrInfo
+};

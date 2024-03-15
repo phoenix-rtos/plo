@@ -131,9 +131,6 @@ static int cmd_kernel(int argc, char *argv[])
 }
 
 
-__attribute__((constructor)) static void cmd_kernelReg(void)
-{
-	const static cmd_t app_cmd = { .name = "kernel", .run = cmd_kernel, .info = cmd_kernelInfo };
-
-	cmd_reg(&app_cmd);
-}
+static const cmd_t kernel_cmd __attribute__((section("commands"), used)) = {
+	.name = "kernel", .run = cmd_kernel, .info = cmd_kernelInfo
+};

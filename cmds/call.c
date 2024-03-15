@@ -104,8 +104,6 @@ static int cmd_call(int argc, char *argv[])
 }
 
 
-__attribute__((constructor)) static void cmd_callReg(void)
-{
-	const static cmd_t app_cmd = { .name = "call", .run = cmd_call, .info = cmd_callInfo };
-	cmd_reg(&app_cmd);
-}
+static const cmd_t call_cmd __attribute__((section("commands"), used)) = {
+	.name = "call", .run = cmd_call, .info = cmd_callInfo
+};

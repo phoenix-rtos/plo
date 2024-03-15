@@ -44,9 +44,6 @@ static int cmd_reboot(int argc, char *argv[])
 }
 
 
-__attribute__((constructor)) static void cmd_rebootReg(void)
-{
-	const static cmd_t app_cmd = { .name = "reboot", .run = cmd_reboot, .info = cmd_rebootInfo };
-
-	cmd_reg(&app_cmd);
-}
+static const cmd_t reboot_cmd __attribute__((section("commands"), used)) = {
+	.name = "reboot", .run = cmd_reboot, .info = cmd_rebootInfo
+};

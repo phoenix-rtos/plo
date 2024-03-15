@@ -21,7 +21,6 @@
 
 
 #define SIZE_HIST 8
-#define SIZE_CMDS 28
 
 #define PROMPT "(plo)% "
 
@@ -29,8 +28,12 @@
 /* Linker symbol points to the beginning of .data section */
 extern char script[];
 
+/* Anchors for section which contains command entries */
+extern const cmd_t __cmd_start[];
+extern const cmd_t __cmd_end[];
+
+
 struct {
-	const cmd_t *cmds[SIZE_CMDS];
 	int ll;
 	int cl;
 	char lines[SIZE_HIST][SIZE_CMD_ARG_LINE];
@@ -78,33 +81,6 @@ static int cmd_parseArgLine(const char **lines, char *buf, size_t bufsz, char *a
 }
 
 
-void cmd_reg(const cmd_t *cmd)
-{
-	unsigned int i;
-
-	for (i = 0; i < SIZE_CMDS; ++i) {
-		if (cmd_common.cmds[i] == NULL) {
-			cmd_common.cmds[i] = cmd;
-			return;
-		}
-
-		if (hal_strcmp(cmd_common.cmds[i]->name, cmd->name) == 0) {
-			break;
-		}
-	}
-
-	/*
-	 * FIXME: Oops, the command is already registered or no free slots
-	 * in the command registration list. The `cmd_reg(..)` is handled in
-	 * commands constructor early before console is available, just halt
-	 * for now.
-	 */
-	for (;;) {
-		hal_cpuHalt();
-	}
-}
-
-
 int cmd_run(void)
 {
 	lib_printf("\ncmd: Executing pre-init script");
@@ -114,19 +90,19 @@ int cmd_run(void)
 
 const cmd_t *cmd_getCmd(unsigned int id)
 {
-	if (id >= SIZE_CMDS)
-		return NULL;
-
-	return cmd_common.cmds[id];
+	return ((size_t)id < (__cmd_end - __cmd_start)) ?
+		&__cmd_start[id] :
+		NULL;
 }
 
 
 int cmd_parse(const char *script)
 {
-	char *argv[SIZE_CMD_ARGV];
 	char argline[SIZE_CMD_ARG_LINE];
+	char *argv[SIZE_CMD_ARGV];
+	const cmd_t *cmd;
+	unsigned int found;
 	int ret, argc;
-	unsigned int found, i;
 
 	for (;;) {
 		argc = cmd_parseArgLine(&script, argline, SIZE_CMD_ARG_LINE, argv, SIZE_CMD_ARGV);
@@ -146,11 +122,11 @@ int cmd_parse(const char *script)
 
 		/* Find command and launch associated function */
 		found = 0;
-		for (i = 0; ((i < SIZE_CMDS) && (cmd_common.cmds[i] != NULL)); i++) {
-			if (hal_strcmp(argv[0], cmd_common.cmds[i]->name) == 0) {
+		for (cmd = __cmd_start; cmd < __cmd_end; ++cmd) {
+			if (hal_strcmp(argv[0], cmd->name) == 0) {
 				lib_getoptReset();
 
-				ret = cmd_common.cmds[i]->run(argc, argv);
+				ret = cmd->run(argc, argv);
 				if (ret != CMD_EXIT_SUCCESS) {
 					return (ret < 0) ? ret : -EINVAL;
 				}

@@ -250,8 +250,6 @@ static int cmd_memMain(int argc, char **argv)
 }
 
 
-__attribute__((constructor)) static void cmd_memReg(void)
-{
-	const static cmd_t app_cmd = { .name = "mem", .run = cmd_memMain, .info = cmd_memInfo };
-	cmd_reg(&app_cmd);
-}
+static const cmd_t mem_cmd __attribute__((section("commands"), used)) = {
+	.name = "mem", .run = cmd_memMain, .info = cmd_memInfo
+};

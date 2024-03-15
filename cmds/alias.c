@@ -120,8 +120,6 @@ static int cmd_alias(int argc, char *argv[])
 }
 
 
-__attribute__((constructor)) static void cmd_aliasReg(void)
-{
-	const static cmd_t alias_cmd = { .name = "alias", .run = cmd_alias, .info = cmd_aliasInfo };
-	cmd_reg(&alias_cmd);
-}
+static const cmd_t alias_cmd __attribute__((section("commands"), used)) = {
+	.name = "alias", .run = cmd_alias, .info = cmd_aliasInfo
+};

@@ -167,9 +167,7 @@ static int cmd_jffs2(int argc, char *argv[])
 	return CMD_EXIT_SUCCESS;
 }
 
-__attribute__((constructor)) static void cmd_jffs2Reg(void)
-{
-	static const cmd_t app_cmd = { .name = "jffs2", .run = cmd_jffs2, .info = cmd_jffs2Info };
 
-	cmd_reg(&app_cmd);
-}
+static const cmd_t jffs2_cmd __attribute__((section("commands"), used)) = {
+	.name = "jffs2", .run = cmd_jffs2, .info = cmd_jffs2Info
+};

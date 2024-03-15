@@ -60,8 +60,6 @@ static int cmd_echo(int argc, char *argv[])
 }
 
 
-__attribute__((constructor)) static void cmd_echoReg(void)
-{
-	const static cmd_t app_cmd = { .name = "echo", .run = cmd_echo, .info = cmd_echoInfo };
-	cmd_reg(&app_cmd);
-}
+static const cmd_t echo_cmd __attribute__((section("commands"), used)) = {
+	.name = "echo", .run = cmd_echo, .info = cmd_echoInfo
+};

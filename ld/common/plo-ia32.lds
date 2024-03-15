@@ -57,6 +57,15 @@ SECTIONS
 		*(.rodata .rodata.* .gnu.linkonce.r.*)
 		__rodata_end = .;
 	} > PLO_IMAGE
+
+	/* section dedicated for PLO commands */
+	.commands : ALIGN(4)
+	{
+		__cmd_start = .;
+		KEEP (*(SORT_BY_NAME(commands)))
+		__cmd_end = .;
+	} > PLO_IMAGE
+
 	.eh_frame_hdr : { *(.eh_frame_hdr) *(.eh_frame_entry .eh_frame_entry.*) } > PLO_IMAGE
 	.eh_frame : ONLY_IF_RO { KEEP (*(.eh_frame)) *(.eh_frame.*) } > PLO_IMAGE
 

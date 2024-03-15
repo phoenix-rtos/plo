@@ -160,9 +160,6 @@ static int cmd_copy(int argc, char *argv[])
 }
 
 
-__attribute__((constructor)) static void cmd_copyReg(void)
-{
-	const static cmd_t app_cmd = { .name = "copy", .run = cmd_copy, .info = cmd_copyInfo };
-
-	cmd_reg(&app_cmd);
-}
+static const cmd_t copy_cmd __attribute__((section("commands"), used)) = {
+	.name = "copy", .run = cmd_copy, .info = cmd_copyInfo
+};
