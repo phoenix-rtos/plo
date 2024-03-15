@@ -70,9 +70,6 @@ static int cmd_wait(int argc, char *argv[])
 }
 
 
-__attribute__((constructor)) static void cmd_waitReg(void)
-{
-	const static cmd_t app_cmd = { .name = "wait", .run = cmd_wait, .info = cmd_waitInfo };
-
-	cmd_reg(&app_cmd);
-}
+static cmd_t wait_cmd __attribute__((section("commands"), used)) = {
+	.name = "wait", .run = cmd_wait, .info = cmd_waitInfo
+};

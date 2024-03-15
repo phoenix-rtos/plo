@@ -144,9 +144,6 @@ static int cmd_kernelimg(int argc, char *argv[])
 }
 
 
-__attribute__((constructor)) static void cmd_kernelimgReg(void)
-{
-	const static cmd_t app_cmd = { .name = "kernelimg", .run = cmd_kernelimg, .info = cmd_kernelimgInfo };
-
-	cmd_reg(&app_cmd);
-}
+static const cmd_t kernelimg_cmd __attribute__((section("commands"), used)) = {
+	.name = "kernelimg", .run = cmd_kernelimg, .info = cmd_kernelimgInfo
+};

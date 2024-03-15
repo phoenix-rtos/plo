@@ -184,11 +184,6 @@ static int cmd_bootcm4(int argc, char *argv[])
 }
 
 
-__attribute__((constructor)) static void cmd_bootcm4Reg(void)
-{
-	const static cmd_t app_cmd = {
-		.name = "bootcm4", .run = cmd_bootcm4, .info = cmd_bootcm4Info
-	};
-
-	cmd_reg(&app_cmd);
-}
+static const cmd_t bootcm4_cmd __attribute__((section("commands"), used)) = {
+	.name = "bootcm4", .run = cmd_bootcm4, .info = cmd_bootcm4Info
+};

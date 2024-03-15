@@ -58,6 +58,14 @@ SECTIONS
 		__rodata_end = .;
 	} > PLO_IMAGE
 
+	/* section dedicated for PLO commands */
+	.commands : ALIGN(4)
+	{
+		__cmd_start = .;
+		KEEP (*(SORT_BY_NAME(commands)))
+		__cmd_end = .;
+	} > PLO_IMAGE
+
 	/* put .ARM.ex* the sections containing information for unwinding the stack */
 	.ARM.extab : {
 		PROVIDE_HIDDEN(__extab_start = .);

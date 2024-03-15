@@ -65,9 +65,6 @@ static int cmd_phfs(int argc, char *argv[])
 }
 
 
-__attribute__((constructor)) static void cmd_phfsReg(void)
-{
-	const static cmd_t app_cmd = { .name = "phfs", .run = cmd_phfs, .info = cmd_phfsInfo };
-
-	cmd_reg(&app_cmd);
-}
+static const cmd_t phfs_cmd __attribute__((section("commands"), used)) = {
+	.name = "phfs", .run = cmd_phfs, .info = cmd_phfsInfo
+};

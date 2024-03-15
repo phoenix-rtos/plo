@@ -46,9 +46,6 @@ static int cmd_go(int argc, char *argv[])
 }
 
 
-__attribute__((constructor)) static void cmd_goReg(void)
-{
-	const static cmd_t app_cmd = { .name = "go!", .run = cmd_go, .info = cmd_goInfo };
-
-	cmd_reg(&app_cmd);
-}
+static const cmd_t go_cmd __attribute__((section("commands"), used)) = {
+	.name = "go!", .run = cmd_go, .info = cmd_goInfo
+};

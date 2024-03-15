@@ -121,11 +121,6 @@ static int cmd_bootrom(int argc, char *argv[])
 }
 
 
-__attribute__((constructor)) static void cmd_bootromReg(void)
-{
-	const static cmd_t app_cmd = {
-		.name = "bootrom", .run = cmd_bootrom, .info = cmd_bootromInfo
-	};
-
-	cmd_reg(&app_cmd);
-}
+static const cmd_t bootrom_cmd __attribute__((section("commands"), used)) = {
+	.name = "bootrom", .run = cmd_bootrom, .info = cmd_bootromInfo
+};

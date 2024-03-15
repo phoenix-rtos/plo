@@ -81,9 +81,6 @@ static int cmd_erase(int argc, char *argv[])
 }
 
 
-__attribute__((constructor)) static void cmd_eraseReg(void)
-{
-	const static cmd_t app_cmd = { .name = "erase", .run = cmd_erase, .info = cmd_eraseInfo };
-
-	cmd_reg(&app_cmd);
-}
+static const cmd_t erase_cmd __attribute__((section("commands"), used)) = {
+	.name = "erase", .run = cmd_erase, .info = cmd_eraseInfo
+};

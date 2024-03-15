@@ -227,11 +227,6 @@ static int cmd_lspciMain(int argc, char *argv[])
 }
 
 
-__attribute__((constructor)) static void cmd_lspciReg(void)
-{
-	const static cmd_t app_cmd = {
-		.name = "lspci", .run = cmd_lspciMain, .info = cmd_lspciInfo
-	};
-
-	cmd_reg(&app_cmd);
-}
+static const cmd_t lspci_cmd __attribute__((section("commands"), used)) = {
+	.name = "lspci", .run = cmd_lspciMain, .info = cmd_lspciInfo
+};

@@ -65,9 +65,6 @@ static int cmd_map(int argc, char *argv[])
 }
 
 
-__attribute__((constructor)) static void cmd_mapReg(void)
-{
-	const static cmd_t app_cmd = { .name = "map", .run = cmd_map, .info = cmd_mapInfo };
-
-	cmd_reg(&app_cmd);
-}
+static const cmd_t map_cmd __attribute__((section("commands"), used)) = {
+	.name = "map", .run = cmd_map, .info = cmd_mapInfo
+};

@@ -50,9 +50,6 @@ static int cmd_bankswitch(int argc, char *argv[])
 }
 
 
-__attribute__((constructor)) static void cmd_appreg(void)
-{
-	const static cmd_t app_cmd = { .name = "bankswitch", .run = cmd_bankswitch, .info = cmd_bankswitchInfo };
-
-	cmd_reg(&app_cmd);
-}
+static const cmd_t bankswitch_cmd __attribute__((section("commands"), used)) = {
+	.name = "bankswitch", .run = cmd_bankswitch, .info = cmd_bankswitchInfo
+};

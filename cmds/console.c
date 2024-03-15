@@ -58,8 +58,6 @@ static int cmd_console(int argc, char *argv[])
 }
 
 
-__attribute__((constructor)) static void cmd_consoleReg(void)
-{
-	const static cmd_t app_cmd = { .name = "console", .run = cmd_console, .info = cmd_consoleInfo };
-	cmd_reg(&app_cmd);
-}
+static const cmd_t console_cmd __attribute__((section("commands"), used)) = {
+	.name = "console", .run = cmd_console, .info = cmd_consoleInfo
+};

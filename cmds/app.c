@@ -260,9 +260,6 @@ static int cmd_app(int argc, char *argv[])
 }
 
 
-__attribute__((constructor)) static void cmd_appReg(void)
-{
-	const static cmd_t app_cmd = { .name = "app", .run = cmd_app, .info = cmd_appInfo };
-
-	cmd_reg(&app_cmd);
-}
+static const cmd_t app_cmd __attribute__((section("commands"), used)) = {
+	.name = "app", .run = cmd_app, .info = cmd_appInfo
+};

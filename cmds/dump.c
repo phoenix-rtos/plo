@@ -160,9 +160,6 @@ static int cmd_dump(int argc, char *argv[])
 }
 
 
-__attribute__((constructor)) static void cmd_dumpReg(void)
-{
-	const static cmd_t app_cmd = { .name = "dump", .run = cmd_dump, .info = cmd_dumpInfo };
-
-	cmd_reg(&app_cmd);
-}
+static const cmd_t dump_cmd __attribute__((section("commands"), used)) = {
+	.name = "dump", .run = cmd_dump, .info = cmd_dumpInfo
+};
