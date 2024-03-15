@@ -18,8 +18,8 @@ CFLAGS:=$(filter-out -mfpu% , $(CFLAGS))
 
 CFLAGS += -DVADDR_KERNEL_INIT=$(VADDR_KERNEL_INIT)
 
-PLO_COMMANDS := alias app call console copy dump echo erase go help jffs2 kernel map mem phfs script \
-  test-dev test-ddr wait
+PLO_COMMANDS := alias app call console copy devices dump echo erase go help jffs2 kernel map mem phfs \
+  script test-dev test-ddr wait
 
 ifeq ($(PLO_NAND), y)
   include devices/nand-imx6ull/Makefile

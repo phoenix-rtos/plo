@@ -20,7 +20,6 @@
 #define SIZE_MAJOR 9
 #define SIZE_MINOR 16
 
-
 struct {
 	const dev_t *devs[SIZE_MAJOR][SIZE_MINOR];
 } devs_common;
@@ -61,6 +60,38 @@ void devs_init(void)
 		}
 	}
 }
+
+
+const dev_t *devs_iterNext(unsigned int *major, unsigned int *minor)
+{
+	unsigned int currMajor, currMinor;
+
+	if ((major == NULL) || (minor == NULL)) {
+		return NULL;
+	}
+
+	currMajor = *major;
+	currMinor = *minor;
+	while (currMajor < SIZE_MAJOR) {
+		while (currMinor < SIZE_MINOR) {
+			const dev_t *dev = devs_common.devs[currMajor][currMinor];
+
+			*major = currMajor;
+			*minor = currMinor + 1;
+			if (*minor >= SIZE_MINOR) {
+				*minor = 0;
+				*major = currMajor + 1;
+			}
+			return dev;
+		}
+		++currMajor;
+		currMinor = 0;
+	}
+
+	/* Iterator has finished enumerating */
+	return DEVS_ITER_STOP;
+}
+
 
 static const dev_t *devs_get(unsigned int major, unsigned int minor)
 {
