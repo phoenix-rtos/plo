@@ -21,7 +21,7 @@
 
 
 #define SIZE_HIST 8
-#define SIZE_CMDS 24
+#define SIZE_CMDS 28
 
 #define PROMPT "(plo)% "
 
@@ -83,15 +83,24 @@ void cmd_reg(const cmd_t *cmd)
 	unsigned int i;
 
 	for (i = 0; i < SIZE_CMDS; ++i) {
-		if (cmd_common.cmds[i] != NULL) {
-			if (hal_strcmp(cmd_common.cmds[i]->name, cmd->name) == 0)
-				return;
-
-			continue;
+		if (cmd_common.cmds[i] == NULL) {
+			cmd_common.cmds[i] = cmd;
+			return;
 		}
 
-		cmd_common.cmds[i] = cmd;
-		break;
+		if (hal_strcmp(cmd_common.cmds[i]->name, cmd->name) == 0) {
+			break;
+		}
+	}
+
+	/*
+	 * FIXME: Oops, the command is already registered or no free slots
+	 * in the command registration list. The `cmd_reg(..)` is handled in
+	 * commands constructor early before console is available, just halt
+	 * for now.
+	 */
+	for (;;) {
+		hal_cpuHalt();
 	}
 }
 
@@ -116,39 +125,42 @@ int cmd_parse(const char *script)
 {
 	char *argv[SIZE_CMD_ARGV];
 	char argline[SIZE_CMD_ARG_LINE];
-	int ret = -1, argc;
-	unsigned int i;
+	int ret, argc;
+	unsigned int found, i;
 
 	for (;;) {
 		argc = cmd_parseArgLine(&script, argline, SIZE_CMD_ARG_LINE, argv, SIZE_CMD_ARGV);
 
 		/* skip empty lines */
-		if (argc == 0)
+		if (argc == 0) {
 			continue;
+		}
 		/* either end of script or no script */
-		else if (argc == -1)
+		else if (argc == -1) {
 			return EOK;
+		}
 		/* error */
-		else if (argc < 0)
+		else if (argc < 0) {
 			return argc;
-
-		/* Find command and launch associated function */
-		for (i = 0; cmd_common.cmds[i] != NULL && i < SIZE_CMDS; i++) {
-			if (hal_strcmp(argv[0], cmd_common.cmds[i]->name) != 0)
-				continue;
-
-			lib_getoptReset();
-
-			ret = cmd_common.cmds[i]->run(argc, argv);
-			if (ret < 0) {
-				return ret;
-			}
-
-			break;
 		}
 
-		/* If previous loop exits with ret < 0, invalid cmd is provided */
-		if (ret < 0) {
+		/* Find command and launch associated function */
+		found = 0;
+		for (i = 0; ((i < SIZE_CMDS) && (cmd_common.cmds[i] != NULL)); i++) {
+			if (hal_strcmp(argv[0], cmd_common.cmds[i]->name) == 0) {
+				lib_getoptReset();
+
+				ret = cmd_common.cmds[i]->run(argc, argv);
+				if (ret != CMD_EXIT_SUCCESS) {
+					return (ret < 0) ? ret : -EINVAL;
+				}
+
+				found = 1;
+				break;
+			}
+		}
+
+		if (found == 0) {
 			log_error("\n'%s' - unknown command!", argv[0]);
 			return -EINVAL;
 		}
