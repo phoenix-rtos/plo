@@ -38,21 +38,25 @@ static int cmd_script(int argc, char *argv[])
 	if (argc == 1) {
 		lib_printf(CONSOLE_BOLD "\nPreinit script:");
 		lib_printf(CONSOLE_NORMAL "\n%s", (char *)script);
-		return EOK;
+		return CMD_EXIT_SUCCESS;
 	}
-	else if (argc != 4) {
+
+	if (argc != 4) {
 		log_error("\n%s: Wrong argument count", argv[0]);
-		return -EINVAL;
+		return CMD_EXIT_FAILURE;
 	}
 
-	if ((res = phfs_open(argv[1], argv[2], 0, &h)) < 0) {
-		log_error("\nCan't open %s, on %s", argv[2], argv[1]);
-		return res;
+	res = phfs_open(argv[1], argv[2], 0, &h);
+	if (res < 0) {
+		log_error("\nCan't open %s, on %s (%d)", argv[2], argv[1], res);
+		return CMD_EXIT_FAILURE;
 	}
 
-	if ((res = phfs_read(h, offs, buff, SIZE_MAGIC_NB)) < 0) {
-		log_error("\nCan't read %s from %s", argv[2], argv[1]);
-		return res;
+	res = phfs_read(h, offs, buff, SIZE_MAGIC_NB);
+	if (res < 0) {
+		log_error("\nCan't read %s from %s (%d)", argv[2], argv[1], res);
+		phfs_close(h);
+		return CMD_EXIT_FAILURE;
 	}
 	offs += res;
 	buff[res] = '\0';
@@ -60,22 +64,27 @@ static int cmd_script(int argc, char *argv[])
 	/* Check magic number */
 	if (hal_strcmp(buff, argv[3]) != 0) {
 		log_error("\nMagic number for %s is wrong.", argv[2]);
-		return -EINVAL;
+		phfs_close(h);
+		return CMD_EXIT_SUCCESS;
 	}
 
 	lib_printf(CONSOLE_BOLD "\nScript - %s:", argv[2]);
 	lib_printf(CONSOLE_NORMAL);
 	do {
-		if ((res = phfs_read(h, offs, buff, SIZE_CMD_ARG_LINE - 1)) < 0) {
-			log_error("\nCan't read %s from %s", argv[2], argv[1]);
-			return res;
+		res = phfs_read(h, offs, buff, SIZE_CMD_ARG_LINE - 1);
+		if (res < 0) {
+			log_error("\nCan't read %s from %s (%d)", argv[2], argv[1], res);
+			phfs_close(h);
+			return CMD_EXIT_FAILURE;
 		}
 		buff[res] = '\0';
 		lib_printf(buff);
 		offs += res;
 	} while (res > 0);
 
-	return EOK;
+	phfs_close(h);
+
+	return CMD_EXIT_SUCCESS;
 }
 
 

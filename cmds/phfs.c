@@ -33,34 +33,35 @@ static int cmd_phfs(int argc, char *argv[])
 
 	if (argc == 1) {
 		phfs_devsShow();
-		return EOK;
+		return CMD_EXIT_SUCCESS;
 	}
 	else if (argc < 3 || argc > 4) {
 		log_error("\n%s: Wrong argument count", argv[0]);
-		return -EINVAL;
+		return CMD_EXIT_FAILURE;
 	}
 
 	/* Get major/minor */
 	major = lib_strtoul(argv[2], &endptr, 0);
 	if (*endptr != '.') {
 		log_error("\n%s: Wrong major value for %s", argv[0], argv[1]);
-		return -EINVAL;
+		return CMD_EXIT_FAILURE;
 	}
 
 	minor = lib_strtoul(++endptr, &endptr, 0);
 	if (*endptr != '\0') {
 		log_error("\n%s: Wrong minor value for %s", argv[0], argv[1]);
-		return -EINVAL;
+		return CMD_EXIT_FAILURE;
 	}
 
-	if ((res = phfs_devReg(argv[1], major, minor, (argc == 3) ? NULL : argv[3])) < 0) {
-		log_error("\nCan't register %s in phfs", argv[0]);
-		return res;
+	res = phfs_devReg(argv[1], major, minor, (argc == 3) ? NULL : argv[3]);
+	if (res < 0) {
+		log_error("\nCan't register %s in phfs (%d)", argv[0], res);
+		return CMD_EXIT_FAILURE;
 	}
 
 	log_info("\nRegistering phfs %s", argv[1]);
 
-	return EOK;
+	return CMD_EXIT_SUCCESS;
 }
 
 

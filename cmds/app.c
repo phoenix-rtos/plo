@@ -182,11 +182,11 @@ static int cmd_app(int argc, char *argv[])
 	/* Parse command arguments */
 	if (argc == 1) {
 		syspage_progShow();
-		return EOK;
+		return CMD_EXIT_SUCCESS;
 	}
 	else if (argc < 5 || argc > 6) {
 		log_error("\n%s: Wrong argument count", argv[0]);
-		return -EINVAL;
+		return CMD_EXIT_FAILURE;
 	}
 
 	/* ARG_0: command name */
@@ -206,20 +206,21 @@ static int cmd_app(int argc, char *argv[])
 		}
 		else {
 			log_error("\n%s: Wrong arguments", argv[0]);
-			return -EINVAL;
+			return CMD_EXIT_FAILURE;
 		}
 	}
 
 	if (argvID != (argc - 3)) {
 		log_error("\n%s: Invalid arg, 'dmap' is not declared", argv[0]);
-		return -EINVAL;
+		return CMD_EXIT_FAILURE;
 	}
 
 	/* ARG_3: name + argv */
 	appArgv = argv[argvID];
 	for (pos = 0; appArgv[pos]; pos++) {
-		if (appArgv[pos] == ';')
+		if (appArgv[pos] == ';') {
 			break;
+		}
 	}
 	hal_memcpy(name, appArgv, pos);
 	name[pos] = '\0';
@@ -231,26 +232,31 @@ static int cmd_app(int argc, char *argv[])
 	dmaps = argv[++argvID];
 
 	/* Open file */
-	if ((res = phfs_open(argv[1], name, 0, &handler)) < 0) {
-		log_error("\nCan't open %s on %s", name, argv[1]);
-		return res;
+	res = phfs_open(argv[1], name, 0, &handler);
+	if (res < 0) {
+		log_error("\nCan't open %s on %s (%d)", name, argv[1], res);
+		return CMD_EXIT_FAILURE;
 	}
 
 	/* Get file's properties */
-	if ((res = phfs_stat(handler, &stat)) < 0) {
-		log_error("\nCan't get stat from %s", name);
-		return res;
+	res = phfs_stat(handler, &stat);
+	if (res < 0) {
+		log_error("\nCan't get stat from %s (%d)", name, res);
+		phfs_close(handler);
+		return CMD_EXIT_FAILURE;
 	}
 
-	if ((res = cmd_appLoad(handler, stat.size, name, imaps, dmaps, appArgv, flags)) < 0) {
-		log_error("\nCan't load %s to %s via %s", name, imaps, argv[1]);
-		return res;
+	res = cmd_appLoad(handler, stat.size, name, imaps, dmaps, appArgv, flags);
+	if (res < 0) {
+		log_error("\nCan't load %s to %s via %s (%d)", name, imaps, argv[1], res);
+		phfs_close(handler);
+		return CMD_EXIT_FAILURE;
 	}
 
 	log_info("\nLoaded %s", name);
 	phfs_close(handler);
 
-	return EOK;
+	return CMD_EXIT_SUCCESS;
 }
 
 

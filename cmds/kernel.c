@@ -58,27 +58,29 @@ static int cmd_kernel(int argc, char *argv[])
 	/* Parse arguments */
 	if ((argc == 1) || (argc > 3)) {
 		log_error("\n%s: Wrong argument count", argv[0]);
-		return -EINVAL;
+		return CMD_EXIT_FAILURE;
 	}
 
 	kname = (argc == 3) ? argv[2] : PATH_KERNEL;
 
 	res = phfs_open(argv[1], kname, 0, &handler);
 	if (res < 0) {
-		log_error("\nCannot open %s, on %s", kname, argv[1]);
-		return res;
+		log_error("\nCannot open %s, on %s (%d)", kname, argv[1], res);
+		return CMD_EXIT_FAILURE;
 	}
 
 	/* Read ELF header */
 	res = phfs_read(handler, elfOffs, &hdr, sizeof(ELF_EHDR));
 	if (res < 0) {
-		log_error("\nCan't read %s, on %s", kname, argv[1]);
-		return res;
+		log_error("\nCan't read %s, on %s (%d)", kname, argv[1], res);
+		phfs_close(handler);
+		return CMD_EXIT_FAILURE;
 	}
 
 	if ((hdr.e_ident[0] != 0x7f) || (hdr.e_ident[1] != 'E') || (hdr.e_ident[2] != 'L') || (hdr.e_ident[3] != 'F')) {
 		log_error("\n%s isn't an ELF object", kname);
-		return -EINVAL;
+		phfs_close(handler);
+		return CMD_EXIT_FAILURE;
 	}
 
 	/* Read program segments */
@@ -86,15 +88,17 @@ static int cmd_kernel(int argc, char *argv[])
 		elfOffs = hdr.e_phoff + i * sizeof(ELF_PHDR);
 		res = phfs_read(handler, elfOffs, &phdr, sizeof(ELF_PHDR));
 		if (res < 0) {
-			log_error("\nCan't read %s, on %s", kname, argv[1]);
-			return res;
+			log_error("\nCan't read %s, on %s (%d)", kname, argv[1], res);
+			phfs_close(handler);
+			return CMD_EXIT_FAILURE;
 		}
 
 		if (phdr.p_type == (ELF_WORD)PHT_LOAD) {
 			entry = syspage_entryAdd(NULL, hal_kernelGetAddress((addr_t)phdr.p_vaddr), phdr.p_memsz, phdr.p_align);
 			if (entry == NULL) {
 				log_error("\nCannot allocate memory for '%s'", kname);
-				return -ENOMEM;
+				phfs_close(handler);
+				return CMD_EXIT_FAILURE;
 			}
 
 			/* Save kernel's beginning address */
@@ -107,8 +111,9 @@ static int cmd_kernel(int argc, char *argv[])
 			for (segOffs = 0; segOffs < phdr.p_filesz; elfOffs += res, segOffs += res) {
 				res = phfs_read(handler, elfOffs, buff, min(sizeof(buff), phdr.p_filesz - segOffs));
 				if (res < 0) {
-					log_error("\nCan't read %s, on %s", kname, argv[1]);
-					return res;
+					log_error("\nCan't read %s, on %s (%d)", kname, argv[1], res);
+					phfs_close(handler);
+					return CMD_EXIT_FAILURE;
 				}
 
 				hal_memcpy((void *)(entry->start + segOffs), buff, res);
@@ -122,7 +127,7 @@ static int cmd_kernel(int argc, char *argv[])
 
 	log_info("\nLoaded %s", kname);
 
-	return EOK;
+	return CMD_EXIT_SUCCESS;
 }
 
 

@@ -31,7 +31,7 @@ static int cmd_go(int argc, char *argv[])
 {
 	if (argc != 1) {
 		log_error("\n%s: Command does not accept arguments", argv[0]);
-		return -EINVAL;
+		return CMD_EXIT_FAILURE;
 	}
 
 	log_info("\nRunning Phoenix-RTOS\n");
@@ -41,7 +41,8 @@ static int cmd_go(int argc, char *argv[])
 	hal_done();
 	hal_cpuJump();
 
-	return EOK;
+	/* Never reached */
+	return CMD_EXIT_FAILURE;
 }
 
 

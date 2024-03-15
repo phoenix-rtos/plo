@@ -99,19 +99,19 @@ static int cmd_mpu(int argc, char *argv[])
 	else if (argc == 2) {
 		if (hal_strcmp(argv[1], "all") != 0) {
 			log_error("\n%s: Wrong arguments", argv[0]);
-			return -EINVAL;
+			return CMD_EXIT_FAILURE;
 		}
 
 		regCnt = mpu_common->regMax;
 	}
 	else {
 		log_error("\n%s: Wrong argument count", argv[0]);
-		return -EINVAL;
+		return CMD_EXIT_FAILURE;
 	}
 
 	if (mpu_common->regMax != sizeof(((hal_syspage_t *)0)->mpu.table) / sizeof(((hal_syspage_t *)0)->mpu.table[0])) {
 		log_error("\n%s: MPU hal is not initialized or unsupported type was detected", argv[0]);
-		return -EFAULT;
+		return CMD_EXIT_FAILURE;
 	}
 
 	lib_printf(CONSOLE_BOLD "\n%-9s %-7s %-4s %-11s %-11s %-3s %-3s %-9s %-4s %-2s %-2s %-2s\n" CONSOLE_NORMAL,
@@ -119,8 +119,11 @@ static int cmd_mpu(int argc, char *argv[])
 
 	for (i = 0; i < regCnt; i++) {
 		region = &mpu_common->region[i];
-		if ((name = syspage_mapName(mpu_common->mapId[i])) == NULL)
+		name = syspage_mapName(mpu_common->mapId[i]);
+
+		if (name == NULL) {
 			name = "<none>";
+		}
 
 		mpu_regionPrint(name, region->rbar, region->rasr);
 	}
@@ -128,7 +131,7 @@ static int cmd_mpu(int argc, char *argv[])
 	lib_printf("\nConfigured %d of %d MPU regions based on %d map definitions.\n",
 		mpu_common->regCnt, mpu_common->regMax, mpu_common->mapCnt);
 
-	return EOK;
+	return CMD_EXIT_SUCCESS;
 }
 
 

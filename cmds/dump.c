@@ -99,7 +99,7 @@ static int cmd_dump(int argc, char *argv[])
 	while ((argn < argc) && (argv[argn][0] == '-')) {
 		if ((argv[argn][1] == '\0') || (argv[argn][2] != '\0')) {
 			log_error("\n%s: Wrong arguments", argv[0]);
-			return -EINVAL;
+			return CMD_EXIT_FAILURE;
 		}
 
 		switch (argv[argn][1]) {
@@ -119,7 +119,7 @@ static int cmd_dump(int argc, char *argv[])
 
 			default:
 				log_error("\n%s: Wrong arguments", argv[0]);
-				return -EINVAL;
+				return CMD_EXIT_FAILURE;
 		}
 
 		argn++;
@@ -127,13 +127,13 @@ static int cmd_dump(int argc, char *argv[])
 
 	if (argn >= argc) {
 		log_error("\n%s: Wrong arguments", argv[0]);
-		return -EINVAL;
+		return CMD_EXIT_FAILURE;
 	}
 
 	start = lib_strtoul(argv[argn], &endptr, 0);
 	if (*endptr != '\0') {
 		log_error("\n%s: Wrong arguments", argv[0]);
-		return -EINVAL;
+		return CMD_EXIT_FAILURE;
 	}
 
 	argn++;
@@ -141,7 +141,7 @@ static int cmd_dump(int argc, char *argv[])
 		length = lib_strtoul(argv[argn], &endptr, 0);
 		if ((*endptr != '\0') || (length == 0u)) {
 			log_error("\n%s: Wrong arguments", argv[0]);
-			return -EINVAL;
+			return CMD_EXIT_FAILURE;
 		}
 	}
 
@@ -156,7 +156,7 @@ static int cmd_dump(int argc, char *argv[])
 		dump_phfs(devname, start, length);
 	}
 
-	return EOK;
+	return CMD_EXIT_SUCCESS;
 }
 
 

@@ -30,7 +30,7 @@ static int cmd_reboot(int argc, char *argv[])
 {
 	if (argc != 1) {
 		log_error("\n%s: Command does not accept arguments", argv[0]);
-		return -EINVAL;
+		return CMD_EXIT_FAILURE;
 	}
 
 	log_info("\nRebooting\n");
@@ -38,7 +38,9 @@ static int cmd_reboot(int argc, char *argv[])
 	hal_done();
 	hal_interruptsDisableAll();
 	hal_cpuReboot();
-	return EOK;
+
+	/* Never reached */
+	return CMD_EXIT_FAILURE;
 }
 
 

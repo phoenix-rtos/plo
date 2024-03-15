@@ -38,45 +38,46 @@ static int cmd_erase(int argc, char *argv[])
 
 	if (argc != 2 && argc != 4) {
 		log_error("\n%s: Wrong argument count", argv[0]);
-		return -EINVAL;
+		return CMD_EXIT_FAILURE;
 	}
 
 	if (argc != 2) {
 		offs = lib_strtoul(argv[2], &endptr, 0);
 		if (argv[2] == endptr) {
 			log_error("\n%s: Wrong arguments", argv[0]);
-			return -EINVAL;
+			return CMD_EXIT_FAILURE;
 		}
 		len = lib_strtoul(argv[3], &endptr, 0);
 		if (argv[3] == endptr) {
 			log_error("\n%s: Wrong arguments", argv[0]);
-			return -EINVAL;
+			return CMD_EXIT_FAILURE;
 		}
 	}
 
 	res = phfs_open(argv[1], NULL, PHFS_OPEN_RAWONLY, &h);
 	if (res < 0) {
 		lib_printf("\n%s: Invalid phfs name provided: %s\n", argv[0], argv[1]);
-		return res;
+		return CMD_EXIT_FAILURE;
 	}
 
 	res = lib_promptConfirm("\nWARNING!\nSerious risk of data loss, type %s to proceed.\n", "YES!", 10 * 1000);
 	if (res != 1) {
 		lib_printf("Aborted.\n");
-		return EOK;
+		return CMD_EXIT_SUCCESS;
 	}
 
 	res = phfs_erase(h, offs, len, 0);
 	if (res < 0) {
 		lib_printf("\n%s: Error %zd", argv[0], res);
-		return res;
+		(void)phfs_close(h);
+		return CMD_EXIT_FAILURE;
 	}
 
 	(void)phfs_close(h);
 
 	lib_printf("\nErased %zd bytes from %s phfs device.\n", res, argv[1]);
 
-	return EOK;
+	return CMD_EXIT_SUCCESS;
 }
 
 
