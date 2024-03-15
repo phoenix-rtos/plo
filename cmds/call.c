@@ -45,15 +45,17 @@ static int cmd_call(int argc, char *argv[])
 
 	/* ARG_0: device name - argv[1]
 	 * ARG_1: script name - argv[2] */
-	if ((res = phfs_open(argv[1], argv[2], 0, &h)) < 0) {
+	res = phfs_open(argv[1], argv[2], 0, &h);
+	if (res < 0) {
 		log_error("\nCan't open %s, on %s", argv[2], argv[1]);
 		return res;
 	}
 
 	/* ARG_2: magic number*/
-	if ((len = phfs_read(h, offs, buff, SIZE_MAGIC_NB)) < 0) {
+	len = phfs_read(h, offs, buff, SIZE_MAGIC_NB);
+	if (len != SIZE_MAGIC_NB) {
 		log_error("\nCan't read %s from %s", argv[2], argv[1]);
-		return len;
+		return (len < 0) ? len : -EIO;
 	}
 	offs += len;
 	buff[len] = '\0';
@@ -61,26 +63,35 @@ static int cmd_call(int argc, char *argv[])
 	/* Check magic number, don't return error, as there might be a next script */
 	if (hal_strcmp(buff, argv[3]) != 0) {
 		log_error("\nMagic number for %s is wrong.", argv[2]);
-		return EOK;
+		return CMD_EXIT_SUCCESS;
 	}
 
 	/* Execute script */
 	i = 0;
 	lib_printf(CONSOLE_NORMAL);
 	do {
-		if ((len = phfs_read(h, offs, &c, 1)) < 0) {
+		len = phfs_read(h, offs, &c, 1);
+		if (len < 0) {
 			log_error("\nCan't read %s from %s", argv[2], argv[1]);
 			return len;
 		}
 
 		offs += len;
-		if (len == 0 || c == '\n' || i == (sizeof(buff) - 1)) {
+		if ((len == 0) || (c == '\n')) {
 			buff[i] = '\0';
-			if ((res = cmd_parse(buff)) < 0)
-				return res;
+			res = cmd_parse(buff);
+			if (res != CMD_EXIT_SUCCESS) {
+				return (res < 0) ? res : -EINVAL;
+			}
 			i = 0;
 			continue;
 		}
+
+		if (i == (sizeof(buff) - 1)) {
+			log_error("\nLine in %s exceeds buffer size", argv[2]);
+			return -ENOMEM;
+		}
+
 		buff[i++] = c;
 	} while (len > 0);
 
