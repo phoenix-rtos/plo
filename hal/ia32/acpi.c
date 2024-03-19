@@ -89,13 +89,23 @@ static void _hal_acpiHpetHandler(hal_syspage_t *hs, sdt_header_t *header)
 }
 
 
+static void _hal_acpiMcfgHandler(hal_syspage_t *hs, sdt_header_t *header)
+{
+	if (_hal_checksumVerify(header, header->length) != 0) {
+		hs->mcfg = (unsigned long)header; /* FIXME - should be addr_t */
+		hs->mcfgLength = header->length;
+	}
+}
+
+
 static const struct {
 	const char magic[4];
 	void (*handler)(hal_syspage_t *hs, sdt_header_t *);
 } acpi_knownTables[] = {
 	{ .magic = "APIC", .handler = _hal_acpiMadtHandler },
 	{ .magic = "FACP", .handler = _hal_acpiFadtHandler },
-	{ .magic = "HPET", .handler = _hal_acpiHpetHandler }
+	{ .magic = "HPET", .handler = _hal_acpiHpetHandler },
+	{ .magic = "MCFG", .handler = _hal_acpiMcfgHandler }
 };
 
 
@@ -171,6 +181,8 @@ void hal_acpiInit(hal_syspage_t *hs)
 	hs->fadtLength = 0;
 	hs->hpet = 0;
 	hs->hpetLength = 0;
+	hs->mcfg = 0;
+	hs->mcfgLength = 0;
 
 	rsdp_t *rsdp = _hal_acpiFindRsdp(hs);
 	if (rsdp != NULL) {
