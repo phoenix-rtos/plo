@@ -13,6 +13,7 @@
  * %LICENSE%
  */
 
+#include <board_config.h>
 #include <hal/hal.h>
 #include "otp.h"
 
