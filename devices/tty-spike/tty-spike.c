@@ -125,14 +125,19 @@ static int uart_init(unsigned int minor)
 
 __attribute__((constructor)) static void uart_reg(void)
 {
-	static const dev_handler_t h = {
-		.init = uart_init,
-		.done = uart_done,
+	static const dev_ops_t opsSpikeTTY = {
 		.read = uart_read,
 		.write = uart_safeWrite,
 		.sync = uart_sync,
 		.map = uart_map,
 	};
 
-	devs_register(DEV_UART, UART_MAX_CNT, &h);
+	static const dev_t devSpikeTTY = {
+		.name = "tty-spike",
+		.init = uart_init,
+		.done = uart_done,
+		.ops = &opsSpikeTTY,
+	};
+
+	devs_register(DEV_UART, UART_MAX_CNT, &devSpikeTTY);
 }

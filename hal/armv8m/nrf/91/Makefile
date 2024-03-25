@@ -12,8 +12,8 @@ LDFLAGS := $(filter-out -Tdata% , $(LDFLAGS))
 CFLAGS := $(filter-out -mfloat-abi% , $(CFLAGS))
 CFLAGS += -mfloat-abi=soft
 
-PLO_COMMANDS := alias app call console copy dump echo go help kernel kernelimg map mem phfs \
-  reboot script wait
+PLO_COMMANDS := alias app call console copy devices dump echo go help kernel kernelimg map \
+  mem phfs reboot script wait
 
 include devices/uart-nrf9160/Makefile
 include devices/flash-nrf9160/Makefile

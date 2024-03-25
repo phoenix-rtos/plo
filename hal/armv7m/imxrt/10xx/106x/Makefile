@@ -12,8 +12,8 @@ LDFLAGS:=$(filter-out -Tdata% , $(LDFLAGS))
 CFLAGS:=$(filter-out -mfloat-abi% , $(CFLAGS))
 CFLAGS+= -mfloat-abi=soft
 
-PLO_COMMANDS := alias app bootrom call console copy dump echo erase go help kernel kernelimg map \
-  mem mpu otp phfs reboot script wait
+PLO_COMMANDS := alias app bootrom call console copy devices dump echo erase go help kernel \
+  kernelimg map mem mpu otp phfs reboot script wait
 
 include devices/pipe-rtt/Makefile
 include devices/usbc-cdc/Makefile

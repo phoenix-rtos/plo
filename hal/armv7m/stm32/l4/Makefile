@@ -12,8 +12,8 @@ LDFLAGS := $(filter-out -Tdata% , $(LDFLAGS))
 CFLAGS := $(filter-out -mfloat-abi% , $(CFLAGS))
 CFLAGS += -mfloat-abi=soft
 
-PLO_COMMANDS := alias app bankswitch call console copy dump echo go help kernelimg map mem mpu \
-  phfs reboot script wait
+PLO_COMMANDS := alias app bankswitch call console copy devices dump echo go help kernelimg map \
+  mem mpu phfs reboot script wait
 
 #include devices/pipe-rtt/Makefile
 include devices/uart-stm32l4x6/Makefile

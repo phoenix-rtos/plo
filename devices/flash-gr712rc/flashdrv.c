@@ -327,17 +327,22 @@ static int flashdrv_init(unsigned int minor)
 
 __attribute__((constructor)) static void flashdrv_reg(void)
 {
-	static const dev_handler_t h = {
-		.init = flashdrv_init,
-		.done = flashdrv_done,
+	static const dev_ops_t opsFlashGR712RC = {
 		.read = flashdrv_read,
 		.write = flashdrv_write,
 		.erase = flashdrv_erase,
 		.sync = flashdrv_sync,
-		.map = flashdrv_map
+		.map = flashdrv_map,
 	};
+
+	static const dev_t devFlashGR712RC = {
+		.name = "flash-gr712rc",
+		.init = flashdrv_init,
+		.done = flashdrv_done,
+		.ops = &opsFlashGR712RC,
+	}
 
 	hal_memset(&fdrv_common, 0, sizeof(fdrv_common));
 
-	devs_register(DEV_STORAGE, FLASH_NO, &h);
+	devs_register(DEV_STORAGE, FLASH_NO, &devFlashGR712RC);
 }
