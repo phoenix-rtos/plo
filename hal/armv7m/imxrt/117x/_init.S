@@ -183,17 +183,21 @@ _init_vectors:
 .type _start, %function
 _start:
 	cpsid if
-#if 0 /* No need to reconfigure FlexRAM, this is default anyway */
+
 	/* Configure FLEX RAM */
 	ldr r0, =IOMUXC_GPR
+	mov r2, #0xffff
 
-	/* Low */
-	ldr r1, =0xaaaa
+	/* LOW (default 0xaaaa) */
+	ldr r1, =FLEXRAM_CONFIG
+	and r1, r1, r2
 	str r1, [r0, #0x44]
 	dmb
 
-	/* HIGH */
-	ldr r1, =0xffff
+	/* HIGH (default 0xffff) */
+	ldr r1, =FLEXRAM_CONFIG
+	lsr r1, r1, #16
+	and r1, r1, r2
 	str r1, [r0, #0x48]
 	dmb
 
@@ -202,7 +206,7 @@ _start:
 	orr r1, #(1 << 2)
 	str r1, [r0, #0x40]
 	dmb
-#endif
+
 	/* Init vector table and stack pointer */
 	ldr r0, =0xe000ed08
 	ldr r1, =_init_vectors
