@@ -12,11 +12,7 @@ GCCLIB := $(shell $(CC) $(CFLAGS) -print-libgcc-file-name)
 
 PLO_COMMANDS ?= alias app call console copy dump echo go help kernel map mem phfs reboot script wait
 
-include devices/ram-storage/Makefile
-ifeq ($(TARGET_PROJECT),spike)
-  include devices/tty-spike/Makefile
-else
-  include devices/uart-16550/Makefile
-endif
+# tty-spike and uart-16550 registers under same major
+PLO_ALLDEVICES := ram-storage tty-spike uart-16550
 
 OBJS += $(addprefix $(PREFIX_O)hal/$(TARGET_SUFF)/$(TARGET_SUBFAMILY)/, hal.o)
