@@ -39,6 +39,7 @@ static struct {
 } interrupts_common;
 
 
+
 void hal_interruptsEnable(unsigned int irqn)
 {
 	if ((irqn & CLINT_IRQ_FLG) != 0) {
@@ -57,7 +58,7 @@ void hal_interruptsDisable(unsigned int irqn)
 		csr_clear(sie, 1u << (irqn & ~CLINT_IRQ_FLG));
 	}
 	else {
-		plic_disableInterrupt(1, irqn);
+		plic_disableInterrupt(PLIC_CONTEXT_S(hal_cpuGetHartId()), irqn);
 	}
 }
 
@@ -76,7 +77,7 @@ void hal_interruptsDisableAll(void)
 
 static void interrupts_dispatchPlic(void)
 {
-	unsigned int irq = plic_claim(1);
+	unsigned int irq = plic_claim(PLIC_CONTEXT_S(hal_cpuGetHartId()));
 
 	if (irq == 0) {
 		return;
@@ -86,7 +87,7 @@ static void interrupts_dispatchPlic(void)
 		interrupts_common.plicHandlers[irq].isr(irq, interrupts_common.plicHandlers[irq].data);
 	}
 
-	plic_complete(1, irq);
+	plic_complete(PLIC_CONTEXT_S(hal_cpuGetHartId()), irq);
 }
 
 
@@ -119,11 +120,11 @@ static int interrupts_setPlic(unsigned int n, int (*isr)(unsigned int, void *), 
 	interrupts_common.plicHandlers[n].isr = isr;
 
 	if (isr == NULL) {
-		plic_disableInterrupt(1, n);
+		plic_disableInterrupt(PLIC_CONTEXT_S(hal_cpuGetHartId()), n);
 	}
 	else {
 		plic_priority(n, 2);
-		plic_enableInterrupt(1, n);
+		plic_enableInterrupt(PLIC_CONTEXT_S(hal_cpuGetHartId()), n);
 	}
 
 	return 0;

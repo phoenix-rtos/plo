@@ -14,6 +14,7 @@
  */
 
 #include "plic.h"
+#include "cpu.h"
 
 #include <board_config.h>
 
@@ -115,8 +116,8 @@ void _plic_init(void)
 	/* Disable and mask external interrupts, irq 0 is unused */
 	for (i = 1; i < PLIC_IRQ_SIZE; i++) {
 		plic_priority(i, 0);
-		plic_disableInterrupt(1, i);
+		plic_disableInterrupt(PLIC_CONTEXT_S(hal_cpuGetHartId()), i);
 	}
 
-	plic_tresholdSet(1, 1);
+	plic_tresholdSet(PLIC_CONTEXT_S(hal_cpuGetHartId()), 1);
 }

@@ -22,6 +22,7 @@ static struct {
 } hal_common;
 
 extern void *dtbAddr;
+extern unsigned long boothartId;
 
 
 /* Linker symbols */
@@ -60,6 +61,7 @@ void hal_done(void)
 
 void hal_syspageSet(hal_syspage_t *hs)
 {
+	hs->boothartId = boothartId;
 	hal_common.hs = hs;
 }
 
@@ -177,8 +179,9 @@ int hal_cpuJump(void)
 	hal_interruptsDisableAll();
 
 	__asm__ volatile(
-		"mv a1, %0\n\t"
-		"mv a0, %1\n\t"
+		"mv a0, tp\n\t"
+		"mv a2, %0\n\t"
+		"mv a1, %1\n\t"
 		"jr %2\n\t"
 		:
 		: "r"(dtbAddr), "r"(hal_common.hs), "r"(hal_common.entry)

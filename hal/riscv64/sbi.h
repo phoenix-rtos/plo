@@ -59,6 +59,15 @@ void sbi_setTimer(u64 stime);
 __attribute__((noreturn)) void sbi_reset(u32 type, u32 reason);
 
 
+sbiret_t sbi_sendIPI(unsigned long hart_mask, unsigned long hart_mask_base);
+
+
+sbiret_t sbi_hartGetStatus(unsigned long hartid);
+
+
+sbiret_t sbi_hartStart(unsigned long hartid, unsigned long start_addr, unsigned long opaque);
+
+
 void sbi_init(void);
 
 

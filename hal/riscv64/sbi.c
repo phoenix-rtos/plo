@@ -34,6 +34,17 @@
 #define SBI_EXT_SRST   0x53525354
 #define SBI_SRST_RESET 0x0
 
+/* IPI extension */
+#define SBI_EXT_IPI  0x735049
+#define SBI_IPI_SEND 0x0
+
+/* HSM extension */
+#define SBI_EXT_HSM     0x48534D
+#define SBI_HSM_START   0x0
+#define SBI_HSM_STOP    0x1
+#define SBI_HSM_STATUS  0x2
+#define SBI_HSM_SUSPEND 0x3
+
 /* Legacy extensions */
 #define SBI_LEGACY_SETTIMER               0x0
 #define SBI_LEGACY_PUTCHAR                0x1
@@ -138,6 +149,23 @@ __attribute__((noreturn)) void sbi_reset(u32 type, u32 reason)
 	/* Reset not available/failed, halt the system */
 	for (;;) {
 	}
+}
+
+
+sbiret_t sbi_sendIPI(unsigned long hart_mask, unsigned long hart_mask_base)
+{
+	return sbi_ecall(SBI_EXT_IPI, SBI_IPI_SEND, hart_mask, hart_mask_base, 0, 0, 0, 0);
+}
+
+
+sbiret_t sbi_hartGetStatus(unsigned long hartid)
+{
+	return sbi_ecall(SBI_EXT_HSM, SBI_HSM_STATUS, hartid, 0, 0, 0, 0, 0);
+}
+
+sbiret_t sbi_hartStart(unsigned long hartid, unsigned long start_addr, unsigned long opaque)
+{
+	return sbi_ecall(SBI_EXT_HSM, SBI_HSM_START, hartid, start_addr, opaque, 0, 0, 0);
 }
 
 
