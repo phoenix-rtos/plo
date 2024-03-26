@@ -20,7 +20,7 @@ CFLAGS += -I.
 CPPFLAGS += -DVERSION=\"$(VERSION)\"
 
 OBJS :=
-# hal Makefile should be included first as it add cmds and devices definitions
+# hal Makefile needs to be included first as it adds cmds and devices definitions
 include hal/$(TARGET_SUFF)/Makefile
 include lib/Makefile
 include devices/Makefile

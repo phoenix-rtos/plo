@@ -16,10 +16,6 @@ CFLAGS += -DVADDR_KERNEL_INIT=$(VADDR_KERNEL_INIT)
 
 PLO_COMMANDS ?= alias app call console copy dump echo go help kernel map mem phfs reboot script wait
 
-include devices/gpio-gr716/Makefile
-include devices/uart-grlib/Makefile
-ifeq ($(TARGET_PROJECT), mini)
-  include devices/flash-gr716/Makefile
-endif
+PLO_ALLDEVICES := gpio-gr716 uart-grlib flash-gr716
 
 OBJS += $(addprefix $(PREFIX_O)hal/$(TARGET_SUFF)/gaisler/$(TARGET_SUBFAMILY)/, _init.o hal.o gr716.o)

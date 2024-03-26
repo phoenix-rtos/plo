@@ -21,17 +21,33 @@ CFLAGS += -DVADDR_KERNEL_INIT=$(VADDR_KERNEL_INIT)
 PLO_COMMANDS ?= alias app call console copy dump echo erase go help jffs2 kernel map mem phfs script \
   test-dev test-ddr wait
 
-ifeq ($(PLO_NAND), y)
-  include devices/nand-imx6ull/Makefile
+PLO_ALLDEVICES := nand-imx6ull flash-imx6ull uart-imx6ull usbc-cdc
+
+ifdef PLO_NAND
+  $(warning Usage of PLO_NAND is deprecated, devices should be passed explicitly)
+  PLO_DEVCFG_DEPRECATED = y
 endif
-ifeq ($(PLO_NOR), y)
-  include devices/flash-imx6ull/Makefile
+
+ifdef PLO_NOR
+  $(warning Usage of PLO_NOR is deprecated, devices should be passed explicitly)
+  PLO_DEVCFG_DEPRECATED = y
 endif
+
+ifdef PLO_DEVCFG_DEPRECATED
+  PLO_ALLDEVICES := $(filter-out nand-imx6ull flash-imx6ull, $(PLO_ALLDEVICES))
+  ifeq ($(PLO_NAND), y)
+    PLO_ALLDEVICES += nand-imx6ull
+  endif
+
+  ifeq ($(PLO_NOR), y)
+    PLO_ALLDEVICES += flash-imx6ull
+  endif
+endif
+
+
 ifeq ($(PLO_NOR_BOOT), y)
   CFLAGS += -DPLO_NOR_BOOT
 endif
-include devices/uart-imx6ull/Makefile
-include devices/usbc-cdc/Makefile
 
 OBJS += $(addprefix $(PREFIX_O)hal/$(TARGET_SUFF)/$(TARGET_SUBFAMILY)/, _init.o imx6ull.o hal.o timer.o \
   interrupts.o console.o)
