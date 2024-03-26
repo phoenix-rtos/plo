@@ -14,7 +14,7 @@ CFLAGS := $(filter-out -mfpu% , $(CFLAGS))
 
 CFLAGS += -DVADDR_KERNEL_INIT=$(VADDR_KERNEL_INIT)
 
-PLO_COMMANDS := alias app bitstream call console copy dump echo erase go help jffs2 kernel map mem \
+PLO_COMMANDS ?= alias app bitstream call console copy dump echo erase go help jffs2 kernel map mem \
   phfs reboot script test-ddr test-dev wait
 
 include devices/gpio-zynq7000/Makefile
