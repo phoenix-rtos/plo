@@ -4,9 +4,9 @@
  * Operating system loader
  *
  * i.MX RT nor flash device driver
- * Macronix Specific
+ * Macronix & ISSI Specific
  *
- * Copyright 2021-2023 Phoenix Systems
+ * Copyright 2021-2024 Phoenix Systems
  * Author: Gerard Swiderski
  *
  * This file is part of Phoenix-RTOS.
@@ -24,14 +24,15 @@
 #include "nor.h"
 
 
+/* Generic Quad Enable for Macronix and ISSI chips */
 int nor_mxQuadEnable(struct nor_device *dev)
 {
 	int res;
 	struct xferOp xfer;
-	u32 quadEnable = 0x40;
+	u32 quadEnable = 0x40u;
 	const time_t timeout = 1000;
 
-	if (!dev->active) {
+	if (dev->active == 0) {
 		return -ENODEV;
 	}
 
@@ -59,12 +60,12 @@ int nor_mxQuadEnable(struct nor_device *dev)
 		return res;
 	}
 
-	if (quadEnable & (1 << 6)) {
+	if ((quadEnable & (1uL << 6u)) != 0uL) {
 		/* Already enabled */
 		return EOK;
 	}
 
-	quadEnable |= (1 << 6);
+	quadEnable |= (1uL << 6u);
 
 	res = nor_writeEnable(&dev->fspi, dev->port, 1, timeout);
 	if (res < EOK) {
