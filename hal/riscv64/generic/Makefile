@@ -10,13 +10,14 @@ CFLAGS += -DVADDR_KERNEL_INIT=$(VADDR_KERNEL_INIT)
 
 GCCLIB := $(shell $(CC) $(CFLAGS) -print-libgcc-file-name)
 
-PLO_COMMANDS = alias app call console copy dump echo go help kernel map mem phfs reboot script wait
+PLO_COMMANDS ?= alias app call console copy dump echo go help kernel map mem phfs reboot script wait
 
-include devices/ram-storage/Makefile
+# TODO: Consider how conflicting devices should be handled
+PLO_ALLDEVICES := ram-storage
 ifeq ($(TARGET_PROJECT),spike)
-  include devices/tty-spike/Makefile
+  PLO_ALLDEVICES += tty-spike
 else
-  include devices/uart-16550/Makefile
+  PLO_ALLDEVICES += uart-16550
 endif
 
 OBJS += $(addprefix $(PREFIX_O)hal/$(TARGET_SUFF)/$(TARGET_SUBFAMILY)/, hal.o)
