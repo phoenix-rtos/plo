@@ -21,10 +21,6 @@
 
 .section .init, "ax"
 
-.globl dtbAddr
-dtbAddr:
-	.dword
-
 .globl _start
 .type _start, @function
 _start:
@@ -32,6 +28,10 @@ _start:
 	sd a1, (t0)
 	/* Mask all interrupts */
 	csrw sie, zero
+
+	mv tp, a0
+	la t0, boothartId
+	sw tp, (t0)
 
 .option push
 .option norelax
@@ -45,3 +45,13 @@ _start:
 	la sp, _stack
 	j _startc
 .size _start, . - _start
+
+.align 8
+.globl dtbAddr
+dtbAddr:
+	.dword 0
+
+.align 4
+.globl boothartId
+boothartId:
+	.word 0

@@ -98,6 +98,16 @@ static inline void hal_cpuReboot(void)
 }
 
 
+static inline unsigned long hal_cpuGetHartId(void)
+{
+	unsigned long id;
+	/* clang-format off */
+	__asm__ volatile ("mv %0, tp" : "=r"(id));
+	/* clang-format on */
+	return id;
+}
+
+
 #endif /* __ASSEMBLY__ */
 
 
