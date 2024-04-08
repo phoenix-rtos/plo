@@ -102,7 +102,7 @@ static int cmd_kernel(int argc, char *argv[])
 			}
 
 			/* Save kernel's beginning address */
-			if (phdr.p_flags == (ELF_WORD)(PHF_R | PHF_X)) {
+			if ((phdr.p_flags & (ELF_WORD)PHF_X) != 0) {
 				kernelPAddr = entry->start;
 			}
 
