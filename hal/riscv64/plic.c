@@ -14,6 +14,7 @@
  */
 
 #include "plic.h"
+#include "cpu.h"
 
 #include <board_config.h>
 
@@ -21,7 +22,7 @@
 /* clang-format off */
 
 /* PLIC register offsets */
-#define PLIC_PRIORITY(irqn)            (0x0000 + (n) * 4)
+#define PLIC_PRIORITY(irqn)            (0x0000 + (irqn) * 4)
 #define PLIC_REG_PENDING(irqn)         (0x1000 + ((irqn) / 32) * 4)
 #define PLIC_REG_ENABLE(context, irqn) (0x2000 + (context) * 0x80 + ((irqn) / 32) * 4)
 #define PLIC_REG_THRESHOLD(context)    (0x200000 + (context) * 0x1000)
@@ -115,8 +116,8 @@ void _plic_init(void)
 	/* Disable and mask external interrupts, irq 0 is unused */
 	for (i = 1; i < PLIC_IRQ_SIZE; i++) {
 		plic_priority(i, 0);
-		plic_disableInterrupt(1, i);
+		plic_disableInterrupt(PLIC_SCONTEXT(hal_cpuGetHartId()), i);
 	}
 
-	plic_tresholdSet(1, 1);
+	plic_tresholdSet(PLIC_SCONTEXT(hal_cpuGetHartId()), 1);
 }

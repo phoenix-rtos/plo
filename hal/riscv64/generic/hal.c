@@ -22,6 +22,7 @@ static struct {
 } hal_common;
 
 extern void *dtbAddr;
+extern unsigned int boothartId;
 
 
 /* Linker symbols */
@@ -36,8 +37,6 @@ extern char __bss_start[], __bss_end[];
 extern char __heap_base[], __heap_limit[];
 extern char __stack_top[], __stack_limit[];
 
-/* Timer */
-extern void timer_init(void);
 
 /* Interrupts */
 extern void interrupts_init(void);
@@ -49,7 +48,6 @@ void hal_init(void)
 	dtb_parse(dtbAddr);
 	sbi_init();
 	interrupts_init();
-	timer_init();
 }
 
 
@@ -60,6 +58,7 @@ void hal_done(void)
 
 void hal_syspageSet(hal_syspage_t *hs)
 {
+	hs->boothartId = boothartId;
 	hal_common.hs = hs;
 }
 
@@ -177,8 +176,9 @@ int hal_cpuJump(void)
 	hal_interruptsDisableAll();
 
 	__asm__ volatile(
-		"mv a1, %0\n\t"
-		"mv a0, %1\n\t"
+		"mv a0, tp\n\t"
+		"mv a2, %0\n\t"
+		"mv a1, %1\n\t"
 		"jr %2\n\t"
 		:
 		: "r"(dtbAddr), "r"(hal_common.hs), "r"(hal_common.entry)
