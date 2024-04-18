@@ -135,7 +135,7 @@ __attribute__((section(".noxip"))) static volatile u32 *_imxrt_IOpadGetReg(int p
 	}
 
 	if (pad < pctl_pad_gpio_lpsr_00) {
-		return imxrt_common.iomuxc_snvs + pad + 14 - pctl_pad_test_mode;
+		return imxrt_common.iomuxc_snvs + pad + 13 - pctl_pad_test_mode;
 	}
 
 	return imxrt_common.iomuxc_lpsr + pad + 16 - pctl_pad_gpio_lpsr_00;
