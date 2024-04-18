@@ -346,7 +346,7 @@ mapent_t *syspage_entryAdd(const char *mapName, addr_t start, size_t size, unsig
 
 		if (iterMap != NULL) {
 			do {
-				if (((iterMap->start < start + size) && (iterMap->end > start))) {
+				if (((iterMap->start <= start) && (iterMap->end >= start + size))) {
 					map = iterMap;
 					break;
 				}
