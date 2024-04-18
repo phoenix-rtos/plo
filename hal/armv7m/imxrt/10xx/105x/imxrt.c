@@ -100,11 +100,13 @@ enum { rtwdog_cs = 0, rtwdog_cnt, rtwdog_total, rtwdog_win };
 
 __attribute__((section(".noxip"))) static volatile u32 *_imxrt_IOmuxGetReg(int mux)
 {
-	if (mux < pctl_mux_gpio_emc_00 || mux > pctl_mux_snvs_pmic_stby_req)
+	if ((mux < pctl_mux_gpio_emc_00) || (mux > pctl_mux_snvs_pmic_stby_req)) {
 		return NULL;
+	}
 
-	if (mux >= pctl_mux_snvs_wakeup)
+	if (mux >= pctl_mux_snvs_wakeup) {
 		return imxrt_common.iomuxsnvs + (mux - pctl_mux_snvs_wakeup);
+	}
 
 	return imxrt_common.iomuxc + mux + 5;
 }
@@ -114,8 +116,10 @@ __attribute__((section(".noxip"))) int _imxrt_setIOmux(int mux, char sion, char 
 {
 	volatile u32 *reg;
 
-	if ((reg = _imxrt_IOmuxGetReg(mux)) == NULL)
+	reg = _imxrt_IOmuxGetReg(mux);
+	if (reg == NULL) {
 		return -1;
+	}
 
 	(*reg) = (!!sion << 4) | (mode & 0xf);
 
@@ -125,14 +129,17 @@ __attribute__((section(".noxip"))) int _imxrt_setIOmux(int mux, char sion, char 
 
 __attribute__((section(".noxip"))) static volatile u32 *_imxrt_IOpadGetReg(int pad)
 {
-	if (pad < pctl_pad_gpio_emc_00 || pad > pctl_pad_snvs_pmic_stby_req)
+	if ((pad < pctl_pad_gpio_emc_00) || (pad > pctl_pad_snvs_pmic_stby_req)) {
 		return NULL;
+	}
 
-	if (pad >= pctl_pad_snvs_test_mode)
+	if (pad >= pctl_pad_snvs_test_mode) {
 		return imxrt_common.iomuxsnvs + 3 + (pad - pctl_pad_snvs_test_mode);
+	}
 
-	if (pad >= pctl_pad_gpio_spi_b0_00)
+	if (pad >= pctl_pad_gpio_spi_b0_00) {
 		return imxrt_common.iomuxc + 429 + (pad - pctl_pad_gpio_spi_b0_00);
+	}
 
 	return imxrt_common.iomuxc + 129 + pad;
 }
@@ -143,8 +150,10 @@ __attribute__((section(".noxip"))) int _imxrt_setIOpad(int pad, char hys, char p
 	u32 t;
 	volatile u32 *reg;
 
-	if ((reg = _imxrt_IOpadGetReg(pad)) == NULL)
+	reg = _imxrt_IOpadGetReg(pad);
+	if (reg == NULL) {
 		return -1;
+	}
 
 	t = (!!hys << 16) | ((pus & 0x3) << 14) | (!!pue << 13) | (!!pke << 12);
 	t |= (!!ode << 11) | ((speed & 0x3) << 6) | ((dse & 0x7) << 3) | !!sre;
@@ -156,8 +165,9 @@ __attribute__((section(".noxip"))) int _imxrt_setIOpad(int pad, char hys, char p
 
 __attribute__((section(".noxip"))) static volatile u32 *_imxrt_IOiselGetReg(int isel, u32 *mask)
 {
-	if (isel < pctl_isel_anatop_usb_otg1_id || isel > pctl_isel_canfd_ipp_ind_canrx)
+	if ((isel < pctl_isel_anatop_usb_otg1_id) || (isel > pctl_isel_canfd_ipp_ind_canrx)) {
 		return NULL;
+	}
 
 	switch (isel) {
 		case pctl_isel_ccm_pmic_ready:
@@ -207,8 +217,9 @@ __attribute__((section(".noxip"))) static volatile u32 *_imxrt_IOiselGetReg(int 
 			break;
 	}
 
-	if (isel >= pctl_isel_enet2_ipg_clk_rmii)
+	if (isel >= pctl_isel_enet2_ipg_clk_rmii) {
 		return imxrt_common.iomuxc + 451 + (isel - pctl_isel_enet2_ipg_clk_rmii);
+	}
 
 	return imxrt_common.iomuxc + 253 + isel;
 }
@@ -219,8 +230,10 @@ __attribute__((section(".noxip"))) int _imxrt_setIOisel(int isel, char daisy)
 	volatile u32 *reg;
 	u32 mask;
 
-	if ((reg = _imxrt_IOiselGetReg(isel, &mask)) == NULL)
+	reg = _imxrt_IOiselGetReg(isel, &mask);
+	if (reg == NULL) {
 		return -1;
+	}
 
 	(*reg) = daisy & mask;
 
@@ -233,8 +246,9 @@ __attribute__((section(".noxip"))) int _imxrt_setIOisel(int isel, char daisy)
 
 __attribute__((section(".noxip"))) static int _imxrt_isValidDev(int dev)
 {
-	if (dev < pctl_clk_aips_tz1 || dev > pctl_clk_flexio3)
+	if ((dev < pctl_clk_aips_tz1) || (dev > pctl_clk_flexio3)) {
 		return 0;
+	}
 
 	return 1;
 }
@@ -244,8 +258,9 @@ __attribute__((section(".noxip"))) int _imxrt_getDevClock(int dev, unsigned int 
 {
 	int ccgr, flag;
 
-	if (!_imxrt_isValidDev(dev))
+	if (_imxrt_isValidDev(dev) == 0) {
 		return -1;
+	}
 
 	ccgr = dev / 16;
 	flag = 3 << (2 * (dev % 16));
@@ -261,8 +276,9 @@ __attribute__((section(".noxip"))) int _imxrt_setDevClock(int dev, unsigned int 
 	int ccgr, flag, mask;
 	u32 t;
 
-	if (!_imxrt_isValidDev(dev))
+	if (_imxrt_isValidDev(dev) == 0) {
 		return -1;
+	}
 
 	ccgr = dev / 16;
 	flag = (state & 3) << (2 * (dev % 16));
@@ -280,7 +296,7 @@ static u32 _imxrt_ccmGetPeriphClkFreq(void)
 	u32 freq;
 
 	/* Periph_clk2_clk ---> Periph_clk */
-	if (*(imxrt_common.ccm + ccm_cbcdr) & (1 << 25)) {
+	if ((*(imxrt_common.ccm + ccm_cbcdr) & (1 << 25)) != 0) {
 		switch ((*(imxrt_common.ccm + ccm_cbcmr) >> 12) & 0x3) {
 			/* Pll3_sw_clk ---> Periph_clk2_clk ---> Periph_clk */
 			case 0x0:
@@ -335,13 +351,13 @@ void _imxrt_ccmInitExterlnalClk(void)
 {
 	/* Power up */
 	*(imxrt_common.ccm_analog + ccm_analog_misc0_clr) = 1 << 30;
-	while (!(*(imxrt_common.xtalosc + xtalosc_lowpwr_ctrl) & (1 << 16)))
-		;
+	while ((*(imxrt_common.xtalosc + xtalosc_lowpwr_ctrl) & (1 << 16)) == 0) {
+	}
 
 	/* Detect frequency */
 	*(imxrt_common.ccm_analog + ccm_analog_misc0_set) = 1 << 16;
-	while (!(*(imxrt_common.ccm_analog + ccm_analog_misc0) & (1 << 15)))
-		;
+	while ((*(imxrt_common.ccm_analog + ccm_analog_misc0) & (1 << 15)) == 0) {
+	}
 
 	*(imxrt_common.ccm_analog + ccm_analog_misc0_clr) = 1 << 16;
 }
@@ -356,10 +372,12 @@ void _imxrt_ccmDeinitExternalClk(void)
 
 void _imxrt_ccmSwitchOsc(int osc)
 {
-	if (osc == osc_rc)
+	if (osc == osc_rc) {
 		*(imxrt_common.xtalosc + xtalosc_lowpwr_ctrl_set) = 1 << 4;
-	else
+	}
+	else {
 		*(imxrt_common.xtalosc + xtalosc_lowpwr_ctrl_clr) = 1 << 4;
+	}
 }
 
 
@@ -388,13 +406,15 @@ u32 _imxrt_ccmGetFreq(int name)
 
 		case clk_semc:
 			/* SEMC alternative clock ---> SEMC Clock */
-			if (*(imxrt_common.ccm + ccm_cbcdr) & (1 << 6)) {
+			if ((*(imxrt_common.ccm + ccm_cbcdr) & (1 << 6)) != 0) {
 				/* PLL3 PFD1 ---> SEMC alternative clock ---> SEMC Clock */
-				if (*(imxrt_common.ccm + ccm_cbcdr) & 0x7)
+				if ((*(imxrt_common.ccm + ccm_cbcdr) & 0x7) != 0) {
 					freq = _imxrt_ccmGetUsb1PfdFreq(clk_pfd1);
+				}
 				/* PLL2 PFD2 ---> SEMC alternative clock ---> SEMC Clock */
-				else
+				else {
 					freq = _imxrt_ccmGetSysPfdFreq(clk_pfd2);
+				}
 			}
 			/* Periph_clk ---> SEMC Clock */
 			else {
@@ -492,8 +512,8 @@ void _imxrt_ccmInitArmPll(u32 div)
 {
 	*(imxrt_common.ccm_analog + ccm_analog_pll_arm) = (1 << 13) | (div & 0x7f);
 
-	while (!(*(imxrt_common.ccm_analog + ccm_analog_pll_arm) & (1 << 31)))
-		;
+	while ((*(imxrt_common.ccm_analog + ccm_analog_pll_arm) & (1 << 31)) == 0) {
+	}
 }
 
 
@@ -507,8 +527,8 @@ void _imxrt_ccmInitSysPll(u8 div)
 {
 	*(imxrt_common.ccm_analog + ccm_analog_pll_sys) = (1 << 13) | (div & 1);
 
-	while (!(*(imxrt_common.ccm_analog + ccm_analog_pll_sys) & (1 << 31)))
-		;
+	while ((*(imxrt_common.ccm_analog + ccm_analog_pll_sys) & (1 << 31)) == 0) {
+	}
 }
 
 
@@ -522,8 +542,8 @@ void _imxrt_ccmInitUsb1Pll(u8 div)
 {
 	*(imxrt_common.ccm_analog + ccm_analog_pll_usb1) = (1 << 13) | (1 << 12) | (1 << 6) | (div & 0x3);
 
-	while (!(*(imxrt_common.ccm_analog + ccm_analog_pll_usb1) & (1 << 31)))
-		;
+	while ((*(imxrt_common.ccm_analog + ccm_analog_pll_usb1) & (1 << 31)) == 0) {
+	}
 }
 
 
@@ -537,8 +557,8 @@ void _imxrt_ccmInitUsb2Pll(u8 div)
 {
 	*(imxrt_common.ccm_analog + ccm_analog_pll_usb2) = (1 << 13) | (1 << 12) | (1 << 6) | (div & 0x3);
 
-	while (!(*(imxrt_common.ccm_analog + ccm_analog_pll_usb2) & (1 << 31)))
-		;
+	while ((*(imxrt_common.ccm_analog + ccm_analog_pll_usb2) & (1 << 31)) == 0) {
+	}
 }
 
 
@@ -585,8 +605,8 @@ void _imxrt_ccmInitAudioPll(u8 loopdiv, u8 postdiv, u32 num, u32 denom)
 
 	*(imxrt_common.ccm_analog + ccm_analog_pll_audio) = pllAudio;
 
-	while (!(*(imxrt_common.ccm_analog + ccm_analog_pll_audio) & (1 << 31)))
-		;
+	while ((*(imxrt_common.ccm_analog + ccm_analog_pll_audio) & (1 << 31)) == 0) {
+	}
 }
 
 
@@ -633,8 +653,8 @@ void _imxrt_ccmInitVideoPll(u8 loopdiv, u8 postdiv, u32 num, u32 denom)
 
 	*(imxrt_common.ccm_analog + ccm_analog_pll_video) = pllVideo;
 
-	while (!(*(imxrt_common.ccm_analog + ccm_analog_pll_video) & (1 << 31)))
-		;
+	while ((*(imxrt_common.ccm_analog + ccm_analog_pll_video) & (1 << 31)) == 0) {
+	}
 }
 
 
@@ -648,19 +668,22 @@ void _imxrt_ccmInitEnetPll(u8 enclk0, u8 enclk1, u8 enclk2, u8 div0, u8 div1)
 {
 	u32 enet_pll = ((div1 & 0x3) << 2) | (div0 & 0x3);
 
-	if (enclk0)
+	if (enclk0 != 0) {
 		enet_pll |= 1 << 12;
+	}
 
-	if (enclk1)
+	if (enclk1 != 0) {
 		enet_pll |= 1 << 20;
+	}
 
-	if (enclk2)
+	if (enclk2 != 0) {
 		enet_pll |= 1 << 21;
+	}
 
 	*(imxrt_common.ccm_analog + ccm_analog_pll_enet) = enet_pll;
 
-	while (!(*(imxrt_common.ccm_analog + ccm_analog_pll_enet) & (1 << 31)))
-		;
+	while ((*(imxrt_common.ccm_analog + ccm_analog_pll_enet) & (1 << 31)) == 0) {
+	}
 }
 
 
@@ -686,10 +709,12 @@ u32 _imxrt_ccmGetPllFreq(int pll)
 			/* PLL output frequency = Fref * (DIV_SELECT + NUM/DENOM). */
 			tmp = ((u64)freq * (u64) * (imxrt_common.ccm_analog + ccm_analog_pll_sys_num)) / (u64) * (imxrt_common.ccm_analog + ccm_analog_pll_sys_denom);
 
-			if (*(imxrt_common.ccm_analog + ccm_analog_pll_sys) & 1)
+			if ((*(imxrt_common.ccm_analog + ccm_analog_pll_sys) & 1) != 0) {
 				freq *= 22;
-			else
+			}
+			else {
 				freq *= 20;
+			}
 
 			freq += (u32)tmp;
 			break;
@@ -717,11 +742,13 @@ u32 _imxrt_ccmGetPllFreq(int pll)
 					break;
 			}
 
-			if (*(imxrt_common.ccm_analog + ccm_analog_misc2) & (1 << 15)) {
-				if (*(imxrt_common.ccm_analog + ccm_analog_misc2) & (1 << 31))
+			if ((*(imxrt_common.ccm_analog + ccm_analog_misc2) & (1 << 15)) != 0) {
+				if ((*(imxrt_common.ccm_analog + ccm_analog_misc2) & (1 << 31)) != 0) {
 					freq >>= 2;
-				else
+				}
+				else {
 					freq >>= 1;
+				}
 			}
 			break;
 
@@ -747,11 +774,13 @@ u32 _imxrt_ccmGetPllFreq(int pll)
 					break;
 			}
 
-			if (*(imxrt_common.ccm_analog + ccm_analog_misc2) & (1 << 30)) {
-				if (*(imxrt_common.ccm_analog + ccm_analog_misc2) & (1 << 31))
+			if ((*(imxrt_common.ccm_analog + ccm_analog_misc2) & (1 << 30)) != 0) {
+				if ((*(imxrt_common.ccm_analog + ccm_analog_misc2) & (1 << 31)) != 0) {
 					freq >>= 2;
-				else
+				}
+				else {
 					freq >>= 1;
+				}
 			}
 			break;
 
@@ -916,8 +945,8 @@ __attribute__((section(".noxip"))) void _imxrt_ccmSetMux(int mux, u32 val)
 
 		case clk_mux_periph:
 			*(imxrt_common.ccm + ccm_cbcdr) = (*(imxrt_common.ccm + ccm_cbcdr) & ~(1 << 25)) | ((val & 1) << 25);
-			while (*(imxrt_common.ccm + ccm_cdhipr) & (1 << 5))
-				;
+			while ((*(imxrt_common.ccm + ccm_cdhipr) & (1 << 5)) != 0) {
+			}
 			break;
 
 		case clk_mux_semcAlt:
@@ -1146,8 +1175,8 @@ __attribute__((section(".noxip"))) void _imxrt_ccmSetDiv(int div, u32 val)
 	switch (div) {
 		case clk_div_arm: /* CACRR */
 			*(imxrt_common.ccm + ccm_cacrr) = (*(imxrt_common.ccm + ccm_cacrr) & ~0x7) | (val & 0x7);
-			while (*(imxrt_common.ccm + ccm_cdhipr) & (1 << 16))
-				;
+			while ((*(imxrt_common.ccm + ccm_cdhipr) & (1 << 16)) != 0) {
+			}
 			break;
 
 		case clk_div_periphclk2: /* CBCDR */
@@ -1156,14 +1185,14 @@ __attribute__((section(".noxip"))) void _imxrt_ccmSetDiv(int div, u32 val)
 
 		case clk_div_semc: /* CBCDR */
 			*(imxrt_common.ccm + ccm_cbcdr) = (*(imxrt_common.ccm + ccm_cbcdr) & ~(0x7 << 16)) | ((val & 0x7) << 16);
-			while (*(imxrt_common.ccm + ccm_cdhipr) & 1)
-				;
+			while ((*(imxrt_common.ccm + ccm_cdhipr) & 1) != 0) {
+			}
 			break;
 
 		case clk_div_ahb: /* CBCDR */
 			*(imxrt_common.ccm + ccm_cbcdr) = (*(imxrt_common.ccm + ccm_cbcdr) & ~(0x7 << 10)) | ((val & 0x7) << 10);
-			while (*(imxrt_common.ccm + ccm_cdhipr) & (1 << 1))
-				;
+			while ((*(imxrt_common.ccm + ccm_cdhipr) & (1 << 1)) != 0) {
+			}
 			break;
 
 		case clk_div_ipg: /* CBCDR */
@@ -1432,8 +1461,9 @@ __attribute__((section(".noxip"))) void _imxrt_ccmControlGate(int dev, int state
 	int index = dev >> 4, shift = (dev & 0xf) << 1;
 	u32 t;
 
-	if (index > 7)
+	if (index > 7) {
 		return;
+	}
 
 	t = *(imxrt_common.ccm + ccm_ccgr0 + index) & ~(0x3 << shift);
 	*(imxrt_common.ccm + ccm_ccgr0 + index) = t | ((state & 0x3) << shift);
@@ -1477,8 +1507,9 @@ int _imxrt_gpioConfig(unsigned int d, u8 pin, u8 dir)
 
 	_imxrt_ccmControlGate(d, 1);
 
-	if (!reg || pin > 31)
+	if ((reg == 0) || (pin > 31)) {
 		return -1;
+	}
 
 	*(reg + gpio_gdir) &= ~(!dir << pin);
 	*(reg + gpio_gdir) |= !!dir << pin;
@@ -1491,8 +1522,9 @@ int _imxrt_gpioSet(unsigned int d, u8 pin, u8 val)
 {
 	volatile u32 *reg = _imxrt_gpioGetReg(d);
 
-	if (!reg || pin > 31)
+	if ((reg == 0) || (pin > 31)) {
 		return -1;
+	}
 
 	*(reg + gpio_dr) &= ~(!val << pin);
 	*(reg + gpio_dr) |= !!val << pin;
@@ -1505,8 +1537,9 @@ int _imxrt_gpioSetPort(unsigned int d, u32 val)
 {
 	volatile u32 *reg = _imxrt_gpioGetReg(d);
 
-	if (!reg)
+	if (reg == 0) {
 		return -1;
+	}
 
 	*(reg + gpio_dr) = val;
 
@@ -1518,8 +1551,9 @@ int _imxrt_gpioGet(unsigned int d, u8 pin, u8 *val)
 {
 	volatile u32 *reg = _imxrt_gpioGetReg(d);
 
-	if (!reg || pin > 31)
+	if ((reg == 0) || (pin > 31)) {
 		return -1;
+	}
 
 	*val = !!(*(reg + gpio_psr) & (1 << pin));
 
@@ -1531,8 +1565,9 @@ int _imxrt_gpioGetPort(unsigned int d, u32 *val)
 {
 	volatile u32 *reg = _imxrt_gpioGetReg(d);
 
-	if (!reg)
+	if (reg == 0) {
 		return -1;
+	}
 
 	*val = *(reg + gpio_psr);
 
@@ -1570,18 +1605,21 @@ void _imxrt_init(void)
 	imxrt_common.cpuclk = 528000000; /* Default system clock */
 
 	/* Disable watchdogs */
-	if (*(imxrt_common.wdog1 + wdog_wcr) & (1 << 2))
+	if ((*(imxrt_common.wdog1 + wdog_wcr) & (1 << 2)) != 0) {
 		*(imxrt_common.wdog1 + wdog_wcr) &= ~(1 << 2);
-	if (*(imxrt_common.wdog2 + wdog_wcr) & (1 << 2))
+	}
+	if ((*(imxrt_common.wdog2 + wdog_wcr) & (1 << 2)) != 0) {
 		*(imxrt_common.wdog2 + wdog_wcr) &= ~(1 << 2);
+	}
 
 	*(imxrt_common.rtwdog + rtwdog_cnt) = 0xd928c520; /* Update key */
 	*(imxrt_common.rtwdog + rtwdog_total) = 0xffff;
 	*(imxrt_common.rtwdog + rtwdog_cs) = (*(imxrt_common.rtwdog + rtwdog_cs) & ~(1 << 7)) | (1 << 5);
 
 	/* Disable Systick which might be enabled by bootrom */
-	if (*(imxrt_common.stk + stk_ctrl) & 1)
+	if ((*(imxrt_common.stk + stk_ctrl) & 1) != 0) {
 		*(imxrt_common.stk + stk_ctrl) &= ~1;
+	}
 
 
 	_imxrt_ccmControlGate(pctl_clk_iomuxc, clk_state_run_wait);
@@ -1625,8 +1663,8 @@ void _imxrt_init(void)
 	_imxrt_ccmDeinitUsb2Pll();
 
 	/* Wait for any pending CCM div/mux handshake process to complete */
-	while (*(imxrt_common.ccm + ccm_cdhipr) & 0x1002b)
-		;
+	while ((*(imxrt_common.ccm + ccm_cdhipr) & 0x1002b) != 0) {
+	}
 
 	/* Allow userspace applications to access hardware registers */
 	for (i = 0; i < sizeof(imxrt_common.aips) / sizeof(imxrt_common.aips[0]); ++i) {

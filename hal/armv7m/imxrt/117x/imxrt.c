@@ -92,14 +92,17 @@ struct {
 
 __attribute__((section(".noxip"))) static volatile u32 *_imxrt_IOmuxGetReg(int mux)
 {
-	if (mux < pctl_mux_gpio_emc_b1_00 || mux > pctl_mux_gpio_lpsr_15)
+	if ((mux < pctl_mux_gpio_emc_b1_00) || (mux > pctl_mux_gpio_lpsr_15)) {
 		return NULL;
+	}
 
-	if (mux < pctl_mux_wakeup)
+	if (mux < pctl_mux_wakeup) {
 		return imxrt_common.iomuxc + 4 + mux - pctl_mux_gpio_emc_b1_00;
+	}
 
-	if (mux < pctl_mux_gpio_lpsr_00)
+	if (mux < pctl_mux_gpio_lpsr_00) {
 		return imxrt_common.iomuxc_snvs + mux - pctl_mux_wakeup;
+	}
 
 	return imxrt_common.iomuxc_lpsr + mux - pctl_mux_gpio_lpsr_00;
 }
@@ -109,8 +112,10 @@ __attribute__((section(".noxip"))) int _imxrt_setIOmux(int mux, char sion, char 
 {
 	volatile u32 *reg;
 
-	if ((reg = _imxrt_IOmuxGetReg(mux)) == NULL)
+	reg = _imxrt_IOmuxGetReg(mux);
+	if (reg == NULL) {
 		return -1;
+	}
 
 	(*reg) = (!!sion << 4) | (mode & 0xf);
 	hal_cpuDataMemoryBarrier();
@@ -121,14 +126,17 @@ __attribute__((section(".noxip"))) int _imxrt_setIOmux(int mux, char sion, char 
 
 __attribute__((section(".noxip"))) static volatile u32 *_imxrt_IOpadGetReg(int pad)
 {
-	if (pad < pctl_pad_gpio_emc_b1_00 || pad > pctl_pad_gpio_lpsr_15)
+	if ((pad < pctl_pad_gpio_emc_b1_00) || (pad > pctl_pad_gpio_lpsr_15)) {
 		return NULL;
+	}
 
-	if (pad < pctl_pad_test_mode)
+	if (pad < pctl_pad_test_mode) {
 		return imxrt_common.iomuxc + pad + 149 - pctl_pad_gpio_emc_b1_00;
+	}
 
-	if (pad < pctl_pad_gpio_lpsr_00)
+	if (pad < pctl_pad_gpio_lpsr_00) {
 		return imxrt_common.iomuxc_snvs + pad + 14 - pctl_pad_test_mode;
+	}
 
 	return imxrt_common.iomuxc_lpsr + pad + 16 - pctl_pad_gpio_lpsr_00;
 }
@@ -140,17 +148,22 @@ __attribute__((section(".noxip"))) int _imxrt_setIOpad(int pad, char sre, char d
 	volatile u32 *reg;
 	char pull;
 
-	if ((reg = _imxrt_IOpadGetReg(pad)) == NULL)
+	reg = _imxrt_IOpadGetReg(pad);
+	if (reg == NULL) {
 		return -1;
+	}
 
-	if (pad >= pctl_pad_gpio_emc_b1_00 && pad <= pctl_pad_gpio_disp_b2_15) {
+	if ((pad >= pctl_pad_gpio_emc_b1_00) && (pad <= pctl_pad_gpio_disp_b2_15)) {
 		/* Fields have slightly diffrent meaning... */
-		if (!pue)
+		if (pue == 0) {
 			pull = 3;
-		else if (pus)
+		}
+		else if (pus != 0) {
 			pull = 1;
-		else
+		}
+		else {
 			pull = 2;
+		}
 
 		t = *reg & ~0x1e;
 		t |= (!!dse << 1) | (pull << 2) | (!!ode << 4);
@@ -159,7 +172,7 @@ __attribute__((section(".noxip"))) int _imxrt_setIOpad(int pad, char sre, char d
 		t = *reg & ~0x1f;
 		t |= (!!sre) | (!!dse << 1) | (!!pue << 2) | (!!pus << 3);
 
-		if (pad >= pctl_pad_test_mode && pad <= pctl_pad_gpio_snvs_09) {
+		if ((pad >= pctl_pad_test_mode) && (pad <= pctl_pad_gpio_snvs_09)) {
 			t &= ~(1 << 6);
 			t |= !!ode << 6;
 		}
@@ -182,8 +195,9 @@ __attribute__((section(".noxip"))) int _imxrt_setIOpad(int pad, char sre, char d
 
 __attribute__((section(".noxip"))) static volatile u32 *_imxrt_IOiselGetReg(int isel, u32 *mask)
 {
-	if (isel < pctl_isel_flexcan1_rx || isel > pctl_isel_sai4_txsync)
+	if ((isel < pctl_isel_flexcan1_rx) || (isel > pctl_isel_sai4_txsync)) {
 		return NULL;
+	}
 
 	switch (isel) {
 		case pctl_isel_flexcan1_rx:
@@ -227,8 +241,9 @@ __attribute__((section(".noxip"))) static volatile u32 *_imxrt_IOiselGetReg(int 
 			break;
 	}
 
-	if (isel >= pctl_isel_can3_canrx)
+	if (isel >= pctl_isel_can3_canrx) {
 		return imxrt_common.iomuxc_lpsr + 32 + isel - pctl_isel_can3_canrx;
+	}
 
 	return imxrt_common.iomuxc + 294 + isel - pctl_isel_flexcan1_rx;
 }
@@ -239,8 +254,10 @@ __attribute__((section(".noxip"))) int _imxrt_setIOisel(int isel, char daisy)
 	volatile u32 *reg;
 	u32 mask;
 
-	if ((reg = _imxrt_IOiselGetReg(isel, &mask)) == NULL)
+	reg = _imxrt_IOiselGetReg(isel, &mask);
+	if (reg == NULL) {
 		return -1;
+	}
 
 	(*reg) = daisy & mask;
 	hal_cpuDataMemoryBarrier();
@@ -380,8 +397,9 @@ __attribute__((section(".noxip"))) int _imxrt_setDirectLPCG(int clock, int state
 	u32 t;
 	volatile u32 *reg;
 
-	if (clock < pctl_lpcg_m7 || clock > pctl_lpcg_uniq_edt_i)
+	if ((clock < pctl_lpcg_m7) || (clock > pctl_lpcg_uniq_edt_i)) {
 		return -1;
+	}
 
 	reg = imxrt_common.ccm + 0x1800 + clock * 0x8;
 
@@ -399,11 +417,13 @@ __attribute__((section(".noxip"))) int _imxrt_setLevelLPCG(int clock, int level)
 {
 	volatile u32 *reg;
 
-	if (clock < pctl_lpcg_m7 || clock > pctl_lpcg_uniq_edt_i)
+	if ((clock < pctl_lpcg_m7) || (clock > pctl_lpcg_uniq_edt_i)) {
 		return -1;
+	}
 
-	if (level < 0 || level > 4)
+	if ((level < 0) || (level > 4)) {
 		return -1;
+	}
 
 	reg = imxrt_common.ccm + 0x1801 + clock * 0x8;
 	*reg = (level << 28) | (level << 24) | (level << 20) | (level << 16) | level;
@@ -683,7 +703,7 @@ int _imxrt_setPfdPllFracClock(u8 pfd, u8 clk_pll, u8 frac)
 
 	switch (clk_pll) {
 		case clk_pllsys2:
-			if ((frac < 13u)) {
+			if (frac < 13u) {
 				return -1;
 			}
 			ctrl = imxrt_common.anadig_pll + sys_pll2_pfd;
@@ -1014,10 +1034,12 @@ void _imxrt_init(void)
 	_imxrt_initClocks();
 
 	/* Disable watchdogs */
-	if (*(imxrt_common.wdog1 + wdog_wcr) & (1 << 2))
+	if ((*(imxrt_common.wdog1 + wdog_wcr) & (1 << 2)) != 0) {
 		*(imxrt_common.wdog1 + wdog_wcr) &= ~(1 << 2);
-	if (*(imxrt_common.wdog2 + wdog_wcr) & (1 << 2))
+	}
+	if ((*(imxrt_common.wdog2 + wdog_wcr) & (1 << 2)) != 0) {
 		*(imxrt_common.wdog2 + wdog_wcr) &= ~(1 << 2);
+	}
 
 	*(imxrt_common.wdog3 + rtwdog_cnt) = 0xd928c520; /* Update key */
 	*(imxrt_common.wdog3 + rtwdog_total) = 0xffff;
@@ -1025,8 +1047,9 @@ void _imxrt_init(void)
 	*(imxrt_common.wdog3 + rtwdog_cs) &= ~(1 << 7);
 
 	/* Disable Systick which might be enabled by bootrom */
-	if (*(imxrt_common.stk + stk_ctrl) & 1)
+	if ((*(imxrt_common.stk + stk_ctrl) & 1) != 0) {
 		*(imxrt_common.stk + stk_ctrl) &= ~1;
+	}
 
 	/* HACK - temporary fix for crash when booting from FlexSPI */
 	_imxrt_setDirectLPCG(pctl_lpcg_semc, 0);
@@ -1040,16 +1063,20 @@ void _imxrt_init(void)
 
 	/* Reconfigure all IO pads as slow slew-rate and low drive strength */
 	for (i = pctl_pad_gpio_emc_b1_00; i <= pctl_pad_gpio_disp_b2_15; ++i) {
-		if ((reg = _imxrt_IOpadGetReg(i)) == NULL)
+		reg = _imxrt_IOpadGetReg(i);
+		if (reg == NULL) {
 			continue;
+		}
 
 		*reg |= 1 << 1;
 		hal_cpuDataMemoryBarrier();
 	}
 
 	for (; i <= pctl_pad_gpio_lpsr_15; ++i) {
-		if ((reg = _imxrt_IOpadGetReg(i)) == NULL)
+		reg = _imxrt_IOpadGetReg(i);
+		if (reg == NULL) {
 			continue;
+		}
 
 		*reg &= ~0x3;
 		hal_cpuDataMemoryBarrier();
