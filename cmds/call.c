@@ -87,6 +87,12 @@ static int cmd_call(int argc, char *argv[])
 				return (res < 0) ? res : -EINVAL;
 			}
 			i = 0;
+
+			if (c == '\0') {
+				/* end of script */
+				break;
+			}
+
 			continue;
 		}
 
