@@ -39,6 +39,7 @@ extern char __heap_base[], __heap_limit[];
 extern char __stack_top[], __stack_limit[];
 extern char __ddr_start[], __ddr_end[];
 extern char __uncached_ddr_start[], __uncached_ddr_end[];
+extern void hal_coreStart(void);
 
 
 /* Timer */
@@ -253,10 +254,17 @@ int hal_cpuJump(void)
 
 	mmu_disable();
 
-	__asm__ volatile("mov r9, %1; \
-		 blx %0"
+	*(addr_t *)(0xFFFFFFF0) = (addr_t)hal_coreStart; /* This write must be uncached */
+	/* clang-format off */
+	__asm__ volatile(" \
+		dsb; \
+		isb; \
+		sev; \
+		mov r9, %1; \
+		blx %0; \
+		"
 		:
 		: "r"(hal_common.entry), "r"((addr_t)hal_common.hs));
-
+	/* clang-format on */
 	return 0;
 }

@@ -23,6 +23,7 @@
 .section .init, "ax"
 .globl _vector_table
 
+.extern syspage_common
 
 .global _start
 .type _start, %function
@@ -45,19 +46,10 @@ _vector_table:
 _start:
 	cpsid aif, #SYS_MODE
 
-	/* Only CPU0 performs initialization, others go into wfi */
-	mrc p15, 0, r1, c0, c0, 5       /* Read Multiprocessor Affinity Register */
-	and r1, r1, #0xf                /* Extract CPU ID                        */
-	cmp r1, #0
-	beq initialize
+	/* Set Vector Table Address */
+	ldr	r0, =_vector_table
+	mcr	p15, 0, r0, c12, c0, 0       /* Write to VBAR (Vector Base Address Register) */
 
-/* TODO: make appropriate action when other core than CPU_0 is running */
-wait_loop:
-	wfi
-	b wait_loop
-
-
-initialize:
 	/* Enable PMU */
 	mrc p15, 0, r0, c9, c12, 0       /* Read PMCR (Performance Monitor Control Register)  */
 	orr r0, #0x7                     /* Cycle counter reset - bit[2], Performance counter reset - bit[1], enable all counters - bit[0] */
@@ -101,10 +93,35 @@ set_loop:
 	cmp r1, #4                       /* Check whether last way was reached               */
 	bne way_loop
 
-
 	/* Invalidate TLB */
 	mcr p15, 0, r1, c8, c7, 0
 
+	/* Enable SMP */
+	mrc p15, 0, r1, c1, c0, 1
+	orr r1, r1, #(1 << 6)
+	mcr p15, 0, r1, c1, c0, 1
+
+	/* CPU 0 continues initialization, other cores wait for the signal to continue */
+	mrc p15, 0, r1, c0, c0, 5       /* Read Multiprocessor Affinity Register */
+	ands r1, r1, #0xf               /* Extract CPU ID                        */
+	beq initialize
+
+/*
+	Important: the code below ONLY runs on QEMU. On real Zynq 7000 Boot ROM loads code into
+	high OCRAM and then jumps CPU 1 to that code. The code below simulates the behavior of that code.
+ */
+	mov r0, #0xfffffff0
+	ldr r1, =load_again
+	str r1, [r0]
+load_again:
+	dsb
+	wfe
+	ldr lr, [r0]
+	cmp lr, r1
+	beq load_again
+	bx	lr
+
+initialize:
 	/* Enable L1 Caches */
 	mrc p15, 0, r1, c1, c0, 0         /* Read SCTLR (System Control Register) data  */
 	orr r1, r1, #(0x1 << 2)           /* Enable data cache                          */
@@ -114,11 +131,6 @@ set_loop:
 	mcr p15, 0, r1, c1, c0, 0         /* Write SCTLR (System Control Register) data */
 	dsb
 	isb
-
-	/* Set Vector Table Address */
-	ldr	r0, =_vector_table
-	mcr	p15, 0, r0, c12, c0, 0       /* Write to VBAR (Vector Base Address Register) */
-
 
 	/* Setup initial SP */
 	ldr r0, =_stack
@@ -158,6 +170,21 @@ set_loop:
 	ldr r8, =_startc
 	bx r8
 .size _start, .-_start
+
+.globl hal_coreStart
+.type hal_coreStart, %function
+hal_coreStart:
+	/* Enable SMP */
+	mrc p15, 0, r9, c1, c0, 1
+	orr r9, r9, #(1 << 6)
+	mcr p15, 0, r9, c1, c0, 1
+
+	ldr r9, =syspage_common
+	ldr r9, [r9]
+	ldr r8, [r9, #8] /* Jump to kernel */
+	bx r8
+.size hal_coreStart, .-hal_coreStart
+.ltorg
 
 
 #include "../_interrupts.S"
