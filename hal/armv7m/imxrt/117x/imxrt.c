@@ -80,12 +80,17 @@ struct {
 	volatile u32 *ccm;
 	volatile u32 *anadig_pll;
 
+	u32 resetFlags;
 	u32 cpuclk;
 	u32 cm4state;
 } imxrt_common;
 
 /* clang-format on */
 
+unsigned int hal_getBootReason(void)
+{
+	return imxrt_common.resetFlags;
+}
 
 /* IOMUX */
 
@@ -1058,8 +1063,10 @@ void _imxrt_init(void)
 	*(imxrt_common.iomuxc_gpr + 28) &= ~(1 << 13);
 	hal_cpuDataMemoryBarrier();
 
-	/* Clear SRSR */
+	/* Store reset flags and then clean them */
+	imxrt_common.resetFlags = *(imxrt_common.src + src_srsr) & 0x1f;
 	*(imxrt_common.src + src_srsr) = 0xffffffffu;
+	hal_cpuDataSyncBarrier();
 
 	/* Reconfigure all IO pads as slow slew-rate and low drive strength */
 	for (i = pctl_pad_gpio_emc_b1_00; i <= pctl_pad_gpio_disp_b2_15; ++i) {

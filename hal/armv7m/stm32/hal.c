@@ -47,6 +47,9 @@ extern void console_init(void);
 /* Interrupts */
 extern void interrupts_init(void);
 
+/* Boot reason */
+extern unsigned int hal_getBootReason(void);
+
 
 void hal_init(void)
 {
@@ -76,6 +79,7 @@ void hal_done(void)
 void hal_syspageSet(hal_syspage_t *hs)
 {
 	hal_common.hs = hs;
+	hs->bootReason = hal_getBootReason();
 }
 
 
