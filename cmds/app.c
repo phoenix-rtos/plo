@@ -6,7 +6,7 @@
  * Load application
  *
  * Copyright 2020-2021 Phoenix Systems
- * Author: Hubert Buczynski, Gerard Swiderski
+ * Author: Hubert Buczynski, Gerard Swiderski, Aleksander Kaminski
  *
  * This file is part of Phoenix-RTOS.
  *
