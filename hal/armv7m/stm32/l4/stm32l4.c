@@ -80,6 +80,11 @@ enum { flash_acr = 0, flash_pdkeyr, flash_keyr, flash_optkeyr, flash_sr, flash_c
 	flash_pcrop2sr = flash_wrp1br + 5, flash_pcrop2er, flash_wrp2ar, flash_wrp2br };
 /* clang-format on*/
 
+unsigned int hal_getBootReason(void)
+{
+	return stm32_common.resetFlags;
+}
+
 
 /* RCC (Reset and Clock Controller) */
 
@@ -465,6 +470,10 @@ void _stm32_init(void)
 	stm32_common.gpio[7] = (void *)0x48001c00; /* GPIOH */
 	stm32_common.gpio[8] = (void *)0x48002000; /* GPIOI */
 	stm32_common.flash = (void *)0x40022000;
+
+	/* Store reset flags and then clean them */
+	stm32_common.resetFlags = (*(stm32_common.rcc + rcc_csr) >> 24);
+	*(stm32_common.rcc + rcc_csr) |= 1 << 23;
 
 	/* Enable System configuration controller */
 	_stm32_rccSetDevClock(pctl_syscfg, 1);

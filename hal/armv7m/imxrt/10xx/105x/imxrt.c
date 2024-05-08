@@ -34,6 +34,7 @@ struct {
 
 	u32 xtaloscFreq;
 	u32 cpuclk;
+	u32 resetFlags;
 } imxrt_common;
 
 
@@ -96,6 +97,12 @@ enum { wdog_wcr = 0, wdog_wsr, wdog_wrsr, wdog_wicr, wdog_wmcr };
 enum { rtwdog_cs = 0, rtwdog_cnt, rtwdog_total, rtwdog_win };
 
 /* clang-format on */
+
+
+unsigned int hal_getBootReason(void)
+{
+	return imxrt_common.resetFlags;
+}
 
 
 __attribute__((section(".noxip"))) static volatile u32 *_imxrt_IOmuxGetReg(int mux)
@@ -1604,6 +1611,11 @@ void _imxrt_init(void)
 	imxrt_common.xtaloscFreq = 24000000;
 	imxrt_common.cpuclk = 528000000; /* Default system clock */
 
+	/* Store reset flags and then clean them */
+	imxrt_common.resetFlags = *(imxrt_common.src + src_srsr) & 0x1f;
+	*(imxrt_common.src + src_srsr) = 0xffffffffu;
+	hal_cpuDataSyncBarrier();
+
 	/* Disable watchdogs */
 	if ((*(imxrt_common.wdog1 + wdog_wcr) & (1 << 2)) != 0) {
 		*(imxrt_common.wdog1 + wdog_wcr) &= ~(1 << 2);
@@ -1621,7 +1633,6 @@ void _imxrt_init(void)
 		*(imxrt_common.stk + stk_ctrl) &= ~1;
 	}
 
-
 	_imxrt_ccmControlGate(pctl_clk_iomuxc, clk_state_run_wait);
 
 	_imxrt_ccmSetMux(clk_mux_periphclk2, 0x1);
@@ -1635,7 +1646,6 @@ void _imxrt_init(void)
 	_imxrt_ccmSetDiv(clk_div_arm, 0x1);
 	_imxrt_ccmSetDiv(clk_div_ahb, 0x0);
 	_imxrt_ccmSetDiv(clk_div_ipg, 0x3);
-
 
 	/* Now CPU runs again on ARM PLL at 528M (with divider 2) */
 	_imxrt_ccmSetMux(clk_mux_prePeriph, 0x3);

@@ -34,6 +34,7 @@ struct {
 
 	u32 xtaloscFreq;
 	u32 cpuclk;
+	u32 resetFlags;
 } imxrt_common;
 
 
@@ -91,6 +92,12 @@ enum { wdog_wcr = 0, wdog_wsr, wdog_wrsr, wdog_wicr, wdog_wmcr };
 
 
 enum { rtwdog_cs = 0, rtwdog_cnt, rtwdog_total, rtwdog_win };
+
+
+unsigned int hal_getBootReason(void)
+{
+	return imxrt_common.resetFlags;
+}
 
 
 __attribute__((section(".noxip"))) static volatile u32 *_imxrt_IOmuxGetReg(int mux)
@@ -1607,6 +1614,11 @@ void _imxrt_init(void)
 
 	imxrt_common.xtaloscFreq = 24000000;
 	imxrt_common.cpuclk = 528000000; /* Default system clock */
+
+	/* Store reset flags and then clean them */
+	imxrt_common.resetFlags = *(imxrt_common.src + src_srsr) & 0x1f;
+	*(imxrt_common.src + src_srsr) = 0xffffffffu;
+	hal_cpuDataSyncBarrier();
 
 	/* Disable watchdogs */
 	if ((*(imxrt_common.wdog1 + wdog_wcr) & (1 << 2)) != 0) {
