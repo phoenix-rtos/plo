@@ -6,8 +6,8 @@
 # %LICENSE%
 #
 
-PLO_ALLCOMMANDS = alias app bankswitch bitstream bootcm4 bootrom call console copy dump \
-  echo erase go help jffs2 kernel kernelimg lspci map mem mpu otp phfs reboot script \
+PLO_ALLCOMMANDS = alias app blob bankswitch bitstream bootcm4 bootrom call console copy \
+  dump echo erase go help jffs2 kernel kernelimg lspci map mem mpu otp phfs reboot script \
   test-dev test-ddr wait
 
 PLO_COMMANDS ?= $(PLO_ALLCOMMANDS)
