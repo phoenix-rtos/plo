@@ -32,6 +32,7 @@ int main(void)
 	hal_init();
 	hal_customInit();
 	syspage_init();
+	lib_printf("test\n");
 
 	lib_printf(CONSOLE_BOLD "Phoenix-RTOS loader v. " VERSION CONSOLE_NORMAL);
 	lib_printf(CONSOLE_CURSOR_HIDE CONSOLE_MAGENTA "\nhal: %s", hal_cpuInfo());
