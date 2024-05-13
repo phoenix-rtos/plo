@@ -178,8 +178,8 @@ __attribute__((section(".noxip"))) int flexspi_init(flexspi_t *fspi, int instanc
 		/* Reset flash size, set default 4MB for XIP */
 		reg = *(fspi->base + flsha1cr0 + i) & (0xff << 23);
 
-		if (fspi->slPortMask & (1 << i)) {
-			reg |= 1 << 16;
+		if ((fspi->slPortMask & (1 << i)) != 0) {
+			reg |= (4 * 1024 * 1024) >> 10;
 		}
 
 		*(fspi->base + flsha1cr0 + i) = reg;
@@ -264,7 +264,7 @@ __attribute__((section(".noxip"))) static addr_t flexspi_getAddressByPort(flexsp
 	/* FlexSPI use the port (chip select) based on an offset of each memory size */
 	for (i = 0; i < port; ++i) {
 		if (fspi->slPortMask & (1 << i)) {
-			addr += fspi->slFlashSz[i];
+			addr += (*(fspi->base + flsha1cr0 + i) & ((1 << 23) - 1)) << 10;
 		}
 	}
 
@@ -423,7 +423,7 @@ __attribute__((section(".noxip"))) ssize_t flexspi_xferExec(flexspi_t *fspi, str
 	}
 
 	/* Clear the instruction pointer */
-	*(fspi->base + flsha1cr2 + xfer->port) |= 1 << 31;
+	*(fspi->base + flsha1cr2 + xfer->port) |= 1u << 31;
 
 	/* Clear any triggered AHB & IP errors and grant timeouts */
 	*(fspi->base + intr) |= (1 << 4) | (1 << 3) | (1 << 2) | (1 << 1);

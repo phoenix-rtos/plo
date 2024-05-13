@@ -55,14 +55,14 @@ static void *flexspi_getBase(int instance)
 
 __attribute__((section(".noxip"))) static void flexspi_clockConfig(flexspi_t *fspi)
 {
-	int gate, clk, div, mux, mfd, mfn, state;
+	int gate, clk, div, mux, mfd, mfn;
 
 	switch (fspi->instance) {
 		case flexspi_instance1:
 			clk = pctl_clk_flexspi1;
 			gate = pctl_lpcg_flexspi1;
-			div = 3; /* SYS_PLL2_CLK / (3 + 1) => 132 MHz */
-			mux = 5; /* Select main clock: SYS_PLL2_CLK = 528 MHz */
+			div = 3;                               /* SYS_PLL2_CLK / (3 + 1) => 132 MHz */
+			mux = mux_clkroot_flexspi1_syspll2out; /* Select main clock: SYS_PLL2_CLK = 528 MHz */
 			mfd = 0;
 			mfn = 0;
 			break;
@@ -70,8 +70,10 @@ __attribute__((section(".noxip"))) static void flexspi_clockConfig(flexspi_t *fs
 		case flexspi_instance2:
 			clk = pctl_clk_flexspi2;
 			gate = pctl_lpcg_flexspi2;
-			/* Copy defaults */
-			_imxrt_getDevClock(clk, &div, &mux, &mfd, &mfn, &state);
+			div = 3;                               /* SYS_PLL2_CLK / (3 + 1) => 132 MHz */
+			mux = mux_clkroot_flexspi2_syspll2out; /* Select main clock: SYS_PLL2_CLK = 528 MHz */
+			mfd = 0;
+			mfn = 0;
 			break;
 
 		default:
@@ -95,9 +97,9 @@ __attribute__((section(".noxip"))) static int flexspi_pinConfig(flexspi_t *fspi)
 		int pad;
 	} pin[] = {
 		/* FlexSPI-1 A1/A2 */
+		{ (flexspi_instance1 << 8) | flexspi_slBusA1, -1, -1, pctl_mux_gpio_sd_b2_06, 1, pctl_pad_gpio_sd_b2_06 },                                         /* SS0 */
 		{ (flexspi_instance1 << 8) | flexspi_slBusA2, -1, -1, pctl_mux_gpio_sd_b2_04, 3, pctl_pad_gpio_sd_b2_04 },                                         /* SS1 */
 		{ (flexspi_instance1 << 8) | flexspi_slBusA1 | flexspi_slBusA2, pctl_isel_flexspi1_dqs_fa, 2, pctl_mux_gpio_sd_b2_05, 1, pctl_pad_gpio_sd_b2_05 }, /* DQS */
-		{ (flexspi_instance1 << 8) | flexspi_slBusA1, -1, -1, pctl_mux_gpio_sd_b2_06, 1, pctl_pad_gpio_sd_b2_06 },                                         /* SS0 */
 		{ (flexspi_instance1 << 8) | flexspi_slBusA1 | flexspi_slBusA2, pctl_isel_flexspi1_sck_fa, 1, pctl_mux_gpio_sd_b2_07, 1, pctl_pad_gpio_sd_b2_07 }, /* SCLK */
 		{ (flexspi_instance1 << 8) | flexspi_slBusA1 | flexspi_slBusA2, pctl_isel_flexspi1_fa_0, 1, pctl_mux_gpio_sd_b2_08, 1, pctl_pad_gpio_sd_b2_08 },   /* D0 */
 		{ (flexspi_instance1 << 8) | flexspi_slBusA1 | flexspi_slBusA2, pctl_isel_flexspi1_fa_1, 1, pctl_mux_gpio_sd_b2_09, 1, pctl_pad_gpio_sd_b2_09 },   /* D1 */
@@ -105,16 +107,20 @@ __attribute__((section(".noxip"))) static int flexspi_pinConfig(flexspi_t *fspi)
 		{ (flexspi_instance1 << 8) | flexspi_slBusA1 | flexspi_slBusA2, pctl_isel_flexspi1_fa_3, 1, pctl_mux_gpio_sd_b2_11, 1, pctl_pad_gpio_sd_b2_11 },   /* D3 */
 
 		/* FlesSPI-1 B1/B2 */
+		{ (flexspi_instance1 << 8) | flexspi_slBusB1, -1, -1, pctl_mux_gpio_sd_b1_04, 8, pctl_pad_gpio_sd_b1_04 },                                         /* SS0 */
+		{ (flexspi_instance1 << 8) | flexspi_slBusB2, -1, -1, pctl_mux_gpio_sd_b1_03, 9, pctl_pad_gpio_sd_b1_03 },                                         /* SS1 */
 		{ (flexspi_instance1 << 8) | flexspi_slBusB1 | flexspi_slBusB2, -1, -1, pctl_mux_gpio_sd_b1_05, 8, pctl_pad_gpio_sd_b1_05 },                       /* DQS */
 		{ (flexspi_instance1 << 8) | flexspi_slBusB1 | flexspi_slBusB2, pctl_isel_flexspi1_sck_fb, 1, pctl_mux_gpio_sd_b2_04, 1, pctl_pad_gpio_sd_b2_04 }, /* SCLK */
-		{ (flexspi_instance1 << 8) | flexspi_slBusB1, -1, -1, pctl_mux_gpio_sd_b2_05, 3, pctl_pad_gpio_sd_b2_05 },                                         /* SS0 */
-		{ (flexspi_instance1 << 8) | flexspi_slBusB2, -1, -1, pctl_mux_gpio_sd_b1_03, 9, pctl_pad_gpio_sd_b1_03 },                                         /* SS1 */
 		{ (flexspi_instance1 << 8) | flexspi_slBusB1 | flexspi_slBusB2, pctl_isel_flexspi1_fb_0, 1, pctl_mux_gpio_sd_b2_03, 1, pctl_pad_gpio_sd_b2_03 },   /* D0 */
 		{ (flexspi_instance1 << 8) | flexspi_slBusB1 | flexspi_slBusB2, pctl_isel_flexspi1_fb_1, 1, pctl_mux_gpio_sd_b2_02, 1, pctl_pad_gpio_sd_b2_02 },   /* D1 */
 		{ (flexspi_instance1 << 8) | flexspi_slBusB1 | flexspi_slBusB2, pctl_isel_flexspi1_fb_2, 1, pctl_mux_gpio_sd_b2_01, 1, pctl_pad_gpio_sd_b2_01 },   /* D2 */
 		{ (flexspi_instance1 << 8) | flexspi_slBusB1 | flexspi_slBusB2, pctl_isel_flexspi1_fb_3, 1, pctl_mux_gpio_sd_b2_00, 1, pctl_pad_gpio_sd_b2_00 },   /* D3 */
 
-		/* FlexSPI-2 A1/B2 */
+		/* FlexSPI-2 A1/A2 */
+		{ (flexspi_instance2 << 8) | flexspi_slBusA1, -1, -1, pctl_mux_gpio_emc_b2_11, 4, pctl_pad_gpio_emc_b2_11 },                                         /* SS0 */
+		{ (flexspi_instance2 << 8) | flexspi_slBusA2, -1, -1, pctl_mux_gpio_ad_01, 9, pctl_pad_gpio_ad_01 },                                                 /* SS1 */
+		{ (flexspi_instance2 << 8) | flexspi_slBusA1 | flexspi_slBusA2, -1, -1, pctl_mux_gpio_emc_b2_12, 4, pctl_pad_gpio_emc_b2_12 },                       /* DQS */
+		{ (flexspi_instance2 << 8) | flexspi_slBusA1 | flexspi_slBusA2, pctl_isel_flexspi2_sck_fa, 0, pctl_mux_gpio_emc_b2_10, 4, pctl_pad_gpio_emc_b2_10 }, /* SCLK */
 		{ (flexspi_instance2 << 8) | flexspi_slBusA1 | flexspi_slBusA2, pctl_isel_flexspi2_fa_0, 0, pctl_mux_gpio_emc_b2_13, 4, pctl_pad_gpio_emc_b2_13 },   /* D0 */
 		{ (flexspi_instance2 << 8) | flexspi_slBusA1 | flexspi_slBusA2, pctl_isel_flexspi2_fa_1, 0, pctl_mux_gpio_emc_b2_14, 4, pctl_pad_gpio_emc_b2_14 },   /* D1 */
 		{ (flexspi_instance2 << 8) | flexspi_slBusA1 | flexspi_slBusA2, pctl_isel_flexspi2_fa_2, 0, pctl_mux_gpio_emc_b2_15, 4, pctl_pad_gpio_emc_b2_15 },   /* D2 */
@@ -123,41 +129,42 @@ __attribute__((section(".noxip"))) static int flexspi_pinConfig(flexspi_t *fspi)
 		{ (flexspi_instance2 << 8) | flexspi_slBusA1 | flexspi_slBusA2, -1, -1, pctl_mux_gpio_emc_b2_18, 4, pctl_pad_gpio_emc_b2_18 },                       /* D5 */
 		{ (flexspi_instance2 << 8) | flexspi_slBusA1 | flexspi_slBusA2, -1, -1, pctl_mux_gpio_emc_b2_19, 4, pctl_pad_gpio_emc_b2_19 },                       /* D6 */
 		{ (flexspi_instance2 << 8) | flexspi_slBusA1 | flexspi_slBusA2, -1, -1, pctl_mux_gpio_emc_b2_20, 4, pctl_pad_gpio_emc_b2_20 },                       /* D7 */
-		{ (flexspi_instance2 << 8) | flexspi_slBusA1 | flexspi_slBusA2, -1, -1, pctl_mux_gpio_emc_b2_12, 4, pctl_pad_gpio_emc_b2_12 },                       /* DQS */
-		{ (flexspi_instance2 << 8) | flexspi_slBusA1 | flexspi_slBusA2, pctl_isel_flexspi2_sck_fa, 0, pctl_mux_gpio_emc_b2_10, 4, pctl_pad_gpio_emc_b2_10 }, /* SCLK */
-		{ (flexspi_instance2 << 8) | flexspi_slBusA1, -1, -1, pctl_mux_gpio_emc_b2_11, 4, pctl_pad_gpio_emc_b2_11 },                                         /* SS0 */
-		{ (flexspi_instance2 << 8) | flexspi_slBusA2, -1, -1, pctl_mux_gpio_ad_01, 9, pctl_pad_gpio_ad_01 },                                                 /* SS1 */
 
 		/* FlexSPI-2 B1/B2 */
-		{ (flexspi_instance2 << 8) | flexspi_slBusB1 | flexspi_slBusB2, -1, -1, pctl_mux_gpio_emc_b2_06, 4, pctl_pad_gpio_emc_b2_07 }, /* D0 */
-		{ (flexspi_instance2 << 8) | flexspi_slBusB1 | flexspi_slBusB2, -1, -1, pctl_mux_gpio_emc_b2_05, 4, pctl_pad_gpio_emc_b2_06 }, /* D1 */
-		{ (flexspi_instance2 << 8) | flexspi_slBusB1 | flexspi_slBusB2, -1, -1, pctl_mux_gpio_emc_b2_04, 4, pctl_pad_gpio_emc_b2_05 }, /* D2 */
-		{ (flexspi_instance2 << 8) | flexspi_slBusB1 | flexspi_slBusB2, -1, -1, pctl_mux_gpio_emc_b2_03, 4, pctl_pad_gpio_emc_b2_04 }, /* D3 */
-		{ (flexspi_instance2 << 8) | flexspi_slBusB1 | flexspi_slBusB2, -1, -1, pctl_mux_gpio_emc_b2_02, 4, pctl_pad_gpio_emc_b2_03 }, /* D4 */
+		{ (flexspi_instance2 << 8) | flexspi_slBusB1, -1, -1, pctl_mux_gpio_emc_b2_08, 4, pctl_pad_gpio_emc_b2_08 },                   /* SS0 */
+		{ (flexspi_instance2 << 8) | flexspi_slBusB2, -1, -1, pctl_mux_gpio_ad_00, 9, pctl_pad_gpio_ad_00 },                           /* SS1 */
+		{ (flexspi_instance2 << 8) | flexspi_slBusB1 | flexspi_slBusB2, -1, -1, pctl_mux_gpio_emc_b2_07, 4, pctl_pad_gpio_emc_b2_07 }, /* DQS */
+		{ (flexspi_instance2 << 8) | flexspi_slBusB1 | flexspi_slBusB2, -1, -1, pctl_mux_gpio_emc_b2_09, 4, pctl_pad_gpio_emc_b2_09 }, /* SCLK */
+		{ (flexspi_instance2 << 8) | flexspi_slBusB1 | flexspi_slBusB2, -1, -1, pctl_mux_gpio_emc_b2_06, 4, pctl_pad_gpio_emc_b2_06 }, /* D0 */
+		{ (flexspi_instance2 << 8) | flexspi_slBusB1 | flexspi_slBusB2, -1, -1, pctl_mux_gpio_emc_b2_05, 4, pctl_pad_gpio_emc_b2_05 }, /* D1 */
+		{ (flexspi_instance2 << 8) | flexspi_slBusB1 | flexspi_slBusB2, -1, -1, pctl_mux_gpio_emc_b2_04, 4, pctl_pad_gpio_emc_b2_04 }, /* D2 */
+		{ (flexspi_instance2 << 8) | flexspi_slBusB1 | flexspi_slBusB2, -1, -1, pctl_mux_gpio_emc_b2_03, 4, pctl_pad_gpio_emc_b2_03 }, /* D3 */
+		{ (flexspi_instance2 << 8) | flexspi_slBusB1 | flexspi_slBusB2, -1, -1, pctl_mux_gpio_emc_b2_02, 4, pctl_pad_gpio_emc_b2_02 }, /* D4 */
 		{ (flexspi_instance2 << 8) | flexspi_slBusB1 | flexspi_slBusB2, -1, -1, pctl_mux_gpio_emc_b2_01, 4, pctl_pad_gpio_emc_b2_01 }, /* D5 */
 		{ (flexspi_instance2 << 8) | flexspi_slBusB1 | flexspi_slBusB2, -1, -1, pctl_mux_gpio_emc_b2_00, 4, pctl_pad_gpio_emc_b2_00 }, /* D6 */
 		{ (flexspi_instance2 << 8) | flexspi_slBusB1 | flexspi_slBusB2, -1, -1, pctl_mux_gpio_emc_b1_41, 4, pctl_pad_gpio_emc_b1_41 }, /* D7 */
-		{ (flexspi_instance2 << 8) | flexspi_slBusB1 | flexspi_slBusB2, -1, -1, pctl_mux_gpio_sd_b2_07, 8, pctl_pad_gpio_sd_b2_07 },   /* DQS */
-		{ (flexspi_instance2 << 8) | flexspi_slBusB1 | flexspi_slBusB2, -1, -1, pctl_mux_gpio_emc_b2_09, 4, pctl_pad_gpio_emc_b2_09 }, /* SCLK */
-		{ (flexspi_instance2 << 8) | flexspi_slBusB1, -1, -1, pctl_mux_gpio_emc_b2_08, 4, pctl_pad_gpio_emc_b2_08 },                   /* SS0 */
-		{ (flexspi_instance2 << 8) | flexspi_slBusB2, -1, -1, pctl_mux_gpio_ad_00, 9, pctl_pad_gpio_ad_00 },                           /* SS1 */
 	};
 
 	for (i = 0, done = 0; i < sizeof(pin) / sizeof(pin[0]); ++i) {
-		if ((pin[i].devMask & ((1 << (fspi->instance - 1)) << 8)) == 0)
+		if ((pin[i].devMask & ((1 << (fspi->instance - 1)) << 8)) == 0) {
 			continue;
+		}
 
-		if ((pin[i].devMask & fspi->slPortMask) == 0)
+		if ((pin[i].devMask & fspi->slPortMask) == 0) {
 			continue;
+		}
 
-		if (pin[i].isel >= 0)
+		if (pin[i].isel >= 0) {
 			_imxrt_setIOisel(pin[i].isel, pin[i].daisy);
+		}
 
-		if (pin[i].mux >= 0)
-			_imxrt_setIOmux(pin[i].mux, pin[i].mode, 1); /* sion is enabled */
+		if (pin[i].mux >= 0) {
+			_imxrt_setIOmux(pin[i].mux, 1, pin[i].mode); /* sion is enabled */
+		}
 
-		if (pin[i].pad >= 0)
+		if (pin[i].pad >= 0) {
 			_imxrt_setIOpad(pin[i].pad, 0, 1, 0, 1, 0, 0);
+		}
 
 		done++;
 	}
