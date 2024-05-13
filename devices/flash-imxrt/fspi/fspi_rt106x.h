@@ -119,7 +119,7 @@ __attribute__((section(".noxip"))) static int flexspi_pinConfig(flexspi_t *fspi)
 		}
 
 		if (pin[i].mux >= 0) {
-			_imxrt_setIOmux(pin[i].mux, pin[i].mode, 1); /* sion is enabled */
+			_imxrt_setIOmux(pin[i].mux, 1, pin[i].mode); /* sion is enabled */
 		}
 
 		if (pin[i].pad >= 0) {

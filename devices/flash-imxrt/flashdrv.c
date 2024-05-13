@@ -51,16 +51,11 @@ static inline int minorToPortMask(unsigned int minor)
 {
 	switch (minor) {
 		case 0:
-			return flexspi_slBusA1;
+			return FLEXSPI1_PORT_MASK;
 
-#if defined(__CPU_IMXRT106X)
+#if defined(__CPU_IMXRT106X) || defined(__CPU_IMXRT117X)
 		case 1:
-			return flexspi_slBusA1;
-#endif
-
-#if defined(__CPU_IMXRT117X)
-		case 1:
-			return flexspi_slBusA1 | flexspi_slBusA2;
+			return FLEXSPI2_PORT_MASK;
 #endif
 
 		default:

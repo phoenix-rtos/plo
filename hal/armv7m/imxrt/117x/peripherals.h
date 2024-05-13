@@ -17,6 +17,8 @@
 #ifndef _PERIPHERALS_H_
 #define _PERIPHERALS_H_
 
+#include <board_config.h>
+
 /* Periperals configuration */
 
 /* Interrupts */
@@ -247,20 +249,20 @@
 
 /* FLASH */
 
-#define FLASH_NO                  (FLASH_FLEXSPI1_MOUNTED + FLASH_FLEXSPI2_MOUNTED)
+#define FLASH_NO                  FLEXSPI_COUNT
 #define FLASH_DEFAULT_SECTOR_SIZE 0x1000
 
-#define FLASH_FLEXSPI1_MOUNTED   1
-#define FLASH_FLEXSPI1           0x30000000
-#define FLASH_SIZE_FLEXSPI1      0x10000000
-#define FLASH_FLEXSPI1_INSTANCE  0x1
-#define FLASH_FLEXSPI1_QSPI_FREQ 0xc0000007
+#ifndef FLEXSPI_COUNT
+#define FLEXSPI_COUNT 1
+#endif
 
-#define FLASH_FLEXSPI2_MOUNTED   0
-#define FLASH_FLEXSPI2           0x60000000
-#define FLASH_SIZE_FLEXSPI2      0x1f800000
-#define FLASH_FLEXSPI2_INSTANCE  0x2
-#define FLASH_FLEXSPI2_QSPI_FREQ 0xc0000007
+#ifndef FLEXSPI1_PORT_MASK
+#define FLEXSPI1_PORT_MASK flexspi_slBusA1
+#endif
+
+#ifndef FLEXSPI2_PORT_MASK
+#define FLEXSPI2_PORT_MASK (flexspi_slBusA1 | flexspi_slBusA2)
+#endif
 
 
 /* USB */

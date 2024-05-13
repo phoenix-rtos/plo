@@ -293,7 +293,7 @@ int nor_probe(flexspi_t *fspi, u8 port, const struct nor_info **pInfo, const cha
 
 	res = -ENXIO;
 
-	lib_printf("\ndev/flash/nor: Probing flash id 0x%08x", jedecId);
+	lib_printf("\ndev/flash/nor: Probing flash id 0x%08x on port %d.%d", jedecId, fspi->instance, port);
 
 	for (i = 0; i < sizeof(flashInfo) / sizeof(flashInfo[0]); ++i) {
 		if (flashInfo[i].jedecId == jedecId) {
