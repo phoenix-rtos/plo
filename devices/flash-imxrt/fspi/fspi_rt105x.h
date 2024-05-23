@@ -41,7 +41,7 @@ static inline void *flexspi_getBase(int instance)
 }
 
 
-__attribute__((section(".noxip"))) static void flexspi_clockConfig(flexspi_t *fspi)
+static void flexspi_clockConfig(flexspi_t *fspi)
 {
 	_imxrt_ccmControlGate(pctl_clk_flexspi, clk_state_off);
 	_imxrt_ccmSetDiv(clk_div_flexspi, 1); /* div2 -> 130 MHz */
@@ -51,7 +51,7 @@ __attribute__((section(".noxip"))) static void flexspi_clockConfig(flexspi_t *fs
 }
 
 
-__attribute__((section(".noxip"))) static int flexspi_pinConfig(flexspi_t *fspi)
+static int flexspi_pinConfig(flexspi_t *fspi)
 {
 	/* MIMXRT1052 (IS25WP064 nor flash) pin setup as decoded from bootloader image */
 	*((volatile u32 *)0x401f81ec) = 0x11;   /* MUX FLEXSPIA_SS0_B */

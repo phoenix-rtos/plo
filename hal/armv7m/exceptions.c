@@ -54,7 +54,7 @@ struct excContext {
 };
 
 
-__attribute__((section(".noxip"))) void hal_exceptionsDumpContext(char *buff, struct excContext *ctx, int n)
+void hal_exceptionsDumpContext(char *buff, struct excContext *ctx, int n)
 {
 	static const char *const mnemonics[] = {
 		"0 #InitialSP", "1 #Reset", "2 #NMI", "3 #HardFault",
@@ -123,7 +123,7 @@ __attribute__((section(".noxip"))) void hal_exceptionsDumpContext(char *buff, st
 }
 
 
-__attribute__((section(".noxip"))) void hal_exceptionsDispatch(unsigned int n, struct excContext *ctx)
+void hal_exceptionsDispatch(unsigned int n, struct excContext *ctx)
 {
 	static char buff[512];
 

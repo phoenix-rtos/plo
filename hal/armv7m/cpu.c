@@ -71,7 +71,7 @@ u32 hal_scbGetPriority(s8 excpn)
 }
 
 
-__attribute__((section(".noxip"))) void hal_enableDCache(void)
+void hal_enableDCache(void)
 {
 	u32 ccsidr, sets, ways;
 
@@ -99,7 +99,7 @@ __attribute__((section(".noxip"))) void hal_enableDCache(void)
 }
 
 
-__attribute__((section(".noxip"))) void hal_disableDCache(void)
+void hal_disableDCache(void)
 {
 	register u32 ccsidr, sets, ways;
 
@@ -126,7 +126,7 @@ __attribute__((section(".noxip"))) void hal_disableDCache(void)
 }
 
 
-__attribute__((section(".noxip"))) void hal_cleanDCache(void)
+void hal_cleanDCache(void)
 {
 	register u32 ccsidr, sets, ways;
 
@@ -149,7 +149,7 @@ __attribute__((section(".noxip"))) void hal_cleanDCache(void)
 }
 
 
-__attribute__((section(".noxip"))) void hal_cleanDCacheAddr(void *addr, u32 sz)
+void hal_cleanDCacheAddr(void *addr, u32 sz)
 {
 	u32 daddr;
 	int dsize;
@@ -174,7 +174,7 @@ __attribute__((section(".noxip"))) void hal_cleanDCacheAddr(void *addr, u32 sz)
 }
 
 
-__attribute__((section(".noxip"))) void hal_cleaninvalDCacheAddr(void *addr, u32 sz)
+void hal_cleaninvalDCacheAddr(void *addr, u32 sz)
 {
 	u32 daddr;
 	int dsize;
@@ -199,7 +199,7 @@ __attribute__((section(".noxip"))) void hal_cleaninvalDCacheAddr(void *addr, u32
 }
 
 
-__attribute__((section(".noxip"))) void hal_invalDCacheAddr(void *addr, u32 sz)
+void hal_invalDCacheAddr(void *addr, u32 sz)
 {
 	u32 daddr;
 	int dsize;
@@ -224,7 +224,7 @@ __attribute__((section(".noxip"))) void hal_invalDCacheAddr(void *addr, u32 sz)
 }
 
 
-__attribute__((section(".noxip"))) void hal_invalDCacheAll(void)
+void hal_invalDCacheAll(void)
 {
 	u32 ccsidr, sets, ways;
 
@@ -246,7 +246,7 @@ __attribute__((section(".noxip"))) void hal_invalDCacheAll(void)
 }
 
 
-__attribute__((section(".noxip"))) void hal_enableICache(void)
+void hal_enableICache(void)
 {
 	if (!(*(cpu_common.scb + scb_ccr) & (1 << 17))) {
 		hal_cpuDataSyncBarrier();
@@ -261,7 +261,7 @@ __attribute__((section(".noxip"))) void hal_enableICache(void)
 }
 
 
-__attribute__((section(".noxip"))) void hal_disableICache(void)
+void hal_disableICache(void)
 {
 	if (*(cpu_common.scb + scb_ccr) & (1 << 17)) {
 		hal_cpuDataSyncBarrier();
@@ -274,7 +274,7 @@ __attribute__((section(".noxip"))) void hal_disableICache(void)
 }
 
 
-__attribute__((section(".noxip"))) void hal_cpuInvCache(unsigned int type, addr_t addr, size_t sz)
+void hal_cpuInvCache(unsigned int type, addr_t addr, size_t sz)
 {
 	switch (type) {
 		case hal_cpuDCache:

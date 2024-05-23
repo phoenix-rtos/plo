@@ -109,39 +109,39 @@ _fcfb:
 .org _fcfb + 0x1000, 0xff
 
 ivt_flash:
-	.word 0x412000d1                         /* hdr */
-	.word _start                             /* entry */
-	.word 0                                  /* reserved 1 */
-	.word 0                                  /* dcd */
-	.word flash_boot_data                    /* boot_data */
-	.word ivt_flash                          /* self */
-	.word 0                                  /* csf */
-	.word 0                                  /* reserved 2 */
+	.word 0x412000d1                               /* hdr */
+	.word _start                                   /* entry */
+	.word 0                                        /* reserved 1 */
+	.word 0                                        /* dcd */
+	.word flash_boot_data // - _fcfb + FLEXSPI2_BASE  /* boot_data */
+	.word ivt_flash // - _fcfb + FLEXSPI2_BASE        /* self */
+	.word 0                                        /* csf */
+	.word 0                                        /* reserved 2 */
 
 flash_boot_data:
-	.word FLEXSPI2_BASE                      /* load address */
-	.word _plo_size                          /* size */
-	.word 0                                  /* plugin */
-	.word 0xffffffff                         /* empty - extra data word */
+	.word _fcfb                                    /* load address */
+	.word _plo_size                                /* size */
+	.word 0                                        /* plugin */
+	.word 0xffffffff                               /* empty - extra data word */
 
 ivt_flash_end:
 
 .org _fcfb + 0x1050, 0xff
 
 ivt:
-	.word 0x412000d1                         /* hdr */
-	.word _start                             /* entry */
-	.word 0                                  /* reserved 1 */
-	.word 0                                  /* dcd */
-	.word boot_data                          /* boot_data */
-	.word ivt                                /* self */
-	.word 0                                  /* csf */
-	.word 0                                  /* reserved 2 */
+	.word 0x412000d1                               /* hdr */
+	.word _start                                   /* entry */
+	.word 0                                        /* reserved 1 */
+	.word 0                                        /* dcd */
+	.word boot_data                                /* boot_data */
+	.word ivt                                      /* self */
+	.word 0                                        /* csf */
+	.word 0                                        /* reserved 2 */
 
 boot_data:
-	.word ADDR_ITCM                          /* load address */
-	.word _plo_size                          /* size */
-	.word 0                                  /* plugin */
+	.word _fcfb                                    /* load address */
+	.word _plo_size                                /* size */
+	.word 0                                        /* plugin */
 	.word 0xffffffff
 
 ivt_end:
@@ -207,7 +207,6 @@ _plo:
 
 .globl _interrupts_dispatch
 .type _interrupts_dispatch, %function
-.section .noxip
 _interrupts_dispatch:
 	mrs r0, ipsr
 	stmdb sp!, {r0, r4-r11, lr}
@@ -222,7 +221,7 @@ _interrupts_dispatch:
 
 .globl _exceptions_dispatch
 .type _exceptions_dispatch, %function
-.section .noxip
+
 
 _exceptions_dispatch:
 	cpsid if

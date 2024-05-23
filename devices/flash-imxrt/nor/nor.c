@@ -84,7 +84,7 @@ static int nor_readID(flexspi_t *fspi, u8 port, u32 *retValue, time_t timeout)
 }
 
 
-__attribute__((section(".noxip"))) int nor_readStatus(flexspi_t *fspi, u8 port, u8 *statusByte, time_t timeout)
+int nor_readStatus(flexspi_t *fspi, u8 port, u8 *statusByte, time_t timeout)
 {
 	struct xferOp xfer;
 
@@ -101,7 +101,7 @@ __attribute__((section(".noxip"))) int nor_readStatus(flexspi_t *fspi, u8 port, 
 }
 
 
-__attribute__((section(".noxip"))) int nor_waitBusy(flexspi_t *fspi, u8 port, time_t timeout)
+int nor_waitBusy(flexspi_t *fspi, u8 port, time_t timeout)
 {
 	int res;
 	u8 status = 0;
@@ -117,7 +117,7 @@ __attribute__((section(".noxip"))) int nor_waitBusy(flexspi_t *fspi, u8 port, ti
 }
 
 
-__attribute__((section(".noxip"))) int nor_writeEnable(flexspi_t *fspi, u8 port, int enable, time_t timeout)
+int nor_writeEnable(flexspi_t *fspi, u8 port, int enable, time_t timeout)
 {
 	struct xferOp xfer;
 	int res, seqCode;
@@ -155,7 +155,7 @@ __attribute__((section(".noxip"))) int nor_writeEnable(flexspi_t *fspi, u8 port,
 }
 
 
-__attribute__((section(".noxip"))) int nor_eraseSector(flexspi_t *fspi, u8 port, addr_t addr, time_t timeout)
+int nor_eraseSector(flexspi_t *fspi, u8 port, addr_t addr, time_t timeout)
 {
 	struct xferOp xfer;
 
@@ -180,7 +180,7 @@ __attribute__((section(".noxip"))) int nor_eraseSector(flexspi_t *fspi, u8 port,
 }
 
 
-__attribute__((section(".noxip"))) static int nor_mode4ByteAddr(flexspi_t *fspi, u8 port, int en4b, time_t timeout)
+static int nor_mode4ByteAddr(flexspi_t *fspi, u8 port, int en4b, time_t timeout)
 {
 	struct xferOp xfer;
 	int seqCode = ((en4b == 0) ? fspi_exit4byteAddr : fspi_enter4byteAddr);
@@ -196,7 +196,7 @@ __attribute__((section(".noxip"))) static int nor_mode4ByteAddr(flexspi_t *fspi,
 }
 
 
-__attribute__((section(".noxip"))) int nor_eraseChipDie(flexspi_t *fspi, u8 port, u32 capFlags, int dieCount, size_t dieSize, time_t timeout)
+int nor_eraseChipDie(flexspi_t *fspi, u8 port, u32 capFlags, int dieCount, size_t dieSize, time_t timeout)
 {
 	struct xferOp xfer;
 	int dieIndex, res = -EIO;
@@ -236,7 +236,7 @@ __attribute__((section(".noxip"))) int nor_eraseChipDie(flexspi_t *fspi, u8 port
 }
 
 
-__attribute__((section(".noxip"))) int nor_pageProgram(flexspi_t *fspi, u8 port, addr_t dstAddr, const void *src, size_t pageSz, time_t timeout)
+int nor_pageProgram(flexspi_t *fspi, u8 port, addr_t dstAddr, const void *src, size_t pageSz, time_t timeout)
 {
 	struct xferOp xfer;
 

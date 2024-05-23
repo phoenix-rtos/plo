@@ -95,7 +95,7 @@ unsigned int hal_getBootReason(void)
 /* IOMUX */
 
 
-__attribute__((section(".noxip"))) static volatile u32 *_imxrt_IOmuxGetReg(int mux)
+static volatile u32 *_imxrt_IOmuxGetReg(int mux)
 {
 	if ((mux < pctl_mux_gpio_emc_b1_00) || (mux > pctl_mux_gpio_lpsr_15)) {
 		return NULL;
@@ -113,7 +113,7 @@ __attribute__((section(".noxip"))) static volatile u32 *_imxrt_IOmuxGetReg(int m
 }
 
 
-__attribute__((section(".noxip"))) int _imxrt_setIOmux(int mux, char sion, char mode)
+int _imxrt_setIOmux(int mux, char sion, char mode)
 {
 	volatile u32 *reg;
 
@@ -129,7 +129,7 @@ __attribute__((section(".noxip"))) int _imxrt_setIOmux(int mux, char sion, char 
 }
 
 
-__attribute__((section(".noxip"))) static volatile u32 *_imxrt_IOpadGetReg(int pad)
+static volatile u32 *_imxrt_IOpadGetReg(int pad)
 {
 	if ((pad < pctl_pad_gpio_emc_b1_00) || (pad > pctl_pad_gpio_lpsr_15)) {
 		return NULL;
@@ -147,7 +147,7 @@ __attribute__((section(".noxip"))) static volatile u32 *_imxrt_IOpadGetReg(int p
 }
 
 
-__attribute__((section(".noxip"))) int _imxrt_setIOpad(int pad, char sre, char dse, char pue, char pus, char ode, char apc)
+int _imxrt_setIOpad(int pad, char sre, char dse, char pue, char pus, char ode, char apc)
 {
 	u32 t;
 	volatile u32 *reg;
@@ -198,7 +198,7 @@ __attribute__((section(".noxip"))) int _imxrt_setIOpad(int pad, char sre, char d
 }
 
 
-__attribute__((section(".noxip"))) static volatile u32 *_imxrt_IOiselGetReg(int isel, u32 *mask)
+static volatile u32 *_imxrt_IOiselGetReg(int isel, u32 *mask)
 {
 	if ((isel < pctl_isel_flexcan1_rx) || (isel > pctl_isel_sai4_txsync)) {
 		return NULL;
@@ -254,7 +254,7 @@ __attribute__((section(".noxip"))) static volatile u32 *_imxrt_IOiselGetReg(int 
 }
 
 
-__attribute__((section(".noxip"))) int _imxrt_setIOisel(int isel, char daisy)
+int _imxrt_setIOisel(int isel, char daisy)
 {
 	volatile u32 *reg;
 	u32 mask;
@@ -358,7 +358,7 @@ int _imxrt_gpioGetPort(unsigned int d, u32 *val)
 
 /* CCM */
 
-__attribute__((section(".noxip"))) int _imxrt_getDevClock(int clock, int *div, int *mux, int *mfd, int *mfn, int *state)
+int _imxrt_getDevClock(int clock, int *div, int *mux, int *mfd, int *mfn, int *state)
 {
 	unsigned int t;
 	volatile u32 *reg = imxrt_common.ccm + (clock * 0x20);
@@ -378,7 +378,7 @@ __attribute__((section(".noxip"))) int _imxrt_getDevClock(int clock, int *div, i
 	return 0;
 }
 
-__attribute__((section(".noxip"))) int _imxrt_setDevClock(int clock, int div, int mux, int mfd, int mfn, int state)
+int _imxrt_setDevClock(int clock, int div, int mux, int mfd, int mfn, int state)
 {
 	unsigned int t;
 	volatile u32 *reg = imxrt_common.ccm + (clock * 0x20);
@@ -397,7 +397,7 @@ __attribute__((section(".noxip"))) int _imxrt_setDevClock(int clock, int div, in
 }
 
 
-__attribute__((section(".noxip"))) int _imxrt_setDirectLPCG(int clock, int state)
+int _imxrt_setDirectLPCG(int clock, int state)
 {
 	u32 t;
 	volatile u32 *reg;
@@ -418,7 +418,7 @@ __attribute__((section(".noxip"))) int _imxrt_setDirectLPCG(int clock, int state
 }
 
 
-__attribute__((section(".noxip"))) int _imxrt_setLevelLPCG(int clock, int level)
+int _imxrt_setLevelLPCG(int clock, int level)
 {
 	volatile u32 *reg;
 

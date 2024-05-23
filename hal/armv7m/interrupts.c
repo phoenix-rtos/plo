@@ -32,7 +32,7 @@ struct{
 } irq_common;
 
 
-__attribute__((section(".noxip"))) static void interrupts_nvicSetIRQ(s8 irqn, u8 state)
+static void interrupts_nvicSetIRQ(s8 irqn, u8 state)
 {
 	volatile u32 *ptr = irq_common.nvic + ((u8)irqn >> 5) + (state ? nvic_iser : nvic_icer);
 	*ptr = 1 << (irqn & 0x1F);
@@ -52,19 +52,19 @@ static void interrupts_nvicSetPriority(s8 irqn, u32 priority)
 }
 
 
-__attribute__((section(".noxip"))) void hal_interruptsEnableAll(void)
+void hal_interruptsEnableAll(void)
 {
 	__asm__ volatile("cpsie if");
 }
 
 
-__attribute__((section(".noxip"))) void hal_interruptsDisableAll(void)
+void hal_interruptsDisableAll(void)
 {
 	__asm__ volatile("cpsid if");
 }
 
 
-__attribute__((section(".noxip"))) void hal_interruptsEnable(unsigned int irqn)
+void hal_interruptsEnable(unsigned int irqn)
 {
 	if (irqn >= SIZE_INTERRUPTS || irqn < 0x10) {
 		return;
@@ -74,7 +74,7 @@ __attribute__((section(".noxip"))) void hal_interruptsEnable(unsigned int irqn)
 }
 
 
-__attribute__((section(".noxip"))) void hal_interruptsDisable(unsigned int irqn)
+void hal_interruptsDisable(unsigned int irqn)
 {
 	if (irqn >= SIZE_INTERRUPTS || irqn < 0x10) {
 		return;
@@ -109,7 +109,7 @@ int hal_interruptsSet(unsigned int irq, int (*isr)(unsigned int, void *), void *
 }
 
 
-__attribute__((section(".noxip"))) int hal_interruptDispatch(unsigned int irq)
+int hal_interruptDispatch(unsigned int irq)
 {
 	if (irq_common.irqs[irq].isr == NULL)
 		return -1;

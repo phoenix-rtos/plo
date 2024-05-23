@@ -53,7 +53,7 @@ static void *flexspi_getBase(int instance)
 }
 
 
-__attribute__((section(".noxip"))) static void flexspi_clockConfig(flexspi_t *fspi)
+static void flexspi_clockConfig(flexspi_t *fspi)
 {
 	int gate, clk, div, mux, mfd, mfn;
 
@@ -87,7 +87,7 @@ __attribute__((section(".noxip"))) static void flexspi_clockConfig(flexspi_t *fs
 }
 
 
-__attribute__((section(".noxip"))) static int flexspi_pinConfig(flexspi_t *fspi)
+static int flexspi_pinConfig(flexspi_t *fspi)
 {
 	unsigned int done, i;
 	static const struct {

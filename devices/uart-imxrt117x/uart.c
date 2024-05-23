@@ -90,19 +90,19 @@ static uart_t *uart_getInstance(unsigned int minor)
 }
 
 
-__attribute__((section(".noxip"))) static int uart_getRXcount(uart_t *uart)
+static int uart_getRXcount(uart_t *uart)
 {
 	return (*(uart->base + waterr) >> 24) & 0xff;
 }
 
 
-__attribute__((section(".noxip"))) static int uart_getTXcount(uart_t *uart)
+static int uart_getTXcount(uart_t *uart)
 {
 	return (*(uart->base + waterr) >> 8) & 0xff;
 }
 
 
-__attribute__((section(".noxip"))) static int uart_handleIntr(unsigned int irq, void *buff)
+static int uart_handleIntr(unsigned int irq, void *buff)
 {
 	uart_t *uart = (uart_t *)buff;
 

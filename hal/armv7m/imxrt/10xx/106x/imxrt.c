@@ -100,7 +100,7 @@ unsigned int hal_getBootReason(void)
 }
 
 
-__attribute__((section(".noxip"))) static volatile u32 *_imxrt_IOmuxGetReg(int mux)
+static volatile u32 *_imxrt_IOmuxGetReg(int mux)
 {
 	if ((mux < pctl_mux_gpio_emc_00) || (mux > pctl_mux_snvs_pmic_stby_req)) {
 		return NULL;
@@ -114,7 +114,7 @@ __attribute__((section(".noxip"))) static volatile u32 *_imxrt_IOmuxGetReg(int m
 }
 
 
-__attribute__((section(".noxip"))) int _imxrt_setIOmux(int mux, char sion, char mode)
+int _imxrt_setIOmux(int mux, char sion, char mode)
 {
 	volatile u32 *reg;
 
@@ -129,7 +129,7 @@ __attribute__((section(".noxip"))) int _imxrt_setIOmux(int mux, char sion, char 
 }
 
 
-__attribute__((section(".noxip"))) static volatile u32 *_imxrt_IOpadGetReg(int pad)
+static volatile u32 *_imxrt_IOpadGetReg(int pad)
 {
 	if ((pad < pctl_pad_gpio_emc_00) || (pad > pctl_pad_snvs_pmic_stby_req)) {
 		return NULL;
@@ -147,7 +147,7 @@ __attribute__((section(".noxip"))) static volatile u32 *_imxrt_IOpadGetReg(int p
 }
 
 
-__attribute__((section(".noxip"))) int _imxrt_setIOpad(int pad, char hys, char pus, char pue, char pke, char ode, char speed, char dse, char sre)
+int _imxrt_setIOpad(int pad, char hys, char pus, char pue, char pke, char ode, char speed, char dse, char sre)
 {
 	u32 t;
 	volatile u32 *reg;
@@ -165,7 +165,7 @@ __attribute__((section(".noxip"))) int _imxrt_setIOpad(int pad, char hys, char p
 }
 
 
-__attribute__((section(".noxip"))) static volatile u32 *_imxrt_IOiselGetReg(int isel, u32 *mask)
+static volatile u32 *_imxrt_IOiselGetReg(int isel, u32 *mask)
 {
 	if ((isel < pctl_isel_anatop_usb_otg1_id) || (isel > pctl_isel_canfd_ipp_ind_canrx)) {
 		return NULL;
@@ -227,7 +227,7 @@ __attribute__((section(".noxip"))) static volatile u32 *_imxrt_IOiselGetReg(int 
 }
 
 
-__attribute__((section(".noxip"))) int _imxrt_setIOisel(int isel, char daisy)
+int _imxrt_setIOisel(int isel, char daisy)
 {
 	volatile u32 *reg;
 	u32 mask;
@@ -246,7 +246,7 @@ __attribute__((section(".noxip"))) int _imxrt_setIOisel(int isel, char daisy)
 /* CCM (Clock Controller Module) */
 
 
-__attribute__((section(".noxip"))) static int _imxrt_isValidDev(int dev)
+static int _imxrt_isValidDev(int dev)
 {
 	if ((dev < pctl_clk_aips_tz1) || (dev > pctl_clk_flexio3)) {
 		return 0;
@@ -256,7 +256,7 @@ __attribute__((section(".noxip"))) static int _imxrt_isValidDev(int dev)
 }
 
 
-__attribute__((section(".noxip"))) int _imxrt_getDevClock(int dev, unsigned int *state)
+int _imxrt_getDevClock(int dev, unsigned int *state)
 {
 	int ccgr, flag;
 
@@ -273,7 +273,7 @@ __attribute__((section(".noxip"))) int _imxrt_getDevClock(int dev, unsigned int 
 }
 
 
-__attribute__((section(".noxip"))) int _imxrt_setDevClock(int dev, unsigned int state)
+int _imxrt_setDevClock(int dev, unsigned int state)
 {
 	int ccgr, flag, mask;
 	u32 t;
@@ -864,7 +864,7 @@ void _imxrt_ccmDeinitSysPfd(int pfd)
 }
 
 
-__attribute__((section(".noxip"))) void _imxrt_ccmInitUsb1Pfd(int pfd, u8 pfdFrac)
+void _imxrt_ccmInitUsb1Pfd(int pfd, u8 pfdFrac)
 {
 	u32 pfd480 = *(imxrt_common.ccm_analog + ccm_analog_pfd_480) & ~(0xbf << (pfd << 3));
 
@@ -939,7 +939,7 @@ u32 _imxrt_ccmGetUsb1PfdFreq(int pfd)
 }
 
 
-__attribute__((section(".noxip"))) void _imxrt_ccmSetMux(int mux, u32 val)
+void _imxrt_ccmSetMux(int mux, u32 val)
 {
 	switch (mux) {
 		case clk_mux_pll3:
@@ -1181,7 +1181,7 @@ u32 _imxrt_ccmGetMux(int mux)
 }
 
 
-__attribute__((section(".noxip"))) void _imxrt_ccmSetDiv(int div, u32 val)
+void _imxrt_ccmSetDiv(int div, u32 val)
 {
 	switch (div) {
 		case clk_div_arm: /* CACRR */
@@ -1467,7 +1467,7 @@ u32 _imxrt_ccmGetDiv(int div)
 }
 
 
-__attribute__((section(".noxip"))) void _imxrt_ccmControlGate(int dev, int state)
+void _imxrt_ccmControlGate(int dev, int state)
 {
 	int index = dev >> 4, shift = (dev & 0xf) << 1;
 	u32 t;

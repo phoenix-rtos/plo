@@ -33,7 +33,7 @@
 
 
 /* Stop/Start FlexSPI module */
-__attribute__((section(".noxip"))) static void flexspi_disable(flexspi_t *fspi, int disable)
+static void flexspi_disable(flexspi_t *fspi, int disable)
 {
 	register u32 reg = *(fspi->base + mcr0);
 
@@ -49,7 +49,7 @@ __attribute__((section(".noxip"))) static void flexspi_disable(flexspi_t *fspi, 
 
 
 /* Module Software Reset (all registers except control registers) */
-__attribute__((section(".noxip"))) static inline void flexspi_swreset(flexspi_t *fspi)
+static inline void flexspi_swreset(flexspi_t *fspi)
 {
 	*(fspi->base + mcr0) |= 1;
 	while ((*(fspi->base + mcr0) & 1) != 0) {
@@ -57,7 +57,7 @@ __attribute__((section(".noxip"))) static inline void flexspi_swreset(flexspi_t 
 }
 
 
-__attribute__((section(".noxip"))) static void flexspi_lutSet(flexspi_t *fspi, u32 index, u32 lutCopy[64], size_t count)
+static void flexspi_lutSet(flexspi_t *fspi, u32 index, u32 lutCopy[64], size_t count)
 {
 	unsigned int i;
 	volatile u32 *lutPtr = fspi->base + lut64 + index;
@@ -81,7 +81,7 @@ __attribute__((section(".noxip"))) static void flexspi_lutSet(flexspi_t *fspi, u
 }
 
 
-__attribute__((section(".noxip"))) void flexspi_lutUpdateEntries(flexspi_t *fspi, u32 index, const u32 *lutTable[], size_t elems, size_t count)
+void flexspi_lutUpdateEntries(flexspi_t *fspi, u32 index, const u32 *lutTable[], size_t elems, size_t count)
 {
 	u32 lutCopy[64];
 	const u32 *src;
@@ -98,7 +98,7 @@ __attribute__((section(".noxip"))) void flexspi_lutUpdateEntries(flexspi_t *fspi
 }
 
 
-__attribute__((section(".noxip"))) void flexspi_lutUpdate(flexspi_t *fspi, u32 index, const u32 *lutTable, size_t count)
+void flexspi_lutUpdate(flexspi_t *fspi, u32 index, const u32 *lutTable, size_t count)
 {
 	u32 lutCopy[64];
 	unsigned int i;
@@ -111,7 +111,7 @@ __attribute__((section(".noxip"))) void flexspi_lutUpdate(flexspi_t *fspi, u32 i
 }
 
 
-__attribute__((section(".noxip"))) int flexspi_init(flexspi_t *fspi, int instance, u8 slPortMask)
+int flexspi_init(flexspi_t *fspi, int instance, u8 slPortMask)
 {
 	int res;
 	unsigned int i;
@@ -257,7 +257,7 @@ void flexspi_setFlashSize(flexspi_t *fspi, const size_t *flashSizes, size_t coun
 }
 
 
-__attribute__((section(".noxip"))) static addr_t flexspi_getAddressByPort(flexspi_t *fspi, u8 port, addr_t addr)
+static addr_t flexspi_getAddressByPort(flexspi_t *fspi, u8 port, addr_t addr)
 {
 	unsigned int i;
 
@@ -280,7 +280,7 @@ int flexspi_deinit(flexspi_t *fspi)
 }
 
 
-__attribute__((section(".noxip"))) static int flexspi_checkFlags(flexspi_t *fspi)
+static int flexspi_checkFlags(flexspi_t *fspi)
 {
 	u32 flags = *(fspi->base + intr) & ((1 << 1) | (1 << 3) | (1 << 11));
 
@@ -304,7 +304,7 @@ __attribute__((section(".noxip"))) static int flexspi_checkFlags(flexspi_t *fspi
 }
 
 
-__attribute__((section(".noxip"))) static ssize_t flexspi_opRead(flexspi_t *fspi, time_t start, struct xferOp *xfer)
+static ssize_t flexspi_opRead(flexspi_t *fspi, time_t start, struct xferOp *xfer)
 {
 	int res;
 	u8 *ptr = xfer->data.read.ptr;
@@ -343,7 +343,7 @@ __attribute__((section(".noxip"))) static ssize_t flexspi_opRead(flexspi_t *fspi
 }
 
 
-__attribute__((section(".noxip"))) static ssize_t flexspi_opWrite(flexspi_t *fspi, time_t start, struct xferOp *xfer)
+static ssize_t flexspi_opWrite(flexspi_t *fspi, time_t start, struct xferOp *xfer)
 {
 	int res;
 	const u8 *ptr = xfer->data.write.ptr;
@@ -382,7 +382,7 @@ __attribute__((section(".noxip"))) static ssize_t flexspi_opWrite(flexspi_t *fsp
 }
 
 
-__attribute__((section(".noxip"))) ssize_t flexspi_xferExec(flexspi_t *fspi, struct xferOp *xfer)
+ssize_t flexspi_xferExec(flexspi_t *fspi, struct xferOp *xfer)
 {
 	u32 dataSize;
 	time_t start = hal_timerGet();

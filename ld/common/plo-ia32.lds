@@ -85,15 +85,6 @@ SECTIONS
 		PROVIDE_HIDDEN (__fini_array_end = .);
 	} > PLO_IMAGE
 
-	.fastram.text.rel : ALIGN(4)
-	{
-		__ramtext_load = LOADADDR(.fastram.text.rel);
-		__ramtext_start = .;
-		*(.ramfunc)
-		. = ALIGN(4);
-		__ramtext_end = .;
-	} > PLO_IMAGE
-
 	.data : ALIGN(4)
 	{
 		. = ALIGN(4);

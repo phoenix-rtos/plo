@@ -50,7 +50,7 @@ static void *flexspi_getBase(int instance)
 }
 
 
-__attribute__((section(".noxip"))) static void flexspi_clockConfig(flexspi_t *fspi)
+static void flexspi_clockConfig(flexspi_t *fspi)
 {
 	if (fspi->instance == flexspi_instance1) {
 		_imxrt_ccmControlGate(pctl_clk_flexspi, clk_state_off);
@@ -69,7 +69,7 @@ __attribute__((section(".noxip"))) static void flexspi_clockConfig(flexspi_t *fs
 }
 
 
-__attribute__((section(".noxip"))) static int flexspi_pinConfig(flexspi_t *fspi)
+static int flexspi_pinConfig(flexspi_t *fspi)
 {
 	unsigned int done, i;
 	static const struct {
