@@ -5,7 +5,7 @@
  *
  * FlexSPI Controller driver (i.MX RT117x)
  *
- * Copyright 2021-2023 Phoenix Systems
+ * Copyright 2021-2024 Phoenix Systems
  * Author: Gerard Swiderski
  *
  * This file is part of Phoenix-RTOS.
@@ -131,18 +131,18 @@ __attribute__((section(".noxip"))) static int flexspi_pinConfig(flexspi_t *fspi)
 		{ (flexspi_instance2 << 8) | flexspi_slBusA1 | flexspi_slBusA2, -1, -1, pctl_mux_gpio_emc_b2_20, 4, pctl_pad_gpio_emc_b2_20 },                       /* D7 */
 
 		/* FlexSPI-2 B1/B2 */
-		{ (flexspi_instance2 << 8) | flexspi_slBusB1, -1, -1, pctl_mux_gpio_emc_b2_08, 4, pctl_pad_gpio_emc_b2_08 },                   /* SS0 */
-		{ (flexspi_instance2 << 8) | flexspi_slBusB2, -1, -1, pctl_mux_gpio_ad_00, 9, pctl_pad_gpio_ad_00 },                           /* SS1 */
-		{ (flexspi_instance2 << 8) | flexspi_slBusB1 | flexspi_slBusB2, -1, -1, pctl_mux_gpio_emc_b2_07, 4, pctl_pad_gpio_emc_b2_07 }, /* DQS */
-		{ (flexspi_instance2 << 8) | flexspi_slBusB1 | flexspi_slBusB2, -1, -1, pctl_mux_gpio_emc_b2_09, 4, pctl_pad_gpio_emc_b2_09 }, /* SCLK */
-		{ (flexspi_instance2 << 8) | flexspi_slBusB1 | flexspi_slBusB2, -1, -1, pctl_mux_gpio_emc_b2_06, 4, pctl_pad_gpio_emc_b2_06 }, /* D0 */
-		{ (flexspi_instance2 << 8) | flexspi_slBusB1 | flexspi_slBusB2, -1, -1, pctl_mux_gpio_emc_b2_05, 4, pctl_pad_gpio_emc_b2_05 }, /* D1 */
-		{ (flexspi_instance2 << 8) | flexspi_slBusB1 | flexspi_slBusB2, -1, -1, pctl_mux_gpio_emc_b2_04, 4, pctl_pad_gpio_emc_b2_04 }, /* D2 */
-		{ (flexspi_instance2 << 8) | flexspi_slBusB1 | flexspi_slBusB2, -1, -1, pctl_mux_gpio_emc_b2_03, 4, pctl_pad_gpio_emc_b2_03 }, /* D3 */
-		{ (flexspi_instance2 << 8) | flexspi_slBusB1 | flexspi_slBusB2, -1, -1, pctl_mux_gpio_emc_b2_02, 4, pctl_pad_gpio_emc_b2_02 }, /* D4 */
-		{ (flexspi_instance2 << 8) | flexspi_slBusB1 | flexspi_slBusB2, -1, -1, pctl_mux_gpio_emc_b2_01, 4, pctl_pad_gpio_emc_b2_01 }, /* D5 */
-		{ (flexspi_instance2 << 8) | flexspi_slBusB1 | flexspi_slBusB2, -1, -1, pctl_mux_gpio_emc_b2_00, 4, pctl_pad_gpio_emc_b2_00 }, /* D6 */
-		{ (flexspi_instance2 << 8) | flexspi_slBusB1 | flexspi_slBusB2, -1, -1, pctl_mux_gpio_emc_b1_41, 4, pctl_pad_gpio_emc_b1_41 }, /* D7 */
+		{ (flexspi_instance2 << 8) | flexspi_slBusB1, -1, -1, pctl_mux_gpio_emc_b2_08, 4, pctl_pad_gpio_emc_b2_08 },                        /* SS0 */
+		{ (flexspi_instance2 << 8) | flexspi_slBusB2, -1, -1, pctl_mux_gpio_ad_00, 9, pctl_pad_gpio_ad_00 },                                /* SS1 */
+		{ (flexspi_instance2 << 8) | flexspi_slBusB1 | flexspi_slBusB2, -1, -1, pctl_mux_gpio_emc_b2_07, 4, pctl_pad_gpio_emc_b2_07 },      /* DQS */
+		{ (flexspi_instance2 << 8) | flexspi_slBusB1 | flexspi_slBusB2, -1, -1, pctl_mux_gpio_emc_b2_09, 4, pctl_pad_gpio_emc_b2_09 },      /* SCLK */
+		{ (flexspi_instance2 << 8) | flexspi_slBusB1 | flexspi_slBusB2, -1, -1, pctl_mux_gpio_emc_b2_06, 4, pctl_pad_gpio_emc_b2_06 },      /* D0 */
+		{ (flexspi_instance2 << 8) | flexspi_slBusB1 | flexspi_slBusB2, -1, -1, pctl_mux_gpio_emc_b2_05, 4, pctl_pad_gpio_emc_b2_05 },      /* D1 */
+		{ (flexspi_instance2 << 8) | flexspi_slBusB1 | flexspi_slBusB2, -1, -1, pctl_mux_gpio_emc_b2_04, 4, pctl_pad_gpio_emc_b2_04 },      /* D2 */
+		{ (flexspi_instance2 << 8) | flexspi_slBusB1 | flexspi_slBusB2, -1, -1, pctl_mux_gpio_emc_b2_03, 4, pctl_pad_gpio_emc_b2_03 },      /* D3 */
+		{ (flexspi_instance2 << 8) | /* flexspi_slBusB1 |*/ flexspi_slBusB2, -1, -1, pctl_mux_gpio_emc_b2_02, 4, pctl_pad_gpio_emc_b2_02 }, /* D4 */
+		{ (flexspi_instance2 << 8) | /* flexspi_slBusB1 |*/ flexspi_slBusB2, -1, -1, pctl_mux_gpio_emc_b2_01, 4, pctl_pad_gpio_emc_b2_01 }, /* D5 */
+		{ (flexspi_instance2 << 8) | /* flexspi_slBusB1 |*/ flexspi_slBusB2, -1, -1, pctl_mux_gpio_emc_b2_00, 4, pctl_pad_gpio_emc_b2_00 }, /* D6 */
+		{ (flexspi_instance2 << 8) | /* flexspi_slBusB1 |*/ flexspi_slBusB2, -1, -1, pctl_mux_gpio_emc_b1_41, 4, pctl_pad_gpio_emc_b1_41 }, /* D7 */
 	};
 
 	for (i = 0, done = 0; i < sizeof(pin) / sizeof(pin[0]); ++i) {
