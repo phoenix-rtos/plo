@@ -14,13 +14,10 @@
  */
 
 #include "dtb.h"
+#include "csr.h"
 
 #include <hal/hal.h>
 #include <board_config.h>
-
-
-#define STR(x)  #x
-#define XSTR(x) STR(x)
 
 #define CLINT_IRQ_SIZE 16
 
@@ -42,10 +39,10 @@ static struct {
 void hal_interruptsEnable(unsigned int irqn)
 {
 	if ((irqn & CLINT_IRQ_FLG) != 0) {
-		csr_set(sie, 1u << (irqn & ~CLINT_IRQ_FLG));
+		csr_set(CSR_SIE, 1u << (irqn & ~CLINT_IRQ_FLG));
 	}
 	else {
-		csr_set(sie, 1u << EXT_IRQ);
+		csr_set(CSR_SIE, 1u << EXT_IRQ);
 		plic_enableInterrupt(1, irqn);
 	}
 }
@@ -54,7 +51,7 @@ void hal_interruptsEnable(unsigned int irqn)
 void hal_interruptsDisable(unsigned int irqn)
 {
 	if ((irqn & CLINT_IRQ_FLG) != 0) {
-		csr_clear(sie, 1u << (irqn & ~CLINT_IRQ_FLG));
+		csr_clear(CSR_SIE, 1u << (irqn & ~CLINT_IRQ_FLG));
 	}
 	else {
 		plic_disableInterrupt(PLIC_SCONTEXT(hal_cpuGetHartId()), irqn);
@@ -64,13 +61,13 @@ void hal_interruptsDisable(unsigned int irqn)
 
 void hal_interruptsEnableAll(void)
 {
-	csr_set(sstatus, SSTATUS_SIE);
+	csr_set(CSR_SSTATUS, SSTATUS_SIE);
 }
 
 
 void hal_interruptsDisableAll(void)
 {
-	csr_clear(sstatus, SSTATUS_SIE);
+	csr_clear(CSR_SSTATUS, SSTATUS_SIE);
 }
 
 
@@ -140,10 +137,10 @@ static int interrupts_setClint(unsigned int n, int (*isr)(unsigned int, void *),
 	interrupts_common.clintHandlers[n].isr = isr;
 
 	if (isr == NULL) {
-		csr_clear(sie, 1u << n);
+		csr_clear(CSR_SIE, 1u << n);
 	}
 	else {
-		csr_set(sie, 1u << n);
+		csr_set(CSR_SIE, 1u << n);
 	}
 
 	return 0;
@@ -185,9 +182,9 @@ void interrupts_init(void)
 		interrupts_common.plicHandlers[i].isr = NULL;
 	}
 
-	csr_write(sscratch, 0);
-	csr_write(sie, -1);
-	csr_write(stvec, _interrupts_dispatch);
+	csr_write(CSR_SSCRATCH, 0);
+	csr_write(CSR_SIE, -1);
+	csr_write(CSR_STVEC, _interrupts_dispatch);
 
 	if (dtb_getPLIC() != 0) {
 		_plic_init();

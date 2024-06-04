@@ -3,7 +3,7 @@
  *
  * Operating system loader
  *
- * Timer controller
+ * Peripherals definitions for RISC-V 64 Generic
  *
  * Copyright 2023 Phoenix Systems
  * Author: Lukasz Leczkowski
@@ -13,11 +13,11 @@
  * %LICENSE%
  */
 
-#include <hal/hal.h>
-#include "csr.h"
+#ifndef _PERIPHERALS_H_
+#define _PERIPHERALS_H_
 
+#include <board_config.h>
 
-time_t hal_timerGet(void)
-{
-	return csr_read(CSR_TIME) / (TIMER_FREQ / 1000);
-}
+#define UART_MAX_CNT 1
+
+#endif
