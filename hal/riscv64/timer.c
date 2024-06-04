@@ -14,9 +14,10 @@
  */
 
 #include <hal/hal.h>
+#include "csr.h"
 
 
 time_t hal_timerGet(void)
 {
-	return csr_read(time) / (TIMER_FREQ / 1000);
+	return csr_read(CSR_TIME) / (TIMER_FREQ / 1000);
 }
