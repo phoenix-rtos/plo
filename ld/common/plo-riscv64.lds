@@ -52,6 +52,7 @@ SECTIONS
 		__rodata_load = LOADADDR(.rodata);
 		__rodata_start = .;
 		*(.rodata .rodata.* .gnu.linkonce.r.*)
+		*(.srodata .srodata.*)
 		__rodata_end = .;
 	} > PLO_IMAGE
 
@@ -97,6 +98,7 @@ SECTIONS
 		__data_start = .;
 		*(.data)
 		*(.data*)
+		*(.sdata .sdata*)
 		. = ALIGN(8);
 		PROVIDE( __global_pointer$ = . + 0x800 );
 		__data_end = .;
@@ -110,6 +112,7 @@ SECTIONS
 		__bss_start = .;
 		*(.dynbss)
 		*(.bss .bss.* .gnu.linkonce.b.*)
+		*(.sbss .sbss.*)
 		*(COMMON)
 		. = ALIGN(8);
 		__bss_end = .;

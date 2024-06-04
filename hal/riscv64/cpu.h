@@ -38,7 +38,10 @@
 #define csr_set(csr, val) \
 	({ \
 		unsigned long __v = (unsigned long)(val); \
-		__asm__ volatile("csrs " #csr ", %0" ::"rK"(__v) : "memory"); \
+		__asm__ volatile ( \
+			"csrs %0, %1" \
+			:: "i"(csr), "rK"(__v) \
+			: "memory"); \
 		__v; \
 	})
 
@@ -46,21 +49,31 @@
 #define csr_write(csr, val) \
 	({ \
 		unsigned long __v = (unsigned long)(val); \
-		__asm__ volatile("csrw " #csr ", %0" ::"rK"(__v) : "memory"); \
+		__asm__ volatile ( \
+			"csrw %0, %1" \
+			:: "i"(csr), "rK"(__v) \
+			: "memory"); \
 	})
 
 
 #define csr_clear(csr, val) \
 	({ \
 		unsigned long __v = (unsigned long)(val); \
-		__asm__ volatile("csrc " #csr ", %0" ::"rK"(__v) : "memory"); \
+		__asm__ volatile ( \
+			"csrc %0, %1" \
+			::"i"(csr), "rK"(__v) \
+			: "memory"); \
 	})
 
 
 #define csr_read(csr) \
 	({ \
 		register unsigned long __v; \
-		__asm__ volatile("csrr %0, " #csr : "=r"(__v)::"memory"); \
+		__asm__ volatile ( \
+			"csrr %0, %1" \
+			: "=r"(__v) \
+			: "i"(csr) \
+			:"memory"); \
 		__v; \
 	})
 
@@ -74,21 +87,25 @@ static inline void hal_cpuHalt(void)
 
 static inline void hal_cpuDataStoreBarrier(void)
 {
+	__asm__ volatile("fence");
 }
 
 
 static inline void hal_cpuDataMemoryBarrier(void)
 {
+	__asm__ volatile("fence");
 }
 
 
 static inline void hal_cpuDataSyncBarrier(void)
 {
+	__asm__ volatile("fence");
 }
 
 
 static inline void hal_cpuInstrBarrier(void)
 {
+	__asm__ volatile("fence.i");
 }
 
 

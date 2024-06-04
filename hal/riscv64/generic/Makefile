@@ -15,4 +15,4 @@ PLO_COMMANDS ?= alias app blob call console copy dump echo go help kernel map me
 # tty-spike and uart-16550 registers under same major
 PLO_ALLDEVICES := ram-storage tty-spike uart-16550
 
-OBJS += $(addprefix $(PREFIX_O)hal/$(TARGET_SUFF)/$(TARGET_SUBFAMILY)/, hal.o)
+OBJS += $(addprefix $(PREFIX_O)hal/$(TARGET_SUFF)/$(TARGET_SUBFAMILY)/, console.o hal.o)
