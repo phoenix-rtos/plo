@@ -1,0 +1,47 @@
+/*
+ * Phoenix-RTOS
+ *
+ * Phoenix SBI
+ *
+ * Linker Template and Platform Config for RISC-V 64 NOEL-V
+ *
+ * Copyright 2024 Phoenix Systems
+ * Author: Lukasz Leczkowski
+ *
+ * This file is part of Phoenix-RTOS.
+ *
+ * %LICENSE%
+ */
+
+#ifndef RISCV64_NOELV_LDT
+#define RISCV64_NOELV_LDT
+
+/* Platform specific definitions */
+#define MAX_HART_COUNT 8
+#define SIZE_PAGE     0x1000
+#define SIZE_STACK    (MAX_HART_COUNT * SIZE_PAGE)
+
+#define ADDR_DDR 0x00000
+#define SIZE_SBI 0x20000
+
+#if defined(__LINKER__)
+
+/* Memory map setup */
+MEMORY
+{
+	m_ram     (rwx) : ORIGIN = ADDR_DDR, LENGTH = 0x20000
+	m_payload (rx)  : ORIGIN = PAYLOAD_ADDR, LENGTH = 0x100000
+}
+
+REGION_ALIAS("SBI_IMAGE", m_ram);
+REGION_ALIAS("DATA", m_ram);
+REGION_ALIAS("BSS", m_ram);
+REGION_ALIAS("STACK", m_ram);
+REGION_ALIAS("PAYLOAD", m_payload);
+
+#include "riscv-common.lds"
+
+#endif
+
+
+#endif
