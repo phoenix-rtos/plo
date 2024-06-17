@@ -865,8 +865,8 @@ static void _imxrt_initClocks(void)
 	_imxrt_pmuBypassDigLdo();
 #endif
 
-	/* Initialize 16 MHz RC osc */
-	*(imxrt_common.anadig_pll + osc_16m_ctrl) |= 1uL << 1u;
+	/* Initialize 24 MHz osc */
+	*(imxrt_common.anadig_pll + osc_16m_ctrl) |= (1uL << 8u) | (1uL << 1u);
 
 	/* Init 400 MHz RC osc */
 	*(imxrt_common.anadig_pll + osc_400m_ctrl1) &= ~1u;
