@@ -8,6 +8,8 @@
 
 ifneq (, $(findstring nrf, $(TARGET_SUBFAMILY)))
   include hal/armv8m/nrf/Makefile
+else ifneq (, $(findstring mcx, $(TARGET_SUBFAMILY)))
+  include hal/armv8m/mcx/Makefile
 endif
 
 OBJS += $(addprefix $(PREFIX_O)hal/$(TARGET_SUFF)/, cpu.o interrupts.o mpu.o string.o)

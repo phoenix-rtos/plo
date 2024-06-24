@@ -103,7 +103,7 @@ int hal_interruptsSet(unsigned int irq, int (*isr)(unsigned int, void *), void *
 			interrupts_nvicSetIRQ(irq - 16, 0);
 		}
 		else {
-			interrupts_nvicSetPriority(irq - 16, 0);
+			interrupts_nvicSetPriority(irq - 16, 1);
 			interrupts_nvicSetIRQ(irq - 16, 1);
 		}
 	}
