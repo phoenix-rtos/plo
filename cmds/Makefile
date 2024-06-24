@@ -8,7 +8,7 @@
 
 PLO_ALLCOMMANDS = alias app blob bankswitch bitstream bootcm4 bootrom call console copy \
   dump echo erase go help jffs2 kernel kernelimg lspci map mem mpu otp phfs reboot script \
-  test-dev test-ddr wait
+  stop test-dev test-ddr wait
 
 PLO_COMMANDS ?= $(PLO_ALLCOMMANDS)
 PLO_APPLETS = $(filter $(PLO_ALLCOMMANDS), $(PLO_COMMANDS))

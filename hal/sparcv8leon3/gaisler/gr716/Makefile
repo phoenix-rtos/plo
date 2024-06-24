@@ -14,7 +14,7 @@ LDFLAGS:=$(filter-out -Wl$(comma)--section-start% , $(LDFLAGS))
 
 CFLAGS += -DVADDR_KERNEL_INIT=$(VADDR_KERNEL_INIT)
 
-PLO_COMMANDS ?= alias app blob call console copy dump echo go help kernel map mem phfs reboot script wait
+PLO_COMMANDS ?= alias app blob call console copy dump echo go help kernel map mem phfs reboot script stop wait
 
 PLO_ALLDEVICES := gpio-gr716 uart-grlib flash-gr716
 

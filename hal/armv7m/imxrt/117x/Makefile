@@ -13,7 +13,7 @@ CFLAGS := $(filter-out -mfloat-abi% , $(CFLAGS))
 CFLAGS += -mfloat-abi=soft
 
 PLO_COMMANDS ?= alias app blob bootcm4 bootrom call console copy dump echo erase go help kernel kernelimg \
-  map mem mpu otp phfs reboot script wait
+  map mem mpu otp phfs reboot script stop wait
 
 PLO_ALLDEVICES := pipe-rtt usbc-cdc uart-imxrt117x flash-imxrt
 
