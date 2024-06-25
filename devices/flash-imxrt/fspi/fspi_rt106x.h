@@ -50,20 +50,20 @@ static void *flexspi_getBase(int instance)
 }
 
 
-__attribute__((section(".noxip"))) static void flexspi_clockConfig(flexspi_t *fspi)
+__attribute__((section(".noxip"))) static void flexspi_clockConfig(flexspi_t *fspi, u8 fast)
 {
 	if (fspi->instance == flexspi_instance1) {
 		_imxrt_ccmControlGate(pctl_clk_flexspi, clk_state_off);
-		_imxrt_ccmInitUsb1Pfd(clk_pfd0, 13);  /* PLL3_PDF0=664.6MHz */
-		_imxrt_ccmSetDiv(clk_div_flexspi, 4); /* div5 */
-		_imxrt_ccmSetMux(clk_mux_flexspi, 3); /* PLL3 PFD0 */
+		_imxrt_ccmInitUsb1Pfd(clk_pfd0, 13);             /* PLL3_PDF0=664.6MHz */
+		_imxrt_ccmSetDiv(clk_div_flexspi, fast ? 4 : 9); /* Fast: 664 / (4 + 1) => 132 MHz, Normal: 664 / (9 + 1) => 66 MHz */
+		_imxrt_ccmSetMux(clk_mux_flexspi, 3);            /* PLL3 PFD0 */
 		_imxrt_ccmControlGate(pctl_clk_flexspi, clk_state_run_wait);
 	}
 	else if (fspi->instance == flexspi_instance2) {
 		_imxrt_ccmControlGate(pctl_clk_flexspi2, clk_state_off);
-		_imxrt_ccmInitUsb1Pfd(clk_pfd0, 13);   /* PLL3_PDF0=664.6MHz */
-		_imxrt_ccmSetDiv(clk_div_flexspi2, 4); /* div5 */
-		_imxrt_ccmSetMux(clk_mux_flexspi2, 1); /* PLL3 PFD0 */
+		_imxrt_ccmInitUsb1Pfd(clk_pfd0, 13);              /* PLL3_PDF0=664.6MHz */
+		_imxrt_ccmSetDiv(clk_div_flexspi2, fast ? 4 : 9); /* Fast: 664 / (4 + 1) => 132 MHz, Normal: 664 / (9 + 1) => 66 MHz */
+		_imxrt_ccmSetMux(clk_mux_flexspi2, 1);            /* PLL3 PFD0 */
 		_imxrt_ccmControlGate(pctl_clk_flexspi2, clk_state_run_wait);
 	}
 }

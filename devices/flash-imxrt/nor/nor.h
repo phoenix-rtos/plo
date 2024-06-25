@@ -92,4 +92,8 @@ extern int nor_probe(flexspi_t *fspi, u8 port, const struct nor_info **pInfo, co
 int nor_mxQuadEnable(struct nor_device *dev);
 
 
+/* ISSI chip init */
+int nor_issiInit(struct nor_device *dev);
+
+
 #endif /* _FLEXSPI_NOR_H_ */

@@ -52,7 +52,7 @@ _fcfb:
 .word 0x00000010 /* controllerMiscOption */
 .byte 0x1        /* deviceType */
 .byte 0x4        /* sflashPadType */
-.byte 0x8        /* serialClkFreq */
+.byte 0x3        /* serialClkFreq */
 .byte 0x0        /* lutCustomSeqEnable */
 .word 0, 0
 .word 0x800000   /* sflashA1Size */
@@ -70,7 +70,7 @@ _fcfb:
 .byte 0x0, 0     /* busyBitPolarity */
 
 /* lookupTable */
-.word 0x0818040b, 0x24043008, 0x00000000, 0x00000000
+.word 0x08180403, 0x00002404, 0x00000000, 0x00000000
 .word 0x00000000, 0x00000000, 0x00000000, 0x00000000
 .word 0x00000000, 0x00000000, 0x00000000, 0x00000000
 .word 0x00000000, 0x00000000, 0x00000000, 0x00000000

@@ -53,7 +53,7 @@ static void *flexspi_getBase(int instance)
 }
 
 
-__attribute__((section(".noxip"))) static void flexspi_clockConfig(flexspi_t *fspi)
+__attribute__((section(".noxip"))) static void flexspi_clockConfig(flexspi_t *fspi, u8 fast)
 {
 	int gate, clk, div, mux, mfd, mfn;
 
@@ -61,7 +61,7 @@ __attribute__((section(".noxip"))) static void flexspi_clockConfig(flexspi_t *fs
 		case flexspi_instance1:
 			clk = pctl_clk_flexspi1;
 			gate = pctl_lpcg_flexspi1;
-			div = 3;                               /* SYS_PLL2_CLK / (3 + 1) => 132 MHz */
+			div = fast ? 3 : 7;                    /* Fast: 528 / (3 + 1) => 132 MHz, Normal: 528 / (7 + 1) => 66 MHz */
 			mux = mux_clkroot_flexspi1_syspll2out; /* Select main clock: SYS_PLL2_CLK = 528 MHz */
 			mfd = 0;
 			mfn = 0;
@@ -70,8 +70,8 @@ __attribute__((section(".noxip"))) static void flexspi_clockConfig(flexspi_t *fs
 		case flexspi_instance2:
 			clk = pctl_clk_flexspi2;
 			gate = pctl_lpcg_flexspi2;
-			div = 3;                               /* SYS_PLL2_CLK / (3 + 1) => 132 MHz */
-			mux = mux_clkroot_flexspi2_syspll2out; /* Select main clock: SYS_PLL2_CLK = 528 MHz */
+			div = fast ? 3 : 7;                    /* Fast: 528 / (3 + 1) => 132 MHz, Normal: 528 / (7 + 1) => 66 MHz */
+			mux = mux_clkroot_flexspi1_syspll2out; /* Select main clock: SYS_PLL2_CLK = 528 MHz */
 			mfd = 0;
 			mfn = 0;
 			break;

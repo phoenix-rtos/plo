@@ -181,7 +181,42 @@ static const u32 seq_micronExit4Byte[NOR_LUTSEQSZ] = {
 };
 
 
-/* Generic chips: ISSI, Winbond, Macronix (3-byte address) */
+/*
+ * ISSI NOR dedicated Command Sequences
+ */
+
+/* Read Fast Quad (3-byte address) for 133 MHz and 11 dummy cycles */
+static const u32 seq_issiReadData3Byte[NOR_LUTSEQSZ] = {
+	LUT_SEQ(lutCmd_SDR, lutPad1, FLASH_CMD_QIOR, lutCmdRADDR_SDR, lutPad4, 0x18),
+	LUT_SEQ(lutCmdMODE8_SDR, lutPad4, 0x00, lutCmdDUMMY_SDR, lutPad4, 0x09),
+	LUT_SEQ(lutCmdREAD_SDR, lutPad4, 0x04, lutCmdSTOP, lutPad1, 0),
+	0
+};
+
+/* Read Fast Quad (4-byte address) for 133 MHz and 11 dummy cycles */
+static const u32 seq_issiReadData4Byte[NOR_LUTSEQSZ] = {
+	LUT_SEQ(lutCmd_SDR, lutPad1, FLASH_CMD_4QIOR, lutCmdRADDR_SDR, lutPad4, 0x20),
+	LUT_SEQ(lutCmdMODE8_SDR, lutPad4, 0x00, lutCmdDUMMY_SDR, lutPad4, 0x09),
+	LUT_SEQ(lutCmdREAD_SDR, lutPad4, 0x04, lutCmdSTOP, lutPad1, 0),
+	0
+};
+
+/* Read Read Parameters */
+static const u32 seq_issiReadReadParameters[NOR_LUTSEQSZ] = {
+	LUT_SEQ(lutCmd_SDR, lutPad1, FLASH_CMD_RDRD, lutCmdREAD_SDR, lutPad1, 0x01),
+	LUT_SEQ(lutCmdSTOP, lutPad1, 0, 0, 0, 0),
+	0, 0
+};
+
+/* Write Read Parameters */
+static const u32 seq_issiWriteReadParameters[NOR_LUTSEQSZ] = {
+	LUT_SEQ(lutCmd_SDR, lutPad1, FLASH_CMD_SRPV, lutCmdWRITE_SDR, lutPad1, 0x01),
+	LUT_SEQ(lutCmdSTOP, lutPad1, 0, 0, 0, 0),
+	0, 0
+};
+
+
+/* Generic chips: Winbond, Macronix (3-byte address) */
 static const u32 *lutGeneric3Byte[LUT_ENTRIES] = {
 	[fspi_readData] = seq_genericReadData3Byte,
 	[fspi_readStatus] = seq_genericReadStatus,
@@ -195,7 +230,7 @@ static const u32 *lutGeneric3Byte[LUT_ENTRIES] = {
 	[fspi_readID] = seq_genericReadID,
 };
 
-/* Generic chips: ISSI, Winbond, Macronix (4-byte address) */
+/* Generic chips: Winbond, Macronix (4-byte address) */
 static const u32 *lutGeneric4Byte[LUT_ENTRIES] = {
 	[fspi_readData] = seq_genericReadData4Byte,
 	[fspi_readStatus] = seq_genericReadStatus,
@@ -237,6 +272,38 @@ static const u32 *lutMicronDie[LUT_ENTRIES] = {
 	[fspi_readID] = seq_genericReadID,
 	[fspi_enter4byteAddr] = seq_micronEnter4Byte,
 	[fspi_exit4byteAddr] = seq_micronExit4Byte,
+};
+
+/* ISSI chips (3-byte address) */
+static const u32 *lutIssi3Byte[LUT_ENTRIES] = {
+	[fspi_readData] = seq_issiReadData3Byte,
+	[fspi_readStatus] = seq_genericReadStatus,
+	[fspi_writeStatus] = seq_genericWriteStatus,
+	[fspi_writeEnable] = seq_genericWriteEnable,
+	[fspi_writeDisable] = seq_genericWriteDisable,
+	[fspi_eraseSector] = seq_genericEraseSector3Byte,
+	[fspi_eraseBlock] = seq_genericEraseBlock3Byte,
+	[fspi_eraseChip] = seq_genericEraseChip,
+	[fspi_programQPP] = seq_genericProgramQPP3Byte,
+	[fspi_readID] = seq_genericReadID,
+	[fspi_cmdCustom1] = seq_issiReadReadParameters,
+	[fspi_cmdCustom2] = seq_issiWriteReadParameters,
+};
+
+/* ISSI chips (4-byte address) */
+static const u32 *lutIssi4Byte[LUT_ENTRIES] = {
+	[fspi_readData] = seq_issiReadData4Byte,
+	[fspi_readStatus] = seq_genericReadStatus,
+	[fspi_writeStatus] = seq_genericWriteStatus,
+	[fspi_writeEnable] = seq_genericWriteEnable,
+	[fspi_writeDisable] = seq_genericWriteDisable,
+	[fspi_eraseSector] = seq_genericEraseSector4Byte,
+	[fspi_eraseBlock] = seq_genericEraseBlock4Byte,
+	[fspi_eraseChip] = seq_genericEraseChip,
+	[fspi_programQPP] = seq_genericProgramQPP4Byte,
+	[fspi_readID] = seq_genericReadID,
+	[fspi_cmdCustom1] = seq_issiReadReadParameters,
+	[fspi_cmdCustom2] = seq_issiWriteReadParameters,
 };
 
 #endif /* _LUTTABLES_H_ */
