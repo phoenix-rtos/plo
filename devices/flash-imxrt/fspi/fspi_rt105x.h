@@ -41,12 +41,12 @@ static inline void *flexspi_getBase(int instance)
 }
 
 
-__attribute__((section(".noxip"))) static void flexspi_clockConfig(flexspi_t *fspi)
+__attribute__((section(".noxip"))) static void flexspi_clockConfig(flexspi_t *fspi, u8 fast)
 {
 	_imxrt_ccmControlGate(pctl_clk_flexspi, clk_state_off);
-	_imxrt_ccmSetDiv(clk_div_flexspi, 1); /* div2 -> 130 MHz */
-	_imxrt_ccmSetMux(clk_mux_flexspi, 3); /* PLL3 PFD0 */
-	_imxrt_ccmInitUsb1Pfd(clk_pfd0, 33);  /* PLL3_PDF0=261.818MHz */
+	_imxrt_ccmSetDiv(clk_div_flexspi, fast ? 1 : 3); /* Fast: 261 / (1 + 1) => 130 MHz, Normal: 261 / (3 + 1) => 65 MHz */
+	_imxrt_ccmSetMux(clk_mux_flexspi, 3);            /* PLL3 PFD0 */
+	_imxrt_ccmInitUsb1Pfd(clk_pfd0, 33);             /* PLL3_PDF0=261.818MHz */
 	_imxrt_ccmControlGate(pctl_clk_flexspi, clk_state_run_wait);
 }
 

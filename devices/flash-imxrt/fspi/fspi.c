@@ -139,7 +139,8 @@ __attribute__((section(".noxip"))) int flexspi_init(flexspi_t *fspi, int instanc
 	hal_invalDCacheAll();
 	hal_cleanDCache();
 
-	flexspi_clockConfig(fspi);
+	/* Configure clock for normal read */
+	flexspi_clockConfig(fspi, 0);
 
 	/* Release FlexSPI from reset and power SRAM */
 	flexspi_disable(fspi, 0);
@@ -212,10 +213,10 @@ __attribute__((section(".noxip"))) int flexspi_init(flexspi_t *fspi, int instanc
 	/* Enable FlexSPI before updating LUT */
 	flexspi_disable(fspi, 0);
 
-	/* Default fast (up to 133MHz) read (single pad) used by AHB and XIP */
-	lut[0] = LUT_SEQ(lutCmd_SDR, lutPad1, 0x0b, lutCmdRADDR_SDR, lutPad1, 0x18);
-	lut[1] = LUT_SEQ(lutCmdDUMMY_SDR, lutPad1, 0x08, lutCmdREAD_SDR, lutPad1, 0x04);
-	lut[2] = LUT_SEQ(lutCmdSTOP, lutPad1, 0, 0, 0, 0);
+	/* Default normal (up to 80 MHz) read (single pad) used by AHB and XIP */
+	lut[0] = LUT_SEQ(lutCmd_SDR, lutPad1, 0x03, lutCmdRADDR_SDR, lutPad1, 0x18);
+	lut[1] = LUT_SEQ(lutCmdREAD_SDR, lutPad1, 0x04, lutCmdSTOP, lutPad1, 0);
+	lut[2] = 0;
 	lut[3] = 0;
 
 	/* Configure initial LUT sequences as needed (for AHB read and IP) */
@@ -228,6 +229,15 @@ __attribute__((section(".noxip"))) int flexspi_init(flexspi_t *fspi, int instanc
 	hal_enableDCache();
 
 	hal_interruptsEnableAll();
+
+	return EOK;
+}
+
+
+__attribute__((section(".noxip"))) int flexspi_postinit(flexspi_t *fspi)
+{
+	/* Reconfigure clock for fast read */
+	flexspi_clockConfig(fspi, 1);
 
 	return EOK;
 }

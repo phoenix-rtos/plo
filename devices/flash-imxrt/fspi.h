@@ -82,6 +82,10 @@ struct xferOp {
 extern int flexspi_init(flexspi_t *fspi, int instance, u8 slPortMask);
 
 
+/* Post-initialize single FlexSPI module */
+extern int flexspi_postinit(flexspi_t *fspi);
+
+
 /* Safely deinit leaving XIP working */
 extern int flexspi_deinit(flexspi_t *fspi);
 

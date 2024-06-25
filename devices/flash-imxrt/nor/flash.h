@@ -66,6 +66,8 @@
 #define FLASH_CMD_ERRS       0x7a /* Program/erase resume */
 #define FLASH_CMD_EN4B       0xb7 /* Enter 4-byte address mode */
 #define FLASH_CMD_EX4B       0xe9 /* Exit 4-byte address mode */
+#define FLASH_CMD_RDRD       0x61 /* ISSI: Read Read Parameters (volatile) */
+#define FLASH_CMD_SRPV       0x63 /* ISSI: Set Read Parameters (volatile) */
 
 
 #endif /* _FLASH_H_ */
