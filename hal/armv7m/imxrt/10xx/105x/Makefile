@@ -13,7 +13,7 @@ CFLAGS:=$(filter-out -mfloat-abi% , $(CFLAGS))
 CFLAGS+= -mfloat-abi=soft
 
 PLO_COMMANDS ?= alias app blob bridge call console copy devices dump echo erase go help kernel \
-  kernelimg map mem mpu otp phfs reboot script stop wait
+  kernelimg map mem mpu otp phfs ptable reboot script stop wait
 
 # pipe-rtt is disabled due to small amount of space in DTCM; RTT_ADDR is not defined for this architecture
 PLO_ALLDEVICES := usbc-cdc uart-imxrt106x flash-imxrt
