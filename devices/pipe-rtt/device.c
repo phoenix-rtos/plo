@@ -83,9 +83,7 @@ static int pipe_init(unsigned int minor)
 
 __attribute__((constructor)) static void pipe_reg(void)
 {
-	static const dev_handler_t h = {
-		.init = pipe_init,
-		.done = pipe_done,
+	static const dev_ops_t opsPipeRTT = {
 		.read = pipe_read,
 		.write = pipe_write,
 		.erase = NULL,
@@ -93,5 +91,12 @@ __attribute__((constructor)) static void pipe_reg(void)
 		.map = pipe_map,
 	};
 
-	devs_register(DEV_PIPE, 1, &h);
+	static const dev_t devPipeRTT = {
+		.name = "pipe-rtt",
+		.init = pipe_init,
+		.done = pipe_done,
+		.ops = &opsPipeRTT,
+	};
+
+	devs_register(DEV_PIPE, 1, &devPipeRTT);
 }

@@ -242,9 +242,7 @@ static int uart_init(unsigned int minor)
 
 __attribute__((constructor)) static void uart_reg(void)
 {
-	static const dev_handler_t h = {
-		.init = uart_init,
-		.done = uart_done,
+	static const dev_ops_t opsUartSTM32L4X6 = {
 		.read = uart_read,
 		.write = uart_safeWrite,
 		.erase = NULL,
@@ -252,5 +250,12 @@ __attribute__((constructor)) static void uart_reg(void)
 		.map = uart_map,
 	};
 
-	devs_register(DEV_UART, UART_MAX_CNT, &h);
+	static const dev_t devUartSTM32L4X6 = {
+		.name = "uart-stm32l4x6",
+		.init = uart_init,
+		.done = uart_done,
+		.ops = &opsUartSTM32L4X6,
+	};
+
+	devs_register(DEV_UART, UART_MAX_CNT, &devUartSTM32L4X6);
 }
