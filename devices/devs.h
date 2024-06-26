@@ -28,6 +28,7 @@
 #define DEV_NAND_RAW  7
 #define DEV_PIPE      8
 
+#define DEVS_ITER_STOP ((const dev_t *)-1)
 
 /* clang-format off */
 enum { dev_isMappable = 0, dev_isNotMappable };
@@ -61,6 +62,10 @@ extern void devs_register(unsigned int major, unsigned int nb, const dev_t *dev)
 
 /* Initialize registered devices */
 extern void devs_init(void);
+
+
+/* Enumerate all devices */
+const dev_t *devs_iterNext(unsigned int *ctx, unsigned int *major, unsigned int *minor);
 
 
 /* Check whether device is available */

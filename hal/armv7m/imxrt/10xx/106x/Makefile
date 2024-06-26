@@ -12,8 +12,8 @@ LDFLAGS:=$(filter-out -Tdata% , $(LDFLAGS))
 CFLAGS:=$(filter-out -mfloat-abi% , $(CFLAGS))
 CFLAGS+= -mfloat-abi=soft
 
-PLO_COMMANDS ?= alias app bootrom blob call console copy dump echo erase go help kernel kernelimg map \
-  mem mpu otp phfs reboot script stop wait
+PLO_COMMANDS ?= alias app blob bootrom call console copy devices dump echo erase go help kernel \
+  kernelimg map mem mpu otp phfs reboot script stop wait
 
 PLO_ALLDEVICES := pipe-rtt usbc-cdc uart-imxrt106x flash-imxrt
 
