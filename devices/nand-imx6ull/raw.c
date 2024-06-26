@@ -155,15 +155,20 @@ static int raw_init(unsigned int minor)
 
 __attribute__((constructor)) static void raw_register(void)
 {
-	static const dev_handler_t h = {
+	static const dev_ops_t opsRawNandIMX6ULL = {
 		.read = raw_read,
 		.write = raw_write,
 		.sync = raw_sync,
 		.map = NULL,
-		.done = raw_done,
-		.init = raw_init,
 		.erase = NULL,
 	};
 
-	devs_register(DEV_NAND_RAW, NAND_MAX_CNT, &h);
+	static const dev_t devRawNandIMX6ULL = {
+		.name = "nand-imx6ull-raw",
+		.init = raw_init,
+		.done = raw_done,
+		.ops = &devRawNandIMX6ULL,
+	};
+
+	devs_register(DEV_NAND_RAW, NAND_MAX_CNT, &devRawNandIMX6ULL);
 }

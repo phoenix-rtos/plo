@@ -446,19 +446,24 @@ static int diskbios_init(unsigned int minor)
 
 __attribute__((constructor)) static void diskbios_register(void)
 {
-	static const dev_handler_t h = {
+	static const dev_ops_t opsDiskBIOS = {
 		.read = diskbios_read,
 		.write = diskbios_write,
 		.erase = NULL,
 		.sync = diskbios_sync,
 		.map = diskbios_map,
-		.done = diskbios_done,
+	};
+
+	static const dev_t devDiskBIOS = {
+		.name = "disk-bios",
 		.init = diskbios_init,
+		.done = diskbios_done,
+		.ops = &opsDiskBIOS,
 	};
 
 	/* Mark caches not used */
 	diskbios_common.lrdn = -1;
 	diskbios_common.lwdn = -1;
 
-	devs_register(DEV_STORAGE, DISKBIOS_MAX_CNT, &h);
+	devs_register(DEV_STORAGE, DISKBIOS_MAX_CNT, &devDiskBIOS);
 }

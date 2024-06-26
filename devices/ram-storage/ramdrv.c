@@ -139,15 +139,20 @@ static int ramdrv_init(unsigned int minor)
 
 __attribute__((constructor)) static void ramdrv_reg(void)
 {
-	static const dev_handler_t h = {
-		.init = ramdrv_init,
-		.done = ramdrv_done,
+	static const dev_ops_t opsRamStorage = {
 		.read = ramdrv_read,
 		.write = ramdrv_write,
 		.erase = NULL,
 		.sync = ramdrv_sync,
-		.map = ramdrv_map
+		.map = ramdrv_map,
 	};
 
-	devs_register(DEV_RAM, RAM_NO, &h);
+	static const dev_t devRamStorage = {
+		.name = "ram-storage",
+		.init = ramdrv_init,
+		.done = ramdrv_done,
+		.ops = &opsRamStorage,
+	};
+
+	devs_register(DEV_RAM, RAM_NO, &devRamStorage);
 }

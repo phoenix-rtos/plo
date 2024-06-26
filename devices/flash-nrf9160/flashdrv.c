@@ -141,15 +141,20 @@ static int flashdrv_init(unsigned int minor)
 
 __attribute__((constructor)) static void flashdrv_reg(void)
 {
-	static const dev_handler_t h = {
-		.init = flashdrv_init,
-		.done = flashdrv_done,
+	static const dev_ops_t devFlashNRF9160 = {
 		.read = flashdrv_read,
 		.write = flashdrv_write,
 		.erase = NULL, /* TODO */
 		.sync = flashdrv_sync,
-		.map = flashdrv_map
+		.map = flashdrv_map,
 	};
 
-	devs_register(DEV_STORAGE, 1, &h);
+	static const dev_t devFlashNRF9160 = {
+		.name = "flash-nrf9160",
+		.init = flashdrv_init,
+		.done = flashdrv_done,
+		.ops = &opsFlashNRF9160,
+	};
+
+	devs_register(DEV_STORAGE, 1, &devFlashNRF9160);
 }
