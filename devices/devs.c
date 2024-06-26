@@ -140,6 +140,16 @@ int devs_map(unsigned int major, unsigned int minor, addr_t addr, size_t sz, int
 }
 
 
+int devs_control(unsigned int major, unsigned int minor, int cmd, void *args)
+{
+	const dev_ops_t *ops = devs_ops(major, minor);
+
+	return ((ops != NULL) && (ops->control != NULL)) ?
+		ops->control(minor, cmd, args) :
+		-ENOSYS;
+}
+
+
 void devs_done(void)
 {
 	const dev_t *dev;
