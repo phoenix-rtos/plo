@@ -26,6 +26,7 @@
 #include "stdarg.h"
 #include "prompt.h"
 #include "crc32.h"
+#include "ptable.h"
 
 
 #define min(a, b) ({ \
@@ -40,6 +41,8 @@
 	__typeof__(b) _b = (b); \
 	_a > _b ? _a : _b; \
 })
+
+#define offsetof(a, b) ((size_t)(&(((a *)(0))->b)))
 
 
 extern int lib_printf(const char *fmt, ...);
