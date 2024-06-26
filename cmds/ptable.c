@@ -29,9 +29,9 @@
 
 
 static struct {
-	u32 memsz;
-	u32 blksz;
 	ptable_t ptable[1024];
+	size_t memsz;
+	size_t blksz;
 } ptable_common;
 
 
@@ -109,22 +109,46 @@ static int cmd_ptable(int argc, char *argv[])
 	char *endptr = NULL;
 	handler_t h;
 
-	/* FIXME: add info to phfs */
-	ptable_common.memsz = 32 * 1024 * 1024;
-	ptable_common.blksz = 4096;
+	unsigned int major;
+	unsigned int minor;
+	unsigned int prot;
 
 	if ((argc != 2) && (argc != 3)) {
 		log_error("\n%s: Wrong argument count", argv[0]);
 		return -EINVAL;
 	}
 
-	if (argc > 2) {
+	if (argc == 3) {
 		offs = lib_strtoul(argv[2], &endptr, 0);
 		if (argv[2] == endptr) {
 			log_error("\n%s: Wrong arguments", argv[0]);
 			return -EINVAL;
 		}
 	}
+
+	if (phfs_devGet(argv[1], &major, &minor, &prot) != EOK) {
+		lib_printf("\n%s: Invalid phfs name provided: %s\n", argv[0], argv[1]);
+		return CMD_EXIT_FAILURE;
+	}
+
+	if (prot != phfs_prot_raw) {
+		lib_printf("\n%s: Device %s does not use raw protocol\n", argv[0], argv[1]);
+		return CMD_EXIT_FAILURE;
+	}
+
+	if ((devs_control(major, minor, DEV_CONTROL_GETPROP_TOTALSZ, &ptable_common.memsz) != EOK) ||
+		(devs_control(major, minor, DEV_CONTROL_GETPROP_BLOCKSZ, &ptable_common.blksz) != EOK)) {
+		lib_printf("\n%s: Unable to get %s device properties: %s\n", argv[0], argv[1]);
+		return CMD_EXIT_FAILURE;
+	}
+
+	if (argc != 3) {
+		/* by default ptable is located in the last sector of raw device */
+		offs = ptable_common.memsz - ptable_common.blksz;
+	}
+
+	lib_printf("\nDevice size: %zu", ptable_common.memsz);
+	lib_printf("\nBlock size:  %zu\n", ptable_common.blksz);
 
 	if (phfs_open(argv[1], NULL, PHFS_OPEN_RAWONLY, &h) < 0) {
 		lib_printf("\n%s: Invalid phfs name provided: %s\n", argv[0], argv[1]);
@@ -136,11 +160,13 @@ static int cmd_ptable(int argc, char *argv[])
 	(void)phfs_close(h);
 
 	if (res <= 0) {
+		log_error("\n%s: Missing partition table at offset %zu", argv[0], offs);
 		return CMD_EXIT_FAILURE;
 	}
 
 	if (res > 0) {
 		partPrint(ptable_common.ptable);
+		lib_printf("\nPartition table at offset: %zu\n", offs);
 	}
 
 	return CMD_EXIT_SUCCESS;
