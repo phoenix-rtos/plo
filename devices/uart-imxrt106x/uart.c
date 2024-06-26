@@ -626,15 +626,20 @@ static int uart_init(unsigned int minor)
 
 __attribute__((constructor)) static void uart_reg(void)
 {
-	static const dev_handler_t h = {
-		.init = uart_init,
-		.done = uart_done,
+	static const dev_ops_t opsUartIMXRT106X = {
 		.read = uart_read,
 		.write = uart_safeWrite,
 		.erase = NULL,
 		.sync = uart_sync,
-		.map = uart_map
+		.map = uart_map,
 	};
 
-	devs_register(DEV_UART, UART_MAX_CNT, &h);
+	static const dev_t devUartIMXRT106X = {
+		.name = "uart-imxrt106x",
+		.init = uart_init,
+		.done = uart_done,
+		.ops = &opsUartIMXRT106X,
+	};
+
+	devs_register(DEV_UART, UART_MAX_CNT, &devUartIMXRT106X);
 }

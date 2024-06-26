@@ -525,15 +525,20 @@ static int ttybios_init(unsigned int minor)
 
 __attribute__((constructor)) static void ttybios_register(void)
 {
-	static const dev_handler_t h = {
+	static const dev_ops_t opsBiosTTY = {
 		.read = ttybios_read,
 		.write = ttybios_write,
 		.erase = NULL,
 		.sync = ttybios_sync,
 		.map = ttybios_map,
-		.done = ttybios_done,
-		.init = ttybios_init,
 	};
 
-	devs_register(DEV_TTY, TTYBIOS_MAX_CNT, &h);
+	static const dev_t devBiosTTY = {
+		.name = "tty-bios",
+		.init = ttybios_init,
+		.done = ttybios_done,
+		.ops = &opsBiosTTY,
+	};
+
+	devs_register(DEV_TTY, TTYBIOS_MAX_CNT, &devBiosTTY);
 }

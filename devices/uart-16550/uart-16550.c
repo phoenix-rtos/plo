@@ -324,15 +324,20 @@ static int uart_init(unsigned int minor)
 
 __attribute__((constructor)) static void uart_register(void)
 {
-	static const dev_handler_t h = {
+	static const dev_ops_t opsUart16550 = {
 		.read = uart_read,
 		.write = uart_safeWrite,
 		.erase = NULL,
 		.sync = uart_sync,
 		.map = uart_map,
-		.done = uart_done,
-		.init = uart_init
 	};
 
-	devs_register(DEV_UART, UART_MAX_CNT, &h);
+	static const dev_t devUart16550 = {
+		.name = "uart-16550",
+		.init = uart_init,
+		.done = uart_done,
+		.ops = &opsUart16550,
+	};
+
+	devs_register(DEV_UART, UART_MAX_CNT, &devUart16550);
 }

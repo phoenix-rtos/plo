@@ -443,15 +443,20 @@ static int data_init(unsigned int minor)
 
 __attribute__((constructor)) static void data_register(void)
 {
-	static const dev_handler_t h = {
+	static const dev_ops_t opsDataNandIMX6ULL = {
 		.read = data_read,
 		.write = data_write,
 		.sync = data_sync,
 		.map = data_map,
-		.done = data_done,
-		.init = data_init,
 		.erase = data_erase,
 	};
 
-	devs_register(DEV_NAND_DATA, NAND_MAX_CNT, &h);
+	static const dev_t devDataNandIMX6ULL = {
+		.name = "nand-imx6ull-data",
+		.init = data_init,
+		.done = data_done,
+		.ops = &opsDataNandIMX6ULL,
+	};
+
+	devs_register(DEV_NAND_DATA, NAND_MAX_CNT, &devDataNandIMX6ULL);
 }
