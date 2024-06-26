@@ -24,9 +24,6 @@
 #define PHFS_TIMEOUT_MS 500
 
 
-enum { phfs_prot_raw = 0, phfs_prot_phoenixd };
-
-
 typedef struct {
 	char alias[8];
 	unsigned int major;
@@ -135,6 +132,35 @@ int phfs_devReg(const char *alias, unsigned int major, unsigned int minor, const
 	phfs_common.dCnt++;
 
 	return EOK;
+}
+
+
+int phfs_devGet(const char *alias, unsigned int *retMajor, unsigned int *retMinor, unsigned int *retProt)
+{
+	phfs_device_t *pd;
+	int i;
+
+	if (phfs_common.dCnt == 0) {
+		return -ENODEV;
+	}
+
+	for (i = 0; i < phfs_common.dCnt; ++i) {
+		pd = &phfs_common.devices[i];
+		if (hal_strcmp(pd->alias, alias) == 0) {
+			if (retMajor != NULL) {
+				*retMajor = pd->major;
+			}
+			if (retMinor != NULL) {
+				*retMinor = pd->minor;
+			}
+			if (retProt != NULL) {
+				*retProt = pd->prot;
+			}
+			return EOK;
+		}
+	}
+
+	return -ENODEV;
 }
 
 

@@ -88,6 +88,30 @@ static inline addr_t get_sectorAddress(struct nor_device *dev, addr_t addr)
 
 /* Device driver interface */
 
+static int flashdrv_control(unsigned int minor, int cmd, void *args)
+{
+	struct nor_device *dev = minorToDevice(minor);
+	size_t *outSz = args;
+
+	if (dev == NULL || dev->active == 0) {
+		return -ENXIO;
+	}
+
+	switch (cmd) {
+		case DEV_CONTROL_GETPROP_TOTALSZ:
+			*outSz = dev->fspi.slFlashSz[dev->port];
+			return EOK;
+
+		case DEV_CONTROL_GETPROP_BLOCKSZ:
+			*outSz = dev->nor->sectorSz; /* FIXME: assumed uniform sector */
+			return EOK;
+
+		default:
+			break;
+	}
+
+	return -ENOSYS;
+}
 
 static int flashdrv_map(unsigned int minor, addr_t addr, size_t sz, int mode, addr_t memaddr, size_t memsz, int memmode, addr_t *a)
 {
@@ -463,6 +487,7 @@ __attribute__((constructor)) static void flashdrv_reg(void)
 		.erase = flashdrv_erase,
 		.sync = flashdrv_sync,
 		.map = flashdrv_map,
+		.control = flashdrv_control,
 	};
 
 	static const dev_t devFlashIMXRT = {

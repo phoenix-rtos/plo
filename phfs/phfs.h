@@ -26,6 +26,11 @@
 #define PHFS_OPEN_RAWONLY 0x80000000
 
 
+/* clang-format off */
+enum { phfs_prot_raw = 0, phfs_prot_phoenixd };
+/* clang-format on */
+
+
 typedef struct {
 	unsigned int pd; /* phfs device descriptor */
 	unsigned int id; /* file id               */
@@ -45,6 +50,10 @@ extern int phfs_devReg(const char *alias, unsigned int major, unsigned int minor
 
 /* Register alias to file located in non-volatile memory */
 extern int phfs_aliasReg(const char *alias, addr_t addr, size_t size);
+
+
+/* Get minor, major and protocol of the registered device alias */
+int phfs_devGet(const char *alias, unsigned int *retMajor, unsigned int *retMinor, unsigned int *retProt);
 
 
 /* Get file's address based on the given handler */
