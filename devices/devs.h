@@ -30,7 +30,10 @@
 
 #define DEVS_ITER_STOP ((const dev_t *)-1)
 
-#define DEV_CONTROL_SETBAUD 1
+#define DEV_CONTROL_SETBAUD         1
+#define DEV_CONTROL_GETBAUD         2
+#define DEV_CONTROL_GETPROP_TOTALSZ 3
+#define DEV_CONTROL_GETPROP_BLOCKSZ 4
 
 /* clang-format off */
 enum { dev_isMappable = 0, dev_isNotMappable };
