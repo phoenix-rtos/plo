@@ -25,6 +25,11 @@ struct {
 } devs_common;
 
 
+/* Anchors for section which contains driver entries */
+extern const dev_t __dev_start[];
+extern const dev_t __dev_end[];
+
+
 void devs_register(unsigned int major, unsigned int nb, const dev_t *dev)
 {
 	unsigned int minor;
@@ -48,6 +53,10 @@ void devs_init(void)
 	const dev_t *dev;
 	unsigned int major;
 	unsigned int minor;
+
+	for (const dev_t *dev = __dev_start; dev < __dev_end; dev++) {
+		dev->init(0);
+	}
 
 	for (major = 0; major < SIZE_MAJOR; ++major) {
 		for (minor = 0; minor < SIZE_MINOR; ++minor) {

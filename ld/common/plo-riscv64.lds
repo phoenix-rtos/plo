@@ -62,6 +62,13 @@ SECTIONS
 		__cmd_end = .;
 	} > PLO_IMAGE
 
+	/* section dedicated for PLO drivers */
+	.drivers : ALIGN(8) {
+		__dev_start = .;
+		KEEP (*(SORT_BY_NAME(drivers)))
+		__dev_end = .;
+	} > PLO_IMAGE
+
 	.eh_frame_hdr : { *(.eh_frame_hdr) *(.eh_frame_entry .eh_frame_entry.*) } > PLO_IMAGE
 	.eh_frame : ONLY_IF_RO { KEEP (*(.eh_frame)) *(.eh_frame.*) } > PLO_IMAGE
 
