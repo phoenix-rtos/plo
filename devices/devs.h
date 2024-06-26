@@ -30,6 +30,8 @@
 
 #define DEVS_ITER_STOP ((const dev_t *)-1)
 
+#define DEV_CONTROL_SETBAUD 1
+
 /* clang-format off */
 enum { dev_isMappable = 0, dev_isNotMappable };
 /* clang-format on */
