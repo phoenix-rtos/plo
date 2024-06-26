@@ -655,6 +655,37 @@ static int uart_init(unsigned int minor)
 }
 
 
+static int uart_control(unsigned int minor, int cmd, void *args)
+{
+	u32 reg;
+	uart_t *uart;
+
+	uart = uart_getInstance(minor);
+	if (uart == NULL) {
+		return -EINVAL;
+	}
+
+	switch (cmd) {
+		case DEV_CONTROL_SETBAUD:
+			/* Set baudrate */
+			reg = *(uart->base + baudr) & ~((0x1f << 24) | (1 << 17) | 0xfff);
+			*(uart->base + baudr) = reg | calculate_baudrate(*(int *)args);
+
+			/* Set 8 bit and no parity mode */
+			*(uart->base + ctrlr) &= ~0x117;
+
+			/* One stop bit */
+			*(uart->base + baudr) &= ~(1 << 13);
+			return EOK;
+
+		default:
+			break;
+	}
+
+	return -ENOSYS;
+}
+
+
 __attribute__((constructor)) static void uart_reg(void)
 {
 	static const dev_ops_t opsUartIMXRT117X = {
@@ -663,6 +694,7 @@ __attribute__((constructor)) static void uart_reg(void)
 		.erase = NULL,
 		.sync = uart_sync,
 		.map = uart_map,
+		.control = uart_control,
 	};
 
 	static const dev_t devUartIMXRT117X = {
