@@ -161,15 +161,20 @@ static int meta_init(unsigned int minor)
 
 __attribute__((constructor)) static void meta_register(void)
 {
-	static const dev_handler_t h = {
+	static const dev_ops_t opsMetaNandIMX6ULL = {
 		.read = meta_read,
 		.write = meta_write,
 		.sync = meta_sync,
 		.map = NULL,
-		.done = meta_done,
-		.init = meta_init,
 		.erase = NULL,
 	};
 
-	devs_register(DEV_NAND_META, NAND_MAX_CNT, &h);
+	static const dev_t devMetaNandIMX6ULL = {
+		.name = "nand-imx6ull-meta",
+		.init = meta_init,
+		.done = meta_done,
+		.ops = &opsMetaNandIMX6ULL,
+	};
+
+	devs_register(DEV_NAND_META, NAND_MAX_CNT, &devMetaNandIMX6ULL);
 }

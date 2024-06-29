@@ -26,6 +26,9 @@ extern int lib_isupper(int c);
 extern int lib_isalpha(int c);
 
 
+extern int lib_isalnum(int c);
+
+
 extern int lib_isdigit(int c);
 
 

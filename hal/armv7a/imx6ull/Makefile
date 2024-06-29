@@ -18,8 +18,8 @@ CFLAGS:=$(filter-out -mfpu% , $(CFLAGS))
 
 CFLAGS += -DVADDR_KERNEL_INIT=$(VADDR_KERNEL_INIT)
 
-PLO_COMMANDS ?= alias app blob call console copy dump echo erase go help jffs2 kernel map mem phfs script \
-  stop test-dev test-ddr wait
+PLO_COMMANDS ?= alias app blob call console copy devices dump echo erase go help jffs2 kernel map mem phfs \
+  script stop test-dev test-ddr wait
 
 PLO_ALLDEVICES := nand-imx6ull flash-imx6ull uart-imx6ull usbc-cdc
 
