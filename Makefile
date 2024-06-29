@@ -12,6 +12,8 @@ VERSION="1.21 rev: $(shell git rev-parse --short HEAD)"
 
 KERNEL=1
 
+OLVL ?= -Os
+
 include ../phoenix-rtos-build/Makefile.common
 
 LDGEN ?= $(CC)
