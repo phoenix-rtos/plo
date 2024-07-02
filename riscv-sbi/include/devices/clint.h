@@ -25,6 +25,12 @@ typedef struct {
 } clint_info_t;
 
 
+void clint_sendIpi(u32 hartid);
+
+
+void clint_clearIpi(u32 hartid);
+
+
 void clint_timerIrqHandler(void);
 
 

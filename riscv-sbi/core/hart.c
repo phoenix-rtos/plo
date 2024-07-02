@@ -69,4 +69,7 @@ void hart_init(void)
 	 * Change this if we want to emulate some functionality in M-Mode
 	 */
 	csr_write(CSR_MEDELEG, 0xb1fb);
+
+	/* Enable IPI */
+	csr_set(CSR_MIE, MIP_MSIP);
 }

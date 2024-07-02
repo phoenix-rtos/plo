@@ -111,7 +111,7 @@ _boot_continue:
 	/* Mark ourselves in the hart mask */
 	la a1, sbi_hartMask
 	sll a3, a2, s0
-	amoor.w.aq zero, a3, (a1)
+	amoor.d.aq zero, a3, (a1)
 
 	mv a0, s0
 	mv a1, s1

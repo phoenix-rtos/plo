@@ -18,9 +18,15 @@
 #include "csr.h"
 
 #include "extensions/hsm.h"
+#include "extensions/ipi.h"
 
 
 extern u32 bootHartId;
+
+
+static struct {
+	volatile u32 hartsStarted;
+} hsm_common;
 
 
 long hsm_hartStart(sbi_param hartid, sbi_param startAddr, sbi_param opaque)
@@ -45,6 +51,8 @@ long hsm_hartStart(sbi_param hartid, sbi_param startAddr, sbi_param opaque)
 
 	ATOMIC_WRITE(&data->nextAddr, startAddr);
 	ATOMIC_WRITE(&data->nextArg1, opaque);
+
+	sbi_ipiSend(hartid, NULL, NULL);
 
 	return SBI_SUCCESS;
 }
@@ -82,7 +90,9 @@ static void hsm_hartWait(u32 hartid)
 	sbi_perHartData_t *data = sbi_getPerHartData(hartid);
 	unsigned long mie = csr_read(CSR_MIE);
 
-	csr_clear(CSR_MIE, MIP_MSIP | MIP_MEIP);
+	csr_set(CSR_MIE, MIP_MSIP | MIP_MEIP);
+
+	atomic_add32(&hsm_common.hartsStarted, 1);
 
 	while (ATOMIC_READ(&data->state) != SBI_HSM_START_PENDING) {
 		__WFI();
@@ -97,8 +107,10 @@ void hsm_init(u32 hartid)
 	sbi_perHartData_t *data;
 
 	if (hartid == bootHartId) {
+		atomic_add32(&hsm_common.hartsStarted, 1);
 		data = sbi_getPerHartData(hartid);
 		ATOMIC_WRITE(&data->state, SBI_HSM_START_PENDING);
+		while (ATOMIC_READ(&hsm_common.hartsStarted) < sbi_getHartCount()) { }
 	}
 	else {
 		hsm_hartWait(hartid);

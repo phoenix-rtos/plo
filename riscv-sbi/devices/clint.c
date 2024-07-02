@@ -31,6 +31,18 @@ static struct {
 } clint_common;
 
 
+void clint_sendIpi(u32 hartid)
+{
+	*((vu32 *)(clint_common.base + CLINT_MSIP(hartid))) = 1;
+}
+
+
+void clint_clearIpi(u32 hartid)
+{
+	*((vu32 *)(clint_common.base + CLINT_MSIP(hartid))) = 0;
+}
+
+
 void clint_timerIrqHandler(void)
 {
 	/* Disable MTIMER interrupt */
