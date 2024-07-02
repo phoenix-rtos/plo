@@ -14,6 +14,10 @@
  */
 
 #include "sbi.h"
+#include "extensions/ipi.h"
+
+
+#define SFENCE_VMA_FLUSH_ALL (size_t)(-1)
 
 
 enum {
@@ -27,22 +31,98 @@ enum {
 };
 
 
+typedef struct {
+	addr_t start;
+	size_t size;
+	u32 asid;
+} sfenceVmaInfo_t;
+
+
+static void ecall_rfence_fenceiHandler(void *data)
+{
+	(void)data;
+
+	__asm__ volatile("fence.i");
+}
+
+
+static void ecall_rfence_sfenceVmaHandler(void *data)
+{
+	size_t i;
+	sfenceVmaInfo_t *info = (sfenceVmaInfo_t *)data;
+
+	if (((info->start == 0) && (info->size == 0)) || (info->size == SFENCE_VMA_FLUSH_ALL)) {
+		__asm__ volatile("sfence.vma" ::: "memory");
+
+		return;
+	}
+
+	for (i = 0; i < info->size; i += PAGE_SIZE) {
+		/* clang-format off */
+		__asm__ volatile (
+			"sfence.vma %0"
+			:
+			: "r"(info->start + i)
+			: "memory"
+		);
+		/* clang-format on */
+	}
+}
+
+
+static void ecall_rfence_sfenceVmaAsidHandler(void *data)
+{
+	size_t i;
+	sfenceVmaInfo_t *info = (sfenceVmaInfo_t *)data;
+
+	if (((info->start == 0) && (info->size == 0)) || (info->size == SFENCE_VMA_FLUSH_ALL)) {
+		/* clang-format off */
+		__asm__ volatile (
+			"sfence.vma x0, %0"
+			:
+			: "r"(info->asid)
+			: "memory"
+		);
+		/* clang-format on */
+
+		return;
+	}
+
+
+	for (i = 0; i < info->size; i += PAGE_SIZE) {
+		/* clang-format off */
+		__asm__ volatile (
+			"sfence.vma %0, %1"
+			:
+			: "r"(info->start + i), "r"(info->asid)
+			: "memory"
+		);
+		/* clang-format on */
+	}
+}
+
+
 static sbiret_t ecall_rfence_handler(sbi_param a0, sbi_param a1, sbi_param a2, sbi_param a3, sbi_param a4, sbi_param a5, int fid)
 {
 	sbiret_t ret = { 0 };
+	sfenceVmaInfo_t info;
 
-	/* TODO */
 	switch (fid) {
 		case RFENCE_FENCE_I:
-			ret.error = SBI_ERR_NOT_SUPPORTED;
+			ret.error = sbi_ipiSendMany(a0, a1, ecall_rfence_fenceiHandler, NULL);
 			break;
 
 		case RFENCE_SFENCE_VMA:
-			ret.error = SBI_ERR_NOT_SUPPORTED;
+			info.start = a2;
+			info.size = a3;
+			ret.error = sbi_ipiSendMany(a0, a1, ecall_rfence_sfenceVmaHandler, &info);
 			break;
 
 		case RFENCE_SFENCE_VMA_ASID:
-			ret.error = SBI_ERR_NOT_SUPPORTED;
+			info.start = a2;
+			info.size = a3;
+			info.asid = a4;
+			ret.error = sbi_ipiSendMany(a0, a1, ecall_rfence_sfenceVmaAsidHandler, &info);
 			break;
 
 		case RFENCE_HFENCE_GVMA_VMID:

@@ -13,7 +13,10 @@
  * %LICENSE%
  */
 
+#include "csr.h"
 #include "sbi.h"
+
+#include "extensions/ipi.h"
 
 
 enum {
@@ -21,14 +24,21 @@ enum {
 };
 
 
+static void ecall_ipi_sendIpiHandler(void *data)
+{
+	(void)data;
+
+	csr_set(CSR_MIP, MIP_SSIP);
+}
+
+
 static sbiret_t ecall_ipi_handler(sbi_param a0, sbi_param a1, sbi_param a2, sbi_param a3, sbi_param a4, sbi_param a5, int fid)
 {
-	/* TODO */
 	sbiret_t ret = { 0 };
 
 	switch (fid) {
 		case IPI_SEND_IPI:
-			ret.error = SBI_ERR_NOT_SUPPORTED;
+			ret.error = sbi_ipiSendMany(a0, a1, ecall_ipi_sendIpiHandler, NULL);
 			break;
 
 		default:

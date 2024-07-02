@@ -14,15 +14,16 @@
  */
 
 
-#include "hart.h"
 #include "csr.h"
 #include "fdt.h"
+#include "hart.h"
 #include "sbi.h"
 
 #include "devices/clint.h"
 #include "devices/console.h"
 
 #include "extensions/hsm.h"
+#include "extensions/ipi.h"
 
 #include "ld/noelv.ldt"
 
@@ -33,13 +34,49 @@ extern const sbi_ext_t __ext_start[];
 extern const sbi_ext_t __ext_end[];
 
 
-volatile u32 sbi_hartMask;
+volatile u64 sbi_hartMask;
 
 
 static struct {
 	volatile u32 hartCount;
 	sbi_perHartData_t perHartData[MAX_HART_COUNT] __attribute__((aligned(8)));
 } sbi_common;
+
+
+unsigned int sbi_getFirstBit(unsigned long v)
+{
+	unsigned int fb = 0;
+
+	if (!(v & 0xffffffffL)) {
+		fb += 32;
+		v = (v >> 32);
+	}
+
+	if (!(v & 0xffff)) {
+		fb += 16;
+		v = (v >> 16);
+	}
+
+	if (!(v & 0xff)) {
+		fb += 8;
+		v = (v >> 8);
+	}
+
+	if (!(v & 0xf)) {
+		fb += 4;
+		v = (v >> 4);
+	}
+
+	if (!(v & 0x3)) {
+		fb += 2;
+		v = (v >> 2);
+	}
+
+	if (!(v & 0x01))
+		fb += 1;
+
+	return fb;
+}
 
 
 sbiret_t sbi_dispatchEcall(sbi_param a0, sbi_param a1, sbi_param a2, sbi_param a3, sbi_param a4, sbi_param a5, int fid, int eid)
@@ -97,6 +134,7 @@ void __attribute__((noreturn)) sbi_initCold(u32 hartid, const void *fdt)
 	hart_init();
 	console_init();
 	clint_init();
+	sbi_ipiInit();
 
 	console_print("Phoenix SBI\n");
 
