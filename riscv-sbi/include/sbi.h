@@ -30,6 +30,9 @@
 
 /* Supported SBI extensions */
 
+#define SBI_EXT_0_1_CONSOLE_PUTCHAR 0x1
+#define SBI_EXT_0_1_CONSOLE_GETCHAR 0x2
+
 #define SBI_EXT_BASE   0x10
 #define SBI_EXT_TIME   0x54494D45
 #define SBI_EXT_IPI    0x735049

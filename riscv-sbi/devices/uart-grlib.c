@@ -21,8 +21,12 @@
 
 
 /* UART control bits */
+#define RX_EN        (1 << 0)
 #define TX_EN        (1 << 1)
 #define TX_FIFO_FULL (1 << 9)
+
+/* UART status bits */
+#define DATA_READY (1 << 0)
 
 enum {
 	uart_data = 0, /* Data register           : 0x00 */
@@ -45,6 +49,17 @@ static void uart_grlib_putc(char c)
 }
 
 
+static int uart_grlib_getc(void)
+{
+	u32 st = *(uart_grlib_common.base + uart_status);
+	if ((st & DATA_READY) == 0) {
+		return -1;
+	}
+
+	return *(uart_grlib_common.base + uart_data) & 0xff;
+}
+
+
 static u32 uart_grlib_calcScaler(u32 freq, u32 baud)
 {
 	return (freq / (baud * 8 + 7));
@@ -62,7 +77,7 @@ static int uart_grlib_init(const char *compatible)
 	RISCV_FENCE(w, o);
 	*(uart_grlib_common.base + uart_scaler) = uart_grlib_calcScaler(info.freq, info.baud);
 	RISCV_FENCE(w, o);
-	*(uart_grlib_common.base + uart_ctrl) = TX_EN;
+	*(uart_grlib_common.base + uart_ctrl) = TX_EN | RX_EN;
 
 	return 0;
 }
@@ -71,5 +86,6 @@ static int uart_grlib_init(const char *compatible)
 static const uart_driver_t uart_grlib __attribute__((section("uart_drivers"), used)) = {
 	.compatible = "gaisler,apbuart",
 	.init = uart_grlib_init,
-	.putc = uart_grlib_putc
+	.putc = uart_grlib_putc,
+	.getc = uart_grlib_getc
 };
