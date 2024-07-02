@@ -24,6 +24,7 @@ typedef struct {
 	const char *compatible;
 	int (*init)(const char *compatible);
 	void (*putc)(char c);
+	int (*getc)(void);
 } uart_driver_t;
 
 
@@ -38,6 +39,9 @@ void console_putc(char c);
 
 
 void console_print(const char *s);
+
+
+int console_getc(void);
 
 
 void console_init(void);
