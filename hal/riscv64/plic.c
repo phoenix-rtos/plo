@@ -111,7 +111,7 @@ void _plic_init(void)
 {
 	unsigned int i;
 
-	plic_common.base = (void *)0x0c000000;
+	plic_common.base = (void *)PLIC_BASE;
 
 	/* Disable and mask external interrupts, irq 0 is unused */
 	for (i = 1; i < PLIC_IRQ_SIZE; i++) {
