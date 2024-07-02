@@ -15,13 +15,14 @@
 
 #include "csr.h"
 #include "devices/clint.h"
+#include "extensions/ipi.h"
 
 
 void interrupts_dispatch(unsigned int irq)
 {
 	switch (irq) {
 		case IRQ_M_SOFT:
-			/* TODO: handle IPI */
+			sbi_ipiHandler();
 			break;
 
 		case IRQ_M_TIMER:

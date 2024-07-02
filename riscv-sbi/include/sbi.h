@@ -52,6 +52,8 @@
 
 #define SIZEOF_SBI_PERHARTDATA 40
 
+#define PAGE_SIZE 0x1000
+
 
 #ifndef __ASSEMBLY__
 
@@ -84,6 +86,12 @@ typedef struct {
 
 
 _Static_assert(sizeof(sbi_perHartData_t) == SIZEOF_SBI_PERHARTDATA, "sbi_perHartData_t size changed, update SIZEOF_SBI_PERHARTDATA");
+
+
+extern volatile u64 sbi_hartMask;
+
+
+unsigned int sbi_getFirstBit(unsigned long v);
 
 
 sbi_perHartData_t *sbi_getPerHartData(u32 hartid);
