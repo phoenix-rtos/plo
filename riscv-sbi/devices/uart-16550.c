@@ -68,6 +68,16 @@ static void uart16550_putc(char c)
 }
 
 
+static int uart16550_getc(void)
+{
+	if ((readReg(lsr) & 0x01) != 0) {
+		return readReg(rbr);
+	}
+
+	return -1;
+}
+
+
 static int uart16550_init(const char *compatible)
 {
 	u16 bdiv;
@@ -90,7 +100,7 @@ static int uart16550_init(const char *compatible)
 	setReg(lcr, 0x03);
 
 	/* Enable FIFO */
-	setReg(fcr, 0xa7);
+	setReg(fcr, 0x01);
 
 	/* No modem control DTR RTS */
 	setReg(mcr, 0x00);
@@ -107,6 +117,6 @@ static int uart16550_init(const char *compatible)
 
 
 static const uart_driver_t uart_16550[] __attribute__((section("uart_drivers"), used)) = {
-	{ .compatible = "ns16550a", .init = uart16550_init, .putc = uart16550_putc },
-	{ .compatible = "ns16550", .init = uart16550_init, .putc = uart16550_putc },
+	{ .compatible = "ns16550a", .init = uart16550_init, .putc = uart16550_putc, .getc = uart16550_getc },
+	{ .compatible = "ns16550", .init = uart16550_init, .putc = uart16550_putc, .getc = uart16550_getc },
 };

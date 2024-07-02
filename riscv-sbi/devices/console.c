@@ -41,6 +41,16 @@ void console_print(const char *s)
 }
 
 
+int console_getc(void)
+{
+	if (console_common.drv != NULL) {
+		return console_common.drv->getc();
+	}
+
+	return -1;
+}
+
+
 void console_init(void)
 {
 	const uart_driver_t *drv;
