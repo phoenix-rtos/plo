@@ -32,6 +32,26 @@
 	do { \
 		__asm__ volatile ("wfi" ::: "memory"); \
 	} while (0)
+
+
+/* Load value using mstatus privilege modification
+ * This macro allows loads from virtual address in M-Mode.
+ */
+#define MPRV_LOAD(load_inst, reg, addr) \
+	__asm__ volatile ( \
+		/* Set MPRV bit */ \
+		"li a6, (1 << 17)\n\t" \
+		"csrs mstatus, a6\n\t" \
+		".option push\n\t" \
+		".option norvc\n\t" \
+		#load_inst " %0, (%1)\n\t" \
+		".option pop\n\t" /* Clear MPRV bit */ \
+		"csrc mstatus, a6" \
+		: "=r"(reg) \
+		: "r"(addr) \
+		: "a6", "memory" \
+	);
+
 /* clang-format on */
 
 

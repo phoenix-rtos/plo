@@ -280,17 +280,12 @@ static void exceptions_illegalHandler(unsigned int n, exc_context_t *ctx)
 {
 	u64 insn = ctx->mtval;
 	u64 prevMode = (ctx->mstatus & MSTATUS_MPP) >> MSTATUS_MPP_SHIFT;
+	unsigned long unpriv_insn;
 
 	/* Check failing instruction */
 	if (((insn & 3) == 3) && (((insn & 0x7c) >> 2) == 0x1c)) {
 		/* Non-compressed, SYSTEM opcode */
 		exceptions_illSystem(n, ctx);
-	}
-	else if (insn == 0) {
-		/* RV implementation didn't write mtval.
-		 * TODO: get failing instruction through unprivileged access
-		 */
-		exceptions_defaultHandler(n, ctx);
 	}
 	else {
 		if (prevMode == PRV_M) {
@@ -298,6 +293,18 @@ static void exceptions_illegalHandler(unsigned int n, exc_context_t *ctx)
 			exceptions_defaultHandler(n, ctx);
 		}
 		else {
+			if (insn == 0) {
+				/* mepc has virtual address, have to load using MPRV */
+				MPRV_LOAD(lhu, insn, ctx->mepc);
+				/* Check lowest to bits to determine if we are dealing with compressed insn
+				 * Noncompressed RV instructions have bits [1:0] = 11.
+				 */
+				if ((insn & 3) == 3) {
+					/* Noncompressed, load 2nd part */
+					MPRV_LOAD(lhu, unpriv_insn, ctx->mepc + 2);
+					insn = (unpriv_insn << 16) | insn;
+				}
+			}
 			exceptions_redirect(n, insn, ctx);
 		}
 	}
