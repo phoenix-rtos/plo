@@ -88,6 +88,30 @@ static inline addr_t get_sectorAddress(struct nor_device *dev, addr_t addr)
 
 /* Device driver interface */
 
+static int flashdrv_control(unsigned int minor, int cmd, void *args)
+{
+	struct nor_device *dev = minorToDevice(minor);
+	size_t *outSz = args;
+
+	if (dev == NULL || dev->active == 0) {
+		return -ENXIO;
+	}
+
+	switch (cmd) {
+		case DEV_CONTROL_GETPROP_TOTALSZ:
+			*outSz = dev->fspi.slFlashSz[dev->port];
+			return EOK;
+
+		case DEV_CONTROL_GETPROP_BLOCKSZ:
+			*outSz = dev->nor->sectorSz; /* FIXME: assumed uniform sector */
+			return EOK;
+
+		default:
+			break;
+	}
+
+	return -ENOSYS;
+}
 
 static int flashdrv_map(unsigned int minor, addr_t addr, size_t sz, int mode, addr_t memaddr, size_t memsz, int memmode, addr_t *a)
 {
@@ -457,17 +481,23 @@ static int flashdrv_init(unsigned int minor)
 
 __attribute__((constructor)) static void flashdrv_reg(void)
 {
-	static const dev_handler_t h = {
-		.init = flashdrv_init,
-		.done = flashdrv_done,
+	static const dev_ops_t opsFlashIMXRT = {
 		.read = flashdrv_read,
 		.write = flashdrv_write,
 		.erase = flashdrv_erase,
 		.sync = flashdrv_sync,
 		.map = flashdrv_map,
+		.control = flashdrv_control,
+	};
+
+	static const dev_t devFlashIMXRT = {
+		.name = "flash-imxrt",
+		.init = flashdrv_init,
+		.done = flashdrv_done,
+		.ops = &opsFlashIMXRT,
 	};
 
 	hal_memset(&fdrv_common, 0, sizeof(fdrv_common));
 
-	devs_register(DEV_STORAGE, FLASH_NO, &h);
+	devs_register(DEV_STORAGE, FLASH_NO, &devFlashIMXRT);
 }

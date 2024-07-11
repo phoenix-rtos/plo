@@ -66,6 +66,13 @@ SECTIONS
 		__cmd_end = .;
 	} > PLO_IMAGE
 
+	/* section dedicated for PLO drivers */
+	.drivers : ALIGN(4) {
+		__dev_start = .;
+		KEEP (*(SORT_BY_NAME(drivers)))
+		__dev_end = .;
+	} > PLO_IMAGE
+
 	/* put .ARM.ex* the sections containing information for unwinding the stack */
 	.ARM.extab : {
 		PROVIDE_HIDDEN(__extab_start = .);

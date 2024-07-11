@@ -624,17 +624,54 @@ static int uart_init(unsigned int minor)
 }
 
 
+static int uart_control(unsigned int minor, int cmd, void *args)
+{
+	u32 reg;
+	uart_t *uart;
+
+	uart = uart_getInstance(minor);
+	if (uart == NULL) {
+		return -EINVAL;
+	}
+
+	switch (cmd) {
+		case DEV_CONTROL_SETBAUD:
+			/* Set baudrate */
+			reg = *(uart->base + baudr) & ~((0x1f << 24) | (1 << 17) | 0x1fff);
+			*(uart->base + baudr) = reg | calculate_baudrate(*(int *)args);
+
+			/* Set 8 bit and no parity mode */
+			*(uart->base + ctrlr) &= ~0x117;
+
+			/* One stop bit */
+			*(uart->base + baudr) &= ~(1 << 13);
+			return EOK;
+
+		default:
+			break;
+	}
+
+	return -ENOSYS;
+}
+
+
 __attribute__((constructor)) static void uart_reg(void)
 {
-	static const dev_handler_t h = {
-		.init = uart_init,
-		.done = uart_done,
+	static const dev_ops_t opsUartIMXRT106X = {
 		.read = uart_read,
 		.write = uart_safeWrite,
 		.erase = NULL,
 		.sync = uart_sync,
-		.map = uart_map
+		.map = uart_map,
+		.control = uart_control,
 	};
 
-	devs_register(DEV_UART, UART_MAX_CNT, &h);
+	static const dev_t devUartIMXRT106X = {
+		.name = "uart-imxrt106x",
+		.init = uart_init,
+		.done = uart_done,
+		.ops = &opsUartIMXRT106X,
+	};
+
+	devs_register(DEV_UART, UART_MAX_CNT, &devUartIMXRT106X);
 }

@@ -40,6 +40,12 @@ int lib_isdigit(int c)
 }
 
 
+int lib_isalnum(int c)
+{
+	return lib_islower(c) || lib_isupper(c) || lib_isdigit(c);
+}
+
+
 int lib_isblank(int c)
 {
 	return (c == ' ') || (c == '\t');
