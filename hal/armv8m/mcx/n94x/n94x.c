@@ -63,7 +63,7 @@ enum {
 	syscon_cmp0fclksel = 380, syscon_cmp0fclkdiv, syscon_cmp0rrclksel, syscon_rrclkdiv,
 	syscon_cmp1fclksel, syscon_cmp1fclkdiv, syscon_cmp1rrclksel, syscon_cmp1rrclkdiv,
 	syscon_cmp2fclksel, syscon_cmp2fclkdiv, syscon_cmp2rrclksel, syscon_cmp2rrclkdiv,
-	syscon_cpuctrl = 512, syscon_cpboot, syscon_cpustat = 514, syscon_pcacctrl = 521,
+	syscon_cpuctrl = 512, syscon_cpboot, syscon_cpustat = 514, syscon_lpcacctrl = 521,
 	syscon_flexcomm0clkdiv = 532, syscon_flexcomm1clkdiv, syscon_flexcomm2clkdiv,
 	syscon_flexcomm3clkdiv, syscon_flexcomm4clkdiv, syscon_flexcomm5clkdiv, syscon_flexcomm6clkdiv,
 	syscon_flexcomm7clkdiv, syscon_flexcomm8clkdiv, syscon_flexcomm9clkdiv,
@@ -80,14 +80,14 @@ enum {
 
 
 enum {
-	scg_verid = 0, scg_param, scg_trimlock, scg_csr, scg_rccr, scg_sosccsr = 64, scg_sosccfg = 66,
-	scg_sirccsr = 128, scg_sirctcfg = 131, scg_sirctrim, scg_sircstat = 134, scg_firccsr = 192,
-	scg_firccfg = 194, scg_firctrim, scg_fircstat = 198, scg_rosccsr = 256, scg_apllcsr = 320,
-	scg_apllctrl, scg_apllstat, scg_apllndiv, scg_apllmdiv, scg_apllpdiv, scg_aplllockcnfg,
-	scg_apllsscgstat, scg_apllsscg0, scg_apllsscg1, scg_apllovrd = 381, scg_spllcsr = 384,
-	scg_spllctrl, scg_spllstat, scg_spllndiv, scg_spllmdiv, scg_spllpdiv, scg_spllockcnfg,
-	scg_spllsscgstat, scg_spllsscg0, scg_spllsscg1, scg_spllovrd = 445, scg_upllcsr = 448,
-	scg_ldocsr = 512
+	scg_verid = 0, scg_param, scg_trimlock, scg_csr = 4, scg_rccr, scg_sosccsr = 64,
+	scg_sosccfg = 66, scg_sirccsr = 128, scg_sirctcfg = 131, scg_sirctrim, scg_sircstat = 134,
+	scg_firccsr = 192, scg_firccfg = 194, scg_firctrim, scg_fircstat = 198, scg_rosccsr = 256,
+	scg_apllcsr = 320, scg_apllctrl, scg_apllstat, scg_apllndiv, scg_apllmdiv, scg_apllpdiv,
+	scg_aplllockcnfg, scg_apllsscgstat, scg_apllsscg0, scg_apllsscg1, scg_apllovrd = 381,
+	scg_spllcsr = 384, scg_spllctrl, scg_spllstat, scg_spllndiv, scg_spllmdiv, scg_spllpdiv,
+	scg_spllockcnfg, scg_spllsscgstat, scg_spllsscg0, scg_spllsscg1, scg_spllovrd = 445,
+	scg_upllcsr = 448, scg_ldocsr = 512
 };
 
 
@@ -167,6 +167,32 @@ enum {
 	vbat_ldotimer1 = 206, vbat_wakeup0a = 448, vbat_wakeup0b, vbat_wakeup1a, vbat_wakeup1b,
 	vbat_waklcka = 510, vbat_waklckb
 };
+
+
+enum {
+	spc_verid = 0, spc_sc = 4, spc_cntrl, spc_lpreqcfg = 7, spc_pdstatus0 = 12, spc_pdstatus1,
+	spc_sramctl = 16, spc_activecfg = 64, spc_activecgfg1, spc_lpcfg, spc_lpcfg1, spc_lpwkupdelay = 72,
+	spc_activevdelay, spc_vdstat = 76, spc_vdcorecfg, spc_vdsyscfg, spc_iocfg, spc_evdcfg,
+	spc_glitchdetectsc, spc_coreldocfg = 192, spc_sysldocfg = 256, spc_dcdccfg = 320, spc_dcdcburstcfg
+};
+
+
+enum {
+	fmu_fstat = 0, fmu_fcnfg, fmu_fctlr, fmu_fcc0b0, fmu_fcc0b1, fmu_fcc0b2, fmu_fcc0b3, fmu_fcc0b4,
+	fmu_fcc0b5, fmu_fcc0b6, fmu_fcc0b7
+};
+
+
+enum {
+	itrc_status = 0, itrc_status1, itrc_outsel, itrc_outsel1 = 24, itrc_outsel2 = 46,
+	itrc_swevent0 = 94, itrc_swevent1
+};
+
+
+enum {
+	gdet_conf0 = 0, gdet_conf1, gdet_enable1, gdet_conf2, gdet_conf3, gdet_conf4, gdet_conf5,
+	gdet_reset = 4010, gdet_test, gdet_dlyctrl = 4016
+};
 /* clang-format on */
 
 
@@ -177,6 +203,11 @@ static struct {
 	volatile u32 *flexcomm[10];
 	volatile u32 *vbat;
 	volatile u32 *scg;
+	volatile u32 *spc;
+	volatile u32 *fmu;
+	volatile u32 *gdet0;
+	volatile u32 *gdet1;
+	volatile u32 *itrc;
 } n94x_common;
 
 
@@ -596,6 +627,229 @@ static void _mcxn94x_clockConfigOsc32khz(u8 extal, u8 cap, u8 gain)
 }
 
 
+static void _mcxn94x_clockConfigExtClk(u32 freq)
+{
+	u8 range;
+
+	if (freq < (20 * 1000 * 1000)) {
+		range = 0;
+	}
+	else if (freq < (30 * 1000 * 1000)) {
+		range = 1;
+	}
+	else if (freq < (50 * 1000 * 1000)) {
+		range = 2;
+	}
+	else {
+		range = 3;
+	}
+
+	/* Clear errors if present */
+	*(n94x_common.scg + scg_sosccsr) = (1 << 26);
+
+	/* Set range and internal reference */
+	*(n94x_common.scg + scg_sosccfg) = (range << 4) | (1 << 2);
+
+	/* Unlock SOSCCSR */
+	*(n94x_common.scg + scg_sosccsr) &= ~(1 << 23);
+	hal_cpuDataMemoryBarrier();
+
+	/* Enable clock and monitor */
+	*(n94x_common.scg + scg_sosccsr) |= (1 << 17) | 1;
+	hal_cpuDataMemoryBarrier();
+
+	/* Wait for clock to stabilize */
+	while ((*(n94x_common.scg + scg_sosccsr) & (1 << 24)) == 0) {
+	}
+}
+
+
+static void _mcxn94x_configBandGap(void)
+{
+	u32 t;
+
+	/* Wait if busy */
+	while ((*(n94x_common.spc + spc_sc) & 1) != 0) {
+	}
+
+	/* Enable band-gap */
+	t = *(n94x_common.spc + spc_activecfg) & ~(0x3 << 20);
+	*(n94x_common.spc + spc_activecfg) = t | (1 << 20);
+	hal_cpuDataMemoryBarrier();
+}
+
+
+static void _mcxn94x_configDCDC(void)
+{
+	u32 t;
+
+	/* For now only normal strength, OD voltage */
+
+	/* Wait if busy */
+	while ((*(n94x_common.spc + spc_sc) & 1) != 0) {
+	}
+
+	/* Select normal strength */
+	t = *(n94x_common.spc + spc_activecfg) & ~(0x3 << 8);
+	*(n94x_common.spc + spc_activecfg) = t | (0x2 << 8);
+	hal_cpuDataMemoryBarrier();
+
+	/* Select OD voltage (1.2 V) */
+	t = *(n94x_common.spc + spc_activecfg) & ~(0x3 << 10);
+	*(n94x_common.spc + spc_activecfg) = t | (0x3 << 10);
+	hal_cpuDataMemoryBarrier();
+
+	/* Wait if busy */
+	while ((*(n94x_common.spc + spc_sc) & 1) != 0) {
+	}
+}
+
+
+static void _mcxn94x_configLDO(void)
+{
+	u32 t;
+
+	/* For now only normal strength, OD voltage */
+
+	/* Wait if busy */
+	while ((*(n94x_common.spc + spc_sc) & 1) != 0) {
+	}
+
+	/* Select normal strength */
+	*(n94x_common.spc + spc_activecfg) |= 1;
+	hal_cpuDataMemoryBarrier();
+
+	/* Select OD voltage (1.2 V) */
+	t = *(n94x_common.spc + spc_activecfg) & ~(0x3 << 2);
+	*(n94x_common.spc + spc_activecfg) = t | (0x3 << 2);
+	hal_cpuDataMemoryBarrier();
+}
+
+
+static void _mcxn94x_configFlashWS(u8 ws)
+{
+	u32 t = *(n94x_common.fmu + fmu_fctlr) & ~(0xf);
+	*(n94x_common.fmu + fmu_fctlr) = t | (ws & 0xf);
+	hal_cpuDataMemoryBarrier();
+}
+
+
+static void _mcxn94x_configSramVoltage(u8 vsm)
+{
+	/* Set voltage */
+	*(n94x_common.spc + spc_sramctl) = (vsm & 0x3);
+	hal_cpuDataMemoryBarrier();
+
+	/* Request change */
+	*(n94x_common.spc + spc_sramctl) |= (1 << 30);
+	hal_cpuDataMemoryBarrier();
+
+	/* Wait for completion */
+	while ((*(n94x_common.spc + spc_sramctl) & (1u << 31)) == 0) {
+	}
+
+	*(n94x_common.spc + spc_sramctl) &= ~(1 << 30);
+	hal_cpuDataMemoryBarrier();
+}
+
+
+static u8 _mcxn94x_clockGetSeli(u32 m)
+{
+	u32 a;
+
+	if (m >= 8000) {
+		a = 1;
+	}
+	else if (m >= 122) {
+		a = 8000 / m;
+	}
+	else {
+		a = (2 * (m / 4)) + 3;
+	}
+
+	return (a > 63) ? 63 : a;
+}
+
+
+static u8 _mcxn94x_clockGetSelp(u32 m)
+{
+	u32 a = (m >> 2) + 1;
+	return (a > 31) ? 31 : a;
+}
+
+
+static void _mcxn94x_clockConfigPLL0(u8 source, u8 mdiv, u8 pdiv, u8 ndiv)
+{
+	u8 seli = _mcxn94x_clockGetSeli(mdiv);
+	u8 selp = _mcxn94x_clockGetSelp(mdiv);
+
+	/* Power off during config */
+	*(n94x_common.scg + scg_apllcsr) &= ~((1 << 1) | 1);
+	hal_cpuDataMemoryBarrier();
+
+	/* Configure parameters */
+	*(n94x_common.scg + scg_apllctrl) = ((source & 0x3) << 25) | ((selp & 0x1f) << 10) | ((seli & 0x3f) << 4);
+	*(n94x_common.scg + scg_apllndiv) = ndiv;
+	hal_cpuDataMemoryBarrier();
+	*(n94x_common.scg + scg_apllndiv) = ndiv | (1u << 31);
+	*(n94x_common.scg + scg_apllpdiv) = pdiv;
+	hal_cpuDataMemoryBarrier();
+	*(n94x_common.scg + scg_apllpdiv) = pdiv | (1u << 31);
+	*(n94x_common.scg + scg_apllmdiv) = mdiv;
+	hal_cpuDataMemoryBarrier();
+	*(n94x_common.scg + scg_apllmdiv) = mdiv | (1u << 31);
+	hal_cpuDataMemoryBarrier();
+
+	/* Config lock time */
+	_mcxn94x_scgTrimUnlock();
+	*(n94x_common.scg + scg_aplllockcnfg) = ((SOSC_FREQ / ndiv) * 500) + 300;
+	_mcxn94x_scgTrimLock();
+
+	/* Enable PLL0 */
+	*(n94x_common.scg + scg_apllcsr) |= (1 << 1) | 1;
+	hal_cpuDataMemoryBarrier();
+
+	/* Wait for lock */
+	while ((*(n94x_common.scg + scg_apllcsr) & (1 << 24)) == 0) {
+	}
+
+	/* Disable clock monitor */
+	*(n94x_common.scg + scg_apllcsr) &= ~(1 << 16);
+}
+
+
+void _mcxn94x_disableGDET(void)
+{
+	u32 t;
+
+	/* Disable aGDET trigger to the CHIP_RESET */
+	t = *(n94x_common.itrc + itrc_outsel + (4 * 2)) & ~(0x3 << 18);
+	*(n94x_common.itrc + itrc_outsel + (4 * 2)) = t | (0x2 << 18);
+	t = *(n94x_common.itrc + itrc_outsel + (4 * 2) + 1) & ~(0x3 << 18);
+	*(n94x_common.itrc + itrc_outsel + (4 * 2) + 1) = t | (0x2 << 18);
+	hal_cpuDataMemoryBarrier();
+
+	/* Disable aGDET interrupt and reset */
+	*(n94x_common.spc + spc_activecfg) |= (1 << 12);
+	*(n94x_common.spc + spc_glitchdetectsc) &= ~(1 << 16);
+	hal_cpuDataMemoryBarrier();
+	*(n94x_common.spc + spc_glitchdetectsc) = 0x3c;
+	hal_cpuDataMemoryBarrier();
+	*(n94x_common.spc + spc_glitchdetectsc) |= (1 << 16);
+
+	/* Disable dGDET trigger to the CHIP_RESET */
+	t = *(n94x_common.itrc + itrc_outsel + (4 * 2)) & ~0x3;
+	*(n94x_common.itrc + itrc_outsel + (4 * 2)) = t | 0x2;
+	t = *(n94x_common.itrc + itrc_outsel + (4 * 2) + 1) & ~0x3;
+	*(n94x_common.itrc + itrc_outsel + (4 * 2) + 1) = t | 0x2;
+	hal_cpuDataMemoryBarrier();
+
+	*(n94x_common.gdet0 + gdet_enable1) = 0;
+	*(n94x_common.gdet1 + gdet_enable1) = 0;
+	hal_cpuDataMemoryBarrier();
+}
+
+
 void _mcxn94x_init(void)
 {
 	int i;
@@ -623,6 +877,13 @@ void _mcxn94x_init(void)
 	n94x_common.flexcomm[9] = (void *)0x400b9000;
 	n94x_common.vbat = (void *)0x40059000;
 	n94x_common.scg = (void *)0x40044000;
+	n94x_common.spc = (void *)0x40045000;
+	n94x_common.fmu = (void *)0x40043000;
+	n94x_common.gdet0 = (void *)0x40024000;
+	n94x_common.gdet1 = (void *)0x40025000;
+	n94x_common.itrc = (void *)0x40026000;
+
+	_mcxn94x_disableGDET();
 
 	/* Configure FlexComms */
 	for (i = 0; i < sizeof(flexcommConf) / sizeof(*flexcommConf); ++i) {
@@ -648,8 +909,11 @@ void _mcxn94x_init(void)
 		_mcxn94x_sysconSetDevClk(pctl_port0 + i, 0, 0, 1);
 	}
 
+	/* Enable the flash cache LPCAC */
+	*(n94x_common.syscon + syscon_lpcacctrl) &= ~1;
+
 	/* Enable LDO */
-	_mcxn94x_scgLdoConfig(LDO_VOUT_1V2);
+	_mcxn94x_scgLdoConfig(LDO_VOUT_1V1);
 
 	/* Configure 32 KHz crystal pins */
 	_mcxn94x_portPinConfig(pctl_pin_p5_0, 0, MCX_PIN_FAST | MCX_PIN_INPUT_BUFFER_ENABLE);
@@ -658,4 +922,36 @@ void _mcxn94x_init(void)
 	/* Enable 32 KHz oscillator */
 	/* TODO determine EXTAL_CAP_SEL, XTAL_CAP_SEL and COARSE_AMP_GAIN values */
 	_mcxn94x_clockConfigOsc32khz(ROSC_EXTALCAP_PF / 2, ROSC_CAP_PF / 2, ROSC_AMP_GAIN);
+
+	/* Configure 24 MHz oscillator pins */
+	_mcxn94x_portPinConfig(pctl_pin_p1_30, 0, MCX_PIN_FAST | MCX_PIN_INPUT_BUFFER_ENABLE);
+	_mcxn94x_portPinConfig(pctl_pin_p1_31, 0, MCX_PIN_FAST | MCX_PIN_INPUT_BUFFER_ENABLE);
+
+	/* Enable oscillator */
+	_mcxn94x_clockConfigExtClk(SOSC_FREQ);
+
+	/* Config power supply */
+	_mcxn94x_configBandGap();
+	_mcxn94x_configDCDC();
+	_mcxn94x_configLDO();
+	_mcxn94x_configSramVoltage(0x3);
+
+	/* Config flash waitstates */
+	_mcxn94x_configFlashWS(3);
+
+	/* Enable PPL0 @150 MHz, SOSC source Fin = SOSC_FREQ / 4 */
+	/* Fout = Fin * m / (2 * p * n) */
+	_mcxn94x_clockConfigPLL0(0, 50, 100, 4);
+
+	/* Select PLL0 as a main clock */
+	*(n94x_common.scg + scg_rccr) = (*(n94x_common.scg + scg_rccr) & ~(0xf << 24)) | 5 << 24;
+	hal_cpuDataMemoryBarrier();
+
+	/* Wait for clock to change */
+	while (((*(n94x_common.scg + scg_csr) >> 24) & 0xf) != 5) {
+	}
+
+	/* Set AHB clock divider to clk / 1 */
+	*(n94x_common.syscon + syscon_ahbclkdiv) = 0;
+	hal_cpuDataMemoryBarrier();
 }
