@@ -3,7 +3,7 @@
  *
  * Operating system loader
  *
- * Leon3 CPU related routines
+ * Leon CPU related routines
  *
  * Copyright 2022 Phoenix Systems
  * Author: Lukasz Leczkowski

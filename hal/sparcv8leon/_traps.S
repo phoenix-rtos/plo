@@ -3,7 +3,7 @@
  *
  * Operating system loader
  *
- * Leon3 trap handlers
+ * Leon trap handlers
  *
  * Copyright 2022 Phoenix Systems
  * Author: Lukasz Leczkowski

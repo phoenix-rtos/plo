@@ -3,7 +3,7 @@
  *
  * Operating system loader
  *
- * Linker Template and Platform Config for SPARC V8 LEON3 GR712RC
+ * Linker Template and Platform Config for SPARC V8 LEON GR712RC
  *
  * Copyright 2023 Phoenix Systems
  * Author: Lukasz Leczkowski
@@ -13,8 +13,8 @@
  * %LICENSE%
  */
 
-#ifndef LEON3_GR712RC_LDT
-#define LEON3_GR712RC_LDT
+#ifndef LEON_GR712RC_LDT
+#define LEON_GR712RC_LDT
 
 #define SIZE_PAGE 0x1000
 #define SIZE_STACK (SIZE_PAGE)

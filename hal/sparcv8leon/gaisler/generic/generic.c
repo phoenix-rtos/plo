@@ -3,7 +3,7 @@
  *
  * Operating system loader
  *
- * LEON3 Generic specific functions
+ * LEON Generic specific functions
  *
  * Copyright 2024 Phoenix Systems
  * Author: Lukasz Leczkowski
@@ -14,7 +14,7 @@
  */
 
 #include "generic.h"
-#include "hal/sparcv8leon3/gaisler/gaisler.h"
+#include "hal/sparcv8leon/gaisler/gaisler.h"
 
 
 int gaisler_iomuxCfg(iomux_cfg_t *ioCfg)

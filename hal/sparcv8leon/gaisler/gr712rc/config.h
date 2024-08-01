@@ -25,10 +25,10 @@
 #include "../types.h"
 #include "../../cpu.h"
 
-#include <phoenix/arch/sparcv8leon3/syspage.h>
+#include <phoenix/arch/sparcv8leon/syspage.h>
 #include <phoenix/syspage.h>
 
-#define PATH_KERNEL "phoenix-sparcv8leon3-gr712rc.elf"
+#define PATH_KERNEL "phoenix-sparcv8leon-gr712rc.elf"
 
 #endif /* __ASSEMBLY__ */
 
@@ -36,7 +36,7 @@
 #define NWINDOWS 8
 
 /* Import platform specific definitions */
-#include "ld/sparcv8leon3-gr712rc.ldt"
+#include "ld/sparcv8leon-gr712rc.ldt"
 
 
 #endif

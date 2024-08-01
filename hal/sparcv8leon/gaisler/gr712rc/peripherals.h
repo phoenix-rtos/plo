@@ -3,7 +3,7 @@
  *
  * Operating system loader
  *
- * Peripherals definitions for Leon3 GR712RC
+ * Peripherals definitions for Leon GR712RC
  *
  * Copyright 2023 Phoenix Systems
  * Author: Lukasz Leczkowski
