@@ -6,9 +6,9 @@
 # %LICENSE%
 #
 
-CFLAGS += -Ihal/sparcv8leon3/gaisler/ -Ihal/sparcv8leon3/gaisler/$(TARGET_SUBFAMILY)
+CFLAGS += -Ihal/sparcv8leon/gaisler/ -Ihal/sparcv8leon/gaisler/$(TARGET_SUBFAMILY)
 
-include hal/sparcv8leon3/gaisler/$(TARGET_SUBFAMILY)/Makefile
+include hal/sparcv8leon/gaisler/$(TARGET_SUBFAMILY)/Makefile
 
 OBJS += $(addprefix $(PREFIX_O)hal/$(TARGET_SUFF)/gaisler/, console.o timer.o)
 
