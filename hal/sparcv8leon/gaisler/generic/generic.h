@@ -3,7 +3,7 @@
  *
  * Operating system loader
  *
- * LEON3 Generic specific functions
+ * LEON Generic specific functions
  *
  * Copyright 2024 Phoenix Systems
  * Author: Lukasz Leczkowski

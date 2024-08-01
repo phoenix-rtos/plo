@@ -3,7 +3,7 @@
  *
  * Operating system loader
  *
- * Peripherals definitions for Leon3 GR716
+ * Peripherals definitions for Leon GR716
  *
  * Copyright 2022-2023 Phoenix Systems
  * Author: Lukasz Leczkowski

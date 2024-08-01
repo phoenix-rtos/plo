@@ -1,14 +1,14 @@
 #
-# Makefile for Phoenix-RTOS loader (SPARCV8 LEON3 HAL)
+# Makefile for Phoenix-RTOS loader (SPARCV8 LEON HAL)
 #
 # Copyright 2023 Phoenix Systems
 #
 # %LICENSE%
 #
 
-CFLAGS += -Ihal/sparcv8leon3/gaisler/ -Ihal/sparcv8leon3/gaisler/$(TARGET_SUBFAMILY)
+CFLAGS += -Ihal/sparcv8leon/gaisler/ -Ihal/sparcv8leon/gaisler/$(TARGET_SUBFAMILY)
 
-include hal/sparcv8leon3/gaisler/$(TARGET_SUBFAMILY)/Makefile
+include hal/sparcv8leon/gaisler/$(TARGET_SUBFAMILY)/Makefile
 
 OBJS += $(addprefix $(PREFIX_O)hal/$(TARGET_SUFF)/gaisler/, console.o timer.o)
 

@@ -1,5 +1,5 @@
 #
-# Makefile for Phoenix-RTOS loader (SPARCV8 LEON3 GR716 HAL)
+# Makefile for Phoenix-RTOS loader (SPARCV8 LEON GR716 HAL)
 #
 # Copyright 2022 Phoenix Systems
 #

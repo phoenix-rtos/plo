@@ -13,10 +13,10 @@
  * %LICENSE%
  */
 
-#ifdef LEON3_TN_0018_FIX
+#ifdef LEON_TN_0018_FIX
 
 
-/* LEON3 Cache controller register - ASI 2 */
+/* LEON Cache controller register - ASI 2 */
 #define CCTRL_IP_BIT 15  /* ICache flush pending bit */
 #define CCTRL_ICS    0x3 /* ICache state */
 

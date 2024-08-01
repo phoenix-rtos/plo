@@ -3,7 +3,7 @@
  *
  * Operating system loader
  *
- * Peripherals definitions for Leon3 Generic
+ * Peripherals definitions for Leon Generic
  *
  * Copyright 2024 Phoenix Systems
  * Author: Lukasz Leczkowski

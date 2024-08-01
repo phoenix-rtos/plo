@@ -3,7 +3,7 @@
  *
  * Operating system loader
  *
- * Interrupts handlers for Leon3
+ * Interrupts handlers for Leon
  *
  * Copyright 2022 Phoenix Systems
  * Author: Lukasz Leczkowski
@@ -100,7 +100,7 @@ wovfl_done:
 	mov %l3, %o0
 
 	/* Disable traps, we can't let a trap use the free stack space */
-#ifdef LEON3_USE_PWR
+#ifdef LEON_USE_PWR
 	pwr 0, %psr
 #else
 	wr %l0, %psr

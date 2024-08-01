@@ -1,5 +1,20 @@
-#ifndef LEON3_GR716_LDT
-#define LEON3_GR716_LDT
+/*
+ * Phoenix-RTOS
+ *
+ * Operating system loader
+ *
+ * Linker Template and Platform Config for SPARC V8 LEON GR716
+ *
+ * Copyright 2023 Phoenix Systems
+ * Author: Lukasz Leczkowski
+ *
+ * This file is part of Phoenix-RTOS.
+ *
+ * %LICENSE%
+ */
+
+#ifndef LEON_GR716_LDT
+#define LEON_GR716_LDT
 
 #define SIZE_PAGE 0x200
 #define SIZE_STACK (8 * SIZE_PAGE)

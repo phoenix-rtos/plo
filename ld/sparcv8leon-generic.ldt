@@ -3,7 +3,7 @@
  *
  * Operating system loader
  *
- * Linker Template and Platform Config for SPARC V8 LEON3 Generic
+ * Linker Template and Platform Config for SPARC V8 LEON Generic
  *
  * Copyright 2023, 2024 Phoenix Systems
  * Author: Lukasz Leczkowski
@@ -13,8 +13,8 @@
  * %LICENSE%
  */
 
-#ifndef LEON3_GENERIC_LDT
-#define LEON3_GENERIC_LDT
+#ifndef LEON_GENERIC_LDT
+#define LEON_GENERIC_LDT
 
 #define SIZE_PAGE 0x1000
 #define SIZE_STACK (SIZE_PAGE)
