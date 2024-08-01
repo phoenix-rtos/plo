@@ -25,12 +25,12 @@
 #include "../gaisler.h"
 #include "../../cpu.h"
 
-#include <phoenix/arch/sparcv8leon3/syspage.h>
+#include <phoenix/arch/sparcv8leon/syspage.h>
 #include <phoenix/syspage.h>
 
 #include <devices/gpio-gr716/gpio.h>
 
-#define PATH_KERNEL "phoenix-sparcv8leon3-gr716.elf"
+#define PATH_KERNEL "phoenix-sparcv8leon-gr716.elf"
 
 #endif /* __ASSEMBLY__ */
 
@@ -38,7 +38,7 @@
 #define NWINDOWS 31
 
 /* Import platform specific definitions */
-#include "ld/sparcv8leon3-gr716.ldt"
+#include "ld/sparcv8leon-gr716.ldt"
 
 
 #endif
