@@ -5,7 +5,7 @@
  *
  * Hardware Abstraction Layer
  *
- * Copyright 2022-2023 Phoenix Systems
+ * Copyright 2024 Phoenix Systems
  * Author: Lukasz Leczkowski
  *
  * This file is part of Phoenix-RTOS.
@@ -14,6 +14,7 @@
  */
 
 #include <hal/hal.h>
+#include "hal/sparcv8leon/gaisler/l2cache.h"
 
 
 #define ASI_FLUSH_DCACHE 0x11
@@ -50,7 +51,7 @@ void console_init(void);
 
 void hal_init(void)
 {
-	_gr712rc_init();
+	_gr740_init();
 	interrupts_init();
 
 	timer_init();
@@ -74,13 +75,13 @@ void hal_syspageSet(hal_syspage_t *hs)
 
 const char *hal_cpuInfo(void)
 {
-	return "LEON3FT GR712RC";
+	return "LEON4FT GR740";
 }
 
 
 addr_t hal_kernelGetAddress(addr_t addr)
 {
-	return addr - VADDR_KERNEL_INIT + ADDR_SRAM;
+	return addr - VADDR_KERNEL_INIT + ADDR_SDRAM;
 }
 
 
@@ -184,14 +185,19 @@ int hal_cpuJump(void)
 	}
 	hal_interruptsDisableAll();
 
-	__asm__ volatile(
-		"jmp %0;"
-		"mov %1, %%g2;"
+	l2c_flushRange(l2c_flush_inv_all | l2c_disable, 0x0, 0x0);
+
+	/* clang-format off */
+	__asm__ volatile (
+		"jmp %0\n\t"
+		"mov %1, %%g2\n\t"
 		:
 		: "r"(hal_common.entry), "r"(hal_common.hs)
-		:);
+		:
+	);
+	/* clang-format on */
 
-	return 0;
+	__builtin_unreachable();
 }
 
 
