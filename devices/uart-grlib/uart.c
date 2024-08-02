@@ -114,6 +114,40 @@ static void uart_iomuxCfg(unsigned int minor)
 	gaisler_iomuxCfg(&cfg);
 }
 
+#elif defined(__CPU_GR740)
+
+static void uart_cguClkEnable(unsigned int minor)
+{
+	_gr740_cguClkEnable(cgudev_apbuart0 + minor);
+}
+
+
+static void uart_cguClkDisable(unsigned int minor)
+{
+	_gr740_cguClkDisable(cgudev_apbuart0 + minor);
+}
+
+
+static int uart_cguClkStatus(unsigned int minor)
+{
+	return _gr740_cguClkStatus(cgudev_apbuart0 + minor);
+}
+
+
+static void uart_iomuxCfg(unsigned int minor)
+{
+	iomux_cfg_t cfg;
+
+	cfg.opt = iomux_alternateio;
+	cfg.pullup = 0;
+	cfg.pulldn = 0;
+	cfg.pin = info[minor].txPin;
+	gaisler_iomuxCfg(&cfg);
+
+	cfg.pin = info[minor].rxPin;
+	gaisler_iomuxCfg(&cfg);
+}
+
 #else
 
 static void uart_cguClkEnable(unsigned int minor)
