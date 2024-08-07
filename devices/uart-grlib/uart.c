@@ -3,9 +3,9 @@
  *
  * Operating system loader
  *
- * GR716 Serial driver
+ * GRLIB APBUART driver
  *
- * Copyright 2022 Phoenix Systems
+ * Copyright 2022-2024 Phoenix Systems
  * Author: Lukasz Leczkowski
  *
  * This file is part of Phoenix-RTOS.
@@ -39,11 +39,11 @@
 
 /* UART */
 enum {
-	uart_data,   /* Data register           : 0x00 */
-	uart_status, /* Status register         : 0x04 */
-	uart_ctrl,   /* Control register        : 0x08 */
-	uart_scaler, /* Scaler reload register  : 0x0C */
-	uart_dbg     /* FIFO debug register     : 0x10 */
+	uart_data = 0, /* Data register           : 0x00 */
+	uart_status,   /* Status register         : 0x04 */
+	uart_ctrl,     /* Control register        : 0x08 */
+	uart_scaler,   /* Scaler reload register  : 0x0C */
+	uart_dbg       /* FIFO debug register     : 0x10 */
 };
 
 
@@ -76,6 +76,72 @@ static const struct {
 	{ UART4_BASE, UART4_IRQ, UART4_TX, UART4_RX, UART4_ACTIVE },
 	{ UART5_BASE, UART5_IRQ, UART5_TX, UART5_RX, UART5_ACTIVE }
 };
+
+
+/* CPU-specific functions */
+
+#if defined(__CPU_GR716)
+
+static void uart_cguClkEnable(unsigned int minor)
+{
+	_gr716_cguClkEnable(cgu_primary, cgudev_apbuart0 + minor);
+}
+
+
+static void uart_cguClkDisable(unsigned int minor)
+{
+	_gr716_cguClkDisable(cgu_primary, cgudev_apbuart0 + minor);
+}
+
+
+static int uart_cguClkStatus(unsigned int minor)
+{
+	return _gr716_cguClkStatus(cgu_primary, cgudev_apbuart0 + minor);
+}
+
+
+static void uart_iomuxCfg(unsigned int minor)
+{
+	iomux_cfg_t cfg;
+
+	cfg.opt = 0x1;
+	cfg.pullup = 0;
+	cfg.pulldn = 0;
+	cfg.pin = info[minor].txPin;
+	gaisler_iomuxCfg(&cfg);
+
+	cfg.pin = info[minor].rxPin;
+	gaisler_iomuxCfg(&cfg);
+}
+
+#else
+
+static void uart_cguClkEnable(unsigned int minor)
+{
+	(void)minor;
+}
+
+
+static void uart_cguClkDisable(unsigned int minor)
+{
+	(void)minor;
+}
+
+
+static int uart_cguClkStatus(unsigned int minor)
+{
+	(void)minor;
+
+	return 1;
+}
+
+
+static void uart_iomuxCfg(unsigned int minor)
+{
+	(void)minor;
+}
+
+#endif
 
 
 static inline void uart_rxData(uart_t *uart)
@@ -243,9 +309,7 @@ static int uart_done(unsigned int minor)
 	*(uart->base + uart_scaler) = 0;
 	hal_cpuDataStoreBarrier();
 
-#ifdef __CPU_GR716
-	_gr716_cguClkDisable(cgu_primary, cgudev_apbuart0 + minor);
-#endif
+	uart_cguClkDisable(minor);
 
 	hal_interruptsSet(uart->irq, NULL, NULL);
 
@@ -275,13 +339,13 @@ static int uart_map(unsigned int minor, addr_t addr, size_t sz, int mode, addr_t
 static int uart_init(unsigned int minor)
 {
 	uart_t *uart;
-	iomux_cfg_t cfg;
 
 	if (minor >= UART_MAX_CNT) {
 		return -EINVAL;
 	}
 
 	if (info[minor].active == 0) {
+		uart_cguClkDisable(minor);
 		return -ENOSYS;
 	}
 
@@ -292,28 +356,21 @@ static int uart_init(unsigned int minor)
 
 	uart_done(minor);
 
-#ifdef __CPU_GR716
-	_gr716_cguClkEnable(cgu_primary, cgudev_apbuart0 + minor);
-#endif
+	if (uart_cguClkStatus(minor) == 0) {
+		uart_cguClkEnable(minor);
+	}
 
-	cfg.opt = 0x1;
-	cfg.pullup = 0;
-	cfg.pulldn = 0;
-	cfg.pin = info[minor].txPin;
-	gaisler_iomuxCfg(&cfg);
-
-	cfg.pin = info[minor].rxPin;
-	gaisler_iomuxCfg(&cfg);
+	uart_iomuxCfg(minor);
 
 	lib_cbufInit(&uart->cbuffRx, uart->dataRx, BUFFER_SIZE);
+	hal_interruptsSet(uart->irq, uart_irqHandler, (void *)uart);
 
 	*(uart->base + uart_scaler) = uart_calcScaler(UART_BAUDRATE);
+	hal_cpuDataStoreBarrier();
 
 	/* UART control - clear everything and: enable 1 stop bit,
 	 * disable parity, enable RX interrupts, enable TX & RX */
 	*(uart->base + uart_ctrl) = RX_INT | TX_EN | RX_EN;
-	hal_cpuDataStoreBarrier();
-	hal_interruptsSet(uart->irq, uart_irqHandler, (void *)uart);
 
 	return EOK;
 }
