@@ -15,7 +15,6 @@
 
 #include "gr712rc.h"
 #include "../gaisler.h"
-#include "../cpu.h"
 
 
 #define CGU_BASE ((void *)0x80000D00)
