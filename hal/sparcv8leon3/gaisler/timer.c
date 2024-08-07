@@ -24,14 +24,20 @@
 #define TIMER_INT_PENDING (1 << 4)
 #define TIMER_CHAIN       (1 << 5)
 
+/* Timer registers */
+
+#define GPT_SCALER     0       /* Scaler value register                 : 0x00 */
+#define GPT_SRELOAD    1       /* Scaler reload value register          : 0x04 */
+#define GPT_CONFIG     2       /* Configuration register                : 0x08 */
+#define GPT_LATCHCFG   3       /* Latch configuration register          : 0x0C */
+#define GPT_TCNTVAL(n) (n * 4) /* Timer n counter value reg (n=1,2,...) : 0xn0 */
+#define GPT_TRLDVAL(n) ((n * 4) + 1) /* Timer n reload value register   : 0xn4 */
+#define GPT_TCTRL(n)   ((n * 4) + 2) /* Timer n control register        : 0xn8 */
+#define GPT_TLATCH(n)  ((n * 4) + 3) /* Timer n latch register          : 0xnC */
+
+#define TIMER_DEFAULT 1
+
 #define TIMER_DEFAULT_FREQ 1000
-
-
-/* clang-format off */
-
-enum { timer1 = 0, timer2, timer3, timer4 };
-
-/* clang-format on */
 
 
 static struct {
@@ -44,13 +50,13 @@ static struct {
 
 static int timer_isr(unsigned int irq, void *data)
 {
-	vu32 st = *(timer_common.gptimer0_base + GPT_TCTRL1) & TIMER_INT_PENDING;
+	vu32 st = *(timer_common.gptimer0_base + GPT_TCTRL(TIMER_DEFAULT)) & TIMER_INT_PENDING;
 
 	if (st != 0) {
 		++timer_common.time;
 		/* Clear irq status - set & clear to handle different GPTIMER core versions */
-		*(timer_common.gptimer0_base + GPT_TCTRL1) |= TIMER_INT_PENDING;
-		*(timer_common.gptimer0_base + GPT_TCTRL1) &= ~TIMER_INT_PENDING;
+		*(timer_common.gptimer0_base + GPT_TCTRL(TIMER_DEFAULT)) |= TIMER_INT_PENDING;
+		*(timer_common.gptimer0_base + GPT_TCTRL(TIMER_DEFAULT)) &= ~TIMER_INT_PENDING;
 	}
 
 	return 0;
@@ -62,7 +68,7 @@ static void timer_setPrescaler(int timer, u32 freq)
 	u32 prescaler = SYSCLK_FREQ / 1000000; /* 1 MHz */
 	u32 ticks = (SYSCLK_FREQ / prescaler) / freq;
 
-	*(timer_common.gptimer0_base + GPT_TRLDVAL1 + timer * 4) = ticks - 1;
+	*(timer_common.gptimer0_base + GPT_TRLDVAL(timer)) = ticks - 1;
 	*(timer_common.gptimer0_base + GPT_SRELOAD) = prescaler - 1;
 
 	timer_common.ticksPerFreq = ticks;
@@ -85,23 +91,23 @@ void timer_done(void)
 {
 	int timer;
 	/* Disable timer interrupts - bits cleared when written 1 */
-	vu32 st = *(timer_common.gptimer0_base + GPT_TCTRL1) & (TIMER_INT_ENABLE | TIMER_INT_PENDING);
-	*(timer_common.gptimer0_base + GPT_TCTRL1) = st;
-	st = *(timer_common.gptimer1_base + GPT_TCTRL1) & (TIMER_INT_ENABLE | TIMER_INT_PENDING);
-	*(timer_common.gptimer1_base + GPT_TCTRL1) = st;
+	vu32 st = *(timer_common.gptimer0_base + GPT_TCTRL(TIMER_DEFAULT)) & (TIMER_INT_ENABLE | TIMER_INT_PENDING);
+	*(timer_common.gptimer0_base + GPT_TCTRL(TIMER_DEFAULT)) = st;
+	st = *(timer_common.gptimer1_base + GPT_TCTRL(TIMER_DEFAULT)) & (TIMER_INT_ENABLE | TIMER_INT_PENDING);
+	*(timer_common.gptimer1_base + GPT_TCTRL(TIMER_DEFAULT)) = st;
 
-	for (timer = 0; timer < TIMER0_CNT; ++timer) {
+	for (timer = 1; timer <= TIMER0_CNT; ++timer) {
 		/* Disable timers */
-		*(timer_common.gptimer0_base + GPT_TCTRL1 + timer * 4) = 0;
+		*(timer_common.gptimer0_base + GPT_TCTRL(timer)) = 0;
 		/* Reset counter and reload value */
-		*(timer_common.gptimer0_base + GPT_TCNTVAL1 + timer * 4) = 0;
-		*(timer_common.gptimer0_base + GPT_TRLDVAL1 + timer * 4) = 0;
+		*(timer_common.gptimer0_base + GPT_TCNTVAL(timer)) = 0;
+		*(timer_common.gptimer0_base + GPT_TRLDVAL(timer)) = 0;
 	}
 
-	for (timer = 0; timer < TIMER1_CNT; ++timer) {
-		*(timer_common.gptimer1_base + GPT_TCTRL1 + timer * 4) = 0;
-		*(timer_common.gptimer1_base + GPT_TCNTVAL1 + timer * 4) = 0;
-		*(timer_common.gptimer1_base + GPT_TRLDVAL1 + timer * 4) = 0;
+	for (timer = 1; timer <= TIMER1_CNT; ++timer) {
+		*(timer_common.gptimer1_base + GPT_TCTRL(TIMER_DEFAULT)) = 0;
+		*(timer_common.gptimer1_base + GPT_TCNTVAL(timer)) = 0;
+		*(timer_common.gptimer1_base + GPT_TRLDVAL(timer)) = 0;
 	}
 
 	hal_interruptsSet(TIMER_IRQ, NULL, NULL);
@@ -117,11 +123,11 @@ void timer_init(void)
 	/* Reset timer */
 	timer_done();
 
-	timer_setPrescaler(timer1, TIMER_DEFAULT_FREQ);
+	timer_setPrescaler(TIMER_DEFAULT, TIMER_DEFAULT_FREQ);
 
 	hal_interruptsSet(TIMER_IRQ, timer_isr, NULL);
 
 	/* Enable timer and interrupts */
 	/* Load reload value into counter register */
-	*(timer_common.gptimer0_base + GPT_TCTRL1) |= TIMER_ENABLE | TIMER_PERIODIC | TIMER_LOAD | TIMER_INT_ENABLE;
+	*(timer_common.gptimer0_base + GPT_TCTRL(TIMER_DEFAULT)) |= TIMER_ENABLE | TIMER_PERIODIC | TIMER_LOAD | TIMER_INT_ENABLE;
 }
