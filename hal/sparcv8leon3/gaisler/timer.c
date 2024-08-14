@@ -90,11 +90,10 @@ time_t hal_timerGet(void)
 void timer_done(void)
 {
 	int timer;
+	vu32 st;
 	/* Disable timer interrupts - bits cleared when written 1 */
-	vu32 st = *(timer_common.gptimer0_base + GPT_TCTRL(TIMER_DEFAULT)) & (TIMER_INT_ENABLE | TIMER_INT_PENDING);
+	st = *(timer_common.gptimer0_base + GPT_TCTRL(TIMER_DEFAULT)) & (TIMER_INT_ENABLE | TIMER_INT_PENDING);
 	*(timer_common.gptimer0_base + GPT_TCTRL(TIMER_DEFAULT)) = st;
-	st = *(timer_common.gptimer1_base + GPT_TCTRL(TIMER_DEFAULT)) & (TIMER_INT_ENABLE | TIMER_INT_PENDING);
-	*(timer_common.gptimer1_base + GPT_TCTRL(TIMER_DEFAULT)) = st;
 
 	for (timer = 1; timer <= TIMER0_CNT; ++timer) {
 		/* Disable timers */
@@ -104,10 +103,16 @@ void timer_done(void)
 		*(timer_common.gptimer0_base + GPT_TRLDVAL(timer)) = 0;
 	}
 
-	for (timer = 1; timer <= TIMER1_CNT; ++timer) {
-		*(timer_common.gptimer1_base + GPT_TCTRL(TIMER_DEFAULT)) = 0;
-		*(timer_common.gptimer1_base + GPT_TCNTVAL(timer)) = 0;
-		*(timer_common.gptimer1_base + GPT_TRLDVAL(timer)) = 0;
+	/* We might not have second timer core */
+	if (timer_common.gptimer1_base != NULL) {
+		st = *(timer_common.gptimer1_base + GPT_TCTRL(TIMER_DEFAULT)) & (TIMER_INT_ENABLE | TIMER_INT_PENDING);
+		*(timer_common.gptimer1_base + GPT_TCTRL(TIMER_DEFAULT)) = st;
+
+		for (timer = 1; timer <= TIMER1_CNT; ++timer) {
+			*(timer_common.gptimer1_base + GPT_TCTRL(TIMER_DEFAULT)) = 0;
+			*(timer_common.gptimer1_base + GPT_TCNTVAL(timer)) = 0;
+			*(timer_common.gptimer1_base + GPT_TRLDVAL(timer)) = 0;
+		}
 	}
 
 	hal_interruptsSet(TIMER_IRQ, NULL, NULL);
