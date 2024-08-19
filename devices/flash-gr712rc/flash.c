@@ -171,7 +171,7 @@ void flash_read(flash_device_t *dev, addr_t offs, void *buff, size_t len)
 void flash_printInfo(int major, int minor, flash_cfi_t *cfi)
 {
 	size_t i;
-	const char *vendor;
+	const char *vendor = NULL;
 	for (i = 0; i < sizeof(flash_vendors) / sizeof(flash_vendors[0]); i++) {
 		if (flash_vendors[i].id == cfi->vendorData[0]) {
 			vendor = flash_vendors[i].name;

@@ -22,8 +22,8 @@
 
 #define ADDR_SRAM 0x40000000
 
-#define SIZE_SRAM (128 * 1024 * 1024)
-#define SIZE_PLO  (4 * 1024 * 1024)
+#define SIZE_SRAM (4 * 1024 * 1024)
+#define SIZE_PLO  (2 * 1024 * 1024)
 
 #if defined(__LINKER__)
 

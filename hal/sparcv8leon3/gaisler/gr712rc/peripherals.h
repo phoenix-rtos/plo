@@ -19,7 +19,7 @@
 #include <board_config.h>
 
 /* Arbitrarily chosen address */
-#define RAM_ADDR      (0x47e00000)
-#define RAM_BANK_SIZE (0x200000)
+#define RAM_ADDR      (0x40300000)
+#define RAM_BANK_SIZE (0x100000)
 
 #endif
