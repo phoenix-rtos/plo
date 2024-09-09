@@ -49,6 +49,15 @@
 	nop;
 
 
+.section ".init", "ax"
+.global _start
+.type _start, #function
+_start:
+	call _init
+	nop
+.size _start, . - _start
+
+
 /* When trap occurs, traps are disabled: ET <- 0
  * existing supervisor mode is saved in PS <- S
  * supervisor mode is enabled: S <- 1
@@ -58,19 +67,20 @@
  * tt field is written to the particular value that identifies the trap
  *
  * Trap table consists of 256 4-instruction entries.
+ *
+ * NOTE: the trap table is placed in the .noxip section to avoid XIP during flash programming.
+ * This means that we can't trap until it's copied to RAM (which happens in _startc).
+ * This is fine as we don't expect to trap before _startc is executed
+ * (only one register window change is expected to happen until the copy).
  */
 
-.section ".init", "ax"
+.section ".noxip", "ax"
 .global _trap_table
 .global _start
-
 _trap_table:
 	/* 0x00 - Hardware traps */
 .align 0x1000
-.type _start, #function
-_start:
 	RESET                     /* 0x00 - reset */
-.size _start, . - _start
 	BAD_TRAP                  /* 0x01 - instruction access exception */
 	BAD_TRAP                  /* 0x02 - illegal instruction */
 	BAD_TRAP                  /* 0x03 - privileged instruction */
@@ -158,7 +168,7 @@ _start:
 	.endr
 
 
-.section ".text"
+.section ".noxip", "ax"
 .align 4
 
 #ifndef __CPU_GR716
