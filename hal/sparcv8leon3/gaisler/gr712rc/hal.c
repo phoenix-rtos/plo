@@ -80,7 +80,7 @@ const char *hal_cpuInfo(void)
 
 addr_t hal_kernelGetAddress(addr_t addr)
 {
-	return addr - VADDR_KERNEL_INIT + ADDR_SRAM;
+	return addr - VADDR_KERNEL + ADDR_SRAM;
 }
 
 

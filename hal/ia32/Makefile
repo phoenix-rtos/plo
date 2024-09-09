@@ -6,7 +6,6 @@
 # %LICENSE%
 #
 
-CFLAGS += -DVADDR_KERNEL_BASE=$(VADDR_KERNEL_BASE)
 CFLAGS += -Ihal/ia32
 
 PLO_COMMANDS ?= alias app blob call console copy dump echo go help kernel lspci map mem phfs script reboot stop syspage wait

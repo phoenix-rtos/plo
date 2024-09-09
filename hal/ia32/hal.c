@@ -36,7 +36,7 @@ extern void hal_timerInit(void);
 
 addr_t hal_kernelGetAddress(addr_t addr)
 {
-	return addr - VADDR_KERNEL_BASE;
+	return addr - VADDR_KERNEL;
 }
 
 

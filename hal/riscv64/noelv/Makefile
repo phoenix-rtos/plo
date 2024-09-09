@@ -6,8 +6,6 @@
 # %LICENSE%
 #
 
-CFLAGS += -DVADDR_KERNEL_INIT=$(VADDR_KERNEL_INIT)
-
 GCCLIB := $(shell $(CC) $(CFLAGS) -print-libgcc-file-name)
 
 PLO_COMMANDS ?= alias app call console copy dump echo go help kernel map mem phfs reboot script wait

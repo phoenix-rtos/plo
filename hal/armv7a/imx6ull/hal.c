@@ -148,8 +148,8 @@ addr_t hal_kernelGetAddress(addr_t addr)
 {
 	addr_t offs;
 
-	if ((addr_t)VADDR_KERNEL_INIT != (addr_t)ADDR_DDR) {
-		offs = addr - VADDR_KERNEL_INIT;
+	if ((addr_t)VADDR_KERNEL != (addr_t)ADDR_DDR) {
+		offs = addr - VADDR_KERNEL;
 		addr = ADDR_DDR + offs;
 	}
 
