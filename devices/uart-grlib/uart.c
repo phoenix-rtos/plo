@@ -178,13 +178,13 @@ static void uart_iomuxCfg(unsigned int minor)
 #endif
 
 
-static inline void uart_rxData(uart_t *uart)
+__attribute__((section(".noxip"))) static inline void uart_rxData(uart_t *uart)
 {
 	char c;
 	/* Keep getting data until rx fifo is not empty */
 	while ((*(uart->base + uart_status) & DATA_READY) != 0) {
 		c = *(uart->base + uart_data) & 0xff;
-		lib_cbufWrite(&uart->cbuffRx, &c, 1);
+		lib_cbufWriteByte(&uart->cbuffRx, c);
 	}
 }
 
@@ -203,7 +203,7 @@ static inline void uart_txData(uart_t *uart, const void *buff, size_t len)
 }
 
 
-static int uart_irqHandler(unsigned int n, void *data)
+__attribute__((section(".noxip"))) static int uart_irqHandler(unsigned int n, void *data)
 {
 	uart_t *uart = (uart_t *)data;
 	u32 status = *(uart->base + uart_status);
