@@ -3,9 +3,9 @@
  *
  * Operating system loader
  *
- * GR712RC Flash on PROM interface driver
+ * GRLIB FTMCTRL Flash driver
  *
- * Copyright 2023 Phoenix Systems
+ * Copyright 2023, 2024 Phoenix Systems
  * Author: Lukasz Leczkowski
  *
  * This file is part of Phoenix-RTOS.
@@ -15,6 +15,8 @@
 
 #include <devices/devs.h>
 #include <lib/lib.h>
+
+#include <config.h>
 
 #include "flash.h"
 #include "ftmctrl.h"
@@ -28,12 +30,6 @@ static struct {
 } fdrv_common;
 
 
-static addr_t fdrv_getBlockAddress(flash_device_t *dev, addr_t addr)
-{
-	return addr & ~(dev->blockSz - 1);
-}
-
-
 static int fdrv_isValidAddress(size_t memsz, addr_t offs, size_t len)
 {
 	if ((offs < memsz) && ((offs + len) <= memsz)) {
@@ -44,21 +40,23 @@ static int fdrv_isValidAddress(size_t memsz, addr_t offs, size_t len)
 }
 
 
-static int fdrv_directBlockWrite(flash_device_t *dev, addr_t offs, const u8 *src)
+static int fdrv_directSectorWrite(flash_device_t *dev, addr_t offs, const u8 *src)
 {
 	addr_t pos;
 	int res;
+	u8 shift = ((dev->model->chipWidth == 16) && (ftmctrl_portWidth() == 8)) ? 1 : 0;
+	size_t bytecount = CFI_SIZE(dev->cfi.bufSz) >> shift;
 
 	ftmctrl_WrEn();
 
-	res = flash_blockErase(offs, CFI_TIMEOUT_MAX_ERASE(dev->cfi.toutTypical.blkErase, dev->cfi.toutMax.blkErase));
+	res = flash_sectorErase(dev, offs, CFI_TIMEOUT_MAX_ERASE(dev->cfi.toutTypical.blkErase, dev->cfi.toutMax.blkErase));
 	if (res < 0) {
 		ftmctrl_WrDis();
 		return res;
 	}
 
-	for (pos = 0; pos < dev->blockSz; pos += CFI_SIZE(dev->cfi.bufSz)) {
-		res = flash_writeBuffer(dev, offs + pos, src + pos, CFI_SIZE(dev->cfi.bufSz));
+	for (pos = 0; pos < dev->sectorSz; pos += bytecount) {
+		res = flash_writeBuffer(dev, offs + pos, src + pos, bytecount, CFI_TIMEOUT_MAX_PROGRAM(dev->cfi.toutTypical.bufWrite, dev->cfi.toutMax.bufWrite));
 		if (res < 0) {
 			ftmctrl_WrDis();
 			return res;
@@ -66,6 +64,9 @@ static int fdrv_directBlockWrite(flash_device_t *dev, addr_t offs, const u8 *src
 	}
 
 	ftmctrl_WrDis();
+
+	hal_cpuInvCache(hal_cpuDCache, ADDR_FLASH + offs, dev->sectorSz);
+
 	return pos;
 }
 
@@ -93,6 +94,11 @@ static ssize_t flashdrv_read(unsigned int minor, addr_t offs, void *buff, size_t
 		return 0;
 	}
 
+	if (dev->sectorBufAddr == flash_getSectorAddress(dev, offs)) {
+		hal_memcpy(buff, dev->sectorBuf + (offs - dev->sectorBufAddr), len);
+		return len;
+	}
+
 	ftmctrl_WrEn();
 	flash_read(dev, offs, buff, len);
 	ftmctrl_WrDis();
@@ -111,11 +117,11 @@ static int flashdrv_sync(unsigned int minor)
 
 	dev = &fdrv_common.dev[minor];
 
-	if ((dev->blockBufAddr == (addr_t)-1) || (dev->blockBufDirty == 0)) {
+	if ((dev->sectorBufAddr == (addr_t)-1) || (dev->sectorBufDirty == 0)) {
 		return EOK;
 	}
 
-	return fdrv_directBlockWrite(dev, dev->blockBufAddr, dev->blockBuf);
+	return fdrv_directSectorWrite(dev, dev->sectorBufAddr, dev->sectorBuf);
 }
 
 
@@ -142,15 +148,15 @@ static ssize_t flashdrv_write(unsigned int minor, addr_t offs, const void *buff,
 	}
 
 	while (doneBytes < len) {
-		currAddr = fdrv_getBlockAddress(dev, offs);
+		currAddr = flash_getSectorAddress(dev, offs);
 
 		blkOffs = offs - currAddr;
-		chunk = min(dev->blockSz - blkOffs, len - doneBytes);
+		chunk = min(dev->sectorSz - blkOffs, len - doneBytes);
 
-		if (currAddr != dev->blockBufAddr) {
-			if ((blkOffs == 0) && (chunk == dev->blockSz)) {
+		if (currAddr != dev->sectorBufAddr) {
+			if ((blkOffs == 0) && (chunk == dev->sectorSz)) {
 				/* Whole block to write */
-				res = fdrv_directBlockWrite(dev, offs, src);
+				res = fdrv_directSectorWrite(dev, offs, src);
 				if (res < 0) {
 					return res;
 				}
@@ -161,17 +167,17 @@ static ssize_t flashdrv_write(unsigned int minor, addr_t offs, const void *buff,
 					return res;
 				}
 
-				dev->blockBufAddr = currAddr;
+				dev->sectorBufAddr = currAddr;
 				ftmctrl_WrEn();
-				flash_read(dev, dev->blockBufAddr, dev->blockBuf, dev->blockSz);
+				flash_read(dev, dev->sectorBufAddr, dev->sectorBuf, dev->sectorSz);
 				ftmctrl_WrDis();
 			}
 		}
 
-		if (currAddr == dev->blockBufAddr) {
+		if (currAddr == dev->sectorBufAddr) {
 			/* Sector to write to in cache */
-			hal_memcpy(dev->blockBuf + blkOffs, src, chunk);
-			dev->blockBufDirty = 1;
+			hal_memcpy(dev->sectorBuf + blkOffs, src, chunk);
+			dev->sectorBufDirty = 1;
 		}
 
 		src += chunk;
@@ -185,8 +191,8 @@ static ssize_t flashdrv_write(unsigned int minor, addr_t offs, const void *buff,
 
 static ssize_t flashdrv_erase(unsigned int minor, addr_t addr, size_t len, unsigned int flags)
 {
-	ssize_t res;
-	addr_t end;
+	ssize_t res = -ENOSYS;
+	addr_t offs = addr, end;
 	flash_device_t *dev;
 
 	(void)flags;
@@ -205,41 +211,47 @@ static ssize_t flashdrv_erase(unsigned int minor, addr_t addr, size_t len, unsig
 		return 0;
 	}
 
-
 	if (len == (size_t)-1) {
 		/* Erase entire memory */
-		dev->blockBufAddr = (addr_t)-1;
-		addr = 0;
+		dev->sectorBufAddr = (addr_t)-1;
+		offs = 0;
 		end = CFI_SIZE(dev->cfi.chipSz);
-		lib_printf("\nErasing entire memory ...");
+		log_info("\nErasing entire memory ...");
 	}
 	else {
 		/* Erase sectors or blocks */
-		addr = fdrv_getBlockAddress(dev, addr);
-		end = fdrv_getBlockAddress(dev, addr + len + dev->blockSz - 1u);
-		lib_printf("\nErasing blocks from 0x%x to 0x%x ...", addr, end);
+		offs = flash_getSectorAddress(dev, offs);
+		end = flash_getSectorAddress(dev, offs + len + dev->sectorSz - 1u);
+		log_info("\nErasing blocks from 0x%x to 0x%x ...", offs, end);
 	}
-
-	len = 0;
 
 	ftmctrl_WrEn();
 
-	while (addr < end) {
-		if (addr == dev->blockBufAddr) {
-			dev->blockBufAddr = (addr_t)-1;
+	if (len == -1) {
+		res = flash_chipErase(dev, CFI_TIMEOUT_MAX_ERASE(dev->cfi.toutTypical.chipErase, dev->cfi.toutMax.chipErase));
+		len = CFI_SIZE(dev->cfi.chipSz);
+	}
+
+	if (res == -ENOSYS) {
+		len = 0;
+		while (offs < end) {
+			if (offs == dev->sectorBufAddr) {
+				dev->sectorBufAddr = (addr_t)-1;
+			}
+			res = flash_sectorErase(dev, offs, CFI_TIMEOUT_MAX_ERASE(dev->cfi.toutTypical.blkErase, dev->cfi.toutMax.blkErase));
+			if (res < 0) {
+				break;
+			}
+			offs += dev->sectorSz;
+			len += dev->sectorSz;
 		}
-		res = flash_blockErase(addr, CFI_TIMEOUT_MAX_ERASE(dev->cfi.toutTypical.blkErase, dev->cfi.toutMax.blkErase));
-		if (res < 0) {
-			ftmctrl_WrDis();
-			return res;
-		}
-		addr += dev->blockSz;
-		len += dev->blockSz;
 	}
 
 	ftmctrl_WrDis();
 
-	return len;
+	hal_cpuInvCache(hal_cpuDCache, ADDR_FLASH + addr, len);
+
+	return (res < 0) ? res : len;
 }
 
 
@@ -256,7 +268,7 @@ static int flashdrv_map(unsigned int minor, addr_t addr, size_t sz, int mode, ad
 	dev = &fdrv_common.dev[minor];
 
 	fSz = CFI_SIZE(dev->cfi.chipSz);
-	fStart = dev->ahbStartAddr;
+	fStart = ADDR_FLASH;
 	*a = fStart;
 
 	/* Check if region is located on flash */
@@ -309,7 +321,10 @@ static int flashdrv_init(unsigned int minor)
 
 	dev = &fdrv_common.dev[minor];
 
-	hal_memset(dev->blockBuf, 0xff, sizeof(dev->blockBuf));
+	dev->sectorBufAddr = (addr_t)-1;
+	dev->sectorBufDirty = 0;
+
+	hal_memset(dev->sectorBuf, 0xff, sizeof(dev->sectorBuf));
 
 	ftmctrl_WrEn();
 	res = flash_init(dev);
@@ -319,7 +334,7 @@ static int flashdrv_init(unsigned int minor)
 		return res;
 	}
 
-	flash_printInfo(DEV_STORAGE, minor, &dev->cfi);
+	flash_printInfo(dev, DEV_STORAGE, minor);
 
 	return EOK;
 }
@@ -327,7 +342,7 @@ static int flashdrv_init(unsigned int minor)
 
 __attribute__((constructor)) static void flashdrv_reg(void)
 {
-	static const dev_ops_t opsFlashGR712RC = {
+	static const dev_ops_t opsFlashFtmctrl = {
 		.read = flashdrv_read,
 		.write = flashdrv_write,
 		.erase = flashdrv_erase,
@@ -335,14 +350,17 @@ __attribute__((constructor)) static void flashdrv_reg(void)
 		.map = flashdrv_map,
 	};
 
-	static const dev_t devFlashGR712RC = {
-		.name = "flash-gr712rc",
+	static const dev_t devFlashFtmctrl = {
+		.name = "flash-ftmctrl",
 		.init = flashdrv_init,
 		.done = flashdrv_done,
-		.ops = &opsFlashGR712RC,
+		.ops = &opsFlashFtmctrl,
 	};
 
 	hal_memset(&fdrv_common, 0, sizeof(fdrv_common));
 
-	devs_register(DEV_STORAGE, FLASH_NO, &devFlashGR712RC);
+	devs_register(DEV_STORAGE, FLASH_NO, &devFlashFtmctrl);
+
+	amd_register();
+	intel_register();
 }
