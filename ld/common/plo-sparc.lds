@@ -71,10 +71,12 @@ SECTIONS
 	{
 		__ramtext_load = LOADADDR(.fastram.text.rel);
 		__ramtext_start = .;
+		/* explicit placement of flash (noxip) and frequently used functions in RAM */
+		*(.noxip)
 		*(.ramfunc)
 		. = ALIGN(4);
 		__ramtext_end = .;
-	} > PLO_IMAGE
+	} > RAM_TEXT AT > PLO_IMAGE
 
 	.data : ALIGN(4)
 	{

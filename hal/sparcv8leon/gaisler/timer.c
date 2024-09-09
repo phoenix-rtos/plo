@@ -48,7 +48,7 @@ static struct {
 } timer_common;
 
 
-static int timer_isr(unsigned int irq, void *data)
+__attribute__((section(".noxip"))) static int timer_isr(unsigned int irq, void *data)
 {
 	vu32 st = *(timer_common.gptimer0_base + GPT_TCTRL(TIMER_DEFAULT)) & TIMER_INT_PENDING;
 
@@ -75,7 +75,7 @@ static void timer_setPrescaler(int timer, u32 freq)
 }
 
 
-time_t hal_timerGet(void)
+__attribute__((section(".noxip"))) time_t hal_timerGet(void)
 {
 	time_t val;
 
