@@ -19,7 +19,7 @@
 #include "cpu.h"
 #include "gaisler/grlib-tn-0018.h"
 
-.section ".text"
+.section ".noxip"
 .align 4
 .global _interrupts_dispatch
 .type _interrupts_dispatch, #function
