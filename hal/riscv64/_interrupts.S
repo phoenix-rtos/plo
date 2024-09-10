@@ -60,7 +60,7 @@ _interrupts_dispatch:
 
 	csrr t0, sstatus
 	csrr t1, sepc
-	csrr t2, sbadaddr
+	csrr t2, stval
 	csrr t3, scause
 
 	sd t0, 256(sp)

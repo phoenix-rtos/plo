@@ -58,7 +58,7 @@ typedef struct _exc_context_t {
 
 	u64 sstatus;
 	u64 sepc;
-	u64 sbadaddr;
+	u64 stval;
 	u64 scause;
 } exc_context_t;
 
@@ -131,7 +131,7 @@ void hal_exceptionsDumpContext(char *buff, exc_context_t *ctx, int n)
 
 	i += hal_i2s(" sstatus : ", &buff[i], (u64)ctx->sstatus, 16, 1);
 	i += hal_i2s(" sepc : ", &buff[i], (u64)ctx->sepc, 16, 1);
-	i += hal_i2s(" sbaddaddr : ", &buff[i], (u64)ctx->sbadaddr, 16, 1);
+	i += hal_i2s(" stval : ", &buff[i], (u64)ctx->stval, 16, 1);
 	i += hal_i2s(" scause : ", &buff[i], (u64)ctx->scause, 16, 1);
 
 	buff[i++] = '\n';
