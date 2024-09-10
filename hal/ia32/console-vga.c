@@ -42,7 +42,7 @@ static const unsigned char ansi2bg[] = {
 
 struct {
 	volatile u16 *vram;      /* Video memory */
-	void *crtc;              /* CRT controller register */
+	u16 crtc;                /* CRT controller register */
 	unsigned int rows;       /* Console height */
 	unsigned int cols;       /* Console width */
 	unsigned char attr;      /* Character attribute */
@@ -91,9 +91,9 @@ void hal_consolePrint(const char *s)
 
 	/* Print from current cursor position */
 	hal_outb(halconsole_common.crtc, 0x0f);
-	pos = hal_inb((void *)((addr_t)halconsole_common.crtc + 1));
+	pos = hal_inb(halconsole_common.crtc + 1);
 	hal_outb(halconsole_common.crtc, 0x0e);
-	pos |= (u16)hal_inb((void *)((addr_t)halconsole_common.crtc + 1)) << 8;
+	pos |= (u16)hal_inb(halconsole_common.crtc + 1) << 8;
 	row = pos / halconsole_common.cols;
 	col = pos % halconsole_common.cols;
 
@@ -277,7 +277,7 @@ void hal_consolePrint(const char *s)
 							switch (halconsole_common.parms[0]) {
 								case 25:
 									hal_outb(halconsole_common.crtc, 0x0a);
-									hal_outb((void *)((addr_t)halconsole_common.crtc + 1), hal_inb((void *)((addr_t)halconsole_common.crtc + 1)) & ~0x20);
+									hal_outb(halconsole_common.crtc + 1, hal_inb(halconsole_common.crtc + 1) & ~0x20);
 									break;
 							}
 							halconsole_common.esc = esc_init;
@@ -287,7 +287,7 @@ void hal_consolePrint(const char *s)
 							switch (halconsole_common.parms[0]) {
 								case 25:
 									hal_outb(halconsole_common.crtc, 0x0a);
-									hal_outb((void *)((addr_t)halconsole_common.crtc + 1), hal_inb((void *)((addr_t)halconsole_common.crtc + 1)) | 0x20);
+									hal_outb(halconsole_common.crtc + 1, hal_inb(halconsole_common.crtc + 1) | 0x20);
 									break;
 							}
 							halconsole_common.esc = esc_init;
@@ -319,9 +319,9 @@ void hal_consolePrint(const char *s)
 		/* Update cursor */
 		i = row * halconsole_common.cols + col;
 		hal_outb(halconsole_common.crtc, 0x0e);
-		hal_outb((void *)((addr_t)halconsole_common.crtc + 1), i >> 8);
+		hal_outb(halconsole_common.crtc + 1, i >> 8);
 		hal_outb(halconsole_common.crtc, 0x0f);
-		hal_outb((void *)((addr_t)halconsole_common.crtc + 1), i);
+		hal_outb(halconsole_common.crtc + 1, i);
 		*((u8 *)(halconsole_common.vram + i) + 1) = halconsole_common.attr;
 	}
 
@@ -340,7 +340,7 @@ void hal_consoleInit(void)
 
 	/* Initialize VGA */
 	halconsole_common.vram = (u16 *)(color ? 0xb8000 : 0xb0000);
-	halconsole_common.crtc = (void *)(color ? 0x3d4 : 0x3b4);
+	halconsole_common.crtc = (u16)(color ? 0x3d4 : 0x3b4);
 
 	/* Default 80x25 text mode with magenta color attribute */
 	halconsole_common.rows = 25;

@@ -58,18 +58,18 @@ void hal_cpuReboot(void)
 
 	/* 1. Try to reboot using keyboard controller (8042) */
 	for (timeout = 0xffff; timeout != 0; --timeout) {
-		status = hal_inb((void *)0x64);
+		status = hal_inb((u16)0x64);
 		if ((status & 1) != 0) {
-			(void)hal_inb((void *)0x60);
+			(void)hal_inb((u16)0x60);
 		}
 		if ((status & 2) == 0) {
 			break;
 		}
 	}
-	hal_outb((void *)0x64, 0xfe);
+	hal_outb((u16)0x64, 0xfe);
 
 	/* 2. Try to reboot by PCI reset */
-	hal_outb((void *)0xcf9, 0xe);
+	hal_outb((u16)0xcf9, 0xe);
 
 	/* 3. Triple fault (interrupt with null idt) */
 	__asm__ volatile(

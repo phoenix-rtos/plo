@@ -26,8 +26,8 @@
 
 int hal_pciDetect(void)
 {
-	hal_outl((void *)PCI_CONFIG_ADDR, PCI_ENABLE);
-	return (hal_inl((void *)PCI_CONFIG_ADDR) == PCI_ENABLE) ? 0 : -1;
+	hal_outl(PCI_CONFIG_ADDR, PCI_ENABLE);
+	return (hal_inl(PCI_CONFIG_ADDR) == PCI_ENABLE) ? 0 : -1;
 }
 
 
@@ -44,8 +44,8 @@ u32 hal_pciRead32(hal_pciAddr_t *bdf, u8 offs)
 {
 	u32 addr = hal_pciAddrBDF(bdf);
 	offs &= 256u / sizeof(u32) - 1u;
-	hal_outl((void *)PCI_CONFIG_ADDR, addr + ((u32)offs << 2u));
-	return hal_inl((void *)PCI_CONFIG_DATA);
+	hal_outl(PCI_CONFIG_ADDR, addr + ((u32)offs << 2u));
+	return hal_inl(PCI_CONFIG_DATA);
 }
 
 
@@ -53,8 +53,8 @@ void hal_pciWrite32(hal_pciAddr_t *bdf, u8 offs, u32 value)
 {
 	u32 addr = hal_pciAddrBDF(bdf);
 	offs &= 256u / sizeof(u32) - 1u;
-	hal_outl((void *)PCI_CONFIG_ADDR, addr + ((u32)offs << 2u));
-	hal_outl((void *)PCI_CONFIG_DATA, value);
+	hal_outl(PCI_CONFIG_ADDR, addr + ((u32)offs << 2u));
+	hal_outl(PCI_CONFIG_DATA, value);
 }
 
 
@@ -62,8 +62,8 @@ u16 hal_pciRead16(hal_pciAddr_t *bdf, u8 offs)
 {
 	u32 addr = hal_pciAddrBDF(bdf);
 	offs &= 256u / sizeof(u16) - 1u;
-	hal_outl((void *)PCI_CONFIG_ADDR, addr + ((u32)offs << 1u));
-	return hal_inw((void *)(PCI_CONFIG_DATA + (((addr_t)offs & 1u) << 1u)));
+	hal_outl(PCI_CONFIG_ADDR, addr + ((u32)offs << 1u));
+	return hal_inw(PCI_CONFIG_DATA + (((addr_t)offs & 1u) << 1u));
 }
 
 
@@ -71,24 +71,24 @@ void hal_pciWrite16(hal_pciAddr_t *bdf, u8 offs, u16 value)
 {
 	u32 addr = hal_pciAddrBDF(bdf);
 	offs &= 256u / sizeof(u16) - 1u;
-	hal_outl((void *)PCI_CONFIG_ADDR, addr + ((u32)offs << 1u));
-	hal_outw((void *)(PCI_CONFIG_DATA + (((addr_t)offs & 1u) << 1u)), value);
+	hal_outl(PCI_CONFIG_ADDR, addr + ((u32)offs << 1u));
+	hal_outw(PCI_CONFIG_DATA + (((addr_t)offs & 1u) << 1u), value);
 }
 
 
 u8 hal_pciRead8(hal_pciAddr_t *bdf, u8 offs)
 {
 	u32 addr = hal_pciAddrBDF(bdf);
-	hal_outl((void *)PCI_CONFIG_ADDR, addr + (u32)offs);
-	return hal_inb((void *)(PCI_CONFIG_DATA + ((addr_t)offs & 3u)));
+	hal_outl(PCI_CONFIG_ADDR, addr + (u32)offs);
+	return hal_inb(PCI_CONFIG_DATA + ((addr_t)offs & 3u));
 }
 
 
 void hal_pciWrite8(hal_pciAddr_t *bdf, u8 offs, u8 value)
 {
 	u32 addr = hal_pciAddrBDF(bdf);
-	hal_outl((void *)PCI_CONFIG_ADDR, addr + (u32)offs);
-	hal_outb((void *)(PCI_CONFIG_DATA + ((addr_t)offs & 3u)), value);
+	hal_outl(PCI_CONFIG_ADDR, addr + (u32)offs);
+	hal_outb(PCI_CONFIG_DATA + ((addr_t)offs & 3u), value);
 }
 
 

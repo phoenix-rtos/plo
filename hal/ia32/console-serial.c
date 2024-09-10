@@ -45,7 +45,7 @@ static unsigned char console_read(unsigned int reg)
 
 	/* Read from IO-port */
 	if (addr & 0x1)
-		return hal_inb((void *)((addr & ~0x3) + reg));
+		return hal_inb((u16)((addr & ~0x3) + reg));
 
 	/* Read from memory */
 	return *(halconsole_common.base + reg);
@@ -58,7 +58,7 @@ static void console_write(unsigned int reg, unsigned char val)
 
 	/* Write to IO-port */
 	if (addr & 0x1) {
-		hal_outb((void *)((addr & ~0x3) + reg), val);
+		hal_outb((u16)((addr & ~0x3) + reg), val);
 		return;
 	}
 

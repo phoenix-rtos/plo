@@ -211,9 +211,9 @@ static int memory_empty8042(void)
 	unsigned short int timeout;
 	for (timeout = 0xffff; timeout != 0; --timeout) {
 		/* Discard input data */
-		status = hal_inb((void *)0x64);
+		status = hal_inb((u16)0x64);
 		if ((status & 0x01) != 0) {
-			hal_inb((void *)0x60);
+			hal_inb((u16)0x60);
 			continue;
 		}
 		if ((status & 0x02) == 0) {
@@ -254,11 +254,11 @@ static int memory_enableA20(void)
 		if (memory_empty8042() < 0) {
 			return -1;
 		}
-		hal_outb((void *)0x64, 0xd1);
+		hal_outb((u16)0x64, 0xd1);
 		if (memory_empty8042() < 0) {
 			return -1;
 		}
-		hal_outb((void *)0x60, 0xdf);
+		hal_outb((u16)0x60, 0xdf);
 		if (memory_empty8042() < 0) {
 			return -1;
 		}

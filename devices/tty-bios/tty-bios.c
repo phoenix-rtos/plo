@@ -69,7 +69,7 @@ static const unsigned char ansi2bg[] = {
 
 typedef struct {
 	volatile u16 *vram;      /* Video memory */
-	void *crtc;              /* CRT controller register */
+	u16 crtc;                /* CRT controller register */
 	unsigned int rows;       /* Terminal height */
 	unsigned int cols;       /* Terminal width */
 	unsigned char attr;      /* Character attribute */
@@ -228,9 +228,9 @@ static ssize_t ttybios_write(unsigned int minor, addr_t offs, const void *buff, 
 
 	/* Print from current cursor position */
 	hal_outb(tty->crtc, 0x0f);
-	pos = hal_inb((void *)((addr_t)tty->crtc + 1));
+	pos = hal_inb(tty->crtc + 1);
 	hal_outb(tty->crtc, 0x0e);
-	pos |= (u16)hal_inb((void *)((addr_t)tty->crtc + 1)) << 8;
+	pos |= (u16)hal_inb(tty->crtc + 1) << 8;
 	row = pos / tty->cols;
 	col = pos % tty->cols;
 
@@ -414,7 +414,7 @@ static ssize_t ttybios_write(unsigned int minor, addr_t offs, const void *buff, 
 							switch (tty->parms[0]) {
 								case 25:
 									hal_outb(tty->crtc, 0x0a);
-									hal_outb((void *)((addr_t)tty->crtc + 1), hal_inb((void *)((addr_t)tty->crtc + 1)) & ~0x20);
+									hal_outb(tty->crtc + 1, hal_inb(tty->crtc + 1) & ~0x20);
 									break;
 							}
 							tty->esc = esc_init;
@@ -424,7 +424,7 @@ static ssize_t ttybios_write(unsigned int minor, addr_t offs, const void *buff, 
 							switch (tty->parms[0]) {
 								case 25:
 									hal_outb(tty->crtc, 0x0a);
-									hal_outb((void *)((addr_t)tty->crtc + 1), hal_inb((void *)((addr_t)tty->crtc + 1)) | 0x20);
+									hal_outb(tty->crtc + 1, hal_inb(tty->crtc + 1) | 0x20);
 									break;
 							}
 							tty->esc = esc_init;
@@ -456,9 +456,9 @@ static ssize_t ttybios_write(unsigned int minor, addr_t offs, const void *buff, 
 		/* Update cursor */
 		i = row * tty->cols + col;
 		hal_outb(tty->crtc, 0x0e);
-		hal_outb((void *)((addr_t)tty->crtc + 1), i >> 8);
+		hal_outb(tty->crtc + 1, i >> 8);
 		hal_outb(tty->crtc, 0x0f);
-		hal_outb((void *)((addr_t)tty->crtc + 1), i);
+		hal_outb(tty->crtc + 1, i);
 		*((u8 *)(tty->vram + i) + 1) = tty->attr;
 	}
 
@@ -507,11 +507,11 @@ static int ttybios_init(unsigned int minor)
 		return -EINVAL;
 
 	/* Check color support */
-	color = hal_inb((void *)0x3cc) & 0x01;
+	color = hal_inb((u16)0x3cc) & 0x01;
 
 	/* Initialize VGA */
 	tty->vram = (u16 *)(color ? 0xb8000 : 0xb0000);
-	tty->crtc = (void *)(color ? 0x3d4 : 0x3b4);
+	tty->crtc = (u16)(color ? 0x3d4 : 0x3b4);
 
 	/* Default 80x25 text mode with magenta color attribute */
 	tty->rows = 25;
