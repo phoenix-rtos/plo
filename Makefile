@@ -19,6 +19,12 @@ LDGEN ?= $(CC)
 CFLAGS += -I.
 CPPFLAGS += -DVERSION=\"$(VERSION)\"
 
+# binutils >= 2.39 required
+LD_VERSION_MINOR := $(shell $(LD) $(LDFLAGS_PREFIX)--version 2> /dev/null | grep -Eo "[0-9][0-9]$$")
+ifeq ($(shell expr $(LD_VERSION_MINOR) ">=" 39), 1)
+LDFLAGS += $(LDFLAGS_PREFIX)--no-warn-rwx-segments
+endif
+
 OBJS :=
 # hal Makefile needs to be included first as it adds cmds and devices definitions
 include hal/$(TARGET_SUFF)/Makefile
