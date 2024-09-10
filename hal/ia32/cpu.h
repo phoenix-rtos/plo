@@ -18,6 +18,9 @@
 #define _CPU_H_
 
 
+#include "types.h"
+
+
 static inline void hal_cpuDataMemoryBarrier(void)
 {
 	/* not supported */
@@ -36,66 +39,92 @@ static inline void hal_cpuInstrBarrier(void)
 }
 
 
-static inline unsigned char hal_inb(void *addr)
+static inline u8 hal_inb(u16 addr)
 {
-	unsigned char val;
+	u8 b;
 
-	__asm__ volatile(
-		"inb %1, %0; "
-	: "=a" (val)
-	: "Nd" (addr));
-
-	return val;
+	/* clang-format off */
+	__asm__ volatile (
+		"inb %1, %0\n\t"
+	: "=a" (b)
+	: "d" (addr)
+	: );
+	/* clang-format on */
+	return b;
 }
 
 
-static inline void hal_outb(void *addr, unsigned char val)
+static inline void hal_outb(u16 addr, u8 b)
 {
-	__asm__ volatile(
-		"outb %0, %1; "
-	:: "a" (val), "Nd" (addr));
+	/* clang-format off */
+	__asm__ volatile (
+		"outb %1, %0"
+	:
+	: "d" (addr), "a" (b)
+	: );
+	/* clang-format on */
+
+	return;
 }
 
 
-static inline unsigned short hal_inw(void *addr)
+static inline u16 hal_inw(u16 addr)
 {
-	unsigned short val;
+	u16 w;
 
-	__asm__ volatile(
-		"inw %1, %0; "
-	: "=a" (val)
-	: "Nd" (addr));
+	/* clang-format off */
+	__asm__ volatile (
+		"inw %1, %0\n\t"
+	: "=a" (w)
+	: "d" (addr)
+	: );
+	/* clang-format on */
 
-	return val;
+	return w;
 }
 
 
-static inline void hal_outw(void *addr, unsigned short val)
+static inline void hal_outw(u16 addr, u16 w)
 {
-	__asm__ volatile(
-		"outw %0, %1; "
-	:: "a" (val), "Nd" (addr));
+	/* clang-format off */
+	__asm__ volatile (
+		"outw %1, %0"
+	:
+	: "d" (addr), "a" (w)
+	: );
+	/* clang-format on */
+
+	return;
 }
 
 
-static inline unsigned int hal_inl(void *addr)
+static inline u32 hal_inl(u16 addr)
 {
-	unsigned int val;
+	u32 l;
 
-	__asm__ volatile(
-		"inl %1, %0; "
-	: "=a" (val)
-	: "Nd" (addr));
+	/* clang-format off */
+	__asm__ volatile (
+		"inl %1, %0\n\t"
+	: "=a" (l)
+	: "d" (addr)
+	: );
+	/* clang-format on */
 
-	return val;
+	return l;
 }
 
 
-static inline void hal_outl(void *addr, unsigned int val)
+static inline void hal_outl(u16 addr, u32 l)
 {
-	__asm__ volatile(
-		"outl %0, %1; "
-	:: "a" (val), "Nd" (addr));
+	/* clang-format off */
+	__asm__ volatile (
+		"outl %1, %0"
+	:
+	: "d" (addr), "a" (l)
+	: );
+	/* clang-format on */
+
+	return;
 }
 
 

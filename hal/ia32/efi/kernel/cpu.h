@@ -184,84 +184,92 @@ typedef struct {
 /* io access */
 
 
-static inline u8 hal_inb(void *addr)
+static inline u8 hal_inb(u16 addr)
 {
-	u32 ioport = (u32)addr;
 	u8 b;
 
-	__asm__ volatile
-	(
-		"inb %1, %0"
+	/* clang-format off */
+	__asm__ volatile (
+		"inb %1, %0\n\t"
 	: "=a" (b)
-	: "dN" ((u16)ioport));
-
+	: "d" (addr)
+	: );
+	/* clang-format on */
 	return b;
 }
 
 
-static inline void hal_outb(void *addr, u8 b)
+static inline void hal_outb(u16 addr, u8 b)
 {
-	u32 ioport = (u32)addr;
-
-	__asm__ volatile
-	(
-		"outb %0, %1"
+	/* clang-format off */
+	__asm__ volatile (
+		"outb %1, %0"
 	:
-	: "a" (b), "dN" ((u16)ioport));
+	: "d" (addr), "a" (b)
+	: );
+	/* clang-format on */
+
+	return;
 }
 
 
-static inline u16 hal_inw(void *addr)
+static inline u16 hal_inw(u16 addr)
 {
-	u32 ioport = (u32)addr;
 	u16 w;
 
-	__asm__ volatile
-	(
-		"inw %1, %0"
+	/* clang-format off */
+	__asm__ volatile (
+		"inw %1, %0\n\t"
 	: "=a" (w)
-	: "dN" ((u16)ioport));
+	: "d" (addr)
+	: );
+	/* clang-format on */
 
 	return w;
 }
 
 
-static inline void hal_outw(void *addr, u16 w)
+static inline void hal_outw(u16 addr, u16 w)
 {
-	u32 ioport = (u32)addr;
-
-	__asm__ volatile
-	(
-		"outw %0, %1"
+	/* clang-format off */
+	__asm__ volatile (
+		"outw %1, %0"
 	:
-	: "a" (w), "dN" ((u16)ioport));
+	: "d" (addr), "a" (w)
+	: );
+	/* clang-format on */
+
+	return;
 }
 
 
-static inline u32 hal_inl(void *addr)
+static inline u32 hal_inl(u16 addr)
 {
-	u32 ioport = (u32)addr;
 	u32 l;
 
-	__asm__ volatile
-	(
-		"inl %1, %0"
+	/* clang-format off */
+	__asm__ volatile (
+		"inl %1, %0\n\t"
 	: "=a" (l)
-	: "dN" ((u16)ioport));
+	: "d" (addr)
+	: );
+	/* clang-format on */
 
 	return l;
 }
 
 
-static inline void hal_outl(void *addr, u32 l)
+static inline void hal_outl(u16 addr, u32 l)
 {
-	u32 ioport = (u32)addr;
-
-	__asm__ volatile
-	(
-		"outl %0, %1"
+	/* clang-format off */
+	__asm__ volatile (
+		"outl %1, %0"
 	:
-	: "a" (l), "dN" ((u16)ioport));
+	: "d" (addr), "a" (l)
+	: );
+	/* clang-format on */
+
+	return;
 }
 
 

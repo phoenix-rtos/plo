@@ -39,7 +39,7 @@ unsigned char uarthw_read(void *hwctx, unsigned int reg)
 
 	/* Read from IO-port */
 	if (addr & 0x1)
-		return hal_inb((void *)((addr & ~0x3) + reg));
+		return hal_inb((u16)((addr & ~0x3) + reg));
 
 	/* Read from memory */
 	return *(ctx->base + reg);
@@ -53,7 +53,7 @@ void uarthw_write(void *hwctx, unsigned int reg, unsigned char val)
 
 	/* Write to IO-port */
 	if (addr & 0x1) {
-		hal_outb((void *)((addr & ~0x3) + reg), val);
+		hal_outb((u16)((addr & ~0x3) + reg), val);
 		return;
 	}
 
@@ -65,21 +65,21 @@ void uarthw_write(void *hwctx, unsigned int reg, unsigned char val)
 /* SCH311X Super IO controller */
 
 
-static unsigned char uarthw_SCH311Xinb(void *base, unsigned int reg)
+static unsigned char uarthw_SCH311Xinb(u16 base, unsigned int reg)
 {
 	hal_outb(base, reg);
 	return hal_inb(base + 1);
 }
 
 
-static void uarthw_SCH311Xoutb(void *base, unsigned int reg, unsigned char val)
+static void uarthw_SCH311Xoutb(u16 base, unsigned int reg, unsigned char val)
 {
 	hal_outb(base, reg);
 	hal_outb(base + 1, val);
 }
 
 
-static int uarthw_SCH311Xdetect(void *base)
+static int uarthw_SCH311Xdetect(u16 base)
 {
 	int ret;
 
@@ -107,7 +107,7 @@ static int uarthw_SCH311Xdetect(void *base)
 }
 
 
-static int uarthw_SCH311Xmode(void *base, unsigned char n, unsigned char mode)
+static int uarthw_SCH311Xmode(u16 base, unsigned char n, unsigned char mode)
 {
 	/* Enter configuration mode */
 	hal_outb(base, 0x55);
@@ -141,9 +141,9 @@ int uarthw_init(unsigned int n, void *hwctx, unsigned int *baud)
 	/* Set preferred baudrate */
 	if (baud != NULL) {
 		/* SCH311X Super IO controller has at least 2 high speed UARTS */
-		if ((n < 2) && (uarthw_SCH311Xdetect((void *)0x2e) >= 0)) {
+		if ((n < 2) && (uarthw_SCH311Xdetect((u16)0x2e) >= 0)) {
 			*baud = bps_460800;
-			uarthw_SCH311Xmode((void *)0x2e, 0x04 + n, bauds[*baud].mode);
+			uarthw_SCH311Xmode((u16)0x2e, 0x04 + n, bauds[*baud].mode);
 		}
 		else {
 			*baud = bps_115200;

@@ -73,11 +73,11 @@ int interrupts_ack(unsigned int n)
 		return -EINVAL;
 
 	if (n < 8) {
-		hal_outb((void *)0x20, 0x60 | n);
+		hal_outb((u16)0x20, 0x60 | n);
 	}
 	else {
-		hal_outb((void *)0x20, 0x62);
-		hal_outb((void *)0xa0, 0x60 | (n - 8));
+		hal_outb((u16)0x20, 0x62);
+		hal_outb((u16)0xa0, 0x60 | (n - 8));
 	}
 
 	return EOK;
@@ -140,16 +140,16 @@ int interrupts_setIDTEntry(unsigned int n, void (*base)(void), unsigned short se
 void interrupts_remapPIC(unsigned char offs1, unsigned char offs2)
 {
 	/* Initialize primary PIC */
-	hal_outb((void *)0x20, 0x11);  /* ICW1 - master initialization sequence */
-	hal_outb((void *)0x21, offs1); /* ICW2 - master vector offset */
-	hal_outb((void *)0x21, 0x04);  /* ICW3 - slave PIC at IRQ2 */
-	hal_outb((void *)0x21, 0x01);  /* ICW4 - 8086 mode */
+	hal_outb((u16)0x20, 0x11);  /* ICW1 - master initialization sequence */
+	hal_outb((u16)0x21, offs1); /* ICW2 - master vector offset */
+	hal_outb((u16)0x21, 0x04);  /* ICW3 - slave PIC at IRQ2 */
+	hal_outb((u16)0x21, 0x01);  /* ICW4 - 8086 mode */
 
 	/* Initialize secondary PIC */
-	hal_outb((void *)0xa0, 0x11);  /* ICW1 - slave initialization sequence */
-	hal_outb((void *)0xa1, offs2); /* ICW2 - slave vector offset */
-	hal_outb((void *)0xa1, 0x02);  /* ICW3 - cascade identity */
-	hal_outb((void *)0xa1, 0x01);  /* ICW4 - 8086 mode */
+	hal_outb((u16)0xa0, 0x11);  /* ICW1 - slave initialization sequence */
+	hal_outb((u16)0xa1, offs2); /* ICW2 - slave vector offset */
+	hal_outb((u16)0xa1, 0x02);  /* ICW3 - cascade identity */
+	hal_outb((u16)0xa1, 0x01);  /* ICW4 - 8086 mode */
 }
 
 
