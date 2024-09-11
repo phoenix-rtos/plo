@@ -26,7 +26,7 @@ static addr_t aliasBase = 0;
 
 static void cmd_aliasInfo(void)
 {
-	lib_printf("sets alias to file, usage: alias [-b <base> | [-r] <name> <offset> <size>]");
+	lib_printf("sets alias to file, usage: alias [-[r]b <base> | [-r] <name> <offset> <size>]");
 }
 
 
@@ -36,7 +36,7 @@ static int cmd_alias(int argc, char *argv[])
 	size_t sz = 0;
 	addr_t addr = 0;
 	int c, relative = 0;
-	addr_t newBase;
+	long newBase;
 
 	if (argc == 1) {
 		if (aliasBase != 0) {
@@ -64,15 +64,20 @@ static int cmd_alias(int argc, char *argv[])
 					return CMD_EXIT_FAILURE;
 				}
 
-				newBase = lib_strtoul(optarg, &end, 0);
+				newBase = lib_strtol(optarg, &end, 0);
 				if (*end != '\0') {
 					log_error("\n%s: Invalid base.\n", argv[0]);
 					cmd_aliasInfo();
 					return CMD_EXIT_FAILURE;
 				}
 
-				aliasBase = newBase;
-				lib_printf("\n%s: Setting relative base address to 0x%p", argv[0], newBase);
+				if (relative) {
+					aliasBase += newBase;
+				}
+				else {
+					aliasBase = newBase;
+				}
+				lib_printf("\n%s: Setting relative base address to 0x%p", argv[0], aliasBase);
 
 				/* Ignore everything else, this is a separate function */
 				return CMD_EXIT_SUCCESS;
