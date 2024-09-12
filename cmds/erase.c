@@ -60,11 +60,13 @@ static int cmd_erase(int argc, char *argv[])
 		return CMD_EXIT_FAILURE;
 	}
 
+#ifdef PLO_ERASE_NEEDS_CONFIRMATION
 	res = lib_promptConfirm("\nWARNING!\nSerious risk of data loss, type %s to proceed.\n", "YES!", 10 * 1000);
 	if (res != 1) {
 		lib_printf("Aborted.\n");
 		return CMD_EXIT_SUCCESS;
 	}
+#endif
 
 	res = phfs_erase(h, offs, len, 0);
 	if (res < 0) {
