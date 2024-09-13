@@ -19,7 +19,7 @@
 #include <lib/lib.h>
 
 #define SIZE_PHFS_HANDLERS 8
-#define SIZE_PHFS_ALIASES  20
+#define SIZE_PHFS_ALIASES  32
 
 #define PHFS_TIMEOUT_MS 500
 
