@@ -12,8 +12,6 @@ LDFLAGS := $(filter-out -Tdata% , $(LDFLAGS))
 CFLAGS := $(filter-out -mfloat-abi% , $(CFLAGS))
 CFLAGS := $(filter-out -mfpu% , $(CFLAGS))
 
-CFLAGS += -DVADDR_KERNEL_INIT=$(VADDR_KERNEL_INIT)
-
 PLO_COMMANDS ?= alias app blob bitstream call console copy dump echo erase go help jffs2 kernel map mem \
   phfs reboot script stop test-ddr test-dev wait
 

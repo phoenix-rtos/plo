@@ -71,7 +71,7 @@ const char *hal_cpuInfo(void)
 
 addr_t hal_kernelGetAddress(addr_t addr)
 {
-	return addr - VADDR_KERNEL_INIT + ADDR_DDR + SIZE_PLO;
+	return addr - VADDR_KERNEL + ADDR_DDR + SIZE_PLO;
 }
 
 

@@ -17,6 +17,9 @@ include ../phoenix-rtos-build/Makefile.common
 LDGEN ?= $(CC)
 
 CFLAGS += -I.
+ifeq ($(HAVE_MMU),y)
+CPPFLAGS += -DVADDR_KERNEL=$(VADDR_KERNEL)
+endif
 CPPFLAGS += -DVERSION=\"$(VERSION)\"
 
 OBJS :=
