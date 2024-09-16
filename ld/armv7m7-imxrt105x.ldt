@@ -50,8 +50,11 @@ MEMORY
 	m_itext   (rwx) : ORIGIN = FLEXRAM_ITEXT_ADDR, LENGTH = FLEXRAM_ITEXT_AREA
 	m_dtcm    (rw)  : ORIGIN = 0x20002000, LENGTH = FLEXRAM_DTCM_AREA
 	m_ocram   (rwx) : ORIGIN = 0x20200000, LENGTH = FLEXRAM_OCRAM_AREA
-	m_flash   (rx)  : ORIGIN = 0x60000000, LENGTH = 8M
+	m_flash   (rx)  : ORIGIN = 0x60000000, LENGTH = 128k /* Not actual flash size. Initial flash size to be put into FCB block for imxrt BootROM init procedure only */
 }
+
+/* Initial flash size to be put into FCB block for imxrt BootROM init procedure only */
+_plo_flash_size = LENGTH(m_flash);
 
 #if defined (ram)
 
