@@ -69,7 +69,7 @@ _fcfb:
 .byte 0x3        /* serialClkFreq */
 .byte 0x0        /* lutCustomSeqEnable */
 .word 0, 0
-.word 0x00010000 /* sflashA1Size */
+.word _plo_flash_size /* sflashA1Size */
 .word 0          /* sflashA2Size */
 .word 0          /* sflashB1Size */
 .word 0          /* sflashB2Size */

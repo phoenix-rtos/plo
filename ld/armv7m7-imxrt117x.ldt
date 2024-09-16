@@ -56,8 +56,11 @@ MEMORY
 	m_dtcm    (rw)  : ORIGIN = 0x20002000 + AREA_KERNEL, LENGTH = FLEXRAM_DTCM_AREA - AREA_KERNEL
 	m_ocram1  (rwx) : ORIGIN = 0x20240000 + AREA_BOOTLOADER, LENGTH = (8 * 32k) - AREA_BOOTLOADER
 	m_ocram2  (rwx) : ORIGIN = 0x202c0000, LENGTH = 512k
-	m_flash   (rx)  : ORIGIN = 0x30000000, LENGTH = 4M
+	m_flash   (rx)  : ORIGIN = 0x30000000, LENGTH = 128k /* Not actual flash size. Initial flash size to be put into FCB block for imxrt BootROM init procedure only */
 }
+
+/* Initial flash size to be put into FCB block for imxrt BootROM init procedure only */
+_plo_flash_size = LENGTH(m_flash);
 
 #if defined (ram)
 
