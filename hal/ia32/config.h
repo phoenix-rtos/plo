@@ -37,6 +37,9 @@ extern void _interrupts_bios(unsigned char intr, unsigned short ds, unsigned sho
 #define PATH_KERNEL "phoenix-ia32-generic.elf"
 
 
+/* Platform can set graphic modes (i.e. via VBE) */
+#define HAS_GRAPHICS 1
+
 
 /* Import platform specific definitions */
 #include "ld/ia32-generic.ldt"

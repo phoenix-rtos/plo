@@ -22,6 +22,15 @@
 enum { flagSyspageExec = 0x01, flagSyspageNoCopy = 0x02 };
 
 
+typedef struct {
+	unsigned short width;
+	unsigned short height;
+	unsigned short bpp;
+	unsigned short pitch;
+	unsigned long framebuffer; /* addr_t */
+} __attribute__((packed)) graphmode_t;
+
+
 /* General functions */
 extern void syspage_init(void);
 
@@ -66,6 +75,12 @@ extern void syspage_progShow(void);
 
 /* Console */
 extern void syspage_consoleSet(unsigned int id);
+
+
+#if HAS_GRAPHICS
+/* Graphics mode */
+extern void syspage_graphmodeSet(graphmode_t graphmode);
+#endif
 
 
 #endif
