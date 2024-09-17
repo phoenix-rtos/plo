@@ -33,6 +33,13 @@
 #define ADDR_PDIR   0x3000
 #define ADDR_PTABLE 0x4000
 
+/* VBE info/mode info structs */
+#define ADDR_VBE_INFO      0x77c00
+#define SIZE_VBE_INFO      0x200
+
+#define ADDR_VBE_MODE_INFO 0x77e00
+#define SIZE_VBE_MODE_INFO 0x100
+
 /* Disk caches (below upper memory starting at 0x80000) */
 #define ADDR_RCACHE 0x78000
 #define SIZE_RCACHE 0x4000

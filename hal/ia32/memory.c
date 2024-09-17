@@ -137,6 +137,8 @@ int hal_memoryGetNextEntry(addr_t start, addr_t end, mapent_t *entry)
 		{ .start = (addr_t)__stack_limit, .end = (addr_t)__stack_top, .type = hal_entryTemp },
 		{ .start = ADDR_GDT, .end = ADDR_GDT + SIZE_GDT, .type = hal_entryTemp },
 		{ .start = ADDR_IDT, .end = ADDR_IDT + SIZE_IDT, .type = hal_entryTemp },
+		{ .start = ADDR_VBE_INFO, .end = ADDR_VBE_INFO + SIZE_VBE_INFO, .type = hal_entryTemp },
+		{ .start = ADDR_VBE_MODE_INFO, .end = ADDR_VBE_MODE_INFO + SIZE_VBE_MODE_INFO, .type = hal_entryTemp },
 		/* TODO: this entry should be removed after changes in disk-bios */
 		{ .start = ADDR_RCACHE, .end = ADDR_RCACHE + SIZE_RCACHE + SIZE_WCACHE, .type = hal_entryTemp },
 	};

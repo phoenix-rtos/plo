@@ -625,3 +625,15 @@ void syspage_progShow(void)
 		prog = prog->next;
 	} while (prog != syspage_common.syspage->progs);
 }
+
+
+#if HAS_GRAPHICS
+void syspage_graphmodeSet(graphmode_t graphmode)
+{
+	syspage_common.syspage->hs.graphmode.width = graphmode.width;
+	syspage_common.syspage->hs.graphmode.height = graphmode.height;
+	syspage_common.syspage->hs.graphmode.bpp = graphmode.bpp;
+	syspage_common.syspage->hs.graphmode.pitch = graphmode.pitch;
+	syspage_common.syspage->hs.graphmode.framebuffer = graphmode.framebuffer;
+}
+#endif
