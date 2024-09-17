@@ -33,6 +33,9 @@
 /* Space reserved for kernel data */
 #define AREA_KERNEL 0x10000
 
+/* Space reserved for RTT control block and buffers */
+#define SIZE_RTTMEM (2 * 2 * 0x400 + 256)
+
 
 #if defined(__LINKER__)
 
@@ -40,6 +43,7 @@
 MEMORY
 {
 	m_sram    (rwx) : ORIGIN = RAM_ADDR + AREA_KERNEL, LENGTH = (256k + 64k) - AREA_KERNEL
+	m_rttmem  (rw)  : ORIGIN = RAM_ADDR + (256k + 64k) - SIZE_RTTMEM, LENGTH = SIZE_RTTMEM
 	m_flash2  (rx)  : ORIGIN = FLASH_PROGRAM_2_ADDR, LENGTH = 512k
 	m_flash1  (rx)  : ORIGIN = FLASH_PROGRAM_1_ADDR, LENGTH = 512k
 }
@@ -51,8 +55,10 @@ REGION_ALIAS("DATA", m_sram);
 REGION_ALIAS("BSS", m_sram);
 REGION_ALIAS("HEAP", m_sram);
 REGION_ALIAS("STACK", m_sram);
+REGION_ALIAS("RTTMEM", m_rttmem);
 
 #include "common/plo-arm.lds"
+#include "common/plo-rtt.lds"
 
 #endif /* end of __LINKER__ */
 

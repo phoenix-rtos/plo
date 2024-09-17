@@ -26,6 +26,9 @@
 /* Space reserved for kernel data */
 #define AREA_KERNEL 0x2000
 
+/* Space reserved for RTT control block and buffers */
+#define SIZE_RTTMEM (2 * 2 * 0x400 + 256)
+
 
 #if defined(__LINKER__)
 
@@ -52,6 +55,7 @@ MEMORY
 	m_itcm    (rwx) : ORIGIN = 0x00000000, LENGTH = FLEXRAM_ITCM_AREA
 	m_itext   (rwx) : ORIGIN = FLEXRAM_ITEXT_ADDR, LENGTH = FLEXRAM_ITEXT_AREA
 	m_dtcm    (rw)  : ORIGIN = 0x20000000 + AREA_KERNEL, LENGTH = FLEXRAM_DTCM_AREA - AREA_KERNEL
+	m_rttmem  (rw)  : ORIGIN = 0x20000000 + FLEXRAM_DTCM_AREA - SIZE_RTTMEM, LENGTH = SIZE_RTTMEM
 	m_ocram   (rwx) : ORIGIN = 0x20200000, LENGTH = 0 * 32k
 	m_flash   (rx)  : ORIGIN = 0x70000000, LENGTH = 4M
 }
@@ -75,8 +79,10 @@ REGION_ALIAS("TCM_TEXT", m_itext);
 REGION_ALIAS("BSS", m_dtcm);
 REGION_ALIAS("HEAP", m_dtcm);
 REGION_ALIAS("STACK", m_dtcm);
+REGION_ALIAS("RTTMEM", m_rttmem);
 
 #include "common/plo-arm.lds"
+#include "common/plo-rtt.lds"
 
 #endif /* end of __LINKER__ */
 
