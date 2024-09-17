@@ -33,6 +33,9 @@ extern char __data_start[], __data_end[];
 extern char __bss_start[], __bss_end[];
 extern char __heap_base[], __heap_limit[];
 extern char __stack_top[], __stack_limit[];
+#if RTT_ENABLED_PLO
+extern char __rttmem_rttcb[];
+#endif
 
 /* Timer */
 extern void timer_init(void);
@@ -60,8 +63,8 @@ void hal_init(void)
 	mpu_init();
 	timer_init();
 
-#ifdef RTT_ADDR
-	rtt_init((void *)RTT_ADDR);
+#if RTT_ENABLED_PLO
+	rtt_init(__rttmem_rttcb);
 #endif
 
 	console_init();
