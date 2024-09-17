@@ -27,9 +27,8 @@
 
 /* DEBUG - RTT PIPE */
 
-#ifndef RTT_ADDR
-/* RTT descriptors location, last 256 bytes of DTCM */
-#define RTT_ADDR (0x20040000 - 0x100)
+#ifndef RTT_ENABLED_PLO
+#define RTT_ENABLED_PLO 1
 #endif
 
 
