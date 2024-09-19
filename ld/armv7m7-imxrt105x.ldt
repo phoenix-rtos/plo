@@ -23,6 +23,10 @@
 #define SIZE_STACK (4 * SIZE_PAGE)
 #define SIZE_HEAP  (8 * SIZE_PAGE)
 
+/* Space reserved for kernel data */
+#define AREA_KERNEL 0x2000
+
+
 #if defined(__LINKER__)
 
 /* FlexRAM configuration */
@@ -48,7 +52,7 @@ MEMORY
 {
 	m_itcm    (rwx) : ORIGIN = 0x00000000, LENGTH = FLEXRAM_ITCM_AREA
 	m_itext   (rwx) : ORIGIN = FLEXRAM_ITEXT_ADDR, LENGTH = FLEXRAM_ITEXT_AREA
-	m_dtcm    (rw)  : ORIGIN = 0x20002000, LENGTH = FLEXRAM_DTCM_AREA
+	m_dtcm    (rw)  : ORIGIN = 0x20000000 + AREA_KERNEL, LENGTH = FLEXRAM_DTCM_AREA - AREA_KERNEL
 	m_ocram   (rwx) : ORIGIN = 0x20200000, LENGTH = FLEXRAM_OCRAM_AREA
 	m_flash   (rx)  : ORIGIN = 0x60000000, LENGTH = 8M
 }
