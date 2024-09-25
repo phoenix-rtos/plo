@@ -33,29 +33,31 @@ void _startc(int argc, char **argv, char **env)
 	size_t i, size;
 
 	/* Load .fastram.text, .data and .rodata sections */
-	if (__ramtext_start != __ramtext_load) {
+	if (&__ramtext_start[0] != &__ramtext_load[0]) {
 		/* hal_memcpy may reside in fastram. */
-		for (i = 0; i <= __ramtext_end - __ramtext_start; i++) {
+		for (i = 0; i <= (__ramtext_end - __ramtext_start); i++) {
 			__ramtext_start[i] = __ramtext_load[i];
 		}
 	}
 
-	if (__data_start != __data_load)
+	if (&__data_start[0] != &__data_load[0]) {
 		hal_memcpy(__data_start, __data_load, __data_end - __data_start);
-
-	if (__rodata_start != __rodata_load)
+	}
+	if (&__rodata_start[0] != &__rodata_load[0]) {
 		hal_memcpy(__rodata_start, __rodata_load, __rodata_end - __rodata_start);
-
+	}
 	/* Clear the .bss section */
 	hal_memset(__bss_start, 0, __bss_end - __bss_start);
 
 	size = __init_array_end - __init_array_start;
-	for (i = 0; i < size; i++)
+	for (i = 0; i < size; i++) {
 		(*__init_array_start[i])();
+	}
 
 	main();
 
 	size = __fini_array_end - __fini_array_start;
-	for (i = size; i > 0; i--)
+	for (i = size; i > 0; i--) {
 		(*__fini_array_start[i - 1])();
+	}
 }
