@@ -336,7 +336,7 @@ void hal_consoleInit(void)
 	unsigned char color;
 
 	/* Check color support */
-	color = hal_inb((void *)0x3cc) & 0x01;
+	color = hal_inb(0x3cc) & 0x01;
 
 	/* Initialize VGA */
 	halconsole_common.vram = (u16 *)(color ? 0xb8000 : 0xb0000);
