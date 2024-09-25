@@ -16,7 +16,7 @@ include ../phoenix-rtos-build/Makefile.common
 
 LDGEN ?= $(CC)
 
-CFLAGS += -I.
+CFLAGS += -I. -ffreestanding
 CPPFLAGS += -DVERSION=\"$(VERSION)\"
 
 OBJS :=
