@@ -30,9 +30,12 @@ CPPFLAGS += -DPAYLOAD_PATH=\"$(PAYLOAD_PATH)\"
 
 ifneq ($(FDT_PATH),)
   CPPFLAGS += -DFDT_PATH=\"$(FDT_PATH)\"
+  $(PREFIX_O)core/_start.o: $(FDT_PATH)
 endif
 
 LDSFLAGS += -DPAYLOAD_ADDR=$(PAYLOAD_ADDR)
+
+$(PREFIX_O)core/_start.o: $(PAYLOAD_PATH)
 
 OBJS :=
 
@@ -40,6 +43,10 @@ include core/Makefile
 include devices/Makefile
 
 OBJS += $(addprefix $(PREFIX_O), entry.o)
+
+# incremental build quick-fix, WARN: assuming the sources are in c
+DEPS := $(patsubst %.o, %.c.d, $(OBJS))
+-include $(DEPS)
 
 .PHONY: all clean
 

@@ -41,6 +41,9 @@ $(PREFIX_O)/custom/%.o: $(PROJECT_PATH)/%.c
 	$(SIL)$(CC) -c $(CFLAGS) "$(abspath $<)" -o "$@"
 	$(SIL)$(CC) -M  -MD -MP -MF $(PREFIX_O)/custom/$*.c.d -MT "$@" $(CFLAGS) $<
 
+# incremental build quick-fix, WARN: assuming the sources are in c
+DEPS := $(patsubst %.o, %.c.d, $(OBJS))
+-include $(DEPS)
 
 .PHONY: all base ram clean
 
