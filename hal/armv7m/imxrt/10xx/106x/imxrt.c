@@ -672,7 +672,7 @@ void _imxrt_ccmInitEnetPll(u8 enclk0, u8 enclk1, u8 enclk2, u8 div0, u8 div1)
 	u32 enet_pll = ((div1 & 0x3) << 2) | (div0 & 0x3);
 
 	if (enclk0 != 0) {
-		enet_pll |= 1 << 12;
+		enet_pll |= 1 << 13;
 	}
 
 	if (enclk1 != 0) {
@@ -683,10 +683,15 @@ void _imxrt_ccmInitEnetPll(u8 enclk0, u8 enclk1, u8 enclk2, u8 div0, u8 div1)
 		enet_pll |= 1 << 21;
 	}
 
-	*(imxrt_common.ccm_analog + ccm_analog_pll_enet) = enet_pll;
+	/* enable bypass during clock frequency change */
+	*(imxrt_common.ccm_analog + ccm_analog_pll_enet) = 1 << 16;
+
+	*(imxrt_common.ccm_analog + ccm_analog_pll_enet) |= enet_pll;
 
 	while ((*(imxrt_common.ccm_analog + ccm_analog_pll_enet) & (1 << 31)) == 0) {
 	}
+
+	*(imxrt_common.ccm_analog + ccm_analog_pll_enet) &= ~(1 << 16);
 }
 
 
@@ -1647,6 +1652,7 @@ void _imxrt_init(void)
 	_imxrt_ccmInitArmPll(88);
 	_imxrt_ccmInitSysPll(1);
 	_imxrt_ccmInitUsb1Pll(0);
+	_imxrt_ccmInitEnetPll(1, 0, 0, 1, 0);
 
 	_imxrt_ccmSetDiv(clk_div_arm, 0x1);
 	_imxrt_ccmSetDiv(clk_div_ahb, 0x0);
@@ -1674,7 +1680,6 @@ void _imxrt_init(void)
 
 	/* Power down all unused PLL */
 	_imxrt_ccmDeinitAudioPll();
-	_imxrt_ccmDeinitEnetPll();
 
 	_imxrt_ccmDeinitUsb2Pll();
 
