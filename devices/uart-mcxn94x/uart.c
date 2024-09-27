@@ -421,9 +421,7 @@ static int uart_init(unsigned int minor)
 
 __attribute__((constructor)) static void uart_reg(void)
 {
-	static const dev_handler_t h = {
-		.init = uart_init,
-		.done = uart_done,
+	static const dev_ops_t opsUartMCXN94X = {
 		.read = uart_read,
 		.write = uart_safeWrite,
 		.erase = NULL,
@@ -431,5 +429,12 @@ __attribute__((constructor)) static void uart_reg(void)
 		.map = uart_map,
 	};
 
-	devs_register(DEV_UART, UART_MAX_CNT, &h);
+	static const dev_t devUartMCXN94X = {
+		.name = "uart-mcxn94x",
+		.init = uart_init,
+		.done = uart_done,
+		.ops = &opsUartMCXN94X,
+	};
+
+	devs_register(DEV_UART, UART_MAX_CNT, &devUartMCXN94X);
 }
