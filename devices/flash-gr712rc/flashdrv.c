@@ -340,7 +340,7 @@ __attribute__((constructor)) static void flashdrv_reg(void)
 		.init = flashdrv_init,
 		.done = flashdrv_done,
 		.ops = &opsFlashGR712RC,
-	}
+	};
 
 	hal_memset(&fdrv_common, 0, sizeof(fdrv_common));
 

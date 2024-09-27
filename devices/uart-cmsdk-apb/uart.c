@@ -286,14 +286,20 @@ static int uart_init(unsigned int minor)
 
 __attribute__((constructor)) static void uart_reg(void)
 {
-	static const dev_handler_t h = {
-		.init = uart_init,
-		.done = uart_done,
+	static const dev_ops_t opsUartCmsdkApb = {
 		.read = uart_read,
 		.write = uart_safeWrite,
+		.erase = NULL,
 		.sync = uart_sync,
 		.map = uart_map,
 	};
 
-	devs_register(DEV_UART, UART_MAX_CNT, &h);
+	static const dev_t devUartCmsdkApb = {
+		.name = "uart-cmsdk-apb",
+		.init = uart_init,
+		.done = uart_done,
+		.ops = &opsUartCmsdkApb,
+	};
+
+	devs_register(DEV_UART, UART_MAX_CNT, &devUartCmsdkApb);
 }
