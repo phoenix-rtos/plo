@@ -55,9 +55,8 @@ struct rtt_desc {
 
 static struct {
 	/* NOTE: each buffer must be aligned to cache line */
-	unsigned char tx[RTT_TXCHANNELS][1024] __attribute__((aligned(32)));
-	unsigned char rx[RTT_RXCHANNELS][1024] __attribute__((aligned(32)));
-} rttBuffers __attribute__((section(".rttmem")));
+	unsigned char bytes[1024] __attribute__((aligned(32)));
+} rttBufferPool[RTT_TXCHANNELS + RTT_RXCHANNELS];
 
 
 static const char rtt_tagBackward[] = RTT_TAG_BACKWARD;
@@ -130,6 +129,7 @@ ssize_t rtt_write(int chan, const void *buf, size_t count)
 
 	rtt->txChannel[chan].wr = wr;
 
+
 	return count - todo;
 }
 
@@ -172,20 +172,19 @@ void rtt_init(void *addr)
 	rtt->txChannels = RTT_TXCHANNELS;
 	rtt->rxChannels = RTT_RXCHANNELS;
 
+	m = 0;
 	for (n = 0; n < rtt->txChannels; n++) {
 		rtt->txChannel[n].name = rtt_txName[n];
-		rtt->txChannel[n].ptr = rttBuffers.tx[n];
-		rtt->txChannel[n].sz = sizeof(rttBuffers.tx[n]);
-		rtt->txChannel[n].wr = 0;
-		rtt->txChannel[n].rd = 0;
+		rtt->txChannel[n].ptr = rttBufferPool[m].bytes;
+		rtt->txChannel[n].sz = sizeof(rttBufferPool[m].bytes);
+		m++;
 	}
 
 	for (n = 0; n < rtt->rxChannels; n++) {
 		rtt->rxChannel[n].name = rtt_rxName[n];
-		rtt->rxChannel[n].ptr = rttBuffers.rx[n];
-		rtt->rxChannel[n].sz = sizeof(rttBuffers.rx[n]);
-		rtt->rxChannel[n].wr = 0;
-		rtt->rxChannel[n].rd = 0;
+		rtt->rxChannel[n].ptr = rttBufferPool[m].bytes;
+		rtt->rxChannel[n].sz = sizeof(rttBufferPool[m].bytes);
+		m++;
 	}
 
 	n = 0;
