@@ -60,6 +60,21 @@ size_t lib_cbufWrite(cbuffer_t *buf, const void *data, size_t sz)
 }
 
 
+__attribute__((section(".noxip"))) int lib_cbufWriteByte(cbuffer_t *buf, char data)
+{
+	if (buf->full != 0) {
+		return 0;
+	}
+
+	*((char *)buf->data + buf->tail) = data;
+
+	buf->tail = (buf->tail + 1) % buf->capacity;
+	buf->full = (buf->tail == buf->head);
+
+	return 1;
+}
+
+
 size_t lib_cbufRead(cbuffer_t *buf, void *data, size_t sz)
 {
 	int bytes = 0;
@@ -85,6 +100,21 @@ size_t lib_cbufRead(cbuffer_t *buf, void *data, size_t sz)
 	buf->full = 0;
 
 	return bytes;
+}
+
+
+__attribute__((section(".noxip"))) int lib_cbufReadByte(cbuffer_t *buf, char *data)
+{
+	if ((buf->head == buf->tail) && (buf->full == 0)) {
+		return 0;
+	}
+
+	*data = *((char *)buf->data + buf->head);
+
+	buf->head = (buf->head + 1) % buf->capacity;
+	buf->full = 0;
+
+	return 1;
 }
 
 
