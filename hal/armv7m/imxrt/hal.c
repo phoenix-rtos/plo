@@ -25,6 +25,11 @@ struct {
 
 
 /* Linker symbols */
+extern char __init_start[], __init_end[];
+extern char __text_start[], __etext[];
+extern char __rodata_start[], __rodata_end[];
+extern char __init_array_start[], __init_array_end[];
+extern char __fini_array_start[], __fini_array_end[];
 extern char __ramtext_start[], __ramtext_end[];
 extern char __data_start[], __data_end[];
 extern char __bss_start[], __bss_end[];
@@ -141,6 +146,11 @@ int hal_memoryGetNextEntry(addr_t start, addr_t end, mapent_t *entry)
 	mapent_t tempEntry, minEntry;
 
 	static const mapent_t entries[] = {
+		{ .start = (addr_t)__init_start, .end = (addr_t)__init_end, .type = hal_entryTemp },
+		{ .start = (addr_t)__text_start, .end = (addr_t)__etext, .type = hal_entryTemp },
+		{ .start = (addr_t)__rodata_start, .end = (addr_t)__rodata_end, .type = hal_entryTemp },
+		{ .start = (addr_t)__init_array_start, .end = (addr_t)__init_array_end, .type = hal_entryTemp },
+		{ .start = (addr_t)__fini_array_start, .end = (addr_t)__fini_array_end, .type = hal_entryTemp },
 		{ .start = (addr_t)__ramtext_start, .end = (addr_t)__ramtext_end, .type = hal_entryTemp },
 		{ .start = (addr_t)__data_start, .end = (addr_t)__data_end, .type = hal_entryTemp },
 		{ .start = (addr_t)__bss_start, .end = (addr_t)__bss_end, .type = hal_entryTemp },
