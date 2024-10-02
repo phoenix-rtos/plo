@@ -88,7 +88,7 @@
 #define WATERMARK 16u
 
 
-__attribute__((section(".noxip"))) static void qspi_setMux(int dev_no)
+static void qspi_setMux(int dev_no)
 {
 	size_t i;
 	static const struct {
@@ -119,7 +119,7 @@ __attribute__((section(".noxip"))) static void qspi_setMux(int dev_no)
 }
 
 
-__attribute__((section(".noxip"))) static void qspi_enable(int enable)
+static void qspi_enable(int enable)
 {
 	if (enable == 0) {
 		QSPI_BASE[QSPI_MCR] |= QSPI_MCR_CLR_MDIS;
@@ -130,7 +130,7 @@ __attribute__((section(".noxip"))) static void qspi_enable(int enable)
 }
 
 
-__attribute__((section(".noxip"))) void qspi_lutUpdate(qspi_t *qspi, u32 index, const u32 *lutTable, size_t count)
+void qspi_lutUpdate(qspi_t *qspi, u32 index, const u32 *lutTable, size_t count)
 {
 	u32 lutCopy[64];
 	size_t i;
@@ -162,7 +162,7 @@ __attribute__((section(".noxip"))) void qspi_lutUpdate(qspi_t *qspi, u32 index, 
 }
 
 
-__attribute__((section(".noxip"))) static void qspi_swReset(void)
+static void qspi_swReset(void)
 {
 	QSPI_BASE[QSPI_MCR] |= (QSPI_MCR_SWRSTHD | QSPI_MCR_SWRSTSD);
 	qspi_enable(0);
@@ -171,7 +171,7 @@ __attribute__((section(".noxip"))) static void qspi_swReset(void)
 }
 
 
-__attribute__((section(".noxip"))) static void qspi_setClk(void)
+static void qspi_setClk(void)
 {
 	imx6ull_setDevClock(clk_qspi, 0x03);
 
@@ -183,7 +183,7 @@ __attribute__((section(".noxip"))) static void qspi_setClk(void)
 }
 
 
-__attribute__((section(".noxip"))) static void qspi_pinConfig(u8 slPortMask)
+static void qspi_pinConfig(u8 slPortMask)
 {
 	if ((slPortMask & (qspi_slBusA1 | qspi_slBusA2)) != 0u) {
 		qspi_setMux(0);
@@ -218,7 +218,7 @@ void qspi_setFlashSize(qspi_t *qspi, const size_t flashSizes[4])
 }
 
 
-__attribute__((section(".noxip"))) static addr_t qspi_getAddressByPort(qspi_t *qspi, u8 port, addr_t addr)
+static addr_t qspi_getAddressByPort(qspi_t *qspi, u8 port, addr_t addr)
 {
 	u32 reg;
 
@@ -255,7 +255,7 @@ int qspi_deinit(qspi_t *qspi)
 }
 
 
-__attribute__((section(".noxip"))) static void qspi_setIPCR(unsigned int seq_num, size_t idatsz)
+static void qspi_setIPCR(unsigned int seq_num, size_t idatsz)
 {
 	u32 reg = QSPI_BASE[QSPI_IPCR];
 
@@ -268,7 +268,7 @@ __attribute__((section(".noxip"))) static void qspi_setIPCR(unsigned int seq_num
 }
 
 
-__attribute__((section(".noxip"))) static ssize_t qspi_opRead(time_t start, struct xferOp *xfer)
+static ssize_t qspi_opRead(time_t start, struct xferOp *xfer)
 {
 	unsigned int i;
 	size_t byte, len = 0;
@@ -312,7 +312,7 @@ __attribute__((section(".noxip"))) static ssize_t qspi_opRead(time_t start, stru
 }
 
 
-__attribute__((section(".noxip"))) static size_t qspi_writeTx(const void *data, size_t size)
+static size_t qspi_writeTx(const void *data, size_t size)
 {
 	size_t byte, sent = 0;
 	int align64 = 0;
@@ -336,7 +336,7 @@ __attribute__((section(".noxip"))) static size_t qspi_writeTx(const void *data, 
 }
 
 
-__attribute__((section(".noxip"))) static ssize_t qspi_opWrite(time_t start, struct xferOp *xfer)
+static ssize_t qspi_opWrite(time_t start, struct xferOp *xfer)
 {
 	size_t sent = 0;
 
@@ -364,7 +364,7 @@ __attribute__((section(".noxip"))) static ssize_t qspi_opWrite(time_t start, str
 }
 
 
-__attribute__((section(".noxip"))) ssize_t qspi_xferExec(qspi_t *qspi, struct xferOp *xfer)
+ssize_t qspi_xferExec(qspi_t *qspi, struct xferOp *xfer)
 {
 	ssize_t res;
 	time_t start = hal_timerGet();
@@ -407,7 +407,7 @@ __attribute__((section(".noxip"))) ssize_t qspi_xferExec(qspi_t *qspi, struct xf
 	return res;
 }
 
-__attribute__((section(".noxip"))) int qspi_init(qspi_t *qspi, u8 slPortMask)
+int qspi_init(qspi_t *qspi, u8 slPortMask)
 {
 	unsigned i;
 	u32 lut[4];
