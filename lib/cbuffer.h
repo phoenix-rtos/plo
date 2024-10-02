@@ -40,6 +40,12 @@ extern size_t lib_cbufRead(cbuffer_t *buf, void *data, size_t sz);
 extern size_t lib_cbufWrite(cbuffer_t *buf, const void *data, size_t sz);
 
 
+extern int lib_cbufReadByte(cbuffer_t *buf, char *data) __attribute__((section(".noxip")));
+
+
+extern int lib_cbufWriteByte(cbuffer_t *buf, char data) __attribute__((section(".noxip")));
+
+
 extern void lib_cbufInit(cbuffer_t *buf, void *data, size_t capacity);
 
 

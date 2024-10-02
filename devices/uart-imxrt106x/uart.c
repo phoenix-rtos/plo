@@ -117,15 +117,14 @@ __attribute__((section(".noxip"))) static int uart_handleIntr(unsigned int irq, 
 	*(uart->base + statr) |= flags;
 
 	/* Receive */
-	while (uart_getRXcount(uart)) {
+	while (uart_getRXcount(uart) != 0) {
 		c = *(uart->base + datar);
-		lib_cbufWrite(&uart->cbuffRx, &c, 1);
+		lib_cbufWriteByte(&uart->cbuffRx, c);
 	}
 
 	/* Transmit */
 	while (uart_getTXcount(uart) < uart->txFifoSz) {
-		if (!lib_cbufEmpty(&uart->cbuffTx)) {
-			lib_cbufRead(&uart->cbuffTx, &c, 1);
+		if (lib_cbufReadByte(&uart->cbuffTx, &c) != 0) {
 			*(uart->base + datar) = c;
 		}
 		else {
