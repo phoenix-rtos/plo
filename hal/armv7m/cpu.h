@@ -21,28 +21,19 @@
 #include <hal/hal.h>
 
 
-static inline void hal_cpuDataMemoryBarrier(void)
-{
-	__asm__ volatile ("dmb");
-}
+/* NOTE: defined as macros to make sure there are no calls to code in flash in .noxip sections. */
+/* clang-format off */
+#define hal_cpuDataMemoryBarrier() do { __asm__ volatile ("dmb"); } while(0)
 
 
-static inline void hal_cpuDataSyncBarrier(void)
-{
-	__asm__ volatile ("dsb");
-}
+#define hal_cpuDataSyncBarrier() do { __asm__ volatile ("dsb"); } while(0)
 
 
-static inline void hal_cpuInstrBarrier(void)
-{
-	__asm__ volatile ("isb");
-}
+#define hal_cpuInstrBarrier() do { __asm__ volatile ("isb"); } while(0)
 
 
-static inline void hal_cpuHalt(void)
-{
-	__asm__ volatile ("wfi");
-}
+#define hal_cpuHalt() do { __asm__ volatile ("wfi"); } while(0)
+/* clang-format on */
 
 
 extern void hal_scbSetPriorityGrouping(u32 group);

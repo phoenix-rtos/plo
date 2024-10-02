@@ -76,7 +76,7 @@ void hal_consoleSetHooks(ssize_t (*writeHook)(int, const void *, size_t))
 }
 
 
-void hal_consolePrint(const char *s)
+__attribute__((section(".noxip"))) void hal_consolePrint(const char *s)
 {
 	const char *ptr;
 

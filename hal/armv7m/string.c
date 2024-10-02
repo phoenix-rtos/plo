@@ -17,7 +17,7 @@
 #include <hal/string.h>
 
 
-void *hal_memcpy(void *dst, const void *src, size_t l)
+__attribute__((section(".noxip"))) void *hal_memcpy(void *dst, const void *src, size_t l)
 {
 	void *ret = dst;
 
@@ -105,7 +105,7 @@ void hal_memset(void *dst, int v, size_t l)
 }
 
 
-size_t hal_strlen(const char *s)
+__attribute__((section(".noxip"))) size_t hal_strlen(const char *s)
 {
 	size_t k = 0;
 
@@ -186,7 +186,7 @@ int hal_strncmp(const char *s1, const char *s2, size_t count)
 }
 
 
-char *hal_strcpy(char *dest, const char *src)
+__attribute__((section(".noxip"))) char *hal_strcpy(char *dest, const char *src)
 {
 	char *p = dest;
 
@@ -240,7 +240,7 @@ char *hal_strchr(const char *s, int c)
 }
 
 
-int hal_i2s(char *prefix, char *s, unsigned int i, unsigned char b, char zero)
+__attribute__((section(".noxip"))) int hal_i2s(char *prefix, char *s, unsigned int i, unsigned char b, char zero)
 {
 	static const char digits[] = "0123456789abcdef";
 	char c;

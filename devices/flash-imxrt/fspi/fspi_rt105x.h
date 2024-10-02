@@ -30,12 +30,12 @@ enum { mcr0 = 0, mcr1, mcr2, ahbcr, inten, intr, lutkey, lutcr, ahbrxbuf0cr0, ah
 #define AHBRXBUF_CNT 4
 
 
-static inline addr_t flexspi_ahbAddr(int instance)
+__attribute__((section(".noxip"))) static inline addr_t flexspi_ahbAddr(int instance)
 {
 	return (instance == flexspi_instance1) ? 0x60000000 : 0;
 }
 
-static inline void *flexspi_getBase(int instance)
+__attribute__((section(".noxip"))) static inline void *flexspi_getBase(int instance)
 {
 	return instance == flexspi_instance1 ? (void *)0x402a8000 : NULL;
 }
