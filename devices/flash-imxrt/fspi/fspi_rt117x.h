@@ -33,7 +33,7 @@ enum { mcr0 = 0, mcr1, mcr2, ahbcr, inten, intr, lutkey, lutcr, ahbrxbuf0cr0, ah
 #define AHBRXBUF_CNT 8
 
 
-static addr_t flexspi_ahbAddr(int instance)
+__attribute__((section(".noxip"))) static addr_t flexspi_ahbAddr(int instance)
 {
 	switch (instance) {
 		case flexspi_instance1: return 0x30000000;
@@ -43,7 +43,7 @@ static addr_t flexspi_ahbAddr(int instance)
 }
 
 
-static void *flexspi_getBase(int instance)
+__attribute__((section(".noxip"))) static void *flexspi_getBase(int instance)
 {
 	switch (instance) {
 		case flexspi_instance1: return (void *)0x400cc000;
