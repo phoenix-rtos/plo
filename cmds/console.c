@@ -53,6 +53,7 @@ static int cmd_console(int argc, char *argv[])
 		return CMD_EXIT_FAILURE;
 	}
 
+	lib_printf("\nconsole: Setting console to %d.%d", major, minor);
 	lib_consoleSet(major, minor);
 	return CMD_EXIT_SUCCESS;
 }

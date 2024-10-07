@@ -16,6 +16,10 @@
 #include <board_config.h>
 
 #include <hal/hal.h>
+#include <lib/helpers.h>
+
+#if !ISEMPTY(UART_CONSOLE_PLO)
+
 
 #define CONCAT(a, b)         a##b
 #define CONCAT2(a, b)        CONCAT(a, b)
@@ -159,3 +163,23 @@ void console_init(void)
 	/* Enable TX and RX */
 	*(halconsole_common.uart + uart_ctrl) |= (1 << 19) | (1 << 18);
 }
+
+#else
+
+void hal_consoleSetHooks(ssize_t (*writeHook)(int, const void *, size_t))
+{
+	(void)writeHook;
+}
+
+
+void hal_consolePrint(const char *s)
+{
+	(void)s;
+}
+
+
+void console_init(void)
+{
+}
+
+#endif /* #if !ISEMPTY(UART_CONSOLE_PLO) */
