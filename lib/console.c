@@ -101,7 +101,6 @@ void lib_consoleSet(unsigned major, unsigned minor)
 	console_common.major = major;
 	console_common.minor = minor;
 	console_common.init = 1;
-	lib_printf("\nconsole: Setting console to %d.%d", major, minor);
 }
 
 

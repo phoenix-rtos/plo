@@ -15,6 +15,9 @@
 
 #include <board_config.h>
 #include <hal/hal.h>
+#include <devices/devs.h>
+#include <lib/helpers.h>
+#include <lib/console.h>
 
 struct {
 	hal_syspage_t *hs;
@@ -65,6 +68,12 @@ void hal_init(void)
 
 #if RTT_ENABLED_PLO
 	rtt_init(__rttmem_rttcb);
+
+#if ISEMPTY(UART_CONSOLE_PLO)
+	/* TODO: Channel number is already hardcoded in halconsole_common.writeHook.
+	Maybe let user redefine RTT channel to be used in plo? */
+	lib_consoleSet(DEV_PIPE, 0);
+#endif
 #endif
 
 	console_init();

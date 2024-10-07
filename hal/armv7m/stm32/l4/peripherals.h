@@ -49,6 +49,10 @@
 #define UART_CONSOLE 2
 #endif
 
+#ifndef UART_CONSOLE_PLO
+#define UART_CONSOLE_PLO UART_CONSOLE
+#endif
+
 #define UART_BAUDRATE 115200
 
 #define UART1_BASE ((void *)0x40013800)

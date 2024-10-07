@@ -14,7 +14,10 @@
  */
 
 #include <hal/hal.h>
+#include <lib/helpers.h>
 #include "stm32l4.h"
+
+#if !ISEMPTY(UART_CONSOLE_PLO)
 
 
 static struct {
@@ -95,3 +98,23 @@ void console_init(void)
 	*(halconsole_common.base + cr1) |= 1;
 	hal_cpuDataMemoryBarrier();
 }
+
+#else
+
+void hal_consoleSetHooks(ssize_t (*writeHook)(int, const void *, size_t))
+{
+	(void)writeHook;
+}
+
+
+void hal_consolePrint(const char *s)
+{
+	(void)s;
+}
+
+
+void console_init(void)
+{
+}
+
+#endif /* #if !ISEMPTY(UART_CONSOLE_PLO) */
