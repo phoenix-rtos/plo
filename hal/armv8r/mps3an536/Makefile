@@ -9,6 +9,9 @@
 LDFLAGS := $(filter-out -Tbss% , $(LDFLAGS))
 LDFLAGS := $(filter-out -Tdata% , $(LDFLAGS))
 
+CFLAGS := $(filter-out -mfloat-abi% , $(CFLAGS))
+CFLAGS := $(filter-out -mfpu% , $(CFLAGS))
+
 CFLAGS += -Ihal/armv8r/mps3an536
 
 # Limited set of commands because of memory constraints on QEMU
