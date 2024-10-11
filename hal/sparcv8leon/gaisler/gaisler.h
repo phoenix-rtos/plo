@@ -31,4 +31,7 @@ typedef struct {
 int gaisler_iomuxCfg(iomux_cfg_t *ioCfg);
 
 
+__attribute__((noreturn)) void timer_wdogReboot(void);
+
+
 #endif

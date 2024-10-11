@@ -203,9 +203,5 @@ int hal_cpuJump(void)
 
 void hal_cpuReboot(void)
 {
-	/* TODO */
-	for (;;) {
-	}
-
-	__builtin_unreachable();
+	timer_wdogReboot();
 }
