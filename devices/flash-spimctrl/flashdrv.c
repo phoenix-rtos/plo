@@ -3,7 +3,7 @@
  *
  * Operating system loader
  *
- * GR716 Flash driver
+ * GRLIB SPIMCTRL Flash driver
  *
  * Copyright 2023 Phoenix Systems
  * Author: Lukasz Leczkowski
@@ -361,7 +361,7 @@ static int flashdrv_init(unsigned int minor)
 
 __attribute__((constructor)) static void flashdrv_reg(void)
 {
-	static const dev_ops_t opsFlashGR716 = {
+	static const dev_ops_t opsFlashSpimctrl = {
 		.read = flashdrv_read,
 		.write = flashdrv_write,
 		.erase = flashdrv_erase,
@@ -369,14 +369,14 @@ __attribute__((constructor)) static void flashdrv_reg(void)
 		.map = flashdrv_map,
 	};
 
-	static const dev_t devFlashGR716 = {
-		.name = "flash-gr716",
+	static const dev_t devFlashSpimctrl = {
+		.name = "flash-spimctrl",
 		.init = flashdrv_init,
 		.done = flashdrv_done,
-		.ops = &opsFlashGR716,
+		.ops = &opsFlashSpimctrl,
 	};
 
 	hal_memset(&fdrv_common, 0, sizeof(fdrv_common));
 
-	devs_register(DEV_STORAGE, FLASH_NO, &devFlashGR716);
+	devs_register(DEV_STORAGE, FLASH_NO, &devFlashSpimctrl);
 }
