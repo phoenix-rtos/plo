@@ -22,7 +22,7 @@
 #define SIZE_HEAP   (SIZE_PAGE)
 
 #define ADDR_DDR 0x200000
-#define SIZE_PLO 0x20000
+#define SIZE_PLO 0x40000
 
 #if defined(__LINKER__)
 
