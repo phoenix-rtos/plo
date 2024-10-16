@@ -22,9 +22,20 @@
 static ssize_t pipe_read(unsigned int minor, addr_t offs, void *buff, size_t len, time_t timeout)
 {
 	(void)offs;
-	(void)timeout;
+	time_t start = hal_timerGet();
 
-	return rtt_read(minor + 1, buff, len);
+	while (1 == 1) {
+		ssize_t ret = rtt_read(minor + 1, buff, len);
+
+		if (ret != 0) {
+			return ret;
+		}
+		if ((hal_timerGet() - start) >= timeout) {
+			return -ETIME;
+		}
+	}
+
+	return 0;
 }
 
 
