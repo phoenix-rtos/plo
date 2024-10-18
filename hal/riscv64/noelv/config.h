@@ -19,12 +19,13 @@
 
 #ifndef __ASSEMBLY__
 
-#include "peripherals.h"
 #include "types.h"
 #include "hal/riscv64/cpu.h"
 #include "hal/riscv64/plic.h"
 #include "hal/riscv64/sbi.h"
 #include "hal/riscv64/dtb.h"
+
+#include <board_config.h>
 
 #include <phoenix/arch/riscv64/syspage.h>
 #include <phoenix/syspage.h>
