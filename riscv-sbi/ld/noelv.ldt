@@ -22,15 +22,15 @@
 #define SIZE_STACK    (MAX_HART_COUNT * SIZE_PAGE)
 
 #define ADDR_DDR 0x00000
-#define SIZE_SBI 0x20000
+#define SIZE_SBI 0x10000
 
 #if defined(__LINKER__)
 
 /* Memory map setup */
 MEMORY
 {
-	m_ram     (rwx) : ORIGIN = ADDR_DDR, LENGTH = 0x20000
-	m_payload (rx)  : ORIGIN = PAYLOAD_ADDR, LENGTH = 0x100000
+	m_ram     (rwx) : ORIGIN = ADDR_DDR, LENGTH = SIZE_SBI
+	m_payload (rx)  : ORIGIN = PAYLOAD_ADDR, LENGTH = 0x30000
 }
 
 REGION_ALIAS("SBI_IMAGE", m_ram);
