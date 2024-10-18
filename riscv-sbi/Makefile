@@ -35,7 +35,11 @@ endif
 
 LDSFLAGS += -DPAYLOAD_ADDR=$(PAYLOAD_ADDR)
 
-$(PREFIX_O)core/_start.o: $(PAYLOAD_PATH)
+PAYLOAD_NAME := $(notdir $(PAYLOAD_PATH))
+$(PREFIX_O)core/_start.o: $(PREFIX_O)/$(PAYLOAD_NAME).stamp
+
+$(PREFIX_O)/$(PAYLOAD_NAME).stamp: $(PAYLOAD_PATH)
+	@touch $@
 
 OBJS :=
 
@@ -48,15 +52,23 @@ OBJS += $(addprefix $(PREFIX_O), entry.o)
 DEPS := $(patsubst %.o, %.c.d, $(OBJS))
 -include $(DEPS)
 
-.PHONY: all clean
+.PHONY: all base ram clean
 
 .PRECIOUS: $(BUILD_DIR)%/.
 
+all: base ram
 
-all: $(PREFIX_PROG_STRIPPED)sbi-$(TARGET_SUBFAMILY).elf $(PREFIX_PROG_STRIPPED)sbi-$(TARGET_SUBFAMILY).img
+base: $(PREFIX_PROG_STRIPPED)sbi-$(TARGET_SUBFAMILY).elf $(PREFIX_PROG_STRIPPED)sbi-$(TARGET_SUBFAMILY).img
+
+ram: $(PREFIX_PROG_STRIPPED)sbi-ram-$(TARGET_SUBFAMILY).elf $(PREFIX_PROG_STRIPPED)sbi-ram-$(TARGET_SUBFAMILY).img
 
 
 $(PREFIX_PROG)sbi-$(TARGET_SUBFAMILY).elf: $(PREFIX_O)/sbi-$(TARGET_SUBFAMILY).ld $(OBJS) | $(PREFIX_PROG)/.
+	@echo "LD  $(@F)"
+	$(SIL)$(LD) $(CFLAGS) $(LDFLAGS) -Wl,-Map=$<.map -o $@ -Wl,-T,$^ -nostdlib -lgcc
+
+
+$(PREFIX_PROG)sbi-ram-$(TARGET_SUBFAMILY).elf: $(PREFIX_O)/sbi-$(TARGET_SUBFAMILY).ld $(OBJS) | $(PREFIX_PROG)/.
 	@echo "LD  $(@F)"
 	$(SIL)$(LD) $(CFLAGS) $(LDFLAGS) -Wl,-Map=$<.map -o $@ -Wl,-T,$^ -nostdlib -lgcc
 
