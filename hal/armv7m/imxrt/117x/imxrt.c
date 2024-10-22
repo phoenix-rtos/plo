@@ -158,7 +158,8 @@ __attribute__((section(".noxip"))) int _imxrt_setIOpad(int pad, char sre, char d
 		return -1;
 	}
 
-	if ((pad >= pctl_pad_gpio_emc_b1_00) && (pad <= pctl_pad_gpio_disp_b2_15)) {
+	if (((pad >= pctl_pad_gpio_emc_b1_00) && (pad <= pctl_pad_gpio_emc_b2_20)) ||
+			((pad >= pctl_pad_gpio_sd_b1_00) && (pad <= pctl_pad_gpio_disp_b2_15))) {
 		/* Fields have slightly diffrent meaning... */
 		if (pue == 0) {
 			pull = 3;
