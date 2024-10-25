@@ -15,8 +15,7 @@
 
 #include <lib/errno.h>
 
-#include "../spimctrl.h"
-#include "../nor/flash.h"
+#include <devices/flash-spimctrl/spimctrl.h>
 
 /* Control register */
 
@@ -40,6 +39,41 @@ enum {
 	flash_econf, /* EDAC configuration  : 0x14 */
 	flash_estat  /* EDAC status         : 0x18 */
 };
+
+
+#if defined(__CPU_GR716)
+
+
+static void spimctrl_cguClkEnable(unsigned int minor)
+{
+	_gr716_cguClkEnable(cgu_primary, cgudev_spimctrl0 + minor);
+}
+
+
+static int spimctrl_cguClkStatus(unsigned int minor)
+{
+	return _gr716_cguClkStatus(cgu_primary, cgudev_spimctrl0 + minor);
+}
+
+
+#else
+
+
+static void spimctrl_cguClkEnable(unsigned int minor)
+{
+	(void)minor;
+}
+
+
+static int spimctrl_cguClkStatus(unsigned int minor)
+{
+	(void)minor;
+
+	return 1;
+}
+
+
+#endif
 
 
 static void spimctrl_userCtrl(vu32 *spimctrlBase)
@@ -90,7 +124,7 @@ static void spimctrl_read(spimctrl_t *spimctrl, struct xferOp *op)
 
 	/* read data */
 	for (i = 0; i < op->dataLen; i++) {
-		spimctrl_tx(spimctrl->base, FLASH_CMD_NOP);
+		spimctrl_tx(spimctrl->base, 0x00u);
 		op->rxData[i] = spimctrl_rx(spimctrl->base);
 	}
 
@@ -144,23 +178,13 @@ void spimctrl_reset(spimctrl_t *spimctrl)
 }
 
 
-int spimctrl_init(spimctrl_t *spimctrl, int instance)
+void spimctrl_init(spimctrl_t *spimctrl, unsigned int minor)
 {
-	void *base = spimctrl_getBase(instance);
-	if (base == NULL) {
-		return -EINVAL;
-	}
-	spimctrl->base = base;
-	spimctrl->ahbStartAddr = spimctrl_ahbAddr(instance);
-	spimctrl->instance = instance;
-
 	/* Enable clock if needed */
-	if (_gr716_cguClkStatus(cgu_primary, cgudev_spimctrl0 + instance) == 0) {
-		_gr716_cguClkEnable(cgu_primary, cgudev_spimctrl0 + instance);
+	if (spimctrl_cguClkStatus(minor) == 0) {
+		spimctrl_cguClkEnable(minor);
 	}
 
 	/* Reset core */
 	spimctrl_reset(spimctrl);
-
-	return EOK;
 }
