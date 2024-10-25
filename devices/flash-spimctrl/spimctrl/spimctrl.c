@@ -15,8 +15,10 @@
 
 #include <lib/errno.h>
 
-#include "../spimctrl.h"
-#include "../nor/flash.h"
+#include <devices/flash-spimctrl/spimctrl.h>
+
+
+#define FLASH_CMD_NOP 0x00u
 
 /* Control register */
 
@@ -32,14 +34,49 @@
 
 
 enum {
-	flash_cfg,   /* Flash configuration : 0x00 */
-	flash_ctrl,  /* Flash control       : 0x04 */
-	flash_stat,  /* Flash status        : 0x08 */
-	flash_rx,    /* Flash receive       : 0x0C */
-	flash_tx,    /* Flash transmit      : 0x10 */
-	flash_econf, /* EDAC configuration  : 0x14 */
-	flash_estat  /* EDAC status         : 0x18 */
+	flash_cfg = 0, /* Flash configuration : 0x00 */
+	flash_ctrl,    /* Flash control       : 0x04 */
+	flash_stat,    /* Flash status        : 0x08 */
+	flash_rx,      /* Flash receive       : 0x0C */
+	flash_tx,      /* Flash transmit      : 0x10 */
+	flash_econf,   /* EDAC configuration  : 0x14 */
+	flash_estat    /* EDAC status         : 0x18 */
 };
+
+
+#if defined(__CPU_GR716)
+
+
+static void spimctrl_cguClkEnable(unsigned int minor)
+{
+	_gr716_cguClkEnable(cgu_primary, cgudev_spimctrl0 + minor);
+}
+
+
+static int spimctrl_cguClkStatus(unsigned int minor)
+{
+	return _gr716_cguClkStatus(cgu_primary, cgudev_spimctrl0 + minor);
+}
+
+
+#else
+
+
+static void spimctrl_cguClkEnable(unsigned int minor)
+{
+	(void)minor;
+}
+
+
+static int spimctrl_cguClkStatus(unsigned int minor)
+{
+	(void)minor;
+
+	return 1;
+}
+
+
+#endif
 
 
 static void spimctrl_userCtrl(vu32 *spimctrlBase)
@@ -144,23 +181,13 @@ void spimctrl_reset(spimctrl_t *spimctrl)
 }
 
 
-int spimctrl_init(spimctrl_t *spimctrl, int instance)
+void spimctrl_init(spimctrl_t *spimctrl, unsigned int minor)
 {
-	void *base = spimctrl_getBase(instance);
-	if (base == NULL) {
-		return -EINVAL;
-	}
-	spimctrl->base = base;
-	spimctrl->ahbStartAddr = spimctrl_ahbAddr(instance);
-	spimctrl->instance = instance;
-
 	/* Enable clock if needed */
-	if (_gr716_cguClkStatus(cgu_primary, cgudev_spimctrl0 + instance) == 0) {
-		_gr716_cguClkEnable(cgu_primary, cgudev_spimctrl0 + instance);
+	if (spimctrl_cguClkStatus(minor) == 0) {
+		spimctrl_cguClkEnable(minor);
 	}
 
 	/* Reset core */
 	spimctrl_reset(spimctrl);
-
-	return EOK;
 }

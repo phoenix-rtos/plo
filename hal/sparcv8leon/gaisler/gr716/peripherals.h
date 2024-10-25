@@ -23,10 +23,5 @@
 #define GRGPIO0_BASE ((void *)0x80000900)
 #define GRGPIO1_BASE ((void *)0x80000a00)
 
-/* SPI Flash */
-
-#define SPIMCTRL0_BASE ((void *)0xfff00100)
-#define SPIMCTRL1_BASE ((void *)0xfff00200)
-
 
 #endif
