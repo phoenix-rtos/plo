@@ -158,8 +158,7 @@ __attribute__((section(".noxip"))) int _imxrt_setIOpad(int pad, char sre, char d
 		return -1;
 	}
 
-	if (((pad >= pctl_pad_gpio_emc_b1_00) && (pad <= pctl_pad_gpio_emc_b2_20)) ||
-			((pad >= pctl_pad_gpio_sd_b1_00) && (pad <= pctl_pad_gpio_disp_b2_15))) {
+	if ((pad <= pctl_pad_gpio_emc_b2_20) || ((pad >= pctl_pad_gpio_sd_b1_00) && (pad <= pctl_pad_gpio_disp_b1_11))) {
 		/* Fields have slightly diffrent meaning... */
 		if (pue == 0) {
 			pull = 3;
@@ -178,13 +177,21 @@ __attribute__((section(".noxip"))) int _imxrt_setIOpad(int pad, char sre, char d
 		t = *reg & ~0x1f;
 		t |= (!!sre) | (!!dse << 1) | (!!pue << 2) | (!!pus << 3);
 
-		if ((pad >= pctl_pad_test_mode) && (pad <= pctl_pad_gpio_snvs_09)) {
+		if (pad <= pctl_pad_gpio_disp_b2_15) {
+			t &= ~(1 << 4);
+			t |= !!ode << 4;
+		}
+		else if ((pad >= pctl_pad_wakeup) && (pad <= pctl_pad_gpio_snvs_09)) {
 			t &= ~(1 << 6);
 			t |= !!ode << 6;
 		}
-		else {
+		else if (pad >= pctl_pad_gpio_lpsr_00) {
 			t &= ~(1 << 5);
 			t |= !!ode << 5;
+		}
+		else {
+			/* MISRA */
+			/* pctl_pad_test_mode, pctl_pad_por_b, pctl_pad_onoff - no ode field */
 		}
 	}
 
