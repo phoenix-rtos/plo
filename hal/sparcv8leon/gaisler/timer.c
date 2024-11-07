@@ -115,7 +115,7 @@ void timer_done(void)
 		}
 	}
 
-	hal_interruptsSet(TIMER_IRQ, NULL, NULL);
+	hal_interruptsSet(TIMER0_1_IRQ, NULL, NULL);
 }
 
 
@@ -130,7 +130,7 @@ void timer_init(void)
 
 	timer_setPrescaler(TIMER_DEFAULT, TIMER_DEFAULT_FREQ);
 
-	hal_interruptsSet(TIMER_IRQ, timer_isr, NULL);
+	hal_interruptsSet(TIMER0_1_IRQ, timer_isr, NULL);
 
 	/* Enable timer and interrupts */
 	/* Load reload value into counter register */
