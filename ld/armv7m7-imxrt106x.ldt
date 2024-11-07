@@ -26,11 +26,15 @@
 /* Space reserved for kernel data */
 #define AREA_KERNEL 0x2000
 
-/* Space reserved for RTT control block and buffers */
-#define SIZE_RTTMEM (2 * 2 * 0x400 + 256)
-
 
 #if defined(__LINKER__)
+
+/* Space reserved for RTT control block and buffers */
+#if defined(CUSTOM_RTT_MAP_SIZE)
+RTT_MAP_SIZE = CUSTOM_RTT_MAP_SIZE;
+#else
+RTT_MAP_SIZE = 0x4000;
+#endif
 
 /* FlexRAM configuration */
 #if defined(CUSTOM_FLEXRAM_CONFIG)
@@ -54,8 +58,8 @@ MEMORY
 	/* TODO: use FLEXRAM_CONFIG value to setup ocram/itcm/dtcm partitioning (*32k) */
 	m_itcm    (rwx) : ORIGIN = 0x00000000, LENGTH = FLEXRAM_ITCM_AREA
 	m_itext   (rwx) : ORIGIN = FLEXRAM_ITEXT_ADDR, LENGTH = FLEXRAM_ITEXT_AREA
-	m_dtcm    (rw)  : ORIGIN = 0x20000000 + AREA_KERNEL, LENGTH = FLEXRAM_DTCM_AREA - AREA_KERNEL - SIZE_RTTMEM
-	m_rttmem  (rw)  : ORIGIN = 0x20000000 + FLEXRAM_DTCM_AREA - SIZE_RTTMEM, LENGTH = SIZE_RTTMEM
+	m_dtcm    (rw)  : ORIGIN = 0x20000000 + AREA_KERNEL, LENGTH = FLEXRAM_DTCM_AREA - AREA_KERNEL - RTT_MAP_SIZE
+	m_rttmem  (rw)  : ORIGIN = 0x20000000 + FLEXRAM_DTCM_AREA - RTT_MAP_SIZE, LENGTH = RTT_MAP_SIZE
 	m_ocram   (rwx) : ORIGIN = 0x20200000, LENGTH = 0 * 32k
 	m_flash   (rx)  : ORIGIN = 0x70000000, LENGTH = 128k /* Not actual flash size. Initial flash size to be put into FCB block for imxrt BootROM init procedure only */
 }

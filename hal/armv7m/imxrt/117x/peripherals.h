@@ -31,6 +31,22 @@
 #define RTT_ENABLED_PLO 1
 #endif
 
+#ifndef RTT_BUFSZ_CONSOLE_TX
+#define RTT_BUFSZ_CONSOLE_TX 1024
+#endif
+
+#ifndef RTT_BUFSZ_CONSOLE_RX
+#define RTT_BUFSZ_CONSOLE_RX 1024
+#endif
+
+#ifndef RTT_BUFSZ_PHOENIXD_TX
+#define RTT_BUFSZ_PHOENIXD_TX 1024
+#endif
+
+#ifndef RTT_BUFSZ_PHOENIXD_RX
+#define RTT_BUFSZ_PHOENIXD_RX 1024
+#endif
+
 
 /* UART */
 

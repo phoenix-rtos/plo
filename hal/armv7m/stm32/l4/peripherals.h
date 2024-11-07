@@ -22,6 +22,30 @@
 /* Interrupts */
 #define SIZE_INTERRUPTS (217 + 16)
 
+
+/* DEBUG - RTT PIPE */
+
+#ifndef RTT_ENABLED_PLO
+#define RTT_ENABLED_PLO 0
+#endif
+
+#ifndef RTT_BUFSZ_CONSOLE_TX
+#define RTT_BUFSZ_CONSOLE_TX 1024
+#endif
+
+#ifndef RTT_BUFSZ_CONSOLE_RX
+#define RTT_BUFSZ_CONSOLE_RX 1024
+#endif
+
+#ifndef RTT_BUFSZ_PHOENIXD_TX
+#define RTT_BUFSZ_PHOENIXD_TX 1024
+#endif
+
+#ifndef RTT_BUFSZ_PHOENIXD_RX
+#define RTT_BUFSZ_PHOENIXD_RX 1024
+#endif
+
+
 /* UART */
 #define UART_MAX_CNT 5
 
