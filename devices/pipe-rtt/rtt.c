@@ -55,14 +55,34 @@ struct rtt_desc {
 
 static struct {
 	/* NOTE: each buffer must be aligned to cache line */
-	unsigned char tx[RTT_TXCHANNELS][1024] __attribute__((aligned(32)));
-	unsigned char rx[RTT_RXCHANNELS][1024] __attribute__((aligned(32)));
+	unsigned char consoleTx[RTT_BUFSZ_CONSOLE_TX] __attribute__((aligned(32)));
+	unsigned char consoleRx[RTT_BUFSZ_CONSOLE_RX] __attribute__((aligned(32)));
+	unsigned char phoenixdTx[RTT_BUFSZ_PHOENIXD_TX] __attribute__((aligned(32)));
+	unsigned char phoenixdRx[RTT_BUFSZ_PHOENIXD_RX] __attribute__((aligned(32)));
 } rttBuffers __attribute__((section(".rttmem")));
 
 
 static const char rtt_tagBackward[] = RTT_TAG_BACKWARD;
-static const char *const rtt_txName[RTT_TXCHANNELS] = { "Console TX", "phoenixd TX" };
-static const char *const rtt_rxName[RTT_RXCHANNELS] = { "Console RX", "phoenixd RX" };
+
+
+static const struct {
+	struct {
+		unsigned char *buf;
+		unsigned int bufsz;
+		const char *name;
+	} tx[RTT_TXCHANNELS], rx[RTT_RXCHANNELS];
+} channelDefs = {
+	.tx = {
+		{ rttBuffers.consoleTx, sizeof(rttBuffers.consoleTx), "Console TX" },
+		{ rttBuffers.phoenixdTx, sizeof(rttBuffers.phoenixdTx), "phoenixd TX" },
+	},
+	.rx = {
+		{ rttBuffers.consoleRx, sizeof(rttBuffers.consoleRx), "Console RX" },
+		{ rttBuffers.phoenixdRx, sizeof(rttBuffers.phoenixdRx), "phoenixd RX" },
+	},
+};
+
+
 static volatile struct rtt_desc *rtt = NULL;
 
 
@@ -160,7 +180,7 @@ static ssize_t rtt_writeBlocking(int chan, const void *buf, size_t count)
 
 void rtt_init(void *addr)
 {
-	unsigned int n, m;
+	size_t n, m;
 
 	if (rtt != NULL) {
 		return;
@@ -172,18 +192,18 @@ void rtt_init(void *addr)
 	rtt->txChannels = RTT_TXCHANNELS;
 	rtt->rxChannels = RTT_RXCHANNELS;
 
-	for (n = 0; n < rtt->txChannels; n++) {
-		rtt->txChannel[n].name = rtt_txName[n];
-		rtt->txChannel[n].ptr = rttBuffers.tx[n];
-		rtt->txChannel[n].sz = sizeof(rttBuffers.tx[n]);
+	for (n = 0; n < (sizeof(channelDefs.tx) / sizeof(channelDefs.tx[0])); n++) {
+		rtt->txChannel[n].name = channelDefs.tx[n].name;
+		rtt->txChannel[n].ptr = channelDefs.tx[n].buf;
+		rtt->txChannel[n].sz = channelDefs.tx[n].bufsz;
 		rtt->txChannel[n].wr = 0;
 		rtt->txChannel[n].rd = 0;
 	}
 
-	for (n = 0; n < rtt->rxChannels; n++) {
-		rtt->rxChannel[n].name = rtt_rxName[n];
-		rtt->rxChannel[n].ptr = rttBuffers.rx[n];
-		rtt->rxChannel[n].sz = sizeof(rttBuffers.rx[n]);
+	for (n = 0; n < (sizeof(channelDefs.rx) / sizeof(channelDefs.rx[0])); n++) {
+		rtt->rxChannel[n].name = channelDefs.rx[n].name;
+		rtt->rxChannel[n].ptr = channelDefs.rx[n].buf;
+		rtt->rxChannel[n].sz = channelDefs.rx[n].bufsz;
 		rtt->rxChannel[n].wr = 0;
 		rtt->rxChannel[n].rd = 0;
 	}
