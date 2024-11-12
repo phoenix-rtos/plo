@@ -1,0 +1,90 @@
+/*
+ * Phoenix-RTOS
+ *
+ * Operating system loader
+ *
+ * Linker Template and Platform Config for AArch64 A53 ZynqMP
+ *
+ * Copyright 2021-2024 Phoenix Systems
+ * Author: Gerard Swiderski, Jacek Maksymowicz
+ *
+ * This file is part of Phoenix-RTOS.
+ *
+ * %LICENSE%
+ */
+
+
+#ifndef AARCH64A53_ZYNQMP_LDT
+#define AARCH64A53_ZYNQMP_LDT
+
+/* Platform specific definitions */
+#define SIZE_PAGE  0x1000
+#define SIZE_STACK (4 * SIZE_PAGE)
+#define SIZE_HEAP  (5 * SIZE_PAGE)
+
+#define ADDR_OCRAM  0xfffc0000
+#define SIZE_OCRAM  (256 * 1024)
+
+#define ADDR_DDR 0x00000000
+/* TODO: Size of DDR depends on board, so it should be configurable somehow */
+#define SIZE_DDR (512 * 1024 * 1024)
+
+/* Maximum size of bitstream for Zynq Ultrascale devices is just under 35 MB - round up to MMU section size */
+#define SIZE_BITSTREAM (36 * 1024 * 1024)
+#define ADDR_BITSTREAM (ADDR_DDR + SIZE_DDR - SIZE_BITSTREAM)
+
+/* DDR memory to allocate plo's data */
+#define SIZE_DDR_PLO (4 * 1024 * 1024)
+
+#define ADDR_BUFF_DDR (ADDR_DDR + SIZE_DDR - SIZE_DDR_PLO - SIZE_BITSTREAM)
+#define SIZE_BUFF_DDR (2 * 1024 * 1024)
+
+#define ADDR_UNCACHED_BUFF_DDR (ADDR_BUFF_DDR + SIZE_BUFF_DDR)
+#define SIZE_UNCACHED_BUFF_DDR (2 * 1024 * 1024)
+
+#if defined(__LINKER__)
+
+/* Memory map setup */
+MEMORY
+{
+	m_ocram        (rwx) : ORIGIN = ADDR_OCRAM, LENGTH = SIZE_OCRAM
+	m_ddr          (rw)  : ORIGIN = ADDR_BUFF_DDR, LENGTH = SIZE_BUFF_DDR
+	m_uncached_ddr (rw)  : ORIGIN = ADDR_UNCACHED_BUFF_DDR, LENGTH = SIZE_UNCACHED_BUFF_DDR
+}
+
+REGION_ALIAS("PLO_IMAGE", m_ocram);
+REGION_ALIAS("TCM_TEXT", m_ocram);
+REGION_ALIAS("DATA", m_ocram);
+REGION_ALIAS("BSS", m_ocram);
+REGION_ALIAS("HEAP", m_ocram);
+REGION_ALIAS("STACK", m_ocram);
+REGION_ALIAS("DDR", m_ddr);
+REGION_ALIAS("UNCACHED_DDR", m_uncached_ddr);
+
+#include "common/plo-aarch64.lds"
+
+/* Additional sections */
+SECTIONS
+{
+	.ddr (NOLOAD) :
+	{
+		. = ALIGN(8);
+		__ddr_start = .;
+		*(.ddr*)
+		__ddr_end = .;
+	} > DDR
+
+	.uncached_ddr (NOLOAD) :
+	{
+		. = ALIGN(8);
+		__uncached_ddr_start = .;
+		*(.uncached_ddr*)
+		__uncached_ddr_end = .;
+	} > UNCACHED_DDR
+}
+
+
+#endif /* end of __LINKER__ */
+
+
+#endif /* end of AARCH64A53_ZYNQMP_LDT */
