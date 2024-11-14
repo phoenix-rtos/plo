@@ -25,7 +25,7 @@ endif
 
 LDGEN ?= $(CC)
 
-CFLAGS += -I. -Iinclude
+CFLAGS += -I. -Iinclude -ffreestanding
 CPPFLAGS += -DPAYLOAD_PATH=\"$(PAYLOAD_PATH)\"
 
 ifneq ($(FDT_PATH),)
