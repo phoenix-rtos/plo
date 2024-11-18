@@ -17,12 +17,20 @@
 #ifndef _PERIPHERALS_H_
 #define _PERIPHERALS_H_
 
+#include <board_config.h>
 #include "zynqmp.h"
 
 
 /* UARTs configuration */
-#define UART_BAUDRATE 115200
-#define UART_REF_CLK  49995000 /* close to 50 MHz - description in uart_initCtrlClock() */
+#ifndef UART0_BAUDRATE
+#define UART0_BAUDRATE 921600
+#endif
+
+#ifndef UART1_BAUDRATE
+#define UART1_BAUDRATE 115200
+#endif
+
+#define UART_REF_CLK 49995000 /* close to 50 MHz - description in uart_initCtrlClock() */
 
 
 #define UARTS_MAX_CNT 2

@@ -14,7 +14,7 @@
  */
 
 #include <hal/hal.h>
-#include <devices/gpio-zynq7000/gpio.h>
+#include <devices/gpio-zynq/gpio.h>
 
 #include "../mmu.h"
 #include "../cache.h"

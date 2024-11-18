@@ -14,6 +14,7 @@
  */
 
 #include <hal/hal.h>
+#include <devices/gpio-zynq/gpio.h>
 
 #include "../mmu.h"
 #include "../cache.h"
@@ -99,6 +100,7 @@ void hal_init(void)
 	hal_memoryInit();
 	interrupts_init();
 
+	gpio_init();
 	timer_init();
 	console_init();
 

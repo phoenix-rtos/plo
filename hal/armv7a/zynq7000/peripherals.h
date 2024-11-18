@@ -17,12 +17,20 @@
 #ifndef _PERIPHERALS_H_
 #define _PERIPHERALS_H_
 
+#include <board_config.h>
 #include "zynq.h"
 
 
 /* UARTs configuration */
-#define UART_BAUDRATE 115200
-#define UART_REF_CLK  50000000 /* 50 MHz - description in _zynq_peripherals() */
+#ifndef UART0_BAUDRATE
+#define UART0_BAUDRATE 115200
+#endif
+
+#ifndef UART1_BAUDRATE
+#define UART1_BAUDRATE 115200
+#endif
+
+#define UART_REF_CLK 50000000 /* 50 MHz - description in uart_initCtrlClock() */
 
 
 #define UARTS_MAX_CNT 2
@@ -63,5 +71,9 @@
 
 /* GPIO */
 #define GPIO_BASE_ADDR ((void *)0xe000a000)
+
+
+/* QSPI*/
+#define QSPI_BASE_ADDR ((void *)0xe000d000)
 
 #endif

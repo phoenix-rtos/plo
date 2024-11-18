@@ -15,7 +15,7 @@
 
 #include "client.h"
 #include "usbphy.h"
-#include <devices/gpio-zynq7000/gpio.h>
+#include <devices/gpio-zynq/gpio.h>
 
 
 struct {
