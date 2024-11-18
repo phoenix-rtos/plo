@@ -26,6 +26,7 @@
 typedef struct {
 	volatile u32 *base;
 	unsigned int irq;
+	int reset;
 	u16 clk;
 
 	u8 dataRx[BUFFER_SIZE];
@@ -50,17 +51,33 @@ struct {
 
 /* TODO: specific uart information should be get from a device tree,
  *       using hardcoded defines is a temporary solution           */
+#if defined(__CPU_ZYNQ7000)
 const struct {
 	volatile u32 *base;
 	unsigned int irq;
 	u16 clk;
 	u16 rxPin;
 	u16 txPin;
+	u32 baudrate;
 } info[UARTS_MAX_CNT] = {
-	{ UART0_BASE_ADDR, UART0_IRQ, UART0_CLK, UART0_RX, UART0_TX },
-	{ UART1_BASE_ADDR, UART1_IRQ, UART1_CLK, UART1_RX, UART1_TX }
+	{ UART0_BASE_ADDR, UART0_IRQ, UART0_CLK, UART0_RX, UART0_TX, UART0_BAUDRATE },
+	{ UART1_BASE_ADDR, UART1_IRQ, UART1_CLK, UART1_RX, UART1_TX, UART1_BAUDRATE },
 };
-
+#elif defined(__CPU_ZYNQMP)
+const struct {
+	volatile u32 *base;
+	unsigned int irq;
+	int rst;
+	u16 rxPin;
+	u16 txPin;
+	u32 baudrate;
+} info[UARTS_MAX_CNT] = {
+	{ UART0_BASE_ADDR, UART0_IRQ, UART0_RESET, UART0_RX, UART0_TX, UART0_BAUDRATE },
+	{ UART1_BASE_ADDR, UART1_IRQ, UART1_RESET, UART1_RX, UART1_TX, UART1_BAUDRATE },
+};
+#else
+#error "Unsupported platform"
+#endif
 
 static inline void uart_rxData(uart_t *uart)
 {
@@ -146,6 +163,7 @@ static int uart_calcBaudarate(uart_t *uart, int baudrate)
 }
 
 
+#if defined(__CPU_ZYNQ7000)
 static int uart_setPin(u32 pin)
 {
 	ctl_mio_t ctl;
@@ -192,6 +210,55 @@ static void uart_initCtrlClock(void)
 
 	_zynq_setCtlClock(&ctl);
 }
+#elif defined(__CPU_ZYNQMP)
+static int uart_setPin(u32 pin)
+{
+	ctl_mio_t ctl;
+
+	/* Set default properties for UART's pins */
+	ctl.pin = pin;
+	ctl.l0 = ctl.l1 = ctl.l2 = 0;
+	ctl.l3 = 0x6;
+	ctl.config = MIO_SLOW_nFAST | MIO_PULL_UP_nDOWN | MIO_PULL_ENABLE;
+
+	switch (pin) {
+		case UART0_RX: /* Fall-through */
+		case UART1_RX:
+			ctl.config |= MIO_TRI_ENABLE;
+			break;
+
+		case UART0_TX: /* Fall-through */
+		case UART1_TX:
+			/* Do nothing */
+			break;
+
+		default:
+			return -EINVAL;
+	}
+
+	return _zynqmp_setMIO(&ctl);
+}
+
+
+static void uart_initCtrlClock(void)
+{
+	ctl_clock_t ctl;
+
+	/* Set IO PLL as source clock and set divider:
+	 * IO_PLL / 0x14 :  999.9 MHz / 20 = 50 MHz     */
+	ctl.dev = ctl_clock_dev_lpd_uart0;
+	ctl.active = 1;
+	ctl.src = 0;
+	ctl.div0 = 20;
+	ctl.div1 = 0;
+	_zynqmp_setCtlClock(&ctl);
+
+	ctl.dev = ctl_clock_dev_lpd_uart1;
+	_zynqmp_setCtlClock(&ctl);
+}
+#else
+#error "Unsupported platform"
+#endif
 
 
 /* Device interface */
@@ -309,7 +376,12 @@ static int uart_done(unsigned int minor)
 	*(uart->base + isr) = 0xfff;
 
 	hal_interruptsSet(uart->irq, NULL, NULL);
+
+#if defined(__CPU_ZYNQ7000)
 	_zynq_setAmbaClk(uart->clk, clk_disable);
+#elif defined(__CPU_ZYNQMP)
+	_zynqmp_devReset(uart->reset, 1);
+#endif
 
 	return EOK;
 }
@@ -345,7 +417,13 @@ static int uart_init(unsigned int minor)
 	uart = &uart_common.uarts[minor];
 
 	uart->irq = info[minor].irq;
+#if defined(__CPU_ZYNQ7000)
 	uart->clk = info[minor].clk;
+	uart->reset = 0;
+#elif defined(__CPU_ZYNQMP)
+	uart->clk = 0;
+	uart->reset = info[minor].rst;
+#endif
 	uart->base = info[minor].base;
 
 	lib_cbufInit(&uart->cbuffTx, uart->dataTx, BUFFER_SIZE);
@@ -353,8 +431,14 @@ static int uart_init(unsigned int minor)
 
 	/* Skip controller initialization if it has been already done by hal */
 	if (!(*(uart->base + cr) & (1 << 4 | 1 << 2))) {
+#if defined(__CPU_ZYNQ7000)
 		if (_zynq_setAmbaClk(info[minor].clk, clk_enable) < 0)
 			return -EINVAL;
+#elif defined(__CPU_ZYNQMP)
+		if (_zynqmp_devReset(info[minor].rst, 0) < 0)
+			return -EINVAL;
+#endif
+
 
 		if (uart_setPin(info[minor].rxPin) < 0 || uart_setPin(info[minor].txPin) < 0)
 			return -EINVAL;
@@ -370,7 +454,7 @@ static int uart_init(unsigned int minor)
 		/* Disable TX and RX */
 		*(uart->base + cr) = (*(uart->base + cr) & ~0x000001ff) | 0x00000028;
 
-		uart_calcBaudarate(uart, UART_BAUDRATE);
+		uart_calcBaudarate(uart, info[minor].baudrate);
 
 		/* Uart Control Register
 			* TXEN = 0x1; RXEN = 0x1; TXRES = 0x1; RXRES = 0x1 */
@@ -391,7 +475,7 @@ static int uart_init(unsigned int minor)
 
 __attribute__((constructor)) static void uart_reg(void)
 {
-	static const dev_ops_t opsUartZynq7K = {
+	static const dev_ops_t opsUartZynq = {
 		.read = uart_read,
 		.write = uart_safeWrite,
 		.erase = NULL,
@@ -399,12 +483,12 @@ __attribute__((constructor)) static void uart_reg(void)
 		.map = uart_map,
 	};
 
-	static const dev_t devUartZynq7K = {
-		.name = "uart-zynq7000",
+	static const dev_t devUartZynq = {
+		.name = "uart-zynq",
 		.init = uart_init,
 		.done = uart_done,
-		.ops = &opsUartZynq7K,
+		.ops = &opsUartZynq,
 	};
 
-	devs_register(DEV_UART, UARTS_MAX_CNT, &devUartZynq7K);
+	devs_register(DEV_UART, UARTS_MAX_CNT, &devUartZynq);
 }
