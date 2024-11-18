@@ -63,6 +63,7 @@ REGION_ALIAS("HEAP", m_ocram_low);
 REGION_ALIAS("STACK", m_ocram_low);
 REGION_ALIAS("DDR", m_ddr);
 REGION_ALIAS("UNCACHED_DDR", m_uncached_ddr);
+REGION_ALIAS("OCRAM_HIGH", m_ocram_high);
 
 #include "common/plo-arm.lds"
 
@@ -84,6 +85,14 @@ SECTIONS
 		*(.uncached_ddr*)
 		__uncached_ddr_end = .;
 	} > UNCACHED_DDR
+
+	.ocram_high (NOLOAD) :
+	{
+		. = ALIGN(4);
+		__ocram_high_start = .;
+		*(.ocram_high*)
+		__ocram_high_end = .;
+	} > OCRAM_HIGH
 }
 
 

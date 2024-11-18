@@ -14,7 +14,7 @@ CFLAGS += -DVADDR_KERNEL_INIT=$(VADDR_KERNEL_INIT)
 PLO_COMMANDS ?= alias app bitstream blob call console copy devices dump echo erase go help jffs2 kernel \
   map mem phfs reboot script stop test-ddr test-dev wait
 
-PLO_ALLDEVICES := ram-storage
+PLO_ALLDEVICES := ram-storage gpio-zynq7000 uart-zynq7000 flash-zynq7000
 
 OBJS += $(addprefix $(PREFIX_O)hal/$(TARGET_SUFF)/$(TARGET_SUBFAMILY)/, _init.o hal.o zynqmp.o timer.o \
   ddr_init.o interrupts.o console.o)
