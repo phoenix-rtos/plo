@@ -207,6 +207,7 @@ ssize_t qspi_polledTransfer(const u8 *txBuff, u8 *rxBuff, size_t size, time_t ti
 }
 
 
+#if defined(__CPU_ZYNQ7000)
 static int qspi_setPin(u32 pin)
 {
 	ctl_mio_t ctl;
@@ -254,6 +255,52 @@ static int qspi_initCtrlClk(void)
 
 	return _zynq_setCtlClock(&ctl);
 }
+#elif defined(__CPU_ZYNQMP)
+static int qspi_setPin(u32 pin)
+{
+	ctl_mio_t ctl;
+
+	/* Pin should not be configured by the driver */
+	if (pin < 0) {
+		return EOK;
+	}
+
+	if (pin > mio_pin_06) {
+		return -EINVAL;
+	}
+
+	ctl.pin = pin;
+	ctl.l0 = 0x1;
+	ctl.l1 = 0;
+	ctl.l2 = 0;
+	ctl.l3 = 0;
+	ctl.config = 0;
+
+	if (pin == QSPI_CS) {
+		ctl.config |= MIO_PULL_UP_nDOWN | MIO_PULL_ENABLE;
+	}
+
+	return _zynqmp_setMIO(&ctl);
+}
+
+
+static int qspi_initCtrlClk(void)
+{
+	ctl_clock_t ctl;
+
+	/* Set IO PLL as source clock and set divider:
+	 * IO_PLL / 0x5 :  1000 MHz / 5 = 200 MHz     */
+	ctl.dev = ctl_clock_dev_lpd_qspi;
+	ctl.src = 0;
+	ctl.div0 = 5;
+	ctl.div1 = 0;
+	ctl.active = 0x1;
+
+	return _zynqmp_setCtlClock(&ctl);
+}
+#else
+#error "Unsupported platform"
+#endif
 
 
 /* Linear mode allows only for reading data.
@@ -347,7 +394,11 @@ int qspi_deinit(void)
 {
 	qspi_stop();
 
+#if defined(__CPU_ZYNQ7000)
 	return _zynq_setAmbaClk(amba_lqspi_clk, clk_disable);
+#elif defined(__CPU_ZYNQMP)
+	return _zynqmp_devReset(ctl_reset_lpd_qspi, 1);
+#endif
 }
 
 
@@ -355,12 +406,19 @@ int qspi_init(void)
 {
 	int res;
 
-	qspi_common.base = (void *)0xe000d000;
+	qspi_common.base = (void *)QSPI_BASE_ADDR;
 
+#if defined(__CPU_ZYNQ7000)
 	res = _zynq_setAmbaClk(amba_lqspi_clk, clk_enable);
 	if (res < 0) {
 		return res;
 	}
+#elif defined(__CPU_ZYNQMP)
+	res = _zynqmp_devReset(ctl_reset_lpd_qspi, 0);
+	if (res < 0) {
+		return res;
+	}
+#endif
 
 	res = qspi_initCtrlClk();
 	if (res < 0) {
