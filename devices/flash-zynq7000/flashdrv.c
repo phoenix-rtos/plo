@@ -24,6 +24,14 @@
 #define MAX_SIZE_CMD   0x20
 
 
+#if defined(__CPU_ZYNQ7000)
+#define BUFFER_ATTRIBUTE __attribute__((section(".ocram_high")))
+#else
+#define BUFFER_ATTRIBUTE
+#endif
+
+
+static u8 fdrvBuffer[65536] BUFFER_ATTRIBUTE;
 struct {
 	/* Buffers for command transactions */
 	u8 cmdRx[MAX_SIZE_CMD];
@@ -596,8 +604,7 @@ static int flashdrv_init(unsigned int minor)
 	fdrv_common.sectID = (u32)-1;
 	fdrv_common.buffPos = 0;
 
-	/* FIXME: temp solution to allocate buffer in high OCRAM (64KB) */
-	fdrv_common.buff = (void *)ADDR_OCRAM_HIGH;
+	fdrv_common.buff = fdrvBuffer;
 
 	res = qspi_init();
 	if (res < 0) {
@@ -615,7 +622,7 @@ static int flashdrv_init(unsigned int minor)
 	}
 
 	for (i = 0; i < info->cfi.regsCount; ++i) {
-		if (CFI_SIZE_SECTION(info->cfi.regs[i].size) > SIZE_OCRAM_HIGH) {
+		if (CFI_SIZE_SECTION(info->cfi.regs[i].size) > sizeof(fdrvBuffer)) {
 			return -EINVAL;
 		}
 	}
