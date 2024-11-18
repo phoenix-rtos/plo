@@ -95,7 +95,7 @@ void hal_init(void)
 	interrupts_init();
 	asm volatile("msr daifClr, #4"); /* Enable synchronous abort */
 
-	//gpio_init();
+	gpio_init();
 	timer_init();
 	console_init();
 

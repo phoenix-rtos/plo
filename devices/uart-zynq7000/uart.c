@@ -26,6 +26,7 @@
 typedef struct {
 	volatile u32 *base;
 	unsigned int irq;
+	int reset;
 	u16 clk;
 
 	u8 dataRx[BUFFER_SIZE];
@@ -50,6 +51,7 @@ struct {
 
 /* TODO: specific uart information should be get from a device tree,
  *       using hardcoded defines is a temporary solution           */
+#if defined(__CPU_ZYNQ7000)
 const struct {
 	volatile u32 *base;
 	unsigned int irq;
@@ -60,7 +62,20 @@ const struct {
 	{ UART0_BASE_ADDR, UART0_IRQ, UART0_CLK, UART0_RX, UART0_TX },
 	{ UART1_BASE_ADDR, UART1_IRQ, UART1_CLK, UART1_RX, UART1_TX }
 };
-
+#elif defined(__CPU_ZYNQMP)
+const struct {
+	volatile u32 *base;
+	unsigned int irq;
+	int rst;
+	u16 rxPin;
+	u16 txPin;
+} info[UARTS_MAX_CNT] = {
+	{ UART0_BASE_ADDR, UART0_IRQ, UART0_RESET, UART0_RX, UART0_TX },
+	{ UART1_BASE_ADDR, UART1_IRQ, UART1_RESET, UART1_RX, UART1_TX }
+};
+#else
+#error "Unsupported platform"
+#endif
 
 static inline void uart_rxData(uart_t *uart)
 {
@@ -146,6 +161,7 @@ static int uart_calcBaudarate(uart_t *uart, int baudrate)
 }
 
 
+#if defined(__CPU_ZYNQ7000)
 static int uart_setPin(u32 pin)
 {
 	ctl_mio_t ctl;
@@ -192,6 +208,55 @@ static void uart_initCtrlClock(void)
 
 	_zynq_setCtlClock(&ctl);
 }
+#elif defined(__CPU_ZYNQMP)
+static int uart_setPin(u32 pin)
+{
+	ctl_mio_t ctl;
+
+	/* Set default properties for UART's pins */
+	ctl.pin = pin;
+	ctl.l0 = ctl.l1 = ctl.l2 = 0;
+	ctl.l3 = 0x6;
+	ctl.config = MIO_SLOW_nFAST | MIO_PULL_UP_nDOWN | MIO_PULL_ENABLE;
+
+	switch (pin) {
+		case UART0_RX: /* Fall-through */
+		case UART1_RX:
+			ctl.config |= MIO_TRI_ENABLE;
+			break;
+
+		case UART0_TX: /* Fall-through */
+		case UART1_TX:
+			/* Do nothing */
+			break;
+
+		default:
+			return -EINVAL;
+	}
+
+	return _zynqmp_setMIO(&ctl);
+}
+
+
+static void uart_initCtrlClock(void)
+{
+	ctl_clock_t ctl;
+
+	/* Set IO PLL as source clock and set divider:
+	 * IO_PLL / 0x14 :  999.9 MHz / 20 = 50 MHz     */
+	ctl.dev = ctl_clock_dev_lpd_uart0;
+	ctl.basic_gen.active = 1;
+	ctl.basic_gen.src = 0;
+	ctl.basic_gen.div0 = 20;
+	ctl.basic_gen.div1 = 0; /* TODO: does setting a value of 0 bypass the divider? */
+	_zynqmp_setCtlClock(&ctl);
+
+	ctl.dev = ctl_clock_dev_lpd_uart1;
+	_zynqmp_setCtlClock(&ctl);
+}
+#else
+#error "Unsupported platform"
+#endif
 
 
 /* Device interface */
@@ -309,7 +374,12 @@ static int uart_done(unsigned int minor)
 	*(uart->base + isr) = 0xfff;
 
 	hal_interruptsSet(uart->irq, NULL, NULL);
+
+#if defined(__CPU_ZYNQ7000)
 	_zynq_setAmbaClk(uart->clk, clk_disable);
+#elif defined(__CPU_ZYNQMP)
+	_zynqmp_devReset(uart->reset, 1);
+#endif
 
 	return EOK;
 }
@@ -345,7 +415,13 @@ static int uart_init(unsigned int minor)
 	uart = &uart_common.uarts[minor];
 
 	uart->irq = info[minor].irq;
+#if defined(__CPU_ZYNQ7000)
 	uart->clk = info[minor].clk;
+	uart->reset = 0;
+#elif defined(__CPU_ZYNQMP)
+	uart->clk = 0;
+	uart->reset = info[minor].rst;
+#endif
 	uart->base = info[minor].base;
 
 	lib_cbufInit(&uart->cbuffTx, uart->dataTx, BUFFER_SIZE);
@@ -353,8 +429,14 @@ static int uart_init(unsigned int minor)
 
 	/* Skip controller initialization if it has been already done by hal */
 	if (!(*(uart->base + cr) & (1 << 4 | 1 << 2))) {
+#if defined(__CPU_ZYNQ7000)
 		if (_zynq_setAmbaClk(info[minor].clk, clk_enable) < 0)
 			return -EINVAL;
+#elif defined(__CPU_ZYNQMP)
+		if (_zynqmp_devReset(info[minor].rst, 0) < 0)
+			return -EINVAL;
+#endif
+
 
 		if (uart_setPin(info[minor].rxPin) < 0 || uart_setPin(info[minor].txPin) < 0)
 			return -EINVAL;
