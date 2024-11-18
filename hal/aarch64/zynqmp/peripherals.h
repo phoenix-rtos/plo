@@ -21,8 +21,9 @@
 
 
 /* UARTs configuration */
-#define UART_BAUDRATE 115200
-#define UART_REF_CLK  49995000 /* close to 50 MHz - description in uart_initCtrlClock() */
+#define UART0_BAUDRATE 921600
+#define UART1_BAUDRATE 115200
+#define UART_REF_CLK   49995000 /* close to 50 MHz - description in uart_initCtrlClock() */
 
 
 #define UARTS_MAX_CNT 2
