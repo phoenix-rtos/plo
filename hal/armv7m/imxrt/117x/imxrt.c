@@ -16,6 +16,7 @@
 #include "imxrt.h"
 #include "../../cpu.h"
 #include "../otp.h"
+#include "board_config.h"
 
 #include <hal/hal.h>
 #include <lib/lib.h>
@@ -828,7 +829,7 @@ int _imxrt_setPfdPllFracClock(u8 pfd, u8 clk_pll, u8 frac)
 }
 
 
-static void _imxrt_deinitSysPll1(void)
+__attribute__((unused)) static void _imxrt_deinitSysPll1(void)
 {
 	/* Disable PLL1 and div2, div5 */
 	*(imxrt_common.anadig_pll + sys_pll1_ctrl) &= ~((1uL << 26u) | (1uL << 25u) | (1uL << 13u));
@@ -847,6 +848,59 @@ static void _imxrt_deinitSysPll1(void)
 
 	/* Disable Internal LDO */
 	_imxrt_vddsoc2PllAiWrite(vddsoc2pll_ai_ctrl_1g, frac_pll_ctrl0_clr, (1uL << 22u));
+}
+
+
+__attribute__((unused)) static void _imxrt_initSysPll1(void)
+{
+	_imxrt_pmuEnablePllLdo();
+
+	_imxrt_setPllBypass(clk_pllsys1, 1);
+
+	/* Enable SYS_PLL1 clk output */
+	*(imxrt_common.anadig_pll + sys_pll1_ctrl) |= (1uL << 13u);
+
+	/* Configure Fractional PLL: div, num, denom */
+	_imxrt_vddsoc2PllAiWrite(vddsoc2pll_ai_ctrl_1g, frac_pll_ctrl0_set, 41u);
+	_imxrt_vddsoc2PllAiWrite(vddsoc2pll_ai_ctrl_1g, frac_pll_denom, 0x0fffffff);
+	_imxrt_vddsoc2PllAiWrite(vddsoc2pll_ai_ctrl_1g, frac_pll_num, 0x0aaaaaaa);
+	/* Disable SS */
+	_imxrt_vddsoc2PllAiWrite(vddsoc2pll_ai_ctrl_1g, frac_pll_ss_clr, (1uL << 15));
+
+	/* Enable Internal LDO */
+	_imxrt_vddsoc2PllAiWrite(vddsoc2pll_ai_ctrl_1g, frac_pll_ctrl0_set, (1uL << 22u));
+	_imxrt_delay(100u * 1000u);
+
+	/* POWERUP */
+	_imxrt_vddsoc2PllAiWrite(vddsoc2pll_ai_ctrl_1g, frac_pll_ctrl0_set, (1uL << 14u) | (1uL << 13u));
+
+	/* assert HOLD_RING_OFF */
+	_imxrt_vddsoc2PllAiWrite(vddsoc2pll_ai_ctrl_1g, frac_pll_ctrl0_set, (1uL << 13u));
+	/* Wait until PLL lock time is halfway through */
+	/* Lock time is 11250 ref cycles */
+	_imxrt_delay(5625u);
+	/* de-assert HOLD_RING_OFF */
+	_imxrt_vddsoc2PllAiWrite(vddsoc2pll_ai_ctrl_1g, frac_pll_ctrl0_clr, (1uL << 13u));
+
+	/* Wait till PLL lock time is complete */
+	while ((*(imxrt_common.anadig_pll + sys_pll1_ctrl) & (1uL << 29u)) != (1uL << 29u)) {
+	}
+
+	/* Enable PLL1 */
+	_imxrt_vddsoc2PllAiWrite(vddsoc2pll_ai_ctrl_1g, frac_pll_ctrl0_set, (1uL << 15u));
+
+	/* Disable PLL gate */
+	*(imxrt_common.anadig_pll + sys_pll1_ctrl) &= ~(1uL << 14u);
+
+#ifdef CLOCK_SYS_PLL1DIV2_ENABLE
+	*(imxrt_common.anadig_pll + sys_pll1_ctrl) |= (1uL << 25);
+#endif
+
+#ifdef CLOCK_SYS_PLL1DIV5_ENABLE
+	*(imxrt_common.anadig_pll + sys_pll1_ctrl) |= (1uL << 26);
+#endif
+
+	_imxrt_setPllBypass(clk_pllsys1, 0);
 }
 
 
@@ -1009,11 +1063,13 @@ static void _imxrt_initClocks(void)
 	/* imxrt_common.cpuclk = 696000000u; */
 #endif
 
+#ifdef CLOCK_SYS_PLL1_ENABLE
+	_imxrt_initSysPll1();
+#else
+	/* Bypass and deinitialize SYS_PLL1 */
 	_imxrt_setPllBypass(clk_pllsys1, 1);
-
-	/* Deinit 1Gig ethernet PLL */
 	_imxrt_deinitSysPll1();
-
+#endif
 	/* TODO: Init PLL2 fixed 528 MHz */
 	/* _imxrt_initSysPll2(); */
 
