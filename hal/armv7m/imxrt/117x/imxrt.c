@@ -852,6 +852,54 @@ static void _imxrt_deinitSysPll1(void)
 }
 
 
+static void _imxrt_initSysPll1(void)
+{
+	_imxrt_pmuEnablePllLdo();
+
+	_imxrt_setPllBypass(clk_pllsys1, 1);
+
+	/* Enable SYS_PLL1 clk output */
+	*(imxrt_common.anadig_pll + sys_pll1_ctrl) |= (1uL << 13u);
+
+	/* Configure Fractional PLL: div, num, denom */
+	_imxrt_vddsoc2PllAiWrite(vddsoc2pll_ai_ctrl_1g, frac_pll_ctrl0_set, 41u);
+	_imxrt_vddsoc2PllAiWrite(vddsoc2pll_ai_ctrl_1g, frac_pll_denom, 0x0fffffff);
+	_imxrt_vddsoc2PllAiWrite(vddsoc2pll_ai_ctrl_1g, frac_pll_num, 0x0aaaaaaa);
+	/* Disable SS */
+	_imxrt_vddsoc2PllAiWrite(vddsoc2pll_ai_ctrl_1g, frac_pll_ss_clr, (1uL << 15));
+
+	/* Enable ldo */
+	_imxrt_vddsoc2PllAiWrite(vddsoc2pll_ai_ctrl_1g, frac_pll_ctrl0_set, (1uL << 22u));
+	_imxrt_delay(100u * 1000u);
+
+	/* POWERUP */
+	_imxrt_vddsoc2PllAiWrite(vddsoc2pll_ai_ctrl_1g, frac_pll_ctrl0_set, (1uL << 14u) | (1uL << 13u));
+
+	/* assert HOLD_RING_OFF */
+	_imxrt_vddsoc2PllAiWrite(vddsoc2pll_ai_ctrl_1g, frac_pll_ctrl0_set, (1uL << 13u));
+	/* Wait until PLL lock time is halfway through */
+	/* Lock time is 11250 ref cycles */
+	_imxrt_delay(5625u);
+	/* de-assert HOLD_RING_OFF */
+	_imxrt_vddsoc2PllAiWrite(vddsoc2pll_ai_ctrl_1g, frac_pll_ctrl0_clr, (1uL << 13u));
+
+	/* Wait till PLL lock time is complete */
+	while ((*(imxrt_common.anadig_pll + sys_pll1_ctrl) & (1uL << 29u)) != (1uL << 29u)) {
+	}
+
+	/* Enable PLL1 */
+	_imxrt_vddsoc2PllAiWrite(vddsoc2pll_ai_ctrl_1g, frac_pll_ctrl0_set, (1uL << 15u));
+
+	/* Disable PLL gate */
+	*(imxrt_common.anadig_pll + sys_pll1_ctrl) &= ~(1uL << 14u);
+
+	/* Enable PLL1_DIV2 output for ENET module */
+	*(imxrt_common.anadig_pll + sys_pll1_ctrl) |= (1uL << 25);
+
+	_imxrt_setPllBypass(clk_pllsys1, 0);
+}
+
+
 static void _imxrt_initClockTree(void)
 {
 	unsigned n;
@@ -1011,10 +1059,8 @@ static void _imxrt_initClocks(void)
 	/* imxrt_common.cpuclk = 696000000u; */
 #endif
 
-	_imxrt_setPllBypass(clk_pllsys1, 1);
-
-	/* Deinit 1Gig ethernet PLL */
-	_imxrt_deinitSysPll1();
+	/* Initialize 1Gig ethernet PLL */
+	_imxrt_initSysPll1();
 
 	/* TODO: Init PLL2 fixed 528 MHz */
 	/* _imxrt_initSysPll2(); */
