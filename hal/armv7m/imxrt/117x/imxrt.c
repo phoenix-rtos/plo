@@ -46,8 +46,9 @@ enum {
 	/* OSC */
 	osc_48m_ctrl = 0x04, osc_24m_ctrl = 0x08, osc_400m_ctrl0 = 0x10, osc_400m_ctrl1 = 0x14, osc_400m_ctrl2 = 0x18,
 	osc_16m_ctrl = 0x30,
+
 	/* PLL */
-	arm_pll_ctrl = 0x80, sys_pll3_ctrl = 0x84, sys_pll3_update= 0x88, sys_pll3_pfd = 0x8c,
+	arm_pll_ctrl = 0x80, sys_pll3_ctrl = 0x84, sys_pll3_update = 0x88, sys_pll3_pfd = 0x8c,
 	sys_pll2_ctrl = 0x90, sys_pll2_update = 0x94, sys_pll2_ss = 0x98, sys_pll2_pfd = 0x9c,
 	sys_pll2_mfd = 0xa8, sys_pll1_ss = 0xac, sys_pll1_ctrl = 0xb0, sys_pll1_denominator = 0xb4,
 	sys_pll1_numerator = 0xb8, sys_pll1_div_select = 0xbc, pll_audio_ctrl = 0xc0, pll_audio_ss = 0xc4,
@@ -58,11 +59,21 @@ enum {
 	pmu_ldo_pll = 0x140, pmu_ldo_lpsr_ana = 0x144, pmu_ldo_lpsr_dig2 = 0x148, pmu_ldo_lpsr_dig = 0x14c,
 	pmu_ref_ctrl = 0x15c,
 
-
 	/* ANATOP AI */
-	vddsoc_ai_ctrl = 0x208, vddsoc_ai_wdata = 0x20c, vddsoc_ai_rdata = 0x210
+	vddsoc_ai_ctrl = 0x208, vddsoc_ai_wdata = 0x20c, vddsoc_ai_rdata = 0x210,
+	vddsoc2pll_ai_ctrl_1g = 0x214, vddsoc2pll_ai_wdata_1g = 0x218, vddsoc2pll_ai_rdata_1g = 0x21c,
+	vddsoc2pll_ai_ctrl_audio = 0x220, vddsoc2pll_ai_wdata_audio = 0x224, vddsoc2pll_ai_rdata_audio = 0x228,
+	vddsoc2pll_ai_ctrl_video = 0x22c, vddsoc2pll_ai_wdata_video = 0x230, vddsoc2pll_ai_rdata_video = 0x234
 };
 
+
+/* Fractional PLL (AI interface) */
+enum {
+	frac_pll_ctrl0 = 0x00, frac_pll_ctrl0_set = 0x04, frac_pll_ctrl0_clr = 0x08, frac_pll_ctrl0_tog = 0x0c,
+	frac_pll_ss = 0x10, frac_pll_ss_set = 0x14, frac_pll_ss_clr = 0x18, frac_pll_ss_tog = 0x1c,
+	frac_pll_num = 0x20, frac_pll_num_set = 0x24, frac_pll_num_clr = 0x28, frac_pll_num_tog = 0x2c,
+	frac_pll_denom = 0x30, frac_pll_denom_set = 0x34, frac_pll_denom_clr = 0x38, frac_pll_denom_tog = 0x3c
+};
 
 struct {
 	volatile u32 *aips[4];
@@ -456,6 +467,58 @@ static void _imxrt_delay(u32 ticks)
 		__asm__ volatile ("nop");
 		/* clang-format on */
 	}
+}
+
+
+static u32 _imxrt_vddsoc2PllAiRead(int ai_ctrl_addr, int ai_reg)
+{
+	u32 pre_tog_done, tog_done, t;
+
+	pre_tog_done = *(imxrt_common.anadig_pll + ai_ctrl_addr) & (1uL << 9u);
+
+	t = *(imxrt_common.anadig_pll + ai_ctrl_addr) & ~((1uL << 16u) | 0xff);
+	t |= (1uL << 16u) | (ai_reg & 0xff);
+
+	/* Write AI_CTRL, RWB=1 */
+	*(imxrt_common.anadig_pll + ai_ctrl_addr) = t;
+
+	/* Toggle AI_CTRL */
+	*(imxrt_common.anadig_pll + ai_ctrl_addr) ^= (1uL << 8u);
+
+	tog_done = *(imxrt_common.anadig_pll + ai_ctrl_addr) & (1uL << 9u);
+
+	/* Wait for TOGGLE_DONE */
+	do {
+		tog_done = *(imxrt_common.anadig_pll + ai_ctrl_addr) & (1uL << 9u);
+	} while (tog_done == pre_tog_done);
+
+	/* Read AI_RDATA */
+	return *(imxrt_common.anadig_pll + (ai_ctrl_addr + 0x8));
+}
+
+
+static void _imxrt_vddsoc2PllAiWrite(int ai_ctrl_addr, int ai_reg, u32 data)
+{
+	u32 pre_tog_done, tog_done, t;
+
+	pre_tog_done = *(imxrt_common.anadig_pll + ai_ctrl_addr) & (1uL << 9u);
+
+	t = *(imxrt_common.anadig_pll + ai_ctrl_addr) & ~((1uL << 16u) | 0xff);
+	t |= ai_reg & 0xff;
+
+	/* Write AI_CTRL, RWB=0 */
+	*(imxrt_common.anadig_pll + ai_ctrl_addr) = t;
+
+	/* Write AI_WDATA */
+	*(imxrt_common.anadig_pll + (ai_ctrl_addr + 0x4)) = data;
+
+	/* Toggle AI_CTRL */
+	*(imxrt_common.anadig_pll + ai_ctrl_addr) ^= (1uL << 8u);
+
+	/* Wait for TOGGLE_DONE */
+	do {
+		tog_done = *(imxrt_common.anadig_pll + ai_ctrl_addr) & (1uL << 9u);
+	} while (tog_done == pre_tog_done);
 }
 
 
