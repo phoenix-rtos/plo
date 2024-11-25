@@ -94,7 +94,7 @@ enum { src_scr = 0, src_sbmr1, src_srsr, src_sbmr2 = 7, src_gpr1, src_gpr2, src_
 enum { wdog_wcr = 0, wdog_wsr, wdog_wrsr, wdog_wicr, wdog_wmcr };
 
 
-enum { rtwdog_cs = 0, rtwdog_cnt, rtwdog_total, rtwdog_win };
+enum { rtwdog_cs = 0, rtwdog_cnt, rtwdog_toval, rtwdog_win };
 
 /* clang-format on */
 
@@ -1625,7 +1625,7 @@ void _imxrt_init(void)
 	}
 
 	*(imxrt_common.rtwdog + rtwdog_cnt) = 0xd928c520; /* Update key */
-	*(imxrt_common.rtwdog + rtwdog_total) = 0xffff;
+	*(imxrt_common.rtwdog + rtwdog_toval) = 0xffff;
 	*(imxrt_common.rtwdog + rtwdog_cs) = (*(imxrt_common.rtwdog + rtwdog_cs) & ~(1 << 7)) | (1 << 5);
 
 	/* Disable Systick which might be enabled by bootrom */
