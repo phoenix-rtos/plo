@@ -532,9 +532,7 @@ static void _imxrt_setPllBypass(u8 clk_pll, u8 enable)
 				(*(imxrt_common.anadig_pll + arm_pll_ctrl) & ~(1uL << 17u));
 			break;
 		case clk_pllsys1:
-			*(imxrt_common.anadig_pll + sys_pll1_ctrl) = (enable != 0) ?
-				(*(imxrt_common.anadig_pll + sys_pll1_ctrl) | (1uL << 16u)) :
-				(*(imxrt_common.anadig_pll + sys_pll1_ctrl) & ~(1uL << 16u));
+			_imxrt_vddsoc2PllAiWrite(vddsoc2pll_ai_ctrl_1g, (enable != 0) ? frac_pll_ctrl0_set : frac_pll_ctrl0_clr, (1uL << 16u));
 			break;
 		case clk_pllsys2:
 			*(imxrt_common.anadig_pll + sys_pll2_ctrl) = (enable != 0) ?
@@ -547,10 +545,10 @@ static void _imxrt_setPllBypass(u8 clk_pll, u8 enable)
 				(*(imxrt_common.anadig_pll + sys_pll3_ctrl) & ~(1uL << 16u));
 			break;
 		case clk_pllaudio:
-			/* TODO: access through ANATOP AI */
+			_imxrt_vddsoc2PllAiWrite(vddsoc2pll_ai_ctrl_audio, (enable != 0) ? frac_pll_ctrl0_set : frac_pll_ctrl0_clr, (1uL << 16u));
 			break;
 		case clk_pllvideo:
-			/* TODO: access through ANATOP AI */
+			_imxrt_vddsoc2PllAiWrite(vddsoc2pll_ai_ctrl_video, (enable != 0) ? frac_pll_ctrl0_set : frac_pll_ctrl0_clr, (1uL << 16u));
 			break;
 		default:
 			break;
@@ -828,6 +826,18 @@ static void _imxrt_deinitSysPll1(void)
 
 	/* Gate PLL1 */
 	*(imxrt_common.anadig_pll + sys_pll1_ctrl) |= 1uL << 14u;
+
+	/* Disable PLL1 */
+	_imxrt_vddsoc2PllAiWrite(vddsoc2pll_ai_ctrl_1g, frac_pll_ctrl0_clr, (1uL << 15u));
+
+	/* Power down PLL1 */
+	_imxrt_vddsoc2PllAiWrite(vddsoc2pll_ai_ctrl_1g, frac_pll_ctrl0_clr, (1uL << 14u));
+
+	/* Disable Spread Spectrum */
+	_imxrt_vddsoc2PllAiWrite(vddsoc2pll_ai_ctrl_1g, frac_pll_ss_clr, (1uL << 15u));
+
+	/* Disable ldo */
+	_imxrt_vddsoc2PllAiWrite(vddsoc2pll_ai_ctrl_1g, frac_pll_ctrl0_clr, (1uL << 22u));
 }
 
 
