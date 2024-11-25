@@ -38,7 +38,7 @@ enum { src_scr = 0, src_srmr, src_sbmr1, src_sbmr2, src_srsr,
 enum { wdog_wcr = 0, wdog_wsr, wdog_wrsr, wdog_wicr, wdog_wmcr };
 
 
-enum { rtwdog_cs = 0, rtwdog_cnt, rtwdog_total, rtwdog_win };
+enum { rtwdog_cs = 0, rtwdog_cnt, rtwdog_toval, rtwdog_win };
 
 
 /* ANADIG & ANATOP complex */
@@ -1055,7 +1055,7 @@ void _imxrt_init(void)
 	}
 
 	*(imxrt_common.wdog3 + rtwdog_cnt) = 0xd928c520; /* Update key */
-	*(imxrt_common.wdog3 + rtwdog_total) = 0xffff;
+	*(imxrt_common.wdog3 + rtwdog_toval) = 0xffff;
 	*(imxrt_common.wdog3 + rtwdog_cs) |= 1 << 5;
 	*(imxrt_common.wdog3 + rtwdog_cs) &= ~(1 << 7);
 
