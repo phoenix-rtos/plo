@@ -53,9 +53,9 @@ static void cmd_ddrInfo(void)
 }
 
 
-static int cmd_ddrByteAccessibility(u32 ddrAddr, u32 size)
+static int cmd_ddrByteAccessibility(addr_t ddrAddr, size_t size)
 {
-	u32 i;
+	size_t i;
 	u8 val;
 	int errs = 0;
 	volatile u8 *ddr = (u8 *)ddrAddr;
@@ -73,10 +73,11 @@ static int cmd_ddrByteAccessibility(u32 ddrAddr, u32 size)
 }
 
 
-static int cmd_ddrWordAccessibility(u32 ddrAddr, u32 size)
+static int cmd_ddrWordAccessibility(addr_t ddrAddr, size_t size)
 {
 	volatile u32 *ddr = (u32 *)ddrAddr;
-	u32 i, val;
+	size_t i;
+	u32 val;
 	int errs = 0;
 
 	for (i = 0; i < (size >> 2); ++i) {
@@ -94,7 +95,7 @@ static int cmd_ddrWordAccessibility(u32 ddrAddr, u32 size)
 }
 
 
-int cmd_ddrAccessibility(u32 ddrAddr, u32 size)
+int cmd_ddrAccessibility(addr_t ddrAddr, size_t size)
 {
 	int errs;
 
@@ -132,7 +133,7 @@ u16 cmd_generateTestVector(int pattern, int column)
 }
 
 
-int cmd_ddrBitCrossTalk(u32 ddrAddr)
+int cmd_ddrBitCrossTalk(addr_t ddrAddr)
 {
 	int bank, row, column, pattern;
 	volatile u16 *addr;
@@ -166,7 +167,7 @@ int cmd_ddrBitCrossTalk(u32 ddrAddr)
 
 /* TODO: Don't hardcode BANK_COUNT, COLUMN_COUNT, ROW_COUNT and others.
 *        They should be defined separately for each memory. */
-int cmd_ddrBitChargeLeakage(u32 ddrAddr)
+int cmd_ddrBitChargeLeakage(addr_t ddrAddr)
 {
 	int bank, row, column, i;
 	volatile u16 *addr;
