@@ -15,6 +15,16 @@
 
 #include "imxrt.h"
 #include "../../cpu.h"
+#include "../otp.h"
+
+#include <hal/hal.h>
+#include <lib/lib.h>
+
+/* 1500 ms is the sum of the minimum sensible watchdog timeout (500 ms) and time for WICT interrupt
+to fire before watchdog times out (1000 ms) */
+#if WATCHDOG_PLO && (WATCHDOG_PLO_TIMEOUT_MS < 1500 || WATCHDOG_PLO_TIMEOUT_MS > 128000)
+#error "Watchdog timeout out of bounds!"
+#endif
 
 /* clang-format off */
 
@@ -71,6 +81,7 @@ struct {
 	volatile u16 *wdog1;
 	volatile u16 *wdog2;
 	volatile u32 *wdog3;
+	volatile u32 *wdog4;
 	volatile u32 *iomuxc_snvs;
 	volatile u32 *iomuxc_lpsr;
 	volatile u32 *iomuxc_lpsr_gpr;
@@ -953,6 +964,45 @@ static void _imxrt_initClocks(void)
 }
 
 
+void _imxrt_wdgReload(void)
+{
+	if ((*(imxrt_common.wdog1 + wdog_wcr) & (1u << 2)) != 0u) {
+		*(imxrt_common.wdog1 + wdog_wsr) = 0x5555;
+		hal_cpuDataMemoryBarrier();
+		*(imxrt_common.wdog1 + wdog_wsr) = 0xaaaa;
+	}
+}
+
+
+static int wdog1_irqHandler(unsigned int n, void *data)
+{
+	if ((*(imxrt_common.wdog1 + wdog_wicr) & (1u << 14)) != 0u) {
+		*(imxrt_common.wdog1 + wdog_wicr) |= (1u << 14);
+		_imxrt_wdgReload();
+	}
+
+	return 0;
+}
+
+
+void _imxrt_wdgAutoReload(int enable)
+{
+	if (enable != 0) {
+		if ((*(imxrt_common.wdog1 + wdog_wcr) & (1u << 2)) != 0u) {
+			/* Enable Watchdog Timer Interrupt and set WICT interrupt to 1s before watchdog timeout.
+			Must be done in a single write - both fields are locked after one write */
+			*(imxrt_common.wdog1 + wdog_wicr) = (*(imxrt_common.wdog1 + wdog_wicr) & ~0xffu) | (1u << 15) | 2u;
+			hal_interruptsSet(wdog1_irq, wdog1_irqHandler, NULL);
+		}
+	}
+	else {
+		/* Watchdog Timer Interrupt Enable bit cannot be unset once set,
+		so the interrupt must be masked when disabling auto mode */
+		hal_interruptsSet(wdog1_irq, NULL, NULL);
+	}
+}
+
+
 /* CM4 */
 
 
@@ -1006,9 +1056,47 @@ u32 _imxrt_getStateCM4(void)
 }
 
 
+int _imxrt_wdgInfo(imxrt_wdgInfo_t *info)
+{
+	u32 val;
+	u32 tmp;
+	int res;
+
+	tmp = *(imxrt_common.wdog1 + wdog_wcr);
+	info->enabled = ((tmp & (1u << 2)) != 0u) ? 1u : 0u;
+	info->timeoutMs = ((tmp >> 8) * 500u) + 500u;
+
+	/* Get WDOG_ENABLE fuse */
+
+	res = otp_read(0x9A0, &val);
+	if (res < 0) {
+		return res;
+	}
+
+	info->platformEnabled = (val & (1u << 15)) ? 1 : 0;
+
+	/* Get WDOG Timeout Select fuse */
+
+	res = otp_read(0x9B0, &val);
+	if (res < 0) {
+		return res;
+	}
+
+	info->defaultTimeoutMs = ((val & 0x7u) <= 3u) ? ((8u << (3u - (val & 0x7u))) * 1000u) : 0u;
+	return 0;
+}
+
+
+void _imxrt_done(void)
+{
+	_imxrt_wdgAutoReload(0);
+}
+
+
 void _imxrt_init(void)
 {
 	int i;
+	u32 tmp;
 	volatile u32 *reg;
 
 	imxrt_common.aips[0] = (void *)0x40000000;
@@ -1019,6 +1107,7 @@ void _imxrt_init(void)
 	imxrt_common.wdog1 = (void *)0x40030000;
 	imxrt_common.wdog2 = (void *)0x40034000;
 	imxrt_common.wdog3 = (void *)0x40038000;
+	imxrt_common.wdog4 = (void *)0x40c10000;
 	imxrt_common.src = (void *)0x40c04000;
 	imxrt_common.iomuxc_snvs = (void *)0x40c94000;
 	imxrt_common.iomuxc_lpsr = (void *)0x40c08000;
@@ -1046,18 +1135,71 @@ void _imxrt_init(void)
 
 	_imxrt_initClocks();
 
-	/* Disable watchdogs */
-	if ((*(imxrt_common.wdog1 + wdog_wcr) & (1 << 2)) != 0) {
-		*(imxrt_common.wdog1 + wdog_wcr) &= ~(1 << 2);
-	}
-	if ((*(imxrt_common.wdog2 + wdog_wcr) & (1 << 2)) != 0) {
-		*(imxrt_common.wdog2 + wdog_wcr) &= ~(1 << 2);
+	/* Disable WDOG1 and WDOG2's Power Down Counter */
+	*(imxrt_common.wdog1 + wdog_wmcr) &= ~1u;
+	*(imxrt_common.wdog2 + wdog_wmcr) &= ~1u;
+
+	/* WDOG1 and WDOG2 can't be disabled once enabled */
+
+	/* Enabling the watchdog and setting the timeout are separate actions controlled by WATCHDOG_PLO and
+	WATCHDOG_PLO_TIMEOUT_MS. This way it is possible to change the timeout if the watchdog was already
+	enabled by bootrom, without enabling it in the other case. */
+#if defined(WATCHDOG_PLO_TIMEOUT_MS)
+	/* Set the timeout (always possible) */
+	tmp = *(imxrt_common.wdog1 + wdog_wcr) & ~(0xffu << 8);
+	*(imxrt_common.wdog1 + wdog_wcr) = tmp | (((WATCHDOG_PLO_TIMEOUT_MS - 500u) / 500u) << 8);
+	hal_cpuDataMemoryBarrier();
+#endif
+#if WATCHDOG_PLO
+	/* Enable the watchdog */
+	*(imxrt_common.wdog1 + wdog_wcr) |= (1u << 2);
+	hal_cpuDataMemoryBarrier();
+#endif
+#if defined(WATCHDOG_PLO_TIMEOUT_MS)
+	/* Reload the watchdog with a new timeout value in case it was already enabled by
+	bootrom and was running with a different timeout */
+	_imxrt_wdgReload();
+#endif
+
+	if ((*(imxrt_common.wdog3 + rtwdog_cs) & (1u << 7)) != 0u) {
+		/* Unlock WDOG3 */
+		*(imxrt_common.wdog3 + rtwdog_cnt) = 0xd928c520; /* Update key */
+		hal_cpuDataMemoryBarrier();
+		while ((*(imxrt_common.wdog3 + rtwdog_cs) & (1u << 11u)) == 0u) {
+		}
+
+		/* Disable WDOG3, but allow later reconfiguration without reset */
+		*(imxrt_common.wdog3 + rtwdog_toval) = 0xffffu;
+		*(imxrt_common.wdog3 + rtwdog_cs) = (*(imxrt_common.wdog3 + rtwdog_cs) & ~(1u << 7)) | (1u << 5);
+
+		/* Wait until new config takes effect */
+		while ((*(imxrt_common.wdog3 + rtwdog_cs) & (1u << 10)) == 0u) {
+		}
+
+		/* Wait until registers are locked (in case low power mode will be used promptly) */
+		while ((*(imxrt_common.wdog3 + rtwdog_cs) & (1u << 11)) != 0u) {
+		}
 	}
 
-	*(imxrt_common.wdog3 + rtwdog_cnt) = 0xd928c520; /* Update key */
-	*(imxrt_common.wdog3 + rtwdog_toval) = 0xffff;
-	*(imxrt_common.wdog3 + rtwdog_cs) |= 1 << 5;
-	*(imxrt_common.wdog3 + rtwdog_cs) &= ~(1 << 7);
+	if ((*(imxrt_common.wdog4 + rtwdog_cs) & (1u << 7)) != 0u) {
+		/* Unlock WDOG4 */
+		*(imxrt_common.wdog4 + rtwdog_cnt) = 0xd928c520; /* Update key */
+		hal_cpuDataMemoryBarrier();
+		while ((*(imxrt_common.wdog4 + rtwdog_cs) & (1u << 11u)) == 0u) {
+		}
+
+		/* Disable WDOG4, but allow later reconfiguration without reset */
+		*(imxrt_common.wdog4 + rtwdog_toval) = 0xffffu;
+		*(imxrt_common.wdog4 + rtwdog_cs) = (*(imxrt_common.wdog4 + rtwdog_cs) & ~(1u << 7)) | (1u << 5);
+
+		/* Wait until new config takes effect */
+		while ((*(imxrt_common.wdog4 + rtwdog_cs) & (1u << 10)) == 0u) {
+		}
+
+		/* Wait until registers are locked (in case low power mode will be used promptly) */
+		while ((*(imxrt_common.wdog4 + rtwdog_cs) & (1u << 11)) != 0u) {
+		}
+	}
 
 	/* Disable Systick which might be enabled by bootrom */
 	if ((*(imxrt_common.stk + stk_ctrl) & 1) != 0) {

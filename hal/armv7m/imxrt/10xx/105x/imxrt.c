@@ -1582,6 +1582,11 @@ int _imxrt_gpioGetPort(unsigned int d, u32 *val)
 }
 
 
+void _imxrt_done(void)
+{
+}
+
+
 void _imxrt_init(void)
 {
 	int i;
