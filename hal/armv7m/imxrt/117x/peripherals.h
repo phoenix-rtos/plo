@@ -289,4 +289,15 @@
 #define PHFS_ACM_PORTS_NB 1 /* Number of ports define by CDC driver; min = 1, max = 2 */
 
 
+/* WATCHDOG */
+
+#ifndef WATCHDOG_PLO
+#define WATCHDOG_PLO 0
+#endif
+
+#ifndef WATCHDOG_PLO_TIMEOUT_MS
+#define WATCHDOG_PLO_TIMEOUT_MS 128000
+#endif
+
+
 #endif

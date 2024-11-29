@@ -88,6 +88,7 @@ void hal_init(void)
 void hal_done(void)
 {
 	timer_done();
+	_imxrt_done();
 
 	hal_cleanDCache();
 }

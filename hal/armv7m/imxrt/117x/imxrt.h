@@ -645,6 +645,14 @@ enum { clk_pllarm = 0, clk_pllsys1, clk_pllsys2, clk_pllsys3, clk_pllaudio, clk_
 /* clang-format on */
 
 
+typedef struct {
+	unsigned char enabled;
+	unsigned char platformEnabled;
+	unsigned int timeoutMs;
+	unsigned int defaultTimeoutMs;
+} imxrt_wdgInfo_t;
+
+
 extern int _imxrt_setIOmux(int mux, char sion, char mode);
 
 
@@ -681,10 +689,22 @@ extern int _imxrt_setPfdPllFracClock(u8 pfd, u8 clk_pll, u8 frac);
 extern void _imxrt_init(void);
 
 
+extern void _imxrt_done(void);
+
+
 extern int _imxrt_setDirectLPCG(int clock, int state);
 
 
 extern int _imxrt_setLevelLPCG(int clock, int level);
+
+
+extern int _imxrt_wdgInfo(imxrt_wdgInfo_t *info);
+
+
+extern void _imxrt_wdgReload(void);
+
+
+extern void _imxrt_wdgAutoReload(int enable);
 
 
 /* CM4 core management */
