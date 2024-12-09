@@ -69,16 +69,7 @@ static int ptable_partVerify(const ptable_t *ptable, const ptable_part_t *part, 
 		return -1;
 	}
 
-	/* Verify partition type */
-	switch (part->type) {
-		case ptable_raw:
-		case ptable_jffs2:
-		case ptable_meterfs:
-			break;
-
-		default:
-			return -1;
-	}
+	/* Partition type is NOT verified on purpose */
 
 	/* Verify partition name */
 	for (i = 0; i < sizeof(part->name); i++) {
