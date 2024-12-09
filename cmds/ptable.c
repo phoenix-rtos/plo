@@ -43,6 +43,7 @@ static void cmd_ptableInfo(void)
 
 static int partPrint(ptable_t *p)
 {
+	const char *type;
 	unsigned int i = p->count;
 	unsigned int j = 0;
 
@@ -52,11 +53,12 @@ static int partPrint(ptable_t *p)
 
 	while (i-- != 0) {
 		ptable_part_t *entry = &p->parts[i];
+		type = ptable_typeName(entry->type);
 		lib_printf(
-			PTABLE_ENTRY_FORMAT,
-			++j, entry->name, entry->offset, entry->offset + entry->size,
-			entry->size / ptable_common.blksz, entry->size,
-			ptable_typeName(entry->type));
+				PTABLE_ENTRY_FORMAT,
+				++j, entry->name, entry->offset, entry->offset + entry->size,
+				entry->size / ptable_common.blksz, entry->size,
+				(type != NULL) ? type : "???");
 	}
 
 	return 0;

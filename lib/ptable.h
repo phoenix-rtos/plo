@@ -14,6 +14,8 @@
 #ifndef _LIB_PTABLE_H_
 #define _LIB_PTABLE_H_
 
+#include <hal/hal.h>
+
 /* Changelog:
  * version 2: Add checksum and version fields
  */
@@ -30,16 +32,17 @@
  *  NOTE: data in partition table should be stored in little endian
  */
 
-/* clang-format off */
 
 /* Partition table magic signature */
 static const u8 ptable_magic[] = { 0xde, 0xad, 0xfc, 0xbe };
 
 
 /* Supported partition types */
-enum { ptable_raw = 0x51, ptable_jffs2 = 0x72, ptable_meterfs = 0x75 };
-
+/* clang-format off */
+enum { ptable_raw = 0x51, ptable_jffs2 = 0x72, ptable_meterfs = 0x75, ptable_futurefs = 0x78 };
 /* clang-format on */
+
+static const u8 ptable_knownTypes[] = { ptable_raw, ptable_jffs2, ptable_meterfs, ptable_futurefs };
 
 
 typedef struct {
@@ -61,14 +64,23 @@ typedef struct {
 } ptable_t;
 
 
+static inline const char *ptable_typeName(int type)
+{
+	switch (type) {
+		case ptable_raw: return "raw";
+		case ptable_jffs2: return "jffs2";
+		case ptable_meterfs: return "meterfs";
+		case ptable_futurefs: return "futurefs";
+		default: return NULL;
+	}
+};
+
+
 /* Returns partition table size provided partition count */
 static inline u32 ptable_size(u32 count)
 {
 	return sizeof(ptable_t) + count * sizeof(ptable_part_t) + sizeof(ptable_magic);
 }
-
-
-extern const char *ptable_typeName(int type);
 
 
 /* Converts partition table to host endianness and verifies it */
