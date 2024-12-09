@@ -18,17 +18,6 @@
 #define htole32(a) (a)
 
 
-const char *ptable_typeName(int type)
-{
-	switch (type) {
-		case ptable_raw: return "raw";
-		case ptable_jffs2: return "jffs2";
-		case ptable_meterfs: return "meterfs";
-		default: return "unknown";
-	}
-}
-
-
 static inline u32 ptable_crc32(const void *data, size_t len)
 {
 	return ~lib_crc32(data, len, 0xffffffff);
@@ -69,16 +58,7 @@ static int ptable_partVerify(const ptable_t *ptable, const ptable_part_t *part, 
 		return -1;
 	}
 
-	/* Verify partition type */
-	switch (part->type) {
-		case ptable_raw:
-		case ptable_jffs2:
-		case ptable_meterfs:
-			break;
-
-		default:
-			return -1;
-	}
+	/* Partition type is NOT verified on purpose */
 
 	/* Verify partition name */
 	for (i = 0; i < sizeof(part->name); i++) {
