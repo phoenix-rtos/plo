@@ -47,12 +47,52 @@ _init_vectors:
 .endr
 .size _init_vectors, .-_init_vectors
 
+.org _init_vectors + 0x300
+
+.globl _vtor_temp
+.type _vtor_temp, %object
+_vtor_temp:
+.word _stack
+.word _start_stage2
+.size _vtor_temp, .-_vtor_temp
+
+
 .thumb
 .thumb_func
 
 .globl _start
 .type _start, %function
 _start:
+	cpsid if
+#ifdef MCX_USE_CPU1
+	/* Switch to CPU1 (micro M33) */
+	/* Set CPBOOT1 (CPU1 VTOR) */
+	ldr r0, =_vtor_temp
+	ldr r1, =0x40000800
+	str r0, [r1, #4]
+
+	/* Start CPU1 */
+	ldr r0, =0xc0c40008
+	str r0, [r1]
+
+	/* CPU0: Wait for something to do */
+	/* FIXME: might be not possible to
+	 * exit this situation, CPU0 reset might
+	 * cause global reset. How to park it
+	 * in a way, that allows to reuse the CPU? */
+1:	wfi
+	b 1b
+#else
+	b _start_stage2
+#endif
+
+.size _start, .-_start
+.ltorg
+
+
+.globl _start_stage2
+.type _start_stage2, %function
+_start_stage2:
 	cpsid if
 
 	/* Init vector table and stack pointer */
@@ -67,7 +107,7 @@ _start:
 	msr msp, r0
 	ldr r8, =_startc
 	bx r8
-.size _start, .-_start
+.size _start_stage2, .-_start_stage2
 .ltorg
 
 
