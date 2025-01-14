@@ -1214,7 +1214,7 @@ void _imxrt_init(void)
 	hal_cpuDataMemoryBarrier();
 
 	/* Store reset flags and then clean them */
-	imxrt_common.resetFlags = *(imxrt_common.src + src_srsr) & 0x1f;
+	imxrt_common.resetFlags = *(imxrt_common.src + src_srsr);
 	*(imxrt_common.src + src_srsr) = 0xffffffffu;
 	hal_cpuDataSyncBarrier();
 
