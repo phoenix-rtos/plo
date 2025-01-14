@@ -1630,7 +1630,7 @@ void _imxrt_init(void)
 	imxrt_common.cpuclk = 528000000; /* Default system clock */
 
 	/* Store reset flags and then clean them */
-	imxrt_common.resetFlags = *(imxrt_common.src + src_srsr) & 0x1f;
+	imxrt_common.resetFlags = *(imxrt_common.src + src_srsr) & 0x1ff;
 	*(imxrt_common.src + src_srsr) = 0xffffffffu;
 	hal_cpuDataSyncBarrier();
 
