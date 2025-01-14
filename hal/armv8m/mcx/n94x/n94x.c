@@ -920,7 +920,6 @@ void _mcxn94x_init(void)
 	_mcxn94x_portPinConfig(pctl_pin_p5_1, 0, MCX_PIN_FAST | MCX_PIN_INPUT_BUFFER_ENABLE);
 
 	/* Enable 32 KHz oscillator */
-	/* TODO determine EXTAL_CAP_SEL, XTAL_CAP_SEL and COARSE_AMP_GAIN values */
 	_mcxn94x_clockConfigOsc32khz(ROSC_EXTALCAP_PF / 2, ROSC_CAP_PF / 2, ROSC_AMP_GAIN);
 
 	/* Configure 24 MHz oscillator pins */
