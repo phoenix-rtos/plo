@@ -74,6 +74,34 @@ static void console_iomuxCfg(void)
 	gaisler_iomuxCfg(&cfg);
 }
 
+#elif defined(__CPU_GR740)
+
+static void console_cguClkEnable(void)
+{
+	_gr740_cguClkEnable(UART_CONSOLE_CGU);
+}
+
+
+static int console_cguClkStatus(void)
+{
+	return _gr740_cguClkStatus(UART_CONSOLE_CGU);
+}
+
+
+static void console_iomuxCfg(void)
+{
+	iomux_cfg_t cfg;
+
+	cfg.opt = iomux_alternateio;
+	cfg.pullup = 0;
+	cfg.pulldn = 0;
+	cfg.pin = UART_CONSOLE_TX;
+	gaisler_iomuxCfg(&cfg);
+
+	cfg.pin = UART_CONSOLE_RX;
+	gaisler_iomuxCfg(&cfg);
+}
+
 #else
 
 static void console_cguClkEnable(void)

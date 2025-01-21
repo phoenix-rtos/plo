@@ -176,24 +176,6 @@ int hal_memoryGetNextEntry(addr_t start, addr_t end, mapent_t *entry)
 }
 
 
-void hal_cpuFlushDCache(void)
-{
-	/* clang-format off */
-	__asm__ volatile(
-		"sta %%g0, [%%g0] %c0\n\t"
-		:
-		: "i"(ASI_FLUSH_DCACHE)
-	);
-	/* clang-format on */
-}
-
-
-void hal_cpuFlushICache(void)
-{
-	__asm__ volatile("flush");
-}
-
-
 int hal_cpuJump(void)
 {
 	if (hal_common.entry == (addr_t)-1) {
