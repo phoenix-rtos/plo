@@ -20,6 +20,7 @@
 /* Address space identifiers */
 #define ASI_CACHE_MISS 0x01
 #define ASI_CCTRL      0x02
+#define ASI_MMU_BYPASS 0x1c
 
 /* Processor State Register */
 #define PSR_CWP 0x1f       /* Current window pointer */
@@ -73,16 +74,28 @@ static inline u8 hal_cpuLoadAlternate8(const u8 *addr, int asi)
 {
 	u8 val;
 	/* clang-format off */
-	__asm__ volatile("lduba [%1] %c2, %0" : "=r"(val) : "r"(addr), "i"(asi));
+	__asm__ volatile ("lduba [%1] %c2, %0" : "=r"(val) : "r"(addr), "i"(asi));
 	/* clang-format on */
 	return val;
 }
 
 
-void hal_cpuFlushDCache(void);
+static inline u32 hal_cpuLoadAlternate32(addr_t addr, const u32 asi)
+{
+	u32 val;
+	/* clang-format off */
+	__asm__ volatile ("lda [%1] %c2, %0" : "=r"(val) : "r"(addr), "i"(asi));
+	/* clang-format on */
+	return val;
+}
 
 
-void hal_cpuFlushICache(void);
+static inline void hal_cpuStoreAlternate32(addr_t addr, const u32 asi, u32 val)
+{
+	/* clang-format off */
+	__asm__ volatile ("sta %0, [%1] %c2" : : "r"(val), "r"(addr), "i"(asi));
+	/* clang-format on */
+}
 
 
 #endif /* __ASSEMBLY__ */
