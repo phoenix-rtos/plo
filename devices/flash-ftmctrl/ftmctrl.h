@@ -16,10 +16,8 @@
 #ifndef _FTMCTRL_H_
 #define _FTMCTRL_H_
 
-#include <hal/hal.h>
-
-
-#define FTMCTRL_BASE 0x80000000
+#include <types.h>
+#include <config.h>
 
 
 static inline void ftmctrl_WrEn(void)
@@ -42,6 +40,12 @@ static inline void ftmctrl_ioEn(void)
 static inline void ftmctrl_ioDis(void)
 {
 	*(vu32 *)FTMCTRL_BASE &= ~(1 << 19);
+}
+
+
+static inline int ftmctrl_portWidth(void)
+{
+	return (((*(vu32 *)FTMCTRL_BASE >> 8) & 0x3) == 0) ? 8 : 16;
 }
 
 
