@@ -112,7 +112,7 @@ static const char *const hal_exceptionsType(int n)
 }
 
 
-static void hal_exceptionsDumpContext(char *buff, exc_context_t *ctx, int n)
+__attribute__((section(".noxip"))) static void hal_exceptionsDumpContext(char *buff, exc_context_t *ctx, int n)
 {
 	size_t i = 0;
 	hal_strcpy(buff, "\033[0m\nException: ");
@@ -167,7 +167,7 @@ static void hal_exceptionsDumpContext(char *buff, exc_context_t *ctx, int n)
 }
 
 
-void exceptions_dispatch(unsigned int n, exc_context_t *ctx)
+__attribute__((section(".noxip"))) void exceptions_dispatch(unsigned int n, exc_context_t *ctx)
 {
 	char buff[512];
 

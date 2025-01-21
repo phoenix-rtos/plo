@@ -59,7 +59,7 @@ inline void hal_interruptsDisable(unsigned int irqn)
 }
 
 
-int interrupts_dispatch(unsigned int irq)
+__attribute__((section(".noxip"))) int interrupts_dispatch(unsigned int irq)
 {
 	if (irq == EXTENDED_IRQN) {
 		/* Extended interrupt (16 - 31) */

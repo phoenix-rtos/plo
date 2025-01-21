@@ -20,7 +20,7 @@
 #define XSTR(x) STR(x)
 
 
-inline void hal_interruptsEnableAll(void)
+__attribute__((section(".noxip"))) void hal_interruptsEnableAll(void)
 {
 	/* clang-format off */
 
@@ -37,7 +37,7 @@ inline void hal_interruptsEnableAll(void)
 }
 
 
-inline void hal_interruptsDisableAll(void)
+__attribute__((section(".noxip"))) void hal_interruptsDisableAll(void)
 {
 	/* clang-format off */
 
