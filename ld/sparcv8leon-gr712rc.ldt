@@ -35,6 +35,7 @@ MEMORY
 }
 
 REGION_ALIAS("PLO_IMAGE", m_sram)
+REGION_ALIAS("RAM_TEXT", m_sram)
 REGION_ALIAS("RODATA", m_sram)
 REGION_ALIAS("DATA", m_sram)
 REGION_ALIAS("BSS", m_sram)
