@@ -21,21 +21,32 @@
 #define SIZE_HEAP  (SIZE_PAGE)
 
 #define ADDR_SDRAM 0x00000000
+#define AREA_KERNEL 0x100000
 
 #define SIZE_SDRAM (128 * 1024 * 1024)
-#define SIZE_PLO  (4 * 1024 * 1024)
 
 #if defined(__LINKER__)
 
 /* Memory map setup */
 MEMORY
 {
-	m_sdram    (rwx) : ORIGIN = ADDR_SDRAM + SIZE_SDRAM - SIZE_PLO, LENGTH = SIZE_PLO
+	m_sdram    (rwx) : ORIGIN = ADDR_SDRAM + AREA_KERNEL, LENGTH = SIZE_SDRAM - AREA_KERNEL
 	m_prom     (rx)  : ORIGIN = 0xc0000000, LENGTH = 64M
 }
 
+#if defined (ram)
+
 REGION_ALIAS("PLO_IMAGE", m_sdram)
 REGION_ALIAS("RODATA", m_sdram)
+
+#else
+
+REGION_ALIAS("PLO_IMAGE", m_prom);
+REGION_ALIAS("RODATA", m_prom)
+
+#endif
+
+REGION_ALIAS("RAM_TEXT", m_sdram)
 REGION_ALIAS("DATA", m_sdram)
 REGION_ALIAS("BSS", m_sdram)
 REGION_ALIAS("HEAP", m_sdram)
