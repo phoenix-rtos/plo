@@ -42,6 +42,7 @@
 
 static struct {
 	vu32 *gptimer0_base;
+	u32 wdog;
 	vu32 *gptimer1_base;
 	volatile time_t time;
 	u32 ticksPerFreq;
@@ -57,6 +58,9 @@ __attribute__((section(".noxip"))) static int timer_isr(unsigned int irq, void *
 		/* Clear irq status - set & clear to handle different GPTIMER core versions */
 		*(timer_common.gptimer0_base + GPT_TCTRL(TIMER_DEFAULT)) |= TIMER_INT_PENDING;
 		*(timer_common.gptimer0_base + GPT_TCTRL(TIMER_DEFAULT)) &= ~TIMER_INT_PENDING;
+
+		/* Kick watchdog (on GR740 there's a fixed PLL watchdog, restarted on watchdog timer tctrl write) */
+		*(timer_common.gptimer0_base + GPT_TCTRL(timer_common.wdog)) |= TIMER_LOAD;
 	}
 
 	return 0;
@@ -87,15 +91,32 @@ __attribute__((section(".noxip"))) time_t hal_timerGet(void)
 }
 
 
+void timer_wdogReboot(void)
+{
+	/* Reboot system using watchdog */
+	*(timer_common.gptimer0_base + GPT_SRELOAD) = 0;
+	*(timer_common.gptimer0_base + GPT_SCALER) = 0;
+	hal_cpuDataStoreBarrier();
+	*(timer_common.gptimer0_base + GPT_TRLDVAL(timer_common.wdog)) = 1;
+	hal_cpuDataStoreBarrier();
+
+	/* Interrupt must be enabled for the watchdog to work */
+	*(timer_common.gptimer0_base + GPT_TCTRL(timer_common.wdog)) = TIMER_LOAD | TIMER_INT_ENABLE | TIMER_ENABLE;
+
+	for (;;) { }
+}
+
+
 void timer_done(void)
 {
-	int timer;
-	vu32 st;
+	u32 timer;
+	u32 tcnt = *(timer_common.gptimer0_base + GPT_CONFIG) & 0x7;
+
 	/* Disable timer interrupts - bits cleared when written 1 */
-	st = *(timer_common.gptimer0_base + GPT_TCTRL(TIMER_DEFAULT)) & (TIMER_INT_ENABLE | TIMER_INT_PENDING);
+	vu32 st = *(timer_common.gptimer0_base + GPT_TCTRL(TIMER_DEFAULT)) & (TIMER_INT_ENABLE | TIMER_INT_PENDING);
 	*(timer_common.gptimer0_base + GPT_TCTRL(TIMER_DEFAULT)) = st;
 
-	for (timer = 1; timer <= TIMER0_CNT; ++timer) {
+	for (timer = 1; timer <= tcnt; ++timer) {
 		/* Disable timers */
 		*(timer_common.gptimer0_base + GPT_TCTRL(timer)) = 0;
 		/* Reset counter and reload value */
@@ -105,10 +126,12 @@ void timer_done(void)
 
 	/* We might not have second timer core */
 	if (timer_common.gptimer1_base != NULL) {
+		tcnt = *(timer_common.gptimer1_base + GPT_CONFIG) & 0x7;
+
 		st = *(timer_common.gptimer1_base + GPT_TCTRL(TIMER_DEFAULT)) & (TIMER_INT_ENABLE | TIMER_INT_PENDING);
 		*(timer_common.gptimer1_base + GPT_TCTRL(TIMER_DEFAULT)) = st;
 
-		for (timer = 1; timer <= TIMER1_CNT; ++timer) {
+		for (timer = 1; timer <= tcnt; ++timer) {
 			*(timer_common.gptimer1_base + GPT_TCTRL(TIMER_DEFAULT)) = 0;
 			*(timer_common.gptimer1_base + GPT_TCNTVAL(timer)) = 0;
 			*(timer_common.gptimer1_base + GPT_TRLDVAL(timer)) = 0;
@@ -124,6 +147,7 @@ void timer_init(void)
 	timer_common.time = 0;
 	timer_common.gptimer0_base = (u32 *)GPTIMER0_BASE;
 	timer_common.gptimer1_base = (u32 *)GPTIMER1_BASE;
+	timer_common.wdog = *(timer_common.gptimer0_base + GPT_CONFIG) & 0x7;
 
 	/* Reset timer */
 	timer_done();
