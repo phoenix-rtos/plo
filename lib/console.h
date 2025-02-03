@@ -33,9 +33,15 @@
 #define CONSOLE_CYAN    "\033[36m"
 #define CONSOLE_WHITE   "\033[37m"
 
+#define CONSOLE_MIRRORS 3
+
 
 /* Sets console device */
-extern void lib_consoleSet(unsigned major, unsigned minor);
+extern void lib_consoleSet(unsigned int major, unsigned int minor);
+
+
+/* Sets console mirror devices */
+extern void lib_consoleSetMirrors(size_t cnt, const unsigned int *major, const unsigned int *minor);
 
 
 /* Registers console read & write hooks (for use with debugger, RTT) */
