@@ -21,6 +21,11 @@
 
 struct {
 	int init;
+	struct {
+		unsigned int major;
+		unsigned int minor;
+	} mirrors[CONSOLE_MIRRORS];
+	size_t mirrorsCnt;
 	unsigned int major;
 	unsigned int minor;
 	ssize_t (*readHook)(int, void *, size_t);
@@ -32,6 +37,20 @@ void lib_consoleSetHooks(ssize_t (*rd)(int, void *, size_t), ssize_t (*wr)(int, 
 {
 	console_common.readHook = rd;
 	console_common.writeHook = wr;
+}
+
+
+static void lib_consoleWrite(const char *s, size_t len)
+{
+	/*
+	 * FIXME: reversing order of writes breaks the mirroring
+	 *        after second user input character on ia32 when mirroring from VGA to UART.
+	 */
+	size_t i;
+	for (i = 0; i < console_common.mirrorsCnt; i++) {
+		devs_write(console_common.mirrors[i].major, console_common.mirrors[i].minor, 0, s, len);
+	}
+	devs_write(console_common.major, console_common.minor, 0, s, len);
 }
 
 
@@ -49,7 +68,7 @@ void lib_consolePuts(const char *s)
 		console_common.writeHook(0, s, len);
 	}
 
-	devs_write(console_common.major, console_common.minor, 0, s, len);
+	lib_consoleWrite(s, len);
 }
 
 
@@ -66,7 +85,7 @@ void lib_consolePutc(char c)
 		console_common.writeHook(0, &data, 1);
 	}
 
-	devs_write(console_common.major, console_common.minor, 0, &data, 1);
+	lib_consoleWrite(data, 1);
 }
 
 
@@ -96,11 +115,23 @@ int lib_consoleGetc(char *c, time_t timeout)
 }
 
 
-void lib_consoleSet(unsigned major, unsigned minor)
+void lib_consoleSet(unsigned int major, unsigned int minor)
 {
 	console_common.major = major;
 	console_common.minor = minor;
 	console_common.init = 1;
+}
+
+
+void lib_consoleSetMirrors(size_t cnt, const unsigned int *majors, const unsigned int *minors)
+{
+	size_t i;
+	cnt = min(CONSOLE_MIRRORS, cnt);
+	for (i = 0; i < cnt; i++) {
+		console_common.mirrors[i].major = majors[i];
+		console_common.mirrors[i].minor = minors[i];
+	}
+	console_common.mirrorsCnt = cnt;
 }
 
 
