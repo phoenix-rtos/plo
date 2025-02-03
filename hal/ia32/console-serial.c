@@ -14,6 +14,7 @@
  */
 
 #include <hal/hal.h>
+#include "console.h"
 
 
 /* UART registers */
@@ -33,7 +34,7 @@ enum {
 };
 
 
-struct {
+static struct {
 	volatile u8 *base;
 	ssize_t (*writeHook)(int, const void *, size_t);
 } halconsole_common;
@@ -67,13 +68,13 @@ static void console_write(unsigned int reg, unsigned char val)
 }
 
 
-void hal_consoleSetHooks(ssize_t (*writeHook)(int, const void *, size_t))
+static void hal_consoleSerialSetHooks(ssize_t (*writeHook)(int, const void *, size_t))
 {
 	halconsole_common.writeHook = writeHook;
 }
 
 
-void hal_consolePrint(const char *s)
+static void hal_consoleSerialPrint(const char *s)
 {
 	const char *ptr;
 
@@ -90,7 +91,7 @@ void hal_consolePrint(const char *s)
 }
 
 
-void hal_consoleInit(void)
+static void hal_consoleSerialInit(void)
 {
 	unsigned int divisor = 115200 / UART_BAUDRATE;
 
@@ -112,4 +113,17 @@ void hal_consoleInit(void)
 
 	/* Disable interrupts */
 	console_write(ier, 0x00);
+}
+
+
+static struct halconsole serial_console;
+
+
+__attribute__((constructor)) static void hal_consoleVgaRegister(void)
+{
+	serial_console.setHooks = hal_consoleSerialSetHooks;
+	serial_console.print = hal_consoleSerialPrint;
+	serial_console.init = hal_consoleSerialInit;
+
+	hal_consoleRegister(&serial_console);
 }

@@ -15,6 +15,7 @@
  */
 
 #include <hal/hal.h>
+#include "console.h"
 
 
 /* ANSI escape sequence states */
@@ -40,7 +41,7 @@ static const unsigned char ansi2bg[] = {
 };
 
 
-struct {
+static struct {
 	volatile u16 *vram;      /* Video memory */
 	u16 crtc;                /* CRT controller register */
 	unsigned int rows;       /* Console height */
@@ -62,7 +63,7 @@ static void console_memset(volatile u16 *vram, u16 val, unsigned int n)
 }
 
 
-void hal_consoleSetHooks(ssize_t (*writeHook)(int, const void *, size_t))
+static void hal_consoleVgaSetHooks(ssize_t (*writeHook)(int, const void *, size_t))
 {
 	halconsole_common.writeHook = writeHook;
 }
@@ -83,7 +84,7 @@ static void console_memmove(volatile u16 *dst, volatile u16 *src, unsigned int n
 }
 
 
-void hal_consolePrint(const char *s)
+static void hal_consoleVgaPrint(const char *s)
 {
 	const char *ptr = s;
 	unsigned int i, row, col, pos;
@@ -331,7 +332,7 @@ void hal_consolePrint(const char *s)
 }
 
 
-void hal_consoleInit(void)
+static void hal_consoleVgaInit(void)
 {
 	unsigned char color;
 
@@ -348,5 +349,18 @@ void hal_consoleInit(void)
 	halconsole_common.attr = 0x05;
 
 	/* Clear console */
-	hal_consolePrint("\033[2J\033[H");
+	hal_consoleVgaPrint("\033[2J\033[H");
+}
+
+
+static struct halconsole vga_console;
+
+
+__attribute__((constructor)) static void hal_consoleVgaRegister(void)
+{
+	vga_console.setHooks = hal_consoleVgaSetHooks;
+	vga_console.print = hal_consoleVgaPrint;
+	vga_console.init = hal_consoleVgaInit;
+
+	hal_consoleRegister(&vga_console);
 }
