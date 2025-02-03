@@ -14,10 +14,12 @@ PLO_COMMANDS ?= alias app blob call console copy devices dump echo go help kerne
 
 PLO_ALLDEVICES := disk-bios tty-bios uart-16550
 
-OBJS += $(addprefix $(PREFIX_O)hal/$(TARGET_SUFF)/, _exceptions.o _init.o _interrupts.o cpu.o exceptions.o hal.o interrupts.o memory.o pci.o string.o timer.o acpi.o)
+OBJS += $(addprefix $(PREFIX_O)hal/$(TARGET_SUFF)/, _exceptions.o _init.o _interrupts.o console.o cpu.o exceptions.o hal.o interrupts.o memory.o pci.o string.o timer.o acpi.o)
 
-ifeq ($(CONSOLE), serial)
+ifneq ($(findstring serial,$(CONSOLE)),)
   OBJS += $(PREFIX_O)hal/$(TARGET_SUFF)/console-serial.o
-else
+endif
+
+ifneq ($(findstring vga,$(CONSOLE)),)
   OBJS += $(PREFIX_O)hal/$(TARGET_SUFF)/console-vga.o
 endif
