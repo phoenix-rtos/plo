@@ -35,12 +35,12 @@ _exceptions_dispatch:
 	stp x4, x5, [sp, #-0x10]!
 	stp x2, x3, [sp, #-0x10]!
 	stp x0, x1, [sp, #-0x10]!
-	mrs x0, spsr_el1
-	mrs x1, elr_el1
+	mrs x0, spsr_el3
+	mrs x1, elr_el3
 	stp x0, x1, [sp, #-0x10]!
 
-	mrs x0, esr_el1
-	mrs x1, far_el1
+	mrs x0, esr_el3
+	mrs x1, far_el3
 	stp x0, x1, [sp, #-0x10]!
 
 	/* Load arguments for exceptions_dispatch() */
@@ -55,8 +55,8 @@ _exceptions_dispatch:
 
 	add sp, sp, #0x10 /* Discard esr, far - not needed to restore context */
 	ldp x0, x1, [sp], #0x10
-	msr spsr_el1, x0
-	msr elr_el1, x1
+	msr spsr_el3, x0
+	msr elr_el3, x1
 	ldp x0, x1, [sp], #0x10
 	ldp x2, x3, [sp], #0x10
 	ldp x4, x5, [sp], #0x10
