@@ -52,7 +52,7 @@ static inline void mmu_invalTLB(void)
 {
 	hal_cpuDataSyncBarrier();
 	/* clang-format off */
-	asm volatile ("tlbi vmalle1");
+	asm volatile ("tlbi alle3");
 	/* clang-format on */
 	hal_cpuDataSyncBarrier();
 	hal_cpuInstrBarrier();
@@ -62,9 +62,9 @@ static inline void mmu_invalTLB(void)
 static inline void mmu_setTranslationRegs(u64 ttbr0, u64 tcr, u64 mair)
 {
 	hal_cpuDataSyncBarrier();
-	sysreg_write(ttbr0_el1, ttbr0);
-	sysreg_write(tcr_el1, tcr);
-	sysreg_write(mair_el1, mair);
+	sysreg_write(ttbr0_el3, ttbr0);
+	sysreg_write(tcr_el3, tcr);
+	sysreg_write(mair_el3, mair);
 	hal_cpuDataSyncBarrier();
 	hal_cpuInstrBarrier();
 }
@@ -74,9 +74,9 @@ void mmu_enable(void)
 {
 	u64 val;
 	hal_cpuDataSyncBarrier();
-	val = sysreg_read(sctlr_el1);
+	val = sysreg_read(sctlr_el3);
 	val |= ((1 << 12) | (1 << 2) | (1 << 0));
-	sysreg_write(sctlr_el1, val);
+	sysreg_write(sctlr_el3, val);
 	hal_cpuDataSyncBarrier();
 	hal_cpuInstrBarrier();
 }
@@ -86,9 +86,9 @@ void mmu_disable(void)
 {
 	u64 val;
 	hal_cpuDataSyncBarrier();
-	val = sysreg_read(sctlr_el1);
+	val = sysreg_read(sctlr_el3);
 	val &= ~((1 << 12) | (1 << 2) | (1 << 0));
-	sysreg_write(sctlr_el1, val);
+	sysreg_write(sctlr_el3, val);
 	hal_cpuDataSyncBarrier();
 	hal_cpuInstrBarrier();
 	mmu_invalTLB();
@@ -122,7 +122,7 @@ void mmu_mapAddr(addr_t paddr, addr_t vaddr, unsigned int flags)
 	hal_cpuDataSyncBarrier();
 	hal_cpuInstrBarrier();
 	/* clang-format off */
-	asm volatile ("tlbi vaae1, %0" :: "r"(vaddr));
+	asm volatile ("tlbi vae3, %0" :: "r"(vaddr));
 	/* clang-format on */
 }
 
