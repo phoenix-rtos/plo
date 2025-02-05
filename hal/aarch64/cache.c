@@ -117,12 +117,12 @@ static void cacheToggle(unsigned int mode, u64 sctlr_bit)
 {
 	asm volatile(
 			"dsb ish\n"
-			"mrs x2, sctlr_el1\n"
+			"mrs x2, sctlr_el3\n"
 			"bic x2, x2, %0\n"
 			"cmp %1, #0\n"
 			"csel %0, %0, xzr, ne\n"
 			"orr x2, x2, %0\n"
-			"msr sctlr_el1, x2\n"
+			"msr sctlr_el3, x2\n"
 			"dsb ish\n"
 			"isb\n"
 			: "+r"(sctlr_bit) : "r"(mode) : "x2", "memory");
