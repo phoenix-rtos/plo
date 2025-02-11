@@ -534,8 +534,91 @@ int _zynqmp_getMIO(ctl_mio_t *mio)
 
 int _zynq_loadPL(addr_t srcAddr, addr_t srcLen)
 {
-	/* TODO */
-	return -1;
+	u32 regVal;
+	time_t start;
+
+	if ((srcAddr % 4 != 0) || (srcLen % 4 != 0)) {
+		return -1;
+	}
+
+	/* Enable PROG_B to propagate and reset the PL */
+	*(zynq_common.pmu_global + pmu_global_ps_cntrl) = (*(zynq_common.pmu_global + pmu_global_ps_cntrl) & ~0x3) | 0x2;
+
+	*(zynq_common.csu + csu_pcap_reset) = 0;  /* Take PCAP out of reset */
+	*(zynq_common.csu + csu_pcap_ctrl) |= 1;  /* Select PCAP mode */
+	*(zynq_common.csu + csu_pcap_rdwr) &= ~1; /* Set PCAP into write mode */
+
+	/* Activate power to the PL if necessary */
+	if ((*(zynq_common.csu + csu_pcap_status) & (1 << 9)) != 0) {
+		*(zynq_common.pmu_global + pmu_global_req_pwrup_int_en) = (1 << 23);
+		*(zynq_common.pmu_global + pmu_global_req_pwrup_trig) = (1 << 23);
+		do {
+			regVal = *(zynq_common.pmu_global + pmu_global_req_pwrup_status) & (1 << 23);
+		} while (regVal != 0);
+
+		/* Put PL into isolation (except for PCAP interface) */
+		*(zynq_common.pmu_global + pmu_global_req_iso_int_en) = (1 << 2);
+		*(zynq_common.pmu_global + pmu_global_req_iso_trig) = (1 << 2);
+		do {
+			regVal = *(zynq_common.pmu_global + pmu_global_req_iso_status) & (1 << 2);
+		} while (regVal != 0);
+	}
+
+	*(zynq_common.csu + csu_pcap_prog) = 0; /* Reset PL */
+	/* Wait at least 250 ns */
+	start = hal_timerGet();
+	while ((hal_timerGet() - start) < 2) {
+		/* Do nothing */
+	}
+
+	*(zynq_common.csu + csu_pcap_prog) = 1;
+
+	/* Confirm PL initialization is started */
+	do {
+		regVal = *(zynq_common.csu + csu_pcap_status) & (1 << 6);
+	} while (regVal == 0);
+
+	/* Confirm PL initialization is finished */
+	do {
+		regVal = *(zynq_common.csu + csu_pcap_status) & (1 << 2);
+	} while (regVal == 0);
+
+	/* Setup the Secure Stream Switch: DMA => PCAP, none => DMA, none => AES, none => SHA */
+	*(zynq_common.csu + csu_sss_cfg) = 0x5;
+	*(zynq_common.csu + csu_dma_reset) = 0; /* Take DMA out of reset */
+
+	*(zynq_common.csudma + csudma_src_addr) = srcAddr & 0xfffffffc;
+	*(zynq_common.csudma + csudma_src_addr_msb) = (srcAddr >> 32) & 0x1ffff;
+	*(zynq_common.csudma + csudma_src_size) = srcLen;
+
+	/* Wait until DMA tranfser finished */
+	do {
+		regVal = *(zynq_common.csudma + csudma_src_i_sts) & (1 << 1);
+	} while (regVal == 0);
+
+	/* Clear interrupt status */
+	*(zynq_common.csudma + csudma_src_i_sts) = (1 << 1);
+
+	/* Wait until PCAP transfer finished */
+	do {
+		regVal = *(zynq_common.csu + csu_pcap_status) & (1 << 0);
+	} while (regVal == 0);
+
+	/* Wait until startup finished */
+	do {
+		regVal = *(zynq_common.csu + csu_pcap_status) & (1 << 4);
+	} while (regVal == 0);
+
+	*(zynq_common.csu + csu_pcap_reset) = 1; /* Put PCAP into reset state */
+
+	/* Release PL from isolation */
+	*(zynq_common.pmu_global + pmu_global_req_pwrup_int_en) = (1 << 23);
+	*(zynq_common.pmu_global + pmu_global_req_pwrup_trig) = (1 << 23);
+	do {
+		regVal = *(zynq_common.pmu_global + pmu_global_req_pwrup_status) & (1 << 23);
+	} while (regVal != 0);
+
+	return 0;
 }
 
 
@@ -765,6 +848,15 @@ static void _zynqmp_clocksInit(void)
 			.dev = ctl_clock_dev_fpd_dbg_tstmp,
 			.src = 0,
 			.div0 = 2,
+			.active = 0x1,
+		},
+
+		/* PL0 clock generator - IOPLL / 10 => 100 MHz */
+		{
+			.dev = ctl_clock_dev_lpd_pl0,
+			.src = 0,
+			.div0 = 10,
+			.div1 = 1,
 			.active = 0x1,
 		},
 	};
