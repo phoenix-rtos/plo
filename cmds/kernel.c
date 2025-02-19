@@ -22,7 +22,7 @@
 #include <syspage.h>
 
 
-#ifdef __TARGET_RISCV64
+#if defined(__TARGET_RISCV64) || defined(__aarch64__)
 #define ELF_WORD Elf64_Word
 #define ELF_EHDR Elf64_Ehdr
 #define ELF_PHDR Elf64_Phdr
