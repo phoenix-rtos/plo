@@ -21,8 +21,9 @@
 
 
 /* UARTs configuration */
-#define UART_BAUDRATE 115200
-#define UART_REF_CLK  50000000 /* 50 MHz - description in _zynq_peripherals() */
+#define UART0_BAUDRATE 115200
+#define UART1_BAUDRATE 115200
+#define UART_REF_CLK   50000000 /* 50 MHz - description in uart_initCtrlClock() */
 
 
 #define UARTS_MAX_CNT 2
@@ -63,5 +64,9 @@
 
 /* GPIO */
 #define GPIO_BASE_ADDR ((void *)0xe000a000)
+
+
+/* QSPI*/
+#define QSPI_BASE_ADDR ((void *)0xe000d000)
 
 #endif
