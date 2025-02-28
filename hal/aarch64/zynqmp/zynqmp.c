@@ -535,76 +535,77 @@ int _zynqmp_getMIO(ctl_mio_t *mio)
 int _zynq_loadPL(addr_t srcAddr, addr_t srcLen)
 {
 	u32 regVal;
-	time_t start;
 
 	if ((srcAddr % 4 != 0) || (srcLen % 4 != 0)) {
 		return -1;
 	}
 
-	/* Enable PROG_B to propagate and reset the PL */
-	*(zynq_common.pmu_global + pmu_global_ps_cntrl) = (*(zynq_common.pmu_global + pmu_global_ps_cntrl) & ~0x3) | 0x2;
+	/* Enable the PCAP clock */
+	*(zynq_common.crl_apb + crl_apb_pcap_ctrl) = (*(zynq_common.crl_apb + crl_apb_pcap_ctrl)) | 0x01000000U;
 
+	/* Power up the PL domain and wait for confirmation */
+	*(zynq_common.pmu_global + pmu_global_req_pwrup_int_en) = (1 << 23);
+	*(zynq_common.pmu_global + pmu_global_req_pwrup_trig) = (1 << 23);
+	do {
+		regVal = *(zynq_common.pmu_global + pmu_global_req_pwrup_status) & (1 << 23);
+	} while (regVal != 0);
+
+	/* Restore isolation */
+	*(zynq_common.pmu_global + pmu_global_req_iso_int_en) = (1 << 2);
+	*(zynq_common.pmu_global + pmu_global_req_iso_trig) = (1 << 2);
+	do {
+		regVal = *(zynq_common.pmu_global + pmu_global_req_iso_status) & (1 << 2);
+	} while (regVal != 0);
+
+	/* Take PCAP out of reset */
 	*(zynq_common.csu + csu_pcap_reset) = 0;
+	/* Select PCAP mode */
 	*(zynq_common.csu + csu_pcap_ctrl) |= 1;
-	*(zynq_common.csu + csu_pcap_rdwr) &= ~1;
+	/* Set PCAP into write mode */
+	*(zynq_common.csu + csu_pcap_rdwr) = 0;
 
-	/* Activate power to the PL if necessary */
-	if ((*(zynq_common.csu + csu_pcap_status) & (1 << 9)) != 0) {
-		*(zynq_common.pmu_global + pmu_global_req_pwrup_int_en) = (1 << 23);
-		*(zynq_common.pmu_global + pmu_global_req_pwrup_trig) = (1 << 23);
-		do {
-			regVal = *(zynq_common.pmu_global + pmu_global_req_pwrup_status) & (1 << 23);
-		} while (regVal != 0);
-
-		*(zynq_common.pmu_global + pmu_global_req_iso_int_en) = (1 << 2);
-		*(zynq_common.pmu_global + pmu_global_req_iso_trig) = (1 << 2);
-		do {
-			regVal = *(zynq_common.pmu_global + pmu_global_req_iso_status) & (1 << 2);
-		} while (regVal != 0);
-	}
-
+	/* Reset PL */
 	*(zynq_common.csu + csu_pcap_prog) = 0;
-	/* Wait at least 250 ns */
-	start = hal_timerGet();
-	while ((hal_timerGet() - start) < 2) {
+	time_t start = hal_timerGet();
+	while ((hal_timerGet() - start) < 10) {
 		/* Do nothing */
 	}
-
 	*(zynq_common.csu + csu_pcap_prog) = 1;
 
-	/* Confirm PL initialization is started */
+	/* Wait for PL_init completion */
 	do {
-		regVal = *(zynq_common.csu + csu_pcap_status) & (1 << 6);
+		regVal = *(zynq_common.csu + csu_pcap_status) & 0x4;
 	} while (regVal == 0);
 
-	/* Confirm PL initialization is finished */
-	do {
-		regVal = *(zynq_common.csu + csu_pcap_status) & (1 << 2);
-	} while (regVal == 0);
+	/* Setup the Secure Stream Switch configuration PCAP data source */
+	*(zynq_common.csu + csu_sss_cfg) = 0x5;
+	/* Setup once again PCAP to write mode */
+	*(zynq_common.csu + csu_pcap_rdwr) = 0;
 
-	*(zynq_common.csu + csu_sss_cfg) = (*(zynq_common.csu + csu_sss_cfg) & ~0xf) | 0x5;
-	*(zynq_common.csu + csu_dma_reset) = 0;
-
-	*(zynq_common.csudma + csudma_src_addr) = srcAddr & 0xfffffffc;
-	*(zynq_common.csudma + csudma_src_addr_msb) = (srcAddr >> 32) & 0x1ffff;
+	/* Setup the source DMA channel, its redundant but mask out not alligned data */
+	*(zynq_common.csudma + csudma_src_addr) = srcAddr & 0xFFFFFFFCU;
+	*(zynq_common.csudma + csudma_src_addr_msb) = ((srcAddr & 0xFFFFFFFF00000000U) >> 32U) & 0x0001FFFFU;
 	*(zynq_common.csudma + csudma_src_size) = srcLen;
 
-	/* TODO: writing to PL gets stuck here */
+	/* Wait until DMA transer ends */
 	do {
 		regVal = *(zynq_common.csudma + csudma_src_i_sts) & (1 << 1);
 	} while (regVal == 0);
 
-	/* Write 1 to clear */
-	*(zynq_common.csudma + csudma_src_i_sts) |= (1 << 1);
+	/* Clear interrupt status */
+	*(zynq_common.csudma + csudma_src_i_sts) = (1 << 1);
 
+	/* Wait until PCAP transfer is done */
 	do {
 		regVal = *(zynq_common.csu + csu_pcap_status) & (1 << 0);
-	} while (regVal != 0);
+	} while (regVal == 0);
 
+	/* Wait till End of startup */
 	do {
 		regVal = *(zynq_common.csu + csu_pcap_status) & (1 << 4);
 	} while (regVal == 0);
 
+	/* Put PCAP into reset state */
 	*(zynq_common.csu + csu_pcap_reset) = 1;
 
 	return 0;
