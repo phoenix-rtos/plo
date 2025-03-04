@@ -47,6 +47,12 @@ static inline void hal_cpuHalt(void)
 }
 
 
+static inline void hal_cpuSignalEvent(void)
+{
+	__asm__ volatile("sev");
+}
+
+
 extern void hal_scbSetPriorityGrouping(u32 group);
 
 
