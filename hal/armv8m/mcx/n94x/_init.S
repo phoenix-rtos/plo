@@ -64,6 +64,13 @@ _vtor_temp:
 .type _start, %function
 _start:
 	cpsid if
+#ifdef MCX_CORE0_RST_ADDR
+	LDR     r0, =MCX_CHECK_ADDR
+	MOV     r1, #0
+	STR     r1, [r0]
+	DSB
+	ISB
+#endif
 #ifdef MCX_USE_CPU1
 	/* Switch to CPU1 (micro M33) */
 	/* Set CPBOOT1 (CPU1 VTOR) */
@@ -75,6 +82,19 @@ _start:
 	ldr r0, =0xc0c40008
 	str r0, [r1]
 
+#ifdef MCX_CORE0_RST_ADDR
+	LDR     r0, =MCX_CHECK_ADDR
+wait_loop:
+	LDR     r1, [r0]
+	CMP     r1, #1
+	BNE     wait_loop
+
+/* Jump to core0 prog */
+	CPSIE if
+	ldr     r0, =MCX_CORE0_RST_ADDR
+	ldr     r0, [r0]
+	bx      r0
+#else
 	/* CPU0: Wait for something to do */
 	/* FIXME: might be not possible to
 	 * exit this situation, CPU0 reset might
@@ -82,6 +102,8 @@ _start:
 	 * in a way, that allows to reuse the CPU? */
 1:	wfi
 	b 1b
+#endif
+
 #else
 	b _start_stage2
 #endif
