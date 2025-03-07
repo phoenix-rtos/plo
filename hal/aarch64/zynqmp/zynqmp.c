@@ -531,6 +531,497 @@ int _zynqmp_getMIO(ctl_mio_t *mio)
 	return 0;
 }
 
+#undef GPIO_MASK_DATA_5_MSW_OFFSET
+#define GPIO_MASK_DATA_5_MSW_OFFSET                                                0XFF0A002C
+#undef GPIO_DIRM_5_OFFSET
+#define GPIO_DIRM_5_OFFSET                                                         0XFF0A0344
+#undef GPIO_OEN_5_OFFSET
+#define GPIO_OEN_5_OFFSET                                                          0XFF0A0348
+#undef GPIO_DATA_5_OFFSET
+#define GPIO_DATA_5_OFFSET                                                         0XFF0A0054
+#undef GPIO_DATA_5_OFFSET
+#define GPIO_DATA_5_OFFSET                                                         0XFF0A0054
+#undef GPIO_DATA_5_OFFSET
+#define GPIO_DATA_5_OFFSET                                                         0XFF0A0054
+
+static inline void Xil_Out32(addr_t Addr, u32 Value)
+{
+	/* write 32 bit value to specified address */
+	volatile u32 *LocalAddr = (volatile u32 *)Addr;
+	*LocalAddr = Value;
+}
+
+static inline u32 Xil_In32(addr_t Addr)
+{
+	return *(volatile u32 *) Addr;
+}
+
+static void PSU_Mask_Write(unsigned long offset, unsigned long mask,
+	unsigned long val)
+{
+	unsigned long RegVal = 0x0;
+
+	RegVal = Xil_In32(offset);
+	RegVal &= ~(mask);
+	RegVal |= (val & mask);
+	Xil_Out32(offset, RegVal);
+}
+
+unsigned long psu_ps_pl_reset_config_data(void)
+{
+    /*
+    * PS PL RESET SEQUENCE
+    */
+    /*
+    * FABRIC RESET USING EMIO
+    */
+    /*
+    * Register : MASK_DATA_5_MSW @ 0XFF0A002C
+
+    * Operation is the same as MASK_DATA_0_LSW[MASK_0_LSW]
+    *  PSU_GPIO_MASK_DATA_5_MSW_MASK_5_MSW                         0x8000
+
+    * Maskable Output Data (GPIO Bank5, EMIO, Upper 16bits)
+    * (OFFSET, MASK, VALUE)      (0XFF0A002C, 0xFFFF0000U ,0x80000000U)
+    */
+	PSU_Mask_Write(GPIO_MASK_DATA_5_MSW_OFFSET,
+		0xFFFF0000U, 0x80000000U);
+/*##################################################################### */
+
+    /*
+    * Register : DIRM_5 @ 0XFF0A0344
+
+    * Operation is the same as DIRM_0[DIRECTION_0]
+    *  PSU_GPIO_DIRM_5_DIRECTION_5                                 0x80000000
+
+    * Direction mode (GPIO Bank5, EMIO)
+    * (OFFSET, MASK, VALUE)      (0XFF0A0344, 0xFFFFFFFFU ,0x80000000U)
+    */
+	PSU_Mask_Write(GPIO_DIRM_5_OFFSET, 0xFFFFFFFFU, 0x80000000U);
+/*##################################################################### */
+
+    /*
+    * Register : OEN_5 @ 0XFF0A0348
+
+    * Operation is the same as OEN_0[OP_ENABLE_0]
+    *  PSU_GPIO_OEN_5_OP_ENABLE_5                                  0x80000000
+
+    * Output enable (GPIO Bank5, EMIO)
+    * (OFFSET, MASK, VALUE)      (0XFF0A0348, 0xFFFFFFFFU ,0x80000000U)
+    */
+	PSU_Mask_Write(GPIO_OEN_5_OFFSET, 0xFFFFFFFFU, 0x80000000U);
+/*##################################################################### */
+
+    /*
+    * Register : DATA_5 @ 0XFF0A0054
+
+    * Output Data
+    *  PSU_GPIO_DATA_5_DATA_5                                      0x80000000
+
+    * Output Data (GPIO Bank5, EMIO)
+    * (OFFSET, MASK, VALUE)      (0XFF0A0054, 0xFFFFFFFFU ,0x80000000U)
+    */
+	PSU_Mask_Write(GPIO_DATA_5_OFFSET, 0xFFFFFFFFU, 0x80000000U);
+/*##################################################################### */
+
+	time_t start = hal_timerGet();
+	while ((hal_timerGet() - start) < 2) {
+		/* Do nothing */
+	}
+
+/*##################################################################### */
+
+    /*
+    * FABRIC RESET USING DATA_5 TOGGLE
+    */
+    /*
+    * Register : DATA_5 @ 0XFF0A0054
+
+    * Output Data
+    *  PSU_GPIO_DATA_5_DATA_5                                      0X00000000
+
+    * Output Data (GPIO Bank5, EMIO)
+    * (OFFSET, MASK, VALUE)      (0XFF0A0054, 0xFFFFFFFFU ,0x00000000U)
+    */
+	PSU_Mask_Write(GPIO_DATA_5_OFFSET, 0xFFFFFFFFU, 0x00000000U);
+/*##################################################################### */
+
+	start = hal_timerGet();
+	while ((hal_timerGet() - start) < 2) {
+		/* Do nothing */
+	}
+
+/*##################################################################### */
+
+    /*
+    * FABRIC RESET USING DATA_5 TOGGLE
+    */
+    /*
+    * Register : DATA_5 @ 0XFF0A0054
+
+    * Output Data
+    *  PSU_GPIO_DATA_5_DATA_5                                      0x80000000
+
+    * Output Data (GPIO Bank5, EMIO)
+    * (OFFSET, MASK, VALUE)      (0XFF0A0054, 0xFFFFFFFFU ,0x80000000U)
+    */
+	PSU_Mask_Write(GPIO_DATA_5_OFFSET, 0xFFFFFFFFU, 0x80000000U);
+/*##################################################################### */
+
+
+	return 1;
+}
+
+
+#undef FPD_SLCR_SECURE_SLCR_DPDMA_OFFSET
+#define FPD_SLCR_SECURE_SLCR_DPDMA_OFFSET                                          0XFD690040
+#undef FPD_SLCR_SECURE_SLCR_PCIE_OFFSET
+#define FPD_SLCR_SECURE_SLCR_PCIE_OFFSET                                           0XFD690030
+#undef LPD_SLCR_SECURE_SLCR_USB_OFFSET
+#define LPD_SLCR_SECURE_SLCR_USB_OFFSET                                            0XFF4B0034
+#undef IOU_SECURE_SLCR_IOU_AXI_RPRTCN_OFFSET
+#define IOU_SECURE_SLCR_IOU_AXI_RPRTCN_OFFSET                                      0XFF240004
+#undef IOU_SECURE_SLCR_IOU_AXI_WPRTCN_OFFSET
+#define IOU_SECURE_SLCR_IOU_AXI_WPRTCN_OFFSET                                      0XFF240000
+#undef IOU_SECURE_SLCR_IOU_AXI_RPRTCN_OFFSET
+#define IOU_SECURE_SLCR_IOU_AXI_RPRTCN_OFFSET                                      0XFF240004
+#undef IOU_SECURE_SLCR_IOU_AXI_WPRTCN_OFFSET
+#define IOU_SECURE_SLCR_IOU_AXI_WPRTCN_OFFSET                                      0XFF240000
+#undef IOU_SECURE_SLCR_IOU_AXI_WPRTCN_OFFSET
+#define IOU_SECURE_SLCR_IOU_AXI_WPRTCN_OFFSET                                      0XFF240000
+#undef IOU_SECURE_SLCR_IOU_AXI_RPRTCN_OFFSET
+#define IOU_SECURE_SLCR_IOU_AXI_RPRTCN_OFFSET                                      0XFF240004
+#undef IOU_SECURE_SLCR_IOU_AXI_WPRTCN_OFFSET
+#define IOU_SECURE_SLCR_IOU_AXI_WPRTCN_OFFSET                                      0XFF240000
+#undef LPD_SLCR_SECURE_SLCR_ADMA_OFFSET
+#define LPD_SLCR_SECURE_SLCR_ADMA_OFFSET                                           0XFF4B0024
+#undef FPD_SLCR_SECURE_SLCR_GDMA_OFFSET
+#define FPD_SLCR_SECURE_SLCR_GDMA_OFFSET                                           0XFD690050
+
+
+static unsigned long psu_apply_master_tz(void)
+{
+    /*
+    * RPU
+    */
+    /*
+    * DP TZ
+    */
+    /*
+    * Register : slcr_dpdma @ 0XFD690040
+
+    * TrustZone classification for DisplayPort DMA
+    *  PSU_FPD_SLCR_SECURE_SLCR_DPDMA_TZ                           1
+
+    * DPDMA TrustZone Settings
+    * (OFFSET, MASK, VALUE)      (0XFD690040, 0x00000001U ,0x00000001U)
+    */
+	PSU_Mask_Write(FPD_SLCR_SECURE_SLCR_DPDMA_OFFSET,
+		0x00000001U, 0x00000001U);
+/*##################################################################### */
+
+    /*
+    * SATA TZ
+    */
+    /*
+    * PCIE TZ
+    */
+    /*
+    * Register : slcr_pcie @ 0XFD690030
+
+    * TrustZone classification for DMA Channel 0
+    *  PSU_FPD_SLCR_SECURE_SLCR_PCIE_TZ_DMA_0                      1
+
+    * TrustZone classification for DMA Channel 1
+    *  PSU_FPD_SLCR_SECURE_SLCR_PCIE_TZ_DMA_1                      1
+
+    * TrustZone classification for DMA Channel 2
+    *  PSU_FPD_SLCR_SECURE_SLCR_PCIE_TZ_DMA_2                      1
+
+    * TrustZone classification for DMA Channel 3
+    *  PSU_FPD_SLCR_SECURE_SLCR_PCIE_TZ_DMA_3                      1
+
+    * TrustZone classification for Ingress Address Translation 0
+    *  PSU_FPD_SLCR_SECURE_SLCR_PCIE_TZ_AT_INGR_0                  1
+
+    * TrustZone classification for Ingress Address Translation 1
+    *  PSU_FPD_SLCR_SECURE_SLCR_PCIE_TZ_AT_INGR_1                  1
+
+    * TrustZone classification for Ingress Address Translation 2
+    *  PSU_FPD_SLCR_SECURE_SLCR_PCIE_TZ_AT_INGR_2                  1
+
+    * TrustZone classification for Ingress Address Translation 3
+    *  PSU_FPD_SLCR_SECURE_SLCR_PCIE_TZ_AT_INGR_3                  1
+
+    * TrustZone classification for Ingress Address Translation 4
+    *  PSU_FPD_SLCR_SECURE_SLCR_PCIE_TZ_AT_INGR_4                  1
+
+    * TrustZone classification for Ingress Address Translation 5
+    *  PSU_FPD_SLCR_SECURE_SLCR_PCIE_TZ_AT_INGR_5                  1
+
+    * TrustZone classification for Ingress Address Translation 6
+    *  PSU_FPD_SLCR_SECURE_SLCR_PCIE_TZ_AT_INGR_6                  1
+
+    * TrustZone classification for Ingress Address Translation 7
+    *  PSU_FPD_SLCR_SECURE_SLCR_PCIE_TZ_AT_INGR_7                  1
+
+    * TrustZone classification for Egress Address Translation 0
+    *  PSU_FPD_SLCR_SECURE_SLCR_PCIE_TZ_AT_EGR_0                   1
+
+    * TrustZone classification for Egress Address Translation 1
+    *  PSU_FPD_SLCR_SECURE_SLCR_PCIE_TZ_AT_EGR_1                   1
+
+    * TrustZone classification for Egress Address Translation 2
+    *  PSU_FPD_SLCR_SECURE_SLCR_PCIE_TZ_AT_EGR_2                   1
+
+    * TrustZone classification for Egress Address Translation 3
+    *  PSU_FPD_SLCR_SECURE_SLCR_PCIE_TZ_AT_EGR_3                   1
+
+    * TrustZone classification for Egress Address Translation 4
+    *  PSU_FPD_SLCR_SECURE_SLCR_PCIE_TZ_AT_EGR_4                   1
+
+    * TrustZone classification for Egress Address Translation 5
+    *  PSU_FPD_SLCR_SECURE_SLCR_PCIE_TZ_AT_EGR_5                   1
+
+    * TrustZone classification for Egress Address Translation 6
+    *  PSU_FPD_SLCR_SECURE_SLCR_PCIE_TZ_AT_EGR_6                   1
+
+    * TrustZone classification for Egress Address Translation 7
+    *  PSU_FPD_SLCR_SECURE_SLCR_PCIE_TZ_AT_EGR_7                   1
+
+    * TrustZone classification for DMA Registers
+    *  PSU_FPD_SLCR_SECURE_SLCR_PCIE_TZ_DMA_REGS                   1
+
+    * TrustZone classification for MSIx Table
+    *  PSU_FPD_SLCR_SECURE_SLCR_PCIE_TZ_MSIX_TABLE                 1
+
+    * TrustZone classification for MSIx PBA
+    *  PSU_FPD_SLCR_SECURE_SLCR_PCIE_TZ_MSIX_PBA                   1
+
+    * TrustZone classification for ECAM
+    *  PSU_FPD_SLCR_SECURE_SLCR_PCIE_TZ_ECAM                       1
+
+    * TrustZone classification for Bridge Common Registers
+    *  PSU_FPD_SLCR_SECURE_SLCR_PCIE_TZ_BRIDGE_REGS                1
+
+    * PCIe TrustZone settings. This register may only be modified during bootu
+    * p (while PCIe block is disabled)
+    * (OFFSET, MASK, VALUE)      (0XFD690030, 0x01FFFFFFU ,0x01FFFFFFU)
+    */
+	PSU_Mask_Write(FPD_SLCR_SECURE_SLCR_PCIE_OFFSET,
+		0x01FFFFFFU, 0x01FFFFFFU);
+/*##################################################################### */
+
+    /*
+    * USB TZ
+    */
+    /*
+    * Register : slcr_usb @ 0XFF4B0034
+
+    * TrustZone Classification for USB3_0
+    *  PSU_LPD_SLCR_SECURE_SLCR_USB_TZ_USB3_0                      1
+
+    * TrustZone Classification for USB3_1
+    *  PSU_LPD_SLCR_SECURE_SLCR_USB_TZ_USB3_1                      1
+
+    * USB3 TrustZone settings
+    * (OFFSET, MASK, VALUE)      (0XFF4B0034, 0x00000003U ,0x00000003U)
+    */
+	PSU_Mask_Write(LPD_SLCR_SECURE_SLCR_USB_OFFSET,
+		0x00000003U, 0x00000003U);
+/*##################################################################### */
+
+    /*
+    * SD TZ
+    */
+    /*
+    * Register : IOU_AXI_RPRTCN @ 0XFF240004
+
+    * AXI protection [0] = '0' : Normal access [0] = '1' : Previleged access [
+    * 1] = '0' : Secure access [1] = '1' : No secure access [2] = '0' : Data a
+    * ccess [2] = '1'' : Instruction access
+    *  PSU_IOU_SECURE_SLCR_IOU_AXI_RPRTCN_SD0_AXI_ARPROT           2
+
+    * AXI protection [0] = '0' : Normal access [0] = '1' : Previleged access [
+    * 1] = '0' : Secure access [1] = '1' : No secure access [2] = '0' : Data a
+    * ccess [2] = '1'' : Instruction access
+    *  PSU_IOU_SECURE_SLCR_IOU_AXI_RPRTCN_SD1_AXI_ARPROT           2
+
+    * AXI read protection type selection
+    * (OFFSET, MASK, VALUE)      (0XFF240004, 0x003F0000U ,0x00120000U)
+    */
+	PSU_Mask_Write(IOU_SECURE_SLCR_IOU_AXI_RPRTCN_OFFSET,
+		0x003F0000U, 0x00120000U);
+/*##################################################################### */
+
+    /*
+    * Register : IOU_AXI_WPRTCN @ 0XFF240000
+
+    * AXI protection [0] = '0' : Normal access [0] = '1' : Previleged access [
+    * 1] = '0' : Secure access [1] = '1' : No secure access [2] = '0' : Data a
+    * ccess [2] = '1'' : Instruction access
+    *  PSU_IOU_SECURE_SLCR_IOU_AXI_WPRTCN_SD0_AXI_AWPROT           2
+
+    * AXI protection [0] = '0' : Normal access [0] = '1' : Previleged access [
+    * 1] = '0' : Secure access [1] = '1' : No secure access [2] = '0' : Data a
+    * ccess [2] = '1'' : Instruction access
+    *  PSU_IOU_SECURE_SLCR_IOU_AXI_WPRTCN_SD1_AXI_AWPROT           2
+
+    * AXI write protection type selection
+    * (OFFSET, MASK, VALUE)      (0XFF240000, 0x003F0000U ,0x00120000U)
+    */
+	PSU_Mask_Write(IOU_SECURE_SLCR_IOU_AXI_WPRTCN_OFFSET,
+		0x003F0000U, 0x00120000U);
+/*##################################################################### */
+
+    /*
+    * GEM TZ
+    */
+    /*
+    * Register : IOU_AXI_RPRTCN @ 0XFF240004
+
+    * AXI protection [0] = '0' : Normal access [0] = '1' : Previleged access [
+    * 1] = '0' : Secure access [1] = '1' : No secure access [2] = '0' : Data a
+    * ccess [2] = '1'' : Instruction access
+    *  PSU_IOU_SECURE_SLCR_IOU_AXI_RPRTCN_GEM0_AXI_ARPROT          2
+
+    * AXI protection [0] = '0' : Normal access [0] = '1' : Previleged access [
+    * 1] = '0' : Secure access [1] = '1' : No secure access [2] = '0' : Data a
+    * ccess [2] = '1'' : Instruction access
+    *  PSU_IOU_SECURE_SLCR_IOU_AXI_RPRTCN_GEM1_AXI_ARPROT          2
+
+    * AXI protection [0] = '0' : Normal access [0] = '1' : Previleged access [
+    * 1] = '0' : Secure access [1] = '1' : No secure access [2] = '0' : Data a
+    * ccess [2] = '1'' : Instruction access
+    *  PSU_IOU_SECURE_SLCR_IOU_AXI_RPRTCN_GEM2_AXI_ARPROT          2
+
+    * AXI protection [0] = '0' : Normal access [0] = '1' : Previleged access [
+    * 1] = '0' : Secure access [1] = '1' : No secure access [2] = '0' : Data a
+    * ccess [2] = '1'' : Instruction access
+    *  PSU_IOU_SECURE_SLCR_IOU_AXI_RPRTCN_GEM3_AXI_ARPROT          2
+
+    * AXI read protection type selection
+    * (OFFSET, MASK, VALUE)      (0XFF240004, 0x00000FFFU ,0x00000492U)
+    */
+	PSU_Mask_Write(IOU_SECURE_SLCR_IOU_AXI_RPRTCN_OFFSET,
+		0x00000FFFU, 0x00000492U);
+/*##################################################################### */
+
+    /*
+    * Register : IOU_AXI_WPRTCN @ 0XFF240000
+
+    * AXI protection [0] = '0' : Normal access [0] = '1' : Previleged access [
+    * 1] = '0' : Secure access [1] = '1' : No secure access [2] = '0' : Data a
+    * ccess [2] = '1'' : Instruction access
+    *  PSU_IOU_SECURE_SLCR_IOU_AXI_WPRTCN_GEM0_AXI_AWPROT          2
+
+    * AXI protection [0] = '0' : Normal access [0] = '1' : Previleged access [
+    * 1] = '0' : Secure access [1] = '1' : No secure access [2] = '0' : Data a
+    * ccess [2] = '1'' : Instruction access
+    *  PSU_IOU_SECURE_SLCR_IOU_AXI_WPRTCN_GEM1_AXI_AWPROT          2
+
+    * AXI protection [0] = '0' : Normal access [0] = '1' : Previleged access [
+    * 1] = '0' : Secure access [1] = '1' : No secure access [2] = '0' : Data a
+    * ccess [2] = '1'' : Instruction access
+    *  PSU_IOU_SECURE_SLCR_IOU_AXI_WPRTCN_GEM2_AXI_AWPROT          2
+
+    * AXI protection [0] = '0' : Normal access [0] = '1' : Previleged access [
+    * 1] = '0' : Secure access [1] = '1' : No secure access [2] = '0' : Data a
+    * ccess [2] = '1'' : Instruction access
+    *  PSU_IOU_SECURE_SLCR_IOU_AXI_WPRTCN_GEM3_AXI_AWPROT          2
+
+    * AXI write protection type selection
+    * (OFFSET, MASK, VALUE)      (0XFF240000, 0x00000FFFU ,0x00000492U)
+    */
+	PSU_Mask_Write(IOU_SECURE_SLCR_IOU_AXI_WPRTCN_OFFSET,
+		0x00000FFFU, 0x00000492U);
+/*##################################################################### */
+
+    /*
+    * QSPI TZ
+    */
+    /*
+    * Register : IOU_AXI_WPRTCN @ 0XFF240000
+
+    * AXI protection [0] = '0' : Normal access [0] = '1' : Previleged access [
+    * 1] = '0' : Secure access [1] = '1' : No secure access [2] = '0' : Data a
+    * ccess [2] = '1'' : Instruction access
+    *  PSU_IOU_SECURE_SLCR_IOU_AXI_WPRTCN_QSPI_AXI_AWPROT          2
+
+    * AXI write protection type selection
+    * (OFFSET, MASK, VALUE)      (0XFF240000, 0x0E000000U ,0x04000000U)
+    */
+	PSU_Mask_Write(IOU_SECURE_SLCR_IOU_AXI_WPRTCN_OFFSET,
+		0x0E000000U, 0x04000000U);
+/*##################################################################### */
+
+    /*
+    * NAND TZ
+    */
+    /*
+    * Register : IOU_AXI_RPRTCN @ 0XFF240004
+
+    * AXI protection [0] = '0' : Normal access [0] = '1' : Previleged access [
+    * 1] = '0' : Secure access [1] = '1' : No secure access [2] = '0' : Data a
+    * ccess [2] = '1'' : Instruction access
+    *  PSU_IOU_SECURE_SLCR_IOU_AXI_RPRTCN_NAND_AXI_ARPROT          2
+
+    * AXI read protection type selection
+    * (OFFSET, MASK, VALUE)      (0XFF240004, 0x01C00000U ,0x00800000U)
+    */
+	PSU_Mask_Write(IOU_SECURE_SLCR_IOU_AXI_RPRTCN_OFFSET,
+		0x01C00000U, 0x00800000U);
+/*##################################################################### */
+
+    /*
+    * Register : IOU_AXI_WPRTCN @ 0XFF240000
+
+    * AXI protection [0] = '0' : Normal access [0] = '1' : Previleged access [
+    * 1] = '0' : Secure access [1] = '1' : No secure access [2] = '0' : Data a
+    * ccess [2] = '1'' : Instruction access
+    *  PSU_IOU_SECURE_SLCR_IOU_AXI_WPRTCN_NAND_AXI_AWPROT          2
+
+    * AXI write protection type selection
+    * (OFFSET, MASK, VALUE)      (0XFF240000, 0x01C00000U ,0x00800000U)
+    */
+	PSU_Mask_Write(IOU_SECURE_SLCR_IOU_AXI_WPRTCN_OFFSET,
+		0x01C00000U, 0x00800000U);
+/*##################################################################### */
+
+    /*
+    * DMA TZ
+    */
+    /*
+    * Register : slcr_adma @ 0XFF4B0024
+
+    * TrustZone Classification for ADMA
+    *  PSU_LPD_SLCR_SECURE_SLCR_ADMA_TZ                            0xFF
+
+    * RPU TrustZone settings
+    * (OFFSET, MASK, VALUE)      (0XFF4B0024, 0x000000FFU ,0x000000FFU)
+    */
+	PSU_Mask_Write(LPD_SLCR_SECURE_SLCR_ADMA_OFFSET,
+		0x000000FFU, 0x000000FFU);
+/*##################################################################### */
+
+    /*
+    * Register : slcr_gdma @ 0XFD690050
+
+    * TrustZone Classification for GDMA
+    *  PSU_FPD_SLCR_SECURE_SLCR_GDMA_TZ                            0xFF
+
+    * GDMA Trustzone Settings
+    * (OFFSET, MASK, VALUE)      (0XFD690050, 0x000000FFU ,0x000000FFU)
+    */
+	PSU_Mask_Write(FPD_SLCR_SECURE_SLCR_GDMA_OFFSET,
+		0x000000FFU, 0x000000FFU);
+/*##################################################################### */
+
+
+	return 1;
+}
+
+
 
 int _zynq_loadPL(addr_t srcAddr, addr_t srcLen)
 {
@@ -610,6 +1101,16 @@ int _zynq_loadPL(addr_t srcAddr, addr_t srcLen)
 	} while (regVal == 0);
 
 	*(zynq_common.csu + csu_pcap_reset) = 1; /* Put PCAP into reset state */
+	do {
+		regVal = *(zynq_common.csu + csu_pcap_reset) & 1;
+	} while (regVal != 1);
+
+	/* Power up full power domain */
+	*(zynq_common.pmu_global + pmu_global_req_pwrup_int_en) = (1 << 22);
+	*(zynq_common.pmu_global + pmu_global_req_pwrup_trig) = (1 << 22);
+	do {
+		regVal = *(zynq_common.pmu_global + pmu_global_req_pwrup_status) & (1 << 22);
+	} while (regVal != 0);
 
 	/* Release PL from isolation */
 	*(zynq_common.pmu_global + pmu_global_req_pwrup_int_en) = (1 << 23);
@@ -617,6 +1118,9 @@ int _zynq_loadPL(addr_t srcAddr, addr_t srcLen)
 	do {
 		regVal = *(zynq_common.pmu_global + pmu_global_req_pwrup_status) & (1 << 23);
 	} while (regVal != 0);
+
+	/* Reset PL, if configured for */
+	psu_ps_pl_reset_config_data();
 
 	return 0;
 }
@@ -909,6 +1413,8 @@ void _zynqmp_init(void)
 	zynq_common.apu = (void *)APU_BASE_ADDRESS;
 	zynq_common.crf_apb = (void *)CRF_APB_BASE_ADDRESS;
 	zynq_common.crl_apb = (void *)CRL_APB_BASE_ADDRESS;
+
+	psu_apply_master_tz();
 
 	/* Read and clear reset flags */
 	zynq_common.resetFlags = *(zynq_common.crl_apb + crl_apb_reset_reason) & 0x7f;
