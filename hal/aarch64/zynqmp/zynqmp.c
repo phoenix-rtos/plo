@@ -1432,4 +1432,10 @@ void _zynqmp_init(void)
 	for (i = 1; i < 4; i++) {
 		_zynqmp_startApuCore(i, (addr_t)_start);
 	}
+
+	/* FPD AXI 32 bit */
+	*(u32 *)0XFD615000 = 0;
+
+	/* LPD AXI 32 bit */
+	*(u32 *)0xFF419000 = 0;
 }

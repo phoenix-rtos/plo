@@ -110,7 +110,7 @@ static void console_setPin(u32 pin)
 			return;
 	}
 
-	_zynqmp_setMIO(&ctl);
+	// _zynqmp_setMIO(&ctl);
 }
 
 

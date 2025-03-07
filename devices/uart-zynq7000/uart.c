@@ -236,7 +236,7 @@ static int uart_setPin(u32 pin)
 			return -EINVAL;
 	}
 
-	return _zynqmp_setMIO(&ctl);
+	return 0; //_zynqmp_setMIO(&ctl);
 }
 
 
@@ -467,6 +467,12 @@ static int uart_init(unsigned int minor)
 	*(uart->base + rxwm) = 1;
 
 	lib_printf("\ndev/uart: Initializing uart(%d.%d)", DEV_UART, minor);
+
+	/* Clear RX FIFO */
+	while (!(*(uart->base + sr) & (0x1 << 1))) {
+		*(uart->base + fifo);
+	}
+	
 	hal_interruptsSet(info[minor].irq, uart_irqHandler, (void *)uart);
 
 	return EOK;
