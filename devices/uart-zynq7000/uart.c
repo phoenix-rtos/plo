@@ -439,9 +439,10 @@ static int uart_init(unsigned int minor)
 			return -EINVAL;
 #endif
 
-
+#if (UART_CONSOLE_ROUTED_VIA_PL != 1)
 		if (uart_setPin(info[minor].rxPin) < 0 || uart_setPin(info[minor].txPin) < 0)
 			return -EINVAL;
+#endif
 
 		/* Reset RX & TX */
 		*(uart->base + cr) = 0x3;
@@ -467,6 +468,12 @@ static int uart_init(unsigned int minor)
 	*(uart->base + rxwm) = 1;
 
 	lib_printf("\ndev/uart: Initializing uart(%d.%d)", DEV_UART, minor);
+
+	/* Clear RX FIFO */
+	while (!(*(uart->base + sr) & (0x1 << 1))) {
+		*(uart->base + fifo);
+	}
+
 	hal_interruptsSet(info[minor].irq, uart_irqHandler, (void *)uart);
 
 	return EOK;
