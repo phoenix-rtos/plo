@@ -117,8 +117,13 @@ static void console_setPin(u32 pin)
 void console_init(void)
 {
 	console_initClock();
+
+#if (UART_CONSOLE_ROUTED_VIA_PL != 1)
 	console_setPin(UART_RX);
 	console_setPin(UART_TX);
+#else
+	(void)console_setPin;
+#endif
 
 	halconsole_common.uart = UART_BASE_ADDR;
 

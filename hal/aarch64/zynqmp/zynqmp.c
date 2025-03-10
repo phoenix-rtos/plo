@@ -31,6 +31,7 @@
 #define FPD_SLCR_BASE_ADDRESS   0xfd610000
 #define CSUDMA_BASE_ADDRESS     0xffc80000
 #define PMU_GLOBAL_BASE_ADDRESS 0xffd80000
+#define GPIO_BASE_ADDRESS       0xff0a0000
 
 
 /* PLO entrypoint */
@@ -46,6 +47,9 @@ static struct {
 	volatile u32 *apu;
 	volatile u32 *crf_apb;
 	volatile u32 *crl_apb;
+	volatile u32 *lpd_slcr;
+	volatile u32 *fpd_slcr;
+	volatile u32 *gpio;
 	u32 resetFlags;
 } zynq_common;
 
@@ -531,6 +535,39 @@ int _zynqmp_getMIO(ctl_mio_t *mio)
 	return 0;
 }
 
+static void _zynqmp_resetPlViaEmio(void)
+{
+	*(zynq_common.gpio + gpio_mask_data_5_msw) =
+			(*(zynq_common.gpio + gpio_mask_data_5_msw) &= ~(0xFFFF0000U)) | 0x80000000U;
+
+	*(zynq_common.gpio + gpio_dirm_5) =
+			(*(zynq_common.gpio + gpio_dirm_5) &= ~(0xFFFFFFFFU)) | 0x80000000U;
+
+	*(zynq_common.gpio + gpio_oen_5) =
+			(*(zynq_common.gpio + gpio_oen_5) &= ~(0xFFFFFFFFU)) | 0x80000000U;
+
+	*(zynq_common.gpio + gpio_data_5) =
+			(*(zynq_common.gpio + gpio_data_5) &= ~(0xFFFFFFFFU)) | 0x80000000U;
+
+	time_t start = hal_timerGet();
+	while ((hal_timerGet() - start) < 2) {
+		/* Do nothing */
+	}
+
+	*(zynq_common.gpio + gpio_data_5) =
+			(*(zynq_common.gpio + gpio_data_5) &= ~(0xFFFFFFFFU)) | 0x00000000U;
+
+	start = hal_timerGet();
+	while ((hal_timerGet() - start) < 2) {
+		/* Do nothing */
+	}
+
+	*(zynq_common.gpio + gpio_data_5) =
+			(*(zynq_common.gpio + gpio_data_5) &= ~(0xFFFFFFFFU)) | 0x80000000U;
+
+	return;
+}
+
 
 int _zynq_loadPL(addr_t srcAddr, addr_t srcLen)
 {
@@ -610,6 +647,16 @@ int _zynq_loadPL(addr_t srcAddr, addr_t srcLen)
 	} while (regVal == 0);
 
 	*(zynq_common.csu + csu_pcap_reset) = 1; /* Put PCAP into reset state */
+	do {
+		regVal = *(zynq_common.csu + csu_pcap_reset) & 1;
+	} while (regVal != 1);
+
+	/* Power up full power domain */
+	*(zynq_common.pmu_global + pmu_global_req_pwrup_int_en) = (1 << 22);
+	*(zynq_common.pmu_global + pmu_global_req_pwrup_trig) = (1 << 22);
+	do {
+		regVal = *(zynq_common.pmu_global + pmu_global_req_pwrup_status) & (1 << 22);
+	} while (regVal != 0);
 
 	/* Release PL from isolation */
 	*(zynq_common.pmu_global + pmu_global_req_pwrup_int_en) = (1 << 23);
@@ -617,6 +664,9 @@ int _zynq_loadPL(addr_t srcAddr, addr_t srcLen)
 	do {
 		regVal = *(zynq_common.pmu_global + pmu_global_req_pwrup_status) & (1 << 23);
 	} while (regVal != 0);
+
+	/* Reset PL via EMIO pin */
+	_zynqmp_resetPlViaEmio();
 
 	return 0;
 }
@@ -898,6 +948,15 @@ unsigned int hal_getBootReason(void)
 	return zynq_common.resetFlags;
 }
 
+void _zynqmp_config_axi_width(void)
+{
+	/* Configure Full Power Domain AXI interfaces width */
+	*(zynq_common.fpd_slcr + fpd_slcr_afi_fs) = (FPD_AXI_S0_WIDTH << 8) |
+			(FPD_AXI_S1_WIDTH << 10);
+
+	/* Configure Low Power Domain AXI interfaces width */
+	*(zynq_common.lpd_slcr + lpd_slcr_afi_fs) = (LPD_AXI_WIDTH << 8);
+}
 
 void _zynqmp_init(void)
 {
@@ -909,6 +968,9 @@ void _zynqmp_init(void)
 	zynq_common.apu = (void *)APU_BASE_ADDRESS;
 	zynq_common.crf_apb = (void *)CRF_APB_BASE_ADDRESS;
 	zynq_common.crl_apb = (void *)CRL_APB_BASE_ADDRESS;
+	zynq_common.lpd_slcr = (void *)LPD_SLCR_BASE_ADDRESS;
+	zynq_common.fpd_slcr = (void *)FPD_SLCR_BASE_ADDRESS;
+	zynq_common.gpio = (void *)GPIO_BASE_ADDRESS;
 
 	/* Read and clear reset flags */
 	zynq_common.resetFlags = *(zynq_common.crl_apb + crl_apb_reset_reason) & 0x7f;
@@ -926,4 +988,6 @@ void _zynqmp_init(void)
 	for (i = 1; i < 4; i++) {
 		_zynqmp_startApuCore(i, (addr_t)_start);
 	}
+
+	_zynqmp_config_axi_width();
 }

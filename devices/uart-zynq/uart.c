@@ -439,16 +439,19 @@ static int uart_init(unsigned int minor)
 			return -EINVAL;
 #endif
 
-
+#if (UART_CONSOLE_ROUTED_VIA_PL != 1)
 		if (uart_setPin(info[minor].rxPin) < 0 || uart_setPin(info[minor].txPin) < 0)
 			return -EINVAL;
+#else
+		(void)uart_setPin;
+#endif
 
 		/* Reset RX & TX */
 		*(uart->base + cr) = 0x3;
 
 		/* Uart Mode Register
-			* normal mode, 1 stop bit, no parity, 8 bits, uart_ref_clk as source clock
-			* PAR = 0x4 */
+		 * normal mode, 1 stop bit, no parity, 8 bits, uart_ref_clk as source clock
+		 * PAR = 0x4 */
 		*(uart->base + mr) = (*(uart->base + mr) & ~0x000003ff) | 0x00000020;
 
 		/* Disable TX and RX */
@@ -457,9 +460,14 @@ static int uart_init(unsigned int minor)
 		uart_calcBaudarate(uart, info[minor].baudrate);
 
 		/* Uart Control Register
-			* TXEN = 0x1; RXEN = 0x1; TXRES = 0x1; RXRES = 0x1 */
+		 * TXEN = 0x1; RXEN = 0x1; TXRES = 0x1; RXRES = 0x1 */
 		*(uart->base + cr) = (*(uart->base + cr) & ~0x000001ff) | 0x00000017;
 	}
+
+#if (UART_CONSOLE_ROUTED_VIA_PL != 1)
+	/* Reset RX to discard possible invalid chars from PL when UART is routed via PL */
+	*(uart->base + cr) |= (1 << 0);
+#endif
 
 	/* Enable RX FIFO trigger */
 	*(uart->base + ier) |= 0x1;
