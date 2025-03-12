@@ -73,7 +73,11 @@ void hal_syspageSet(hal_syspage_t *hs)
 
 const char *hal_cpuInfo(void)
 {
+#ifdef MCX_USE_CPU1
+	return "Micro Cortex-M33 MCXN94x";
+#else
 	return "Cortex-M33 MCXN94x";
+#endif
 }
 
 
