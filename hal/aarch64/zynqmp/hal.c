@@ -5,8 +5,8 @@
  *
  * Hardware Abstraction Layer
  *
- * Copyright 2021-2022 Phoenix Systems
- * Author: Hubert Buczynski, Gerard Swiderski
+ * Copyright 2021-2025 Phoenix Systems
+ * Author: Hubert Buczynski, Gerard Swiderski, Jacek Maksymowicz
  *
  * This file is part of Phoenix-RTOS.
  *
@@ -21,9 +21,12 @@
 
 
 struct {
+	/* These fields are used in assembly code in _init.S, don't reorder them */
 	hal_syspage_t *hs;
 	addr_t entry;
 } hal_common;
+
+volatile u64 hal_coreJumpFlag;
 
 
 /* Linker symbols */
@@ -39,7 +42,6 @@ extern char __heap_base[], __heap_limit[];
 extern char __stack_top[], __stack_limit[];
 extern char __ddr_start[], __ddr_end[];
 extern char __uncached_ddr_start[], __uncached_ddr_end[];
-extern void hal_coreStart(void);
 
 
 /* Timer */
@@ -52,22 +54,22 @@ extern void interrupts_init(void);
 /* Console */
 void console_init(void);
 
+/* Jump to kernel */
+extern void hal_exitToEL1(void) __attribute__((noreturn));
+
+extern unsigned int hal_getBootReason(void);
+
 
 static void hal_memoryInit(void)
 {
-	int sz = 0;
+	size_t sz = 0;
 	addr_t addr;
 
 	mmu_init();
 
 	/* Define on-chip RAM memory as cached */
-	for (sz = 0; sz <= SIZE_OCRAM_LOW; sz += SIZE_MMU_SECTION_REGION) {
-		addr = ADDR_OCRAM_LOW + sz;
-		mmu_mapAddr(addr, addr, MMU_FLAG_CACHED);
-	}
-
-	for (sz = 0; sz < SIZE_OCRAM_HIGH; sz += SIZE_MMU_SECTION_REGION) {
-		addr = (ADDR_OCRAM_HIGH & ~(SIZE_MMU_SECTION_REGION - 1)) + sz;
+	for (sz = 0; sz < SIZE_OCRAM; sz += SIZE_MMU_SECTION_REGION) {
+		addr = ADDR_OCRAM + sz;
 		mmu_mapAddr(addr, addr, MMU_FLAG_CACHED);
 	}
 
@@ -94,7 +96,7 @@ static void hal_memoryInit(void)
 
 void hal_init(void)
 {
-	_zynq_init();
+	_zynqmp_init();
 	hal_memoryInit();
 	interrupts_init();
 
@@ -115,12 +117,13 @@ void hal_done(void)
 void hal_syspageSet(hal_syspage_t *hs)
 {
 	hal_common.hs = hs;
+	hs->resetReason = hal_getBootReason();
 }
 
 
 const char *hal_cpuInfo(void)
 {
-	return "Cortex-A9 Zynq 7000";
+	return "Cortex-A53 ZynqMP";
 }
 
 
@@ -159,11 +162,13 @@ int hal_memoryAddMap(addr_t start, addr_t end, u32 attr, u32 mapId)
 static void hal_getMinOverlappedRange(addr_t start, addr_t end, mapent_t *entry, mapent_t *minEntry)
 {
 	if ((start < entry->end) && (end > entry->start)) {
-		if (start > entry->start)
+		if (start > entry->start) {
 			entry->start = start;
+		}
 
-		if (end < entry->end)
+		if (end < entry->end) {
 			entry->end = end;
+		}
 
 		if (entry->start < minEntry->start) {
 			minEntry->start = entry->start;
@@ -195,8 +200,9 @@ int hal_memoryGetNextEntry(addr_t start, addr_t end, mapent_t *entry)
 		{ .start = (addr_t)ADDR_BITSTREAM, .end = (addr_t)SIZE_BITSTREAM, .type = hal_entryTemp },
 	};
 
-	if (start == end)
+	if (start == end) {
 		return -1;
+	}
 
 	minEntry.start = (addr_t)-1;
 	minEntry.end = 0;
@@ -209,8 +215,9 @@ int hal_memoryGetNextEntry(addr_t start, addr_t end, mapent_t *entry)
 	hal_getMinOverlappedRange(start, end, &tempEntry, &minEntry);
 
 	for (i = 0; i < sizeof(entries) / sizeof(entries[0]); ++i) {
-		if (entries[i].start >= entries[i].end)
+		if (entries[i].start >= entries[i].end) {
 			continue;
+		}
 		tempEntry.start = entries[i].start;
 		tempEntry.end = entries[i].end;
 		tempEntry.type = entries[i].type;
@@ -231,7 +238,7 @@ int hal_memoryGetNextEntry(addr_t start, addr_t end, mapent_t *entry)
 
 void hal_cpuReboot(void)
 {
-	_zynq_softRst();
+	_zynqmp_softRst();
 
 	__builtin_unreachable();
 }
@@ -239,32 +246,21 @@ void hal_cpuReboot(void)
 
 int hal_cpuJump(void)
 {
-	if (hal_common.entry == (addr_t)-1)
+	if (hal_common.entry == (addr_t)-1) {
 		return -1;
+	}
 
 	hal_interruptsDisableAll();
 
 	hal_dcacheEnable(0);
-	hal_dcacheFlush((addr_t)ADDR_OCRAM_LOW, (addr_t)ADDR_OCRAM_LOW + SIZE_OCRAM_LOW);
-	hal_dcacheFlush((addr_t)ADDR_OCRAM_HIGH, (addr_t)ADDR_OCRAM_HIGH + SIZE_OCRAM_HIGH);
+	hal_dcacheFlush((addr_t)ADDR_OCRAM, (addr_t)ADDR_OCRAM + SIZE_OCRAM);
 	hal_dcacheFlush((addr_t)ADDR_DDR, (addr_t)ADDR_DDR + SIZE_DDR);
 
 	hal_icacheEnable(0);
 	hal_icacheInval();
 
 	mmu_disable();
-
-	*(addr_t *)(0xFFFFFFF0) = (addr_t)hal_coreStart; /* This write must be uncached */
-	/* clang-format off */
-	__asm__ volatile(" \
-		dsb; \
-		isb; \
-		sev; \
-		mov r9, %1; \
-		blx %0; \
-		"
-		:
-		: "r"(hal_common.entry), "r"((addr_t)hal_common.hs));
-	/* clang-format on */
+	hal_coreJumpFlag = 1; /* This write must be uncached */
+	hal_exitToEL1();
 	return 0;
 }
