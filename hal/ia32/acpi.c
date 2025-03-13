@@ -135,7 +135,13 @@ static rsdp_t *_hal_acpiLookForRsdp(hal_syspage_t *hs, void *start, void *end)
 static rsdp_t *_hal_acpiFindRsdp(hal_syspage_t *hs)
 {
 	/* Search EBDA */
+
+	/* FIXME: pragmas are needed as a result of a bug in GCC -Warray-bounds */
+#pragma GCC diagnostic push
+#pragma GCC diagnostic ignored "-Warray-bounds"
 	unsigned int ebda = ((*(u16 *)0x40eu) << 4) & ~(SIZE_PAGE - 1);
+#pragma GCC diagnostic pop
+
 	rsdp_t *result;
 	if ((ebda < 0x00080000u) || (ebda > 0x0009ffffu)) {
 		ebda = 0x00080000u;
