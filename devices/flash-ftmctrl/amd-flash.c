@@ -19,6 +19,11 @@
 #include <lib/lib.h>
 
 
+/* GCC bug: https://gcc.gnu.org/bugzilla/show_bug.cgi?id=104657 */
+#pragma GCC diagnostic push
+#pragma GCC diagnostic ignored "-Warray-bounds"
+
+
 /* Valid offset on flash - for executing commands */
 #define FLASH_VALID_OFFS 0x0
 #define STS_FULL_CHECK   ((1 << 5) | (1 << 4) | (1 << 3) | (1 << 1))
@@ -111,6 +116,9 @@ __attribute__((section(".noxip"))) static void amd_exitQuery(void)
 {
 	*(vu8 *)ADDR_FLASH = AMD_CMD_EXIT_QUERY;
 }
+
+
+#pragma GCC diagnostic pop
 
 
 /* These structures must not reside on flash */
