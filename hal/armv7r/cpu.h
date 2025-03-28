@@ -71,6 +71,28 @@ static inline u32 hal_getCycleCount(void)
 }
 
 
+static inline void hal_cpuMapATCM(u32 addr, int enable)
+{
+	addr &= ~((1 << 12) - 1);
+	if (enable) {
+		addr |= 1;
+	}
+
+	__asm__ volatile("mcr p15, 0, %0, c9, c1, 1" ::"r"(addr));
+}
+
+
+static inline void hal_cpuMapBTCM(u32 addr, int enable)
+{
+	addr &= ~((1 << 12) - 1);
+	if (enable) {
+		addr |= 1;
+	}
+
+	__asm__ volatile("mcr p15, 0, %0, c9, c1, 0" ::"r"(addr));
+}
+
+
 #endif
 
 
