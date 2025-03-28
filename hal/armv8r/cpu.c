@@ -42,8 +42,12 @@ void hal_cpuInvCache(unsigned int type, addr_t addr, size_t sz)
 	switch (type) {
 		case hal_cpuDCache:
 			hal_dcacheInval(addr, addr + sz);
+			break;
+
 		case hal_cpuICache:
 			hal_icacheInval();
+			break;
+
 		default:
 			break;
 	}
