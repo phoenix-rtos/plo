@@ -464,9 +464,13 @@ static int uart_init(unsigned int minor)
 		*(uart->base + cr) = (*(uart->base + cr) & ~0x000001ff) | 0x00000017;
 	}
 
-#if (UART_CONSOLE_ROUTED_VIA_PL != 1)
+#if (UART_CONSOLE_ROUTED_VIA_PL == 1)
 	/* Reset RX to discard possible invalid chars from PL when UART is routed via PL */
 	*(uart->base + cr) |= (1 << 0);
+	/* Wait until RX FIFO is empty */
+	while (0 != (*(uart->base + cr) & (1 << 0))) {
+		/* do nothing */
+	};
 #endif
 
 	/* Enable RX FIFO trigger */
