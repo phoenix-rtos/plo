@@ -110,6 +110,14 @@ set_loop:
 	ldr r0, =_stack
 	bic r0, #7
 
+	/* Enable PMU */
+	mrc p15, 0, r0, c9, c12, 0       /* Read PMCR (Performance Monitor Control Register)  */
+	orr r0, #0x7                     /* Cycle counter reset - bit[2], Performance counter reset - bit[1], enable all counters - bit[0] */
+	mcr p15, 0, r0, c9, c12, 0       /* Write PMCR (Performance Monitor Control Register) */
+	mrc p15, 0, r0, c9, c12, 1       /* Read CESR (Count Enable Set Register)             */
+	orr r0, #1 << 31                 /* Enable cycle counter                              */
+	mcr p15, 0, r0, c9, c12, 1       /* Write CESR (Count Enable Set Register)            */
+
 	/* FIQ mode stack */
 	msr CPSR_c, #(MODE_FIQ | NO_INT)
 	mov sp, r0
