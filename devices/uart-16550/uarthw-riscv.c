@@ -49,6 +49,12 @@ unsigned int uarthw_irq(void *hwctx)
 }
 
 
+unsigned int uarthw_getDivisor(void *hwctx, baud_t *baud)
+{
+	return baud->divisor;
+}
+
+
 int uarthw_init(unsigned int n, void *hwctx, unsigned int *baud)
 {
 	if (n >= sizeof(uarts) / sizeof(uarts[0])) {
