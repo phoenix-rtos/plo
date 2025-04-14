@@ -63,6 +63,14 @@ static inline void hal_cpuHalt(void)
 }
 
 
+static inline u32 hal_getCycleCount(void)
+{
+	u32 ret;
+	__asm__ volatile("mrc p15, 0, %0, c9, c13, 0" : "=r"(ret));
+	return ret;
+}
+
+
 #endif
 
 
