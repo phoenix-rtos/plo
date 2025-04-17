@@ -885,6 +885,9 @@ void _mcxn94x_init(void)
 
 	_mcxn94x_disableGDET();
 
+	/* Enable Mailbox */
+	_mcxn94x_sysconSetDevClkState(pctl_mailbox, 1);
+
 	/* Configure FlexComms */
 	for (i = 0; i < sizeof(flexcommConf) / sizeof(*flexcommConf); ++i) {
 		if (flexcommConf[i] == FLEXCOMM_NONE) {
