@@ -7,7 +7,7 @@
  *
  * Copyright 2020, 2021 Phoenix Systems
  * Author: Pawel Pisarczyk, Lukasz Kosinski
- * 
+ *
  * This file is part of Phoenix-RTOS.
  *
  * %LICENSE%
@@ -16,6 +16,7 @@
 #ifndef _DEV_UARTHW_H_
 #define _DEV_UARTHW_H_
 
+#include "uart-16550.h"
 
 /* UART hardware context size */
 #define SIZE_UARTHW_CTX 16
@@ -31,6 +32,10 @@ extern void uarthw_write(void *hwctx, unsigned int reg, unsigned char val);
 
 /* Returns UART interrupt number */
 extern unsigned int uarthw_irq(void *hwctx);
+
+
+/* Returns the divisor value needed to achieve selected baurdrate */
+extern unsigned int uarthw_getDivisor(void *hwctx, const baud_t *baud);
 
 
 /* Initializes UART hardware context (optionally sets preferred baudrate index) */
