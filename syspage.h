@@ -77,7 +77,7 @@ extern void syspage_progShow(void);
 extern void syspage_consoleSet(unsigned int id);
 
 
-#if HAS_GRAPHICS
+#if defined(HAS_GRAPHICS) && HAS_GRAPHICS != 0
 /* Graphics mode */
 extern void syspage_graphmodeSet(graphmode_t graphmode);
 #endif
