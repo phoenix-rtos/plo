@@ -627,7 +627,8 @@ void syspage_progShow(void)
 }
 
 
-#if HAS_GRAPHICS
+/* TODO: function get value from hal-specific struct, consider move to target-specific code */
+#if defined(HAS_GRAPHICS) && HAS_GRAPHICS != 0
 void syspage_graphmodeSet(graphmode_t graphmode)
 {
 	syspage_common.syspage->hs.graphmode.width = graphmode.width;
