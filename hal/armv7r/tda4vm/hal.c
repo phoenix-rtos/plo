@@ -36,8 +36,6 @@ extern char __data_start[], __data_end[];
 extern char __bss_start[], __bss_end[];
 extern char __heap_base[], __heap_limit[];
 extern char __stack_top[], __stack_limit[];
-extern char __ddr_start[], __ddr_end[];
-extern char __uncached_ddr_start[], __uncached_ddr_end[];
 
 
 /* Timer */
@@ -58,6 +56,7 @@ void hal_init(void)
 	_tda4vm_init();
 	interrupts_init();
 
+	mpu_init();
 	timer_init();
 	console_init();
 
@@ -107,11 +106,7 @@ void hal_kernelEntryPoint(addr_t addr)
 
 int hal_memoryAddMap(addr_t start, addr_t end, u32 attr, u32 mapId)
 {
-	/* TODO: on this platform we cannot enable MPU until
-	 * our memory map implementation supports overlapping regions
-	 */
-	hal_common.hs->mpu.allocCnt = 0;
-	return 0;
+	return mpu_regionAlloc(start, end, attr, mapId, 1);
 }
 
 
@@ -151,8 +146,6 @@ int hal_memoryGetNextEntry(addr_t start, addr_t end, mapent_t *entry)
 		{ .start = (addr_t)__bss_start, .end = (addr_t)__bss_end, .type = hal_entryTemp },
 		{ .start = (addr_t)__heap_base, .end = (addr_t)__heap_limit, .type = hal_entryTemp },
 		{ .start = (addr_t)__stack_limit, .end = (addr_t)__stack_top, .type = hal_entryTemp },
-		{ .start = (addr_t)__ddr_start, .end = (addr_t)__ddr_end, .type = hal_entryTemp },
-		{ .start = (addr_t)__uncached_ddr_start, .end = (addr_t)__uncached_ddr_end, .type = hal_entryTemp },
 	};
 
 	if (start == end) {
@@ -209,13 +202,8 @@ int hal_cpuJump(void)
 	hal_interruptsDisableAll();
 
 	hal_dcacheEnable(0);
-	hal_dcacheFlush((addr_t)ADDR_ATCM, (addr_t)ADDR_ATCM + SIZE_ATCM);
-	hal_dcacheFlush((addr_t)ADDR_BTCM, (addr_t)ADDR_BTCM + SIZE_BTCM);
-	hal_dcacheFlush((addr_t)ADDR_MSRAM_REMAP, (addr_t)ADDR_MSRAM_REMAP + SIZE_MSRAM_REMAP);
-	hal_dcacheFlush((addr_t)ADDR_DDR, (addr_t)ADDR_DDR + SIZE_DDR);
-
+	/* Flushing cache not necessary - memory is configured in _init.S to be write-through */
 	hal_icacheEnable(0);
-	hal_icacheInval();
 
 	/* Removing region that remaps our interrupt vectors.
 	 * Interrupts MUST be disabled before this is done! */
