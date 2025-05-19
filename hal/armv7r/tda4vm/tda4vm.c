@@ -822,10 +822,6 @@ const tda4vm_uart_info_t *tda4vm_getUartInfo(unsigned n)
 
 void _tda4vm_init(void)
 {
-	/* TODO: ugly hack to make sure the linker doesn't remove .ramdisk section */
-	static const int dummy __attribute__((section(".ramdisk"))) = 0;
-	asm volatile("" ::"r"(&dummy));
-
 	/* Set up memory for kernel code */
 	hal_cpuMapATCM(ADDR_ATCM, 1);
 	hal_cpuMapBTCM(ADDR_BTCM, 1);
