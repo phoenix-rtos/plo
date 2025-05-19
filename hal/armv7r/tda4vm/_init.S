@@ -27,7 +27,28 @@
 
 .section .init, "ax"
 .org 0
-	b _start /* This instruction is the reset vector, do not remove it */
+/* Because this vector table will be re-mapped to a different address,
+ * it needs to be position-independent */
+.globl _vector_table
+.type _vector_table, %object
+_vector_table:
+	ldr pc, [pc, #24]
+	ldr pc, [pc, #24]
+	ldr pc, [pc, #24]
+	ldr pc, [pc, #24]
+	ldr pc, [pc, #24]
+	b .
+	ldr pc, [pc, #24]
+	ldr pc, [pc, #24]
+
+.word _start
+.word _exception_undef
+.word _syscalls_dispatch
+.word _exception_prefetch
+.word _exception_abort
+.word 0
+.word _interrupts_dispatch
+.word _interrupts_dispatch
 
 .global _start
 .type _start, %function
@@ -192,51 +213,21 @@ _preinit_mpu_data:
 .word 0 /* Base address */
 .word 0x1305 /* Device, PL1: Read/Write PL0: Read/Write, Execute never, Shareable */
 .word ((30 << 1) | 1) /* size 2 GB, enabled */
-/* Kernel text - ATCM+BTCM+MCU_MSRAM (mapped from 0x41cb0000) */
+/* Kernel text - ATCM+BTCM+MCU_MSRAM (mapped from 0x41cf0000) */
 .word ADDR_ATCM /* Base address */
 .word 0x10b /* Normal cacheable Write-Back, Write-Allocate, PL1: Read/Write PL0: No access, Executable, Non-shareable */
 .word ((16 << 1) | 1) /* size 128 KB, enabled */
-/* Kernel data - MCU_MSRAM */
-.word ADDR_MSRAM_KERNEL /* Base address */
-.word 0x120b /* Normal cacheable Write-Back, Write-Allocate, PL1: Read/Write PL0: Read-only, Execute never, Non-shareable */
-.word ((19 << 1) | 1) /* size 1 MB, enabled */
+/* User code/data - MCU_MSRAM */
+.word ADDR_MSRAM /* Base address */
+.word 0x30b /* Normal cacheable Write-Back, Write-Allocate, PL1: Read/Write PL0: Read/Write, Executable, Non-shareable */
+.word (19 << 1) | 1 /* Size 1M, enabled */
 /* Block access to re-mapped part of MCU_MSRAM */
 .word ORIG_MSRAM_REMAP /* Base address */
 .word 0x0 /* No access */
 .word ((15 << 1) | 1) /* size 64 KB, enabled */
-/* PLO init code - BTCM (temporary) */
-.word ADDR_BTCM_EARLY /* Base address */
-.word 0x10b /* Normal cacheable Write-Back, Write-Allocate, PL1: Read/Write PL0: No access, Executable, Non-shareable */
-.word ((14 << 1) | 1) /* size 32 KB, enabled */
 /* Zero out remaining regions */
-.rept 10
+.rept 11
 .word 0
 .word 0
 .word 0 /* Disabled */
 .endr
-
-.section .text, "ax"
-/* Because this vector table will be re-mapped to a different address,
- * it needs to be position-independent */
-.org 0
-.align 6
-.globl _vector_table
-.type _vector_table, %object
-_vector_table:
-	ldr pc, [pc, #24]
-	ldr pc, [pc, #24]
-	ldr pc, [pc, #24]
-	ldr pc, [pc, #24]
-	ldr pc, [pc, #24]
-	b .
-	ldr pc, [pc, #24]
-	ldr pc, [pc, #24]
-
-.word _start
-.word _exception_undef
-.word _syscalls_dispatch
-.word _exception_prefetch
-.word _exception_abort
-.word 0
-.word _interrupts_dispatch
-.word _interrupts_dispatch
