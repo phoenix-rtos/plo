@@ -26,26 +26,21 @@
 #define ADDR_ATCM 0x0
 #define SIZE_ATCM (32 * 1024)
 
-#define ADDR_BTCM_EARLY 0x41010000
-#define ADDR_BTCM       (ADDR_ATCM + SIZE_ATCM)
-#define SIZE_BTCM       (32 * 1024)
+#define ADDR_BTCM (ADDR_ATCM + SIZE_ATCM)
+#define SIZE_BTCM (32 * 1024)
 
 #define ADDR_MSRAM_REMAP (ADDR_BTCM + SIZE_BTCM)
 #define SIZE_MSRAM_REMAP (64 * 1024)
-#define ORIG_MSRAM_REMAP 0x41ce0000
+#define ORIG_MSRAM_REMAP 0x41cf0000
 
-#define ADDR_MSRAM_KERNEL 0x41c00000
-#define SIZE_MSRAM_KERNEL (896 * 1024)
+#define ADDR_MSRAM_KERNEL 0x41c80000
+#define SIZE_MSRAM_KERNEL (448 * 1024)
 
-#define ADDR_DDR 0xa0100000
-#define SIZE_DDR (15 * 1024 * 1024)
+#define ADDR_MSRAM 0x41c00000
+#define SIZE_MSRAM (512 * 1024)
 
-/* DDR memory to allocate plo's data */
-#define ADDR_BUFF_DDR (ADDR_DDR)
-#define SIZE_BUFF_DDR (2 * 1024 * 1024)
-
-#define ADDR_UNCACHED_BUFF_DDR (ADDR_BUFF_DDR + SIZE_BUFF_DDR)
-#define SIZE_UNCACHED_BUFF_DDR (1 * 1024 * 1024)
+#define ADDR_MSRAM_PLO 0x41cc0000
+#define SIZE_MSRAM_PLO (192 * 1024)
 
 /* RAM disk configuration */
 #define RAM_ADDR      0xa0400000
@@ -56,54 +51,17 @@
 /* Memory map setup */
 MEMORY
 {
-	m_btcm         (rw)  : ORIGIN = ADDR_BTCM_EARLY, LENGTH = SIZE_BTCM
-	m_ddr          (rw)  : ORIGIN = ADDR_BUFF_DDR, LENGTH = SIZE_BUFF_DDR
-	m_uncached_ddr (rw)  : ORIGIN = ADDR_UNCACHED_BUFF_DDR, LENGTH = SIZE_UNCACHED_BUFF_DDR
-	m_ramdisk      (r)   : ORIGIN = RAM_ADDR, LENGTH = RAM_BANK_SIZE
+	m_msram_plo (rwx)  : ORIGIN = ADDR_MSRAM_PLO, LENGTH = SIZE_MSRAM_PLO
 }
 
-REGION_ALIAS("INIT_VECTORS", m_btcm);
-REGION_ALIAS("PLO_IMAGE", m_ddr);
-REGION_ALIAS("TCM_TEXT", m_ddr);
-REGION_ALIAS("DATA", m_ddr);
-REGION_ALIAS("BSS", m_ddr);
-REGION_ALIAS("HEAP", m_ddr);
-REGION_ALIAS("STACK", m_ddr);
-REGION_ALIAS("DDR", m_ddr);
-REGION_ALIAS("UNCACHED_DDR", m_uncached_ddr);
-REGION_ALIAS("RAMDISK", m_ramdisk);
+REGION_ALIAS("PLO_IMAGE", m_msram_plo);
+REGION_ALIAS("TCM_TEXT", m_msram_plo);
+REGION_ALIAS("DATA", m_msram_plo);
+REGION_ALIAS("BSS", m_msram_plo);
+REGION_ALIAS("HEAP", m_msram_plo);
+REGION_ALIAS("STACK", m_msram_plo);
 
-#include "common/plo-arm-hivecs.lds"
-
-/* Additional sections */
-SECTIONS
-{
-	.ddr (NOLOAD) :
-	{
-		. = ALIGN(4);
-		__ddr_start = .;
-		*(.ddr*)
-		__ddr_end = .;
-	} > DDR
-
-	.uncached_ddr (NOLOAD) :
-	{
-		. = ALIGN(4);
-		__uncached_ddr_start = .;
-		*(.uncached_ddr*)
-		__uncached_ddr_end = .;
-	} > UNCACHED_DDR
-
-	.ramdisk :
-	{
-		. = ALIGN(4);
-		__ramdisk_load = LOADADDR(.ramdisk);
-		__ramdisk_start = .;
-		*(.ramdisk*)
-		__ramdisk_end = .;
-	} > RAMDISK
-}
-
+#include "common/plo-arm.lds"
 
 #endif /* end of __LINKER__ */
 
