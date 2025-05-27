@@ -941,9 +941,9 @@ void _mcxn94x_init(void)
 	/* Config flash waitstates */
 	_mcxn94x_configFlashWS(3);
 
-	/* Enable PPL0 @150 MHz, SOSC source Fin = SOSC_FREQ / 4 */
+	/* Enable PPL0 @150 MHz, SOSC source Fin = SOSC_FREQ = 24 MHz */
 	/* Fout = Fin * m / (2 * p * n) */
-	_mcxn94x_clockConfigPLL0(0, 50, 100, 4);
+	_mcxn94x_clockConfigPLL0(0, 25, 1, 2);
 
 	/* Select PLL0 as a main clock */
 	*(n94x_common.scg + scg_rccr) = (*(n94x_common.scg + scg_rccr) & ~(0xf << 24)) | 5 << 24;
