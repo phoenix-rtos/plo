@@ -19,6 +19,9 @@
 
 #include <board_config.h>
 
+#ifndef UART_CONSOLE_ROUTED_VIA_PL
+#define UART_CONSOLE_ROUTED_VIA_PL 0
+#endif
 
 #define MAX_TXRX_FIFO_SIZE 0x40
 #define BUFFER_SIZE        0x200
