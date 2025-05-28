@@ -24,6 +24,13 @@
 /* Interrupts */
 #define SIZE_INTERRUPTS 167
 
+/* DEBUG - RTT PIPE */
+#ifdef RTT_ENABLED_PLO
+#error RTT is not supported on IMXRT105X
+#endif
+
+#define RTT_ENABLED_PLO 0
+
 /* UART */
 #define UART_MAX_CNT 8
 
