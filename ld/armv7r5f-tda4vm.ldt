@@ -1,0 +1,69 @@
+/*
+ * Phoenix-RTOS
+ *
+ * Operating system loader
+ *
+ * Linker Template and Platform Config for ARMv7 R5 TDA4VM
+ *
+ * Copyright 2021-2025 Phoenix Systems
+ * Author: Gerard Swiderski, Jacek Maksymowicz
+ *
+ * This file is part of Phoenix-RTOS.
+ *
+ * %LICENSE%
+ */
+
+
+#ifndef ARMV7R5F_TDA4VM_LDT
+#define ARMV7R5F_TDA4VM_LDT
+
+
+/* Platform specific definitions */
+#define SIZE_PAGE  0x1000
+#define SIZE_STACK (4 * SIZE_PAGE)
+#define SIZE_HEAP  (5 * SIZE_PAGE)
+
+#define ADDR_ATCM 0x0
+#define SIZE_ATCM (32 * 1024)
+
+#define ADDR_BTCM (ADDR_ATCM + SIZE_ATCM)
+#define SIZE_BTCM (32 * 1024)
+
+#define ADDR_MSRAM_REMAP (ADDR_BTCM + SIZE_BTCM)
+#define SIZE_MSRAM_REMAP (64 * 1024)
+#define ORIG_MSRAM_REMAP 0x41cf0000
+
+#define ADDR_MSRAM_KERNEL 0x41c80000
+#define SIZE_MSRAM_KERNEL (448 * 1024)
+
+#define ADDR_MSRAM 0x41c00000
+#define SIZE_MSRAM (512 * 1024)
+
+#define ADDR_MSRAM_PLO 0x41cc0000
+#define SIZE_MSRAM_PLO (192 * 1024)
+
+/* RAM disk configuration */
+#define RAM_ADDR      0xa0400000
+#define RAM_BANK_SIZE (4 * 1024 * 1024)
+
+#if defined(__LINKER__)
+
+/* Memory map setup */
+MEMORY
+{
+	m_msram_plo (rwx)  : ORIGIN = ADDR_MSRAM_PLO, LENGTH = SIZE_MSRAM_PLO
+}
+
+REGION_ALIAS("PLO_IMAGE", m_msram_plo);
+REGION_ALIAS("TCM_TEXT", m_msram_plo);
+REGION_ALIAS("DATA", m_msram_plo);
+REGION_ALIAS("BSS", m_msram_plo);
+REGION_ALIAS("HEAP", m_msram_plo);
+REGION_ALIAS("STACK", m_msram_plo);
+
+#include "common/plo-arm.lds"
+
+#endif /* end of __LINKER__ */
+
+
+#endif /* end of ARMV7R5F_TDA4VM_LDT */
