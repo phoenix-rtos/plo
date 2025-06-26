@@ -15,6 +15,6 @@ CFLAGS += -mfloat-abi=soft
 PLO_COMMANDS ?= alias app blob call console copy devices dump echo go help kernelimg \
   map mem phfs reboot script stop wait
 
-PLO_ALLDEVICES := pipe-rtt ram-storage
+PLO_ALLDEVICES := pipe-rtt ram-storage uart-stm32
 
 OBJS += $(addprefix $(PREFIX_O)hal/$(TARGET_SUFF)/stm32/n6/, _init.o stm32n6.o timer.o console.o)
