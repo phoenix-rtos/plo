@@ -240,7 +240,7 @@ char *hal_strchr(const char *s, int c)
 }
 
 
-int hal_i2s(char *prefix, char *s, unsigned int i, unsigned char b, char zero)
+int hal_i2s(char *prefix, char *s, unsigned long i, unsigned char b, char zero)
 {
 	static const char digits[] = "0123456789abcdef";
 	char c;
