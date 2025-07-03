@@ -144,7 +144,7 @@ static void exceptions_DumpContext(char *buff, exc_context_t *ctx, int n)
 
 static void __attribute__((noreturn)) exceptions_defaultHandler(unsigned int n, exc_context_t *ctx)
 {
-	char buff[512];
+	char buff[1100];
 
 	exceptions_DumpContext(buff, ctx, n);
 	console_print(buff);

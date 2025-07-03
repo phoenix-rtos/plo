@@ -142,7 +142,7 @@ void hal_exceptionsDumpContext(char *buff, exc_context_t *ctx, int n)
 
 void exceptions_dispatch(unsigned int n, exc_context_t *ctx)
 {
-	char buff[512];
+	char buff[1100];
 
 	hal_exceptionsDumpContext(buff, ctx, n);
 	hal_consolePrint(buff);

@@ -24,6 +24,4 @@ extern void console_init(void);
 void noelv_init(void)
 {
 	console_init();
-	/* Enable execution of cache management instructions */
-	csr_write(CSR_SENVCFG, 0xffu);
 }

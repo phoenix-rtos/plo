@@ -34,6 +34,7 @@ _interrupts_dispatch:
 	 * MPP = 3 -> machine mode
 	 */
 	srli a0, a0, 11
+	andi a0, a0, 3
 	xori a0, a0, 3
 	bnez a0, 1f
 
