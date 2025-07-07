@@ -20,6 +20,78 @@
 static mpu_common_t mpu_common;
 
 
+/* clang-format off */
+enum { mpu_type, mpu_ctrl, mpu_rnr, mpu_rbar, mpu_rlar, mpu_rbar_a1, mpu_rlar_a1, mpu_rbar_a2, mpu_rlar_a2,
+	   mpu_rbar_a3, mpu_rlar_a3, mpu_mair0, mpu_mair1 };
+/* clang-format on */
+
+
+/* Translate memory map attributes to RLAR attribute bits */
+static u32 mpu_regionAttrsRlar(u32 attr, unsigned int enable)
+{
+	u8 attrIndx = ((attr & mAttrCacheable) & 1u) | (((attr & mAttrBufferable) & 1u) << 1);
+	return (attrIndx & 0x3u << 1) |
+			(enable != 0);
+}
+
+
+/* Translate memory map attributes to RLAR attribute bits */
+static u32 mpu_regionAttrsRbar(u32 attr, unsigned int enable)
+{
+	u8 ap = 0; /* privileged read-write access, unprivileged no access */
+
+	if ((attr & mAttrRead) != 0) {
+		/*
+		 * privileged read-write access, unprivileged read only access
+		 * however, armv8m doesn't support that
+		 * instead set both levels to read/write
+		 */
+		ap = 1;
+	}
+
+	if ((attr & mAttrWrite) != 0) {
+		ap = 1; /* priviliged read-write access, unprivileged read and write access */
+	}
+
+	return (((attr & mAttrShareable) != 0) << 4) |
+			((ap & 0x3u) << 1) |
+			((attr & mAttrExec) == 0);
+}
+
+/* Setup single MPU region entry in local MPU context */
+static int mpu_regionSet(unsigned int *idx, addr_t start, addr_t end, u32 rbarAttr, u32 rlarAttr, u32 mapId)
+{
+	/* Allow end == 0, this means end of address range */
+	const size_t size = (end - start) & 0xffffffffu;
+	u32 limit = end - 1;
+
+	if (*idx >= mpu_common.regMax) {
+		return -EPERM;
+	}
+
+	/* Allow end == 0, this means end of address range */
+	if ((end != 0) && (end <= start)) {
+		return -EINVAL;
+	}
+
+	/* Check if entire address range is requested */
+	if (size == 0) {
+		limit = 0xffffffff;
+	}
+	else if (size < 32 || ((size & 0x1f) != 0) || ((start & 0x1f) != 0)) {
+		/* Not supported by MPU */
+		return -EPERM;
+	}
+
+	mpu_common.region[*idx].rbar = (start & ~0x1f) | rbarAttr;
+	mpu_common.region[*idx].rlar = (limit & ~0x1f) | rlarAttr;
+	mpu_common.mapId[*idx] = mapId;
+
+	*idx += 1;
+	return EOK;
+}
+
+
 const mpu_common_t *const mpu_getCommon(void)
 {
 	/* TODO: return initialized structure, when enabling MPU on armv8m */
@@ -27,20 +99,76 @@ const mpu_common_t *const mpu_getCommon(void)
 }
 
 
+/* Invalidate range of regions */
+static void mpu_regionInvalidate(u8 first, u8 last)
+{
+	unsigned int i;
+
+	for (i = first; i < last && i < mpu_common.regMax; i++) {
+		/* set multi-map to none */
+		mpu_common.mapId[i] = (u32)-1;
+
+		/* mark i-th region as disabled */
+		mpu_common.region[i].rlar = 0;
+
+		/* set exec never */
+		mpu_common.region[i].rbar = 1;
+	}
+}
+
+
 void mpu_init(void)
 {
-	/* TODO: add implementation, when enabling MPU on armv8m */
+	volatile u32 *mpu_base = (void *)0xe002ed90;
+	mpu_common.type = *(mpu_base + mpu_type);
+	mpu_common.regMax = (u8)(mpu_common.type >> 8);
+	mpu_common.regCnt = mpu_common.mapCnt = 0;
+
+	mpu_regionInvalidate(0, sizeof(mpu_common.region) / sizeof(mpu_common.region[0]));
+
+	/*
+	 * TODO: program MPU_MAIR attributes for cacheability and bufferability into the MPU
+	 * 3: Cacheable & Bufferable -> outer and inner write back, read alloc policy
+	 * 1: Cacheable & !Bufferable -> outer and inner Write-Through, read alloc policy
+	 * 2: !Cacheable & Bufferable -> device memory (armv7m), nGnRE
+	 * 0: !Cacheable & !Bufferable -> device memory (armv7m strongly ordered) nGnRnE
+	 */
+
+	*(mpu_base + mpu_mair0) = 0xee01aa00;
 }
 
 
 int mpu_regionAlloc(addr_t addr, addr_t end, u32 attr, u32 mapId, unsigned int enable)
 {
-	/* TODO: add implementation, when enabling MPU on armv8m */
-	return 0;
-}
+	int res;
+	unsigned int regCur = mpu_common.regCnt;
+	u32 rbarAttr = mpu_regionAttrsRbar(attr, enable);
+	u32 rlarAttr = mpu_regionAttrsRlar(attr, enable);
 
+	res = mpu_regionSet(&regCur, addr, end, rbarAttr, rlarAttr, mapId);
+	if (res != EOK) {
+		mpu_regionInvalidate(mpu_common.regCnt, regCur);
+		return res;
+	}
+
+	mpu_common.regCnt = regCur;
+	mpu_common.mapCnt++;
+
+	return EOK;
+}
 
 void mpu_getHalData(hal_syspage_t *hal)
 {
-	/* TODO: add implementation, when enabling MPU on armv8m */
+	unsigned int i;
+
+	mpu_regionInvalidate(mpu_common.regCnt, mpu_common.regMax);
+
+	hal->mpu.type = mpu_common.type;
+	hal->mpu.allocCnt = mpu_common.regCnt;
+
+	for (i = 0; i < sizeof(hal->mpu.table) / sizeof(hal->mpu.table[0]); i++) {
+		hal->mpu.table[i].rbar = mpu_common.region[i].rbar;
+		hal->mpu.table[i].rlar = mpu_common.region[i].rlar;
+		hal->mpu.map[i] = mpu_common.mapId[i];
+	}
 }
