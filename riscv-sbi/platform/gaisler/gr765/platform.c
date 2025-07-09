@@ -3,9 +3,9 @@
  *
  * Phoenix SBI
  *
- * NOEL-V CPU specific functions
+ * GR765 CPU specific functions
  *
- * Copyright 2024 Phoenix Systems
+ * Copyright 2025 Phoenix Systems
  * Author: Lukasz Leczkowski
  *
  * This file is part of Phoenix-RTOS.
@@ -14,7 +14,7 @@
  */
 
 #include "csr.h"
-#include "custom-csr.h"
+#include "platform/gaisler/custom-csr.h"
 
 
 void platform_cpuEarlyInit(void)

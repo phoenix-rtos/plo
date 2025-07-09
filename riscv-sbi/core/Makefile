@@ -6,7 +6,12 @@
 # %LICENSE%
 #
 
-include platform/$(TARGET_SUBFAMILY)/Makefile
+ifneq ($(filter $(TARGET_SUBFAMILY),grfpga gr765),)
+  include platform/gaisler/$(TARGET_SUBFAMILY)/Makefile
+else
+  include platform/$(TARGET_SUBFAMILY)/Makefile
+endif
+
 include core/extensions/Makefile
 include core/fdt/Makefile
 
