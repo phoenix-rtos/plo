@@ -14,7 +14,6 @@
  */
 
 #include <hal/hal.h>
-#include "hal/riscv64/asm-macros.h"
 
 
 static struct {
@@ -182,7 +181,7 @@ int hal_cpuJump(void)
 		"mv a0, tp\n\t"
 		"mv a2, %0\n\t"
 		"mv a1, %1\n\t"
-		XSTR(CBO_INVAL(REG_ZERO)) "\n\t"
+		"cbo.inval (x0)\n\t"
 		"fence.i\n\t"
 		"jr %2\n\t"
 		:
