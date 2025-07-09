@@ -49,7 +49,7 @@ void hal_init(void)
 	dtb_parse(dtbAddr);
 	sbi_init();
 	interrupts_init();
-	noelv_init();
+	cpu_init();
 }
 
 
@@ -67,7 +67,7 @@ void hal_syspageSet(hal_syspage_t *hs)
 
 const char *hal_cpuInfo(void)
 {
-	return "RISC-V 64-bit NOEL-V";
+	return CPU_INFO;
 }
 
 

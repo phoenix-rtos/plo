@@ -3,9 +3,9 @@
  *
  * Operating system loader
  *
- * Linker Template and Platform Config for RISC-V 64 NOEL-V
+ * Linker Template and Platform Config for RISC-V 64 GR765
  *
- * Copyright 2024 Phoenix Systems
+ * Copyright 2025 Phoenix Systems
  *
  * This file is part of Phoenix-RTOS.
  *
@@ -13,8 +13,8 @@
  */
 
 
-#ifndef RISCV64_NOELV_LDT
-#define RISCV64_NOELV_LDT
+#ifndef RISCV64_GR765_LDT
+#define RISCV64_GR765_LDT
 
 /* Platform specific definitions */
 #define SIZE_PAGE   0x1000
