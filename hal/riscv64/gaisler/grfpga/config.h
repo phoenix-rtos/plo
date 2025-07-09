@@ -30,14 +30,15 @@
 #include <phoenix/arch/riscv64/syspage.h>
 #include <phoenix/syspage.h>
 
-#define PATH_KERNEL "phoenix-riscv64-noelv.elf"
+#define PATH_KERNEL "phoenix-riscv64-grfpga.elf"
+#define CPU_INFO    "RISC-V 64-bit GRFPGA"
 
 #endif /* __ASSEMBLY__ */
 
-#include "noelv.h"
+#include "grfpga.h"
 
 /* Import platform specific definitions */
-#include "ld/riscv64-noelv.ldt"
+#include "ld/riscv64-grfpga.ldt"
 
 
 #endif

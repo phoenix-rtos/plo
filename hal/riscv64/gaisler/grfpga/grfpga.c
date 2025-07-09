@@ -3,7 +3,7 @@
  *
  * Operating system loader
  *
- * NOEL-V CPU specific functions
+ * GRFPGA CPU specific functions
  *
  * Copyright 2024 Phoenix Systems
  * Author: Lukasz Leczkowski
@@ -13,11 +13,13 @@
  * %LICENSE%
  */
 
-#ifndef _NOELV_H_
-#define _NOELV_H_
+#include "grfpga.h"
 
 
-void noelv_init(void);
+extern void console_init(void);
 
 
-#endif
+void cpu_init(void)
+{
+	console_init();
+}
