@@ -14,6 +14,7 @@ else
   CFLAGS += -Ihal/$(TARGET_SUFF)/$(TARGET_SUBFAMILY)
 endif
 
+CFLAGS += -Ihal/$(TARGET_SUFF)
 
 OBJS += $(addprefix $(PREFIX_O)hal/$(TARGET_SUFF)/, _init.o _interrupts.o _string.o \
   dtb.o exceptions.o interrupts.o plic.o sbi.o string.o timer.o)
