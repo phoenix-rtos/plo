@@ -3,7 +3,7 @@
  *
  * Phoenix SBI
  *
- * NOEL-V CPU specific functions
+ * RISC-V Generic CPU specific functions
  *
  * Copyright 2024 Phoenix Systems
  * Author: Lukasz Leczkowski

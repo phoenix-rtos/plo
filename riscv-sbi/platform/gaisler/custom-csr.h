@@ -3,7 +3,7 @@
  *
  * Phoenix SBI
  *
- * NOEL-V custom CSR definitions
+ * Gaisler custom CSR definitions
  *
  * Copyright 2024 Phoenix Systems
  * Author: Lukasz Leczkowski
@@ -13,8 +13,8 @@
  * %LICENSE%
  */
 
-#ifndef _SBI_NOELV_CUSTOM_CSR_H_
-#define _SBI_NOELV_CUSTOM_CSR_H_
+#ifndef _SBI_GAISLER_CUSTOM_CSR_H_
+#define _SBI_GAISLER_CUSTOM_CSR_H_
 
 
 #define CSR_FEATURES 0x7c0

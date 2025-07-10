@@ -25,7 +25,15 @@
 #include "extensions/hsm.h"
 #include "extensions/ipi.h"
 
-#include "ld/noelv.ldt"
+#if defined(__CPU_GR765)
+#include "ld/gr765.ldt"
+#elif defined(__CPU_GRFPGA)
+#include "ld/grfpga.ldt"
+#elif defined(__CPU_GENERIC)
+#include "ld/generic.ldt"
+#else
+#error "Unsupported TARGET"
+#endif
 
 
 extern const void *__payload_start;

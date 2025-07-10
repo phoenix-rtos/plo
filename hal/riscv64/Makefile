@@ -6,9 +6,15 @@
 # %LICENSE%
 #
 
-include hal/riscv64/$(TARGET_SUBFAMILY)/Makefile
+ifneq ($(filter $(TARGET_SUBFAMILY),grfpga gr765),)
+  include hal/$(TARGET_SUFF)/gaisler/Makefile
+  CFLAGS += -Ihal/$(TARGET_SUFF)/gaisler/$(TARGET_SUBFAMILY)
+else
+  include hal/$(TARGET_SUFF)/$(TARGET_SUBFAMILY)/Makefile
+  CFLAGS += -Ihal/$(TARGET_SUFF)/$(TARGET_SUBFAMILY)
+endif
 
-CFLAGS += -Ihal/riscv64/$(TARGET_SUBFAMILY)
+CFLAGS += -Ihal/$(TARGET_SUFF)
 
 OBJS += $(addprefix $(PREFIX_O)hal/$(TARGET_SUFF)/, _init.o _interrupts.o _string.o \
   dtb.o exceptions.o interrupts.o plic.o sbi.o string.o timer.o)
