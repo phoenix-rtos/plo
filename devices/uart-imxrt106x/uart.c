@@ -24,7 +24,8 @@
 #define PIN2PAD(x)        CONCATENATE(pctl_pad_gpio_, x)
 
 
-#define BUFFER_SIZE 0x20
+#define RX_BUFFER_SIZE 0x40
+#define TX_BUFFER_SIZE 0x20
 
 typedef struct {
 	volatile u32 *base;
@@ -33,10 +34,10 @@ typedef struct {
 	u16 rxFifoSz;
 	u16 txFifoSz;
 
-	u8 dataRx[BUFFER_SIZE];
+	u8 dataRx[RX_BUFFER_SIZE];
 	cbuffer_t cbuffRx;
 
-	u8 dataTx[BUFFER_SIZE];
+	u8 dataTx[TX_BUFFER_SIZE];
 	cbuffer_t cbuffTx;
 } uart_t;
 
@@ -566,8 +567,8 @@ static int uart_init(unsigned int minor)
 	}
 
 	uart->base = info[minor].base;
-	lib_cbufInit(&uart->cbuffTx, uart->dataTx, BUFFER_SIZE);
-	lib_cbufInit(&uart->cbuffRx, uart->dataRx, BUFFER_SIZE);
+	lib_cbufInit(&uart->cbuffTx, uart->dataTx, TX_BUFFER_SIZE);
+	lib_cbufInit(&uart->cbuffRx, uart->dataRx, RX_BUFFER_SIZE);
 
 	_imxrt_ccmControlGate(info[minor].dev, clk_state_run_wait);
 
