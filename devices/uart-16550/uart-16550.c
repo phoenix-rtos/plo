@@ -282,6 +282,7 @@ static int uart_done(unsigned int minor)
 static int uart_init(unsigned int minor)
 {
 	unsigned int baud = bps_115200;
+	unsigned int divisor = 0;
 	uart_t *uart;
 	int err;
 
@@ -298,13 +299,21 @@ static int uart_init(unsigned int minor)
 		return -ENODEV;
 	uart->active = 1;
 
+	/* Disable all interrupts */
+	uarthw_write(uart->hwctx, ier, 0x00);
+
 	/* Set interrupt handler */
 	hal_interruptsSet(uarthw_irq(uart->hwctx), uart_isr, uart);
 
 	/* Set speed */
+	divisor = uarthw_getDivisor(uart->hwctx, &bauds[baud]);
+	if (divisor == 0) {
+		return -EINVAL;
+	}
+
 	uarthw_write(uart->hwctx, lcr, 0x80);
-	uarthw_write(uart->hwctx, dll, bauds[baud].divisor);
-	uarthw_write(uart->hwctx, dlm, bauds[baud].divisor >> 8);
+	uarthw_write(uart->hwctx, dll, divisor);
+	uarthw_write(uart->hwctx, dlm, divisor >> 8);
 
 	/* Set data format */
 	uarthw_write(uart->hwctx, lcr, 0x03);
