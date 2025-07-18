@@ -5,8 +5,8 @@
  *
  * Reads or writes OCOTP fuses
  *
- * Copyright 2020-2022 Phoenix Systems
- * Author: Aleksander Kaminski, Gerard Swiderski
+ * Copyright 2020-2022 2025 Phoenix Systems
+ * Author: Aleksander Kaminski, Gerard Swiderski, Krzysztof Radzewicz
  *
  * This file is part of Phoenix-RTOS.
  *
@@ -15,7 +15,11 @@
 
 #include "cmd.h"
 
+#if defined(__CPU_IMXRT105X) || defined(__CPU_IMXRT106X) || defined(__CPU_IMXRT117X)
 #include <hal/armv7m/imxrt/otp.h>
+#elif defined(__CPU_STM32N6)
+#include <hal/armv8m/stm32/n6/otp.h>
+#endif
 #include <lib/lib.h>
 
 
