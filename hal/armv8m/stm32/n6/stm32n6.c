@@ -16,6 +16,7 @@
 #include <hal/hal.h>
 #include "stm32n6.h"
 #include "stm32n6_regs.h"
+#include "otp.h"
 
 
 #define GPIOA_BASE ((void *)0x56020000)
@@ -912,6 +913,7 @@ static void _stm32_initSRAM(void)
 void _stm32_init(void)
 {
 	u32 i, v;
+	(void)v;
 	static const int gpioDevs[] = { dev_gpioa, dev_gpiob, dev_gpioc, dev_gpiod, dev_gpioe, dev_gpiof, dev_gpiog,
 		dev_gpioh, dev_gpion, dev_gpioo, dev_gpiop, dev_gpioq };
 
@@ -996,6 +998,16 @@ void _stm32_init(void)
 	}
 
 	hal_cpuDataMemoryBarrier();
+
+	otp_init();
+
+	/* Enable debug */
+	volatile u32 *rccMiscensr = ((volatile u32 *)(RCC_BASE + 0xA48));
+	volatile u32 *bsecDBGCR = ((volatile u32 *)(0x56009000 + 0xE8C));
+	volatile u32 *bsecApUnlock = ((volatile u32 *)(0x56009000 + 0xE90));
+	*rccMiscensr |= 0x1u;
+	*bsecDBGCR = (*bsecDBGCR & 0xFF) | 0xB451B400;
+	*bsecApUnlock = (*bsecApUnlock & 0xFFFFFF00) | 0xB4;
 
 #if defined(WATCHDOG)
 	/* Init watchdog */
