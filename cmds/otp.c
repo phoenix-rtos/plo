@@ -5,7 +5,7 @@
  *
  * Reads or writes OCOTP fuses
  *
- * Copyright 2020-2022 Phoenix Systems
+ * Copyright 2020-2022 2025 Phoenix Systems
  * Author: Aleksander Kaminski, Gerard Swiderski
  *
  * This file is part of Phoenix-RTOS.
@@ -15,7 +15,11 @@
 
 #include "cmd.h"
 
+#if defined(__CPU_IMXRT105X) || defined(__CPU_IMXRT106X) || defined(__CPU_IMXRT117X)
 #include <hal/armv7m/imxrt/otp.h>
+#elif defined(__CPU_STM32N6)
+#include <hal/armv8m/stm32/n6/otp.h>
+#endif
 #include <lib/lib.h>
 
 
@@ -61,6 +65,7 @@ int cmd_otp(int argc, char *argv[])
 				return CMD_EXIT_FAILURE;
 		}
 	}
+	lib_printf("Not writing or reading!");
 
 	if ((read ^ write) == 0) {
 		lib_printf("Specify either read or write mode\n");
@@ -75,7 +80,7 @@ int cmd_otp(int argc, char *argv[])
 
 	if (read != 0) {
 		res = otp_read(fuse, &val);
-		if (res < 0) {
+		if (res != 0) {
 			lib_printf("Fuse reading failed! (%d)\n", res);
 			return CMD_EXIT_FAILURE;
 		}
@@ -84,7 +89,7 @@ int cmd_otp(int argc, char *argv[])
 	}
 	else if (write != 0) {
 		res = otp_write(fuse, val);
-		if (res < 0) {
+		if (res != 0) {
 			lib_printf("Fuse write failed! (%d)\n", res);
 			return CMD_EXIT_FAILURE;
 		}
