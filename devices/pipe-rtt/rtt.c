@@ -17,7 +17,17 @@
 #include <lib/lib.h>
 
 
-#define RTT_TXCHANNELS 2
+#ifndef RTT_PERF_BUFFERS
+#define RTT_PERF_BUFFERS 0
+#endif
+
+#if RTT_PERF_BUFFERS
+#define RTT_TX_PERF_CHANNELS 2
+#else
+#define RTT_TX_PERF_CHANNELS 0
+#endif
+
+#define RTT_TXCHANNELS (2 + RTT_TX_PERF_CHANNELS)
 #define RTT_RXCHANNELS 2
 
 /*
@@ -31,6 +41,14 @@
 
 #ifndef RTT_TAG_BACKWARD
 #define RTT_TAG_BACKWARD "EPIP TTR"
+#endif
+
+#ifndef RTT_BUFSZ_PERF_META_TX
+#define RTT_BUFSZ_PERF_META_TX 1024
+#endif
+
+#ifndef RTT_BUFSZ_PERF_EVENT_TX
+#define RTT_BUFSZ_PERF_EVENT_TX 1024
 #endif
 
 
@@ -59,6 +77,10 @@ static struct {
 	unsigned char consoleRx[RTT_BUFSZ_CONSOLE_RX] __attribute__((aligned(32)));
 	unsigned char phoenixdTx[RTT_BUFSZ_PHOENIXD_TX] __attribute__((aligned(32)));
 	unsigned char phoenixdRx[RTT_BUFSZ_PHOENIXD_RX] __attribute__((aligned(32)));
+#if RTT_PERF_BUFFERS
+	unsigned char perfMetaTx[RTT_BUFSZ_PERF_META_TX] __attribute__((aligned(32)));
+	unsigned char perfEventTx[RTT_BUFSZ_PERF_EVENT_TX] __attribute__((aligned(32)));
+#endif
 } rttBuffers __attribute__((section(".rttmem")));
 
 
@@ -75,6 +97,10 @@ static const struct {
 	.tx = {
 		{ rttBuffers.consoleTx, sizeof(rttBuffers.consoleTx), "Console TX" },
 		{ rttBuffers.phoenixdTx, sizeof(rttBuffers.phoenixdTx), "phoenixd TX" },
+#if RTT_PERF_BUFFERS
+		{ rttBuffers.perfMetaTx, sizeof(rttBuffers.perfMetaTx), "perf meta TX" },
+		{ rttBuffers.perfEventTx, sizeof(rttBuffers.perfEventTx), "perf event TX" },
+#endif
 	},
 	.rx = {
 		{ rttBuffers.consoleRx, sizeof(rttBuffers.consoleRx), "Console RX" },
