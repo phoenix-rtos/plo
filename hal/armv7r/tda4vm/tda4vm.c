@@ -661,8 +661,8 @@ static void tda4vm_PLLSetup(void)
 				.post_div2 = 1,
 				.is_enabled = 1,
 			},
-			/* HSDIV outputs: 1 GHz, 1 GHz, 1 GHz, 1 GHz, 166.67 MHz */
-			.hsdivs = { 1, 1, 1, 1, 6 },
+			/* HSDIV outputs: 250 MHz, 500 MHz, 1 GHz, 1 GHz, 166.67 MHz */
+			.hsdivs = { 4, 2, 1, 1, 6 },
 			.n_hsdivs = 5,
 		},
 

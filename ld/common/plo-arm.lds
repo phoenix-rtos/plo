@@ -79,13 +79,17 @@ SECTIONS
 		PROVIDE_HIDDEN(__exidx_end = .);
 	} > PLO_IMAGE
 
-	.init_array :
-	{
-		PROVIDE_HIDDEN (__init_array_start = .);
-		KEEP (*(SORT_BY_INIT_PRIORITY(.init_array.*) SORT_BY_INIT_PRIORITY(.ctors.*)))
-		KEEP (*(.init_array .ctors))
-		PROVIDE_HIDDEN (__init_array_end = .);
-	} > PLO_IMAGE
+/*
+*	.init_array :
+*	{
+*		PROVIDE_HIDDEN (__init_array_start = .);
+*		KEEP (*(SORT_BY_INIT_PRIORITY(.init_array.*) SORT_BY_INIT_PRIORITY(.ctors.*)))
+*		KEEP (*(.init_array .ctors))
+*		PROVIDE_HIDDEN (__init_array_end = .);
+*	} > PLO_IMAGE
+*
+*/
+
 
 	.fini_array :
 	{
@@ -116,6 +120,12 @@ SECTIONS
 		__data_end = .;
 		_edata = .;
 		PROVIDE (edata = .);
+
+		PROVIDE_HIDDEN (__init_array_start = .);
+		KEEP (*(SORT_BY_INIT_PRIORITY(.init_array.*) SORT_BY_INIT_PRIORITY(.ctors.*)))
+		KEEP (*(.init_array .ctors))
+		PROVIDE_HIDDEN (__init_array_end = .);
+		
 	} > DATA AT > PLO_IMAGE
 
 	.bss (NOLOAD) :
