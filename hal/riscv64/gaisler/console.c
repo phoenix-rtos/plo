@@ -19,6 +19,13 @@
 #define TX_EN        (1 << 1)
 #define TX_FIFO_FULL (1 << 9)
 
+#define HAL_CONCAT_(a, b) a##b
+#define HAL_CONCAT(a, b)  HAL_CONCAT_(a, b)
+
+/* Console config */
+#define UART_CONSOLE_BASE HAL_CONCAT(UART, HAL_CONCAT(UART_CONSOLE_PLO, _BASE))
+
+
 enum {
 	uart_data = 0, /* Data register           : 0x00 */
 	uart_status,   /* Status register         : 0x04 */
@@ -64,7 +71,7 @@ static u32 console_calcScaler(u32 baud)
 
 void console_init(void)
 {
-	halconsole_common.uart = UART0_BASE;
+	halconsole_common.uart = UART_CONSOLE_BASE;
 	*(halconsole_common.uart + uart_ctrl) = 0;
 	hal_cpuDataStoreBarrier();
 	*(halconsole_common.uart + uart_scaler) = console_calcScaler(UART_BAUDRATE);
