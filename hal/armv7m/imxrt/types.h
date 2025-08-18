@@ -39,7 +39,7 @@ typedef vu32 *reg32;
 typedef unsigned int addr_t;
 typedef unsigned int size_t;
 typedef int ssize_t;
-typedef unsigned long long time_t;
+typedef long long time_t;
 
 
 #endif

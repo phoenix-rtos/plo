@@ -119,7 +119,7 @@ typedef u64 cycles_t;
 typedef u64 usec_t;
 
 typedef unsigned int size_t;
-typedef unsigned long long time_t;
+typedef long long time_t;
 
 
 #pragma pack(1)
