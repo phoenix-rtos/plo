@@ -41,7 +41,7 @@ typedef vu64 *reg64;
 typedef u64 addr_t;
 typedef u64 size_t;
 typedef s64 ssize_t;
-typedef unsigned long long time_t;
+typedef long long time_t;
 
 
 #endif
