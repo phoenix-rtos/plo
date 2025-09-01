@@ -30,17 +30,17 @@
 #define SIZE_BTCM (32 * 1024)
 
 #define ADDR_MSRAM_REMAP (ADDR_BTCM + SIZE_BTCM)
-#define SIZE_MSRAM_REMAP (64 * 1024)
-#define ORIG_MSRAM_REMAP 0x41cf0000
+#define SIZE_MSRAM_REMAP (32 * 1024)
+#define ORIG_MSRAM_REMAP 0x41cf8000
 
-#define ADDR_MSRAM_KERNEL 0x41c80000
-#define SIZE_MSRAM_KERNEL (448 * 1024)
+#define ADDR_MSRAM_KERNEL 0x41cc0000
+#define SIZE_MSRAM_KERNEL (224 * 1024)
 
 #define ADDR_MSRAM 0x41c00000
 #define SIZE_MSRAM (512 * 1024)
 
-#define ADDR_MSRAM_PLO 0x41cc0000
-#define SIZE_MSRAM_PLO (192 * 1024)
+#define ADDR_MSRAM_PLO 0x41cd7c00				// not working shift: 0x41CDAC00 
+#define SIZE_MSRAM_PLO (97 * 1024)
 
 /* RAM disk configuration */
 #define RAM_ADDR      0xa0400000

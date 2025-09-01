@@ -38,28 +38,25 @@ enum operation_io_type {
 
 
 typedef struct {
-	u8 readIoType;         /* One of enum operation_io_type */
-	u8 readOpcode;         /* Opcode to perform a read operation */
-	u8 readModeCyc;        /* Mode cycles needed for a read operation */
-	u8 readDummy;          /* Dummy cycles needed for a read operation */
-	u8 writeIoType;        /* One of enum operation_io_type */
-	u8 writeOpcode;        /* Opcode to perform a program operation */
-	u8 writeDummy;         /* Dummy cycles needed for a program operation */
-	u8 eraseOpcode;        /* Opcode to perform an erase operation */
-	u8 addrMode;           /* One of ADDRMODE_* */
-	u8 log_chipSize;       /* log2 of chip size in bytes */
-	u8 log_eraseSize;      /* log2 of erase size in bytes */
-	u8 log_pageSize;       /* log2 of page size in bytes */
-	u32 eraseBlockTimeout; /* Max time in ms to erase block of (1 << log_eraseSize) bytes */
-	u32 eraseChipTimeout;  /* Max time in ms to erase the whole chip */
+	u8 readIoType;    /* One of enum operation_io_type */
+	u8 readOpcode;    /* Opcode to perform a read operation */
+	u8 readDummy;     /* Dummy cycles needed for a read operation */
+	u8 writeIoType;   /* One of enum operation_io_type */
+	u8 writeOpcode;   /* Opcode to perform a program operation */
+	u8 writeDummy;    /* Dummy cycles needed for a program operation */
+	u8 eraseOpcode;   /* Opcode to perform an erase operation */
+	u8 addrMode;      /* One of ADDRMODE_* */
+	u8 log_chipSize;  /* log2 of chip size in bytes */
+	u8 log_eraseSize; /* log2 of erase size in bytes */
+	u8 log_pageSize;  /* log2 of page size in bytes */
 } flash_opParameters_t;
 
 
-/* Initializes structure with default or reasonable parameters of typical JEDEC Flash memory */
+/* Initializes structure with minimum compatible parameters of typical JEDEC Flash memory */
 void flashdrv_fillDefaultParams(flash_opParameters_t *res);
 
 
-/* Parses SFDP data block from pointer `data`. Results will be stored in `res`.
+/* Parses SFDP data block from pointer `data`.
  * If `tryMultiIoCmd` is set to 1, will attempt to find support for 2-2-2 and 4-4-4 I/O modes,
  * otherwise only 1-*-* modes will be considered.
  */

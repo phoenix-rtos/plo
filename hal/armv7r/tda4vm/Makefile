@@ -19,5 +19,6 @@ PLO_COMMANDS ?= alias app blob call console copy devices dump echo erase go help
 
 PLO_ALLDEVICES := ram-storage uart-16550 flash-tda4vm
 
-OBJS += $(addprefix $(PREFIX_O)hal/$(TARGET_SUFF)/$(TARGET_SUBFAMILY)/, _init.o hal.o tda4vm.o timer.o \
+
+OBJS += $(addprefix $(PREFIX_O)hal/$(TARGET_SUFF)/$(TARGET_SUBFAMILY)/, _init.o hal.o tda4vm.o timer.o sciclient/sciclient.o \
   interrupts.o console.o)

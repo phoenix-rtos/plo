@@ -21,6 +21,7 @@
 
 #include "tda4vm_intrtr_defs.h"
 #include "tda4vm_regs.h"
+#include "sciclient/sciclient.h"
 
 
 static const struct {
@@ -662,8 +663,8 @@ static void tda4vm_PLLSetup(void)
 				.post_div2 = 1,
 				.is_enabled = 1,
 			},
-			/* HSDIV outputs: 1 GHz, 1 GHz, 1 GHz, 1 GHz, 166.67 MHz */
-			.hsdivs = { 1, 1, 1, 1, 6 },
+			/* HSDIV outputs: 250 MHz, 500 MHz, 1 GHz, 1 GHz, 166.67 MHz */
+			.hsdivs = { 4, 2, 1, 1, 6 },
 			.n_hsdivs = 5,
 		},
 
@@ -678,8 +679,8 @@ static void tda4vm_PLLSetup(void)
 
 __attribute__((noreturn)) void tda4vm_warmReset(void)
 {
-	volatile u32 *base = CTRLMMR_WKUP_BASE_ADDR;
-	*(base + ctrlmmr_wkup_reg_mcu_warm_rst_ctrl) = 0x60000; /* Magic value to trigger reset */
+	
+	Sciclient_sys_reset();
 	while (1) {
 		/* Hang and wait for reset */
 	}

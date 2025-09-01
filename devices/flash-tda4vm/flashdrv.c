@@ -24,6 +24,12 @@
 
 #include "flash_params.h"
 
+/* TODO:
+ * * Add detection and support for mode bits
+ * * For better performance (or XIP) consider enabling CPU caches over Flash address range
+ * 	 * If CPU data cache is enabled, it needs to be invalidated after erase operations
+ * * Read typical erase times from SFDP and configure timeouts based on that
+ */
 
 enum {
 	ospi_reg_config = (0x0 / 4),
@@ -84,7 +90,11 @@ enum {
 #define OSPI1_REG1_MAX_SIZE 0x8000000
 #define OSPI1_CTRL_BASE     ((void *)0x47050000)
 
-typedef struct {
+#define ERASE_BLOCK_TIMEOUT_MS 1000
+#define ERASE_CHIP_TIMEOUT_MS  60000
+
+typedef struct
+{
 	u8 opcode;
 	u8 readBytes;
 	u8 writeBytes;
@@ -178,10 +188,61 @@ static struct {
 } flashParams[N_CONTROLLERS];
 
 
-/* Definitions of Flash commands shared between different functions */
+/* Definitions of Flash commands */
+
+
+static const flash_opDefinition_t opDef_read_id = {
+	.opcode = 0x9f,
+	.readBytes = 6,
+	.writeBytes = 0,
+	.addrBytes = 0,
+	.addr = 0,
+	.dummyCycles = 0,
+};
+
 
 static const flash_opDefinition_t opDef_enter_4byte = {
 	.opcode = 0xb7,
+	.readBytes = 0,
+	.writeBytes = 0,
+	.addrBytes = 0,
+	.addr = 0,
+	.dummyCycles = 0,
+};
+
+
+static const flash_opDefinition_t opDef_read_status = {
+	.opcode = 0x05,
+	.readBytes = 1,
+	.writeBytes = 0,
+	.addrBytes = 0,
+	.addr = 0,
+	.dummyCycles = 0,
+};
+
+
+static const flash_opDefinition_t opDef_write_enable = {
+	.opcode = 0x06,
+	.readBytes = 0,
+	.writeBytes = 0,
+	.addrBytes = 0,
+	.addr = 0,
+	.dummyCycles = 0,
+};
+
+
+static const flash_opDefinition_t opDef_write_disable = {
+	.opcode = 0x04,
+	.readBytes = 0,
+	.writeBytes = 0,
+	.addrBytes = 0,
+	.addr = 0,
+	.dummyCycles = 0,
+};
+
+
+static const flash_opDefinition_t opDef_chip_erase = {
+	.opcode = 0x60,
 	.readBytes = 0,
 	.writeBytes = 0,
 	.addrBytes = 0,
@@ -195,7 +256,7 @@ static void flashdrv_performSimpleOp(unsigned int minor, const flash_opDefinitio
 {
 	const flash_ctrlParams_t *p = &controllerParams[minor];
 	u32 data_32[2];
-	u32 val = ((u32)opDef->opcode) << 24;
+	u32 val = (u32)opDef->opcode << 24;
 	if (opDef->readBytes > 0) {
 		val |= (1 << 23);
 		val |= (opDef->readBytes - 1) << 20;
@@ -239,19 +300,10 @@ static void flashdrv_performSimpleOp(unsigned int minor, const flash_opDefinitio
 
 static int flashdrv_waitForWriteCompletion(unsigned int minor, u32 timeout)
 {
-	static const flash_opDefinition_t opDef_readStatus = {
-		.opcode = 0x05,
-		.readBytes = 1,
-		.writeBytes = 0,
-		.addrBytes = 0,
-		.addr = 0,
-		.dummyCycles = 0,
-	};
-
 	unsigned char status = 0;
 	time_t time_start = hal_timerGet();
 	while (1) {
-		flashdrv_performSimpleOp(minor, &opDef_readStatus, &status);
+		flashdrv_performSimpleOp(minor, &opDef_read_status, &status);
 		if ((status & 1) == 0) {
 			return 0;
 		}
@@ -265,30 +317,11 @@ static int flashdrv_waitForWriteCompletion(unsigned int minor, u32 timeout)
 
 static int flashdrv_writeEnable(unsigned int minor, int enable)
 {
-	static const flash_opDefinition_t opDef_writeEnable = {
-		.opcode = 0x06,
-		.readBytes = 0,
-		.writeBytes = 0,
-		.addrBytes = 0,
-		.addr = 0,
-		.dummyCycles = 0,
-	};
-
-
-	static const flash_opDefinition_t opDef_writeDisable = {
-		.opcode = 0x04,
-		.readBytes = 0,
-		.writeBytes = 0,
-		.addrBytes = 0,
-		.addr = 0,
-		.dummyCycles = 0,
-	};
-
 	if (enable) {
-		flashdrv_performSimpleOp(minor, &opDef_writeEnable, NULL);
+		flashdrv_performSimpleOp(minor, &opDef_write_enable, NULL);
 	}
 	else {
-		flashdrv_performSimpleOp(minor, &opDef_writeDisable, NULL);
+		flashdrv_performSimpleOp(minor, &opDef_write_disable, NULL);
 	}
 
 	return 0;
@@ -325,23 +358,9 @@ static int flashdrv_modifyRegister(unsigned int minor, u8 readOp, u8 writeOp, u8
 }
 
 
-/* Puts controller into a mode where SFDP data can be accessed within the address space.
- * Returns pointer to SFDP data. */
-static const u32 *flashdrv_mountSfdp(int minor)
-{
-	const flash_ctrlParams_t *p = &controllerParams[minor];
-
-	/* Set read command to 0x5a (READ SERIAL FLASH DISCOVERY PARAMETER) with 8 dummy cycles */
-	*(p->ctrl + ospi_reg_dev_instr_rd_config) = (8 << 24) | 0x5a;
-	*(p->ctrl + ospi_reg_dev_size_config) = (16 << 16) | (0x100 << 4) | 0x2;
-	hal_cpuDataSyncBarrier();
-
-	return p->start;
-}
-
-
 static int flashdrv_detectMicron(int minor, flash_opParameters_t *res, unsigned char *device_id)
 {
+	const flash_ctrlParams_t *p = &controllerParams[minor];
 	/* Memory capacity is BCD-encoded */
 	if (((device_id[2] >> 4) >= 10) || ((device_id[2] & 0xf) >= 10)) {
 		return -EINVAL;
@@ -349,10 +368,19 @@ static int flashdrv_detectMicron(int minor, flash_opParameters_t *res, unsigned 
 
 	res->log_chipSize = ((device_id[2] >> 4) * 10) + (device_id[2] & 0xf) + 6;
 
-	if (flashdrv_parseSfdp(flashdrv_mountSfdp(minor), res, 1) < 0) {
+	/* Set read command to 0x5a (READ SERIAL FLASH DISCOVERY PARAMETER) with 8 dummy cycles */
+	*(p->ctrl + ospi_reg_dev_instr_rd_config) = (8 << 24) | 0x5a;
+	*(p->ctrl + ospi_reg_dev_size_config) = (16 << 16) | (0x100 << 4) | 0x2;
+	hal_cpuDataSyncBarrier();
+
+	/* Now SFDP data is available in address space */
+	if (flashdrv_parseSfdp(p->start, res, 1) < 0) {
 		return -EINVAL;
 	}
 
+	/* TODO: Micron apparently sets dummy cycle value to 1 less than actual value?
+	 * Needs more investigation */
+	res->readDummy += 1;
 	res->writeIoType = res->readIoType;
 	res->writeDummy = 0;
 	switch (res->writeIoType) {
@@ -405,7 +433,18 @@ static int flashdrv_initMicron(int minor)
 
 static int flashdrv_detectGeneric(int minor, flash_opParameters_t *res, unsigned char *device_id)
 {
-	return flashdrv_parseSfdp(flashdrv_mountSfdp(minor), res, 0);
+	const flash_ctrlParams_t *p = &controllerParams[minor];
+	/* Set read command to 0x5a (READ SERIAL FLASH DISCOVERY PARAMETER) with 8 dummy cycles */
+	*(p->ctrl + ospi_reg_dev_instr_rd_config) = (8 << 24) | 0x5a;
+	*(p->ctrl + ospi_reg_dev_size_config) = (16 << 16) | (0x100 << 4) | 0x2;
+	hal_cpuDataSyncBarrier();
+
+	/* Now SFDP data is available in address space */
+	if (flashdrv_parseSfdp(p->start, res, 0) < 0) {
+		return -EINVAL;
+	}
+
+	return 0;
 }
 
 
@@ -423,18 +462,9 @@ static int flashdrv_initGeneric(int minor)
 
 static int flashdrv_detectFlashType(unsigned int minor, flash_opParameters_t *res)
 {
-	static const flash_opDefinition_t opDef_readId = {
-		.opcode = 0x9f,
-		.readBytes = 6,
-		.writeBytes = 0,
-		.addrBytes = 0,
-		.addr = 0,
-		.dummyCycles = 0,
-	};
-
 	flashdrv_fillDefaultParams(res);
 	unsigned char *device_id = flashParams[minor].device_id;
-	flashdrv_performSimpleOp(minor, &opDef_readId, device_id);
+	flashdrv_performSimpleOp(minor, &opDef_read_id, device_id);
 
 	if ((device_id[0] == 0x20) && ((device_id[1] == 0xBA) || (device_id[1] == 0xBB))) {
 		flashParams[minor].name = "Micron";
@@ -495,24 +525,7 @@ static void flashdrv_initPins(const flash_ctrlParams_t *p)
 }
 
 
-static u8 flashdrv_modeCyclesToBits(u8 readIoType, u8 cycles)
-{
-	switch (readIoType) {
-		case OPERATION_IO_144: /* Fall-through */
-		case OPERATION_IO_444:
-			return cycles * 4;
-
-		case OPERATION_IO_122: /* Fall-through */
-		case OPERATION_IO_222:
-			return cycles * 2;
-
-		default:
-			return cycles;
-	}
-}
-
-
-static inline u32 flashdrv_makeInstructionRegister(u8 ioType, u8 opcode, u8 dummy, u8 modeCycles, int isWrite)
+static inline u32 flashdrv_makeInstructionRegister(u8 ioType, u8 opcode, u8 dummy, int isWrite)
 {
 	u32 res = opcode;
 	switch (ioType) {
@@ -540,7 +553,6 @@ static inline u32 flashdrv_makeInstructionRegister(u8 ioType, u8 opcode, u8 dumm
 			break;
 	}
 
-	res |= (modeCycles != 0) ? (1 << 20) : 0;
 	res |= (u32)dummy << 24;
 	return res;
 }
@@ -574,28 +586,16 @@ static ssize_t flashdrv_write(unsigned int minor, addr_t offs, const void *buff,
 
 static ssize_t flashdrv_erase(unsigned int minor, addr_t offs, size_t len, unsigned int flags)
 {
-	static const flash_opDefinition_t opDef_chipErase = {
-		.opcode = 0x60,
-		.readBytes = 0,
-		.writeBytes = 0,
-		.addrBytes = 0,
-		.addr = 0,
-		.dummyCycles = 0,
-	};
-
 	flash_opDefinition_t op;
-	const flash_opParameters_t *p;
 	u32 eraseSize;
-	ssize_t len_ret = (ssize_t)len;
 	if (flashdrv_isValidMinor(minor) == 0) {
 		return -EINVAL;
 	}
 
-	p = &flashParams[minor].params;
 	if (len == (size_t)-1) {
 		flashdrv_writeEnable(minor, 1);
-		flashdrv_performSimpleOp(minor, &opDef_chipErase, NULL);
-		if (flashdrv_waitForWriteCompletion(minor, p->eraseChipTimeout) < 0) {
+		flashdrv_performSimpleOp(minor, &opDef_chip_erase, NULL);
+		if (flashdrv_waitForWriteCompletion(minor, ERASE_CHIP_TIMEOUT_MS) < 0) {
 			return -ETIME;
 		}
 
@@ -605,26 +605,26 @@ static ssize_t flashdrv_erase(unsigned int minor, addr_t offs, size_t len, unsig
 		return -EINVAL;
 	}
 	else {
-		eraseSize = 1 << p->log_eraseSize;
+		eraseSize = 1 << flashParams[minor].params.log_eraseSize;
 		if ((offs & (eraseSize - 1)) != 0 || (len & (eraseSize - 1)) != 0) {
 			return -EINVAL;
 		}
 
-		op.addrBytes = (p->addrMode == ADDRMODE_3B) ? 3 : 4;
-		op.opcode = p->eraseOpcode;
+		op.addrBytes = (flashParams[minor].params.addrMode == ADDRMODE_3B) ? 3 : 4;
+		op.opcode = flashParams[minor].params.eraseOpcode;
 		op.dummyCycles = 0;
 		op.readBytes = 0;
 		op.writeBytes = 0;
-		for (; len != 0; offs += eraseSize, len -= eraseSize) {
+		for (; len != offs; offs += eraseSize) {
 			flashdrv_writeEnable(minor, 1);
 			op.addr = offs;
 			flashdrv_performSimpleOp(minor, &op, NULL);
-			if (flashdrv_waitForWriteCompletion(minor, p->eraseBlockTimeout) < 0) {
+			if (flashdrv_waitForWriteCompletion(minor, ERASE_BLOCK_TIMEOUT_MS) < 0) {
 				return -ETIME;
 			}
 		}
 
-		return len_ret;
+		return (ssize_t)len;
 	}
 }
 
@@ -669,7 +669,7 @@ static int flashdrv_map(unsigned int minor, addr_t addr, size_t sz, int mode, ad
 	}
 
 	/* Check if flash is mappable to map region */
-	if ((fStart <= memaddr) && ((fStart + ctrlSz) >= (memaddr + memsz))) {
+	if (fStart <= memaddr && (fStart + ctrlSz) >= (memaddr + memsz)) {
 		return dev_isMappable;
 	}
 
@@ -734,16 +734,7 @@ static int flashdrv_init(unsigned int minor)
 		}
 	}
 
-	if (fp->readModeCyc != 0) {
-		if (flashdrv_modeCyclesToBits(fp->readIoType, fp->readModeCyc) != 8) {
-			/* This controller only supports 8 mode bits or none. If mode bits != 8, treat mode bits as dummy cycles.
-			 * This is not entirely correct, but in this case it's likely that the data in SFDP is inaccurate anyway
-			 * (manufacturer counted some dummy cycles as "mode cycles" and Flash doesn't care about mode data). */
-			fp->readDummy += fp->readModeCyc;
-			fp->readModeCyc = 0;
-		}
-	}
-
+	dev_size_config = (16 << 16) | (0x100 << 4); /* Block size: 64 KB, Page size: 256 B */
 	dev_size_config = (fp->log_eraseSize << 16) | ((1 << fp->log_pageSize) << 4);
 	if (fp->log_chipSize <= 31) {
 		flashParams[minor].size = 1 << fp->log_chipSize;
@@ -753,16 +744,10 @@ static int flashdrv_init(unsigned int minor)
 	}
 
 	*(p->ctrl + ospi_reg_dev_instr_rd_config) =
-			flashdrv_makeInstructionRegister(fp->readIoType, fp->readOpcode, fp->readDummy, fp->readModeCyc, 0);
+			flashdrv_makeInstructionRegister(fp->readIoType, fp->readOpcode, fp->readDummy, 0);
 
 	*(p->ctrl + ospi_reg_dev_instr_wr_config) =
-			flashdrv_makeInstructionRegister(fp->writeIoType, fp->writeOpcode, fp->writeDummy, 0, 1);
-
-	if (fp->readModeCyc != 0) {
-		/* Clear mode bits to 0. Mode bits are typically used to set flash into continuous read mode,
-		 * but currently we don't use this function. */
-		*(p->ctrl + ospi_reg_mode_bit_config) &= ~0xff;
-	}
+			flashdrv_makeInstructionRegister(fp->writeIoType, fp->writeOpcode, fp->writeDummy, 1);
 
 	/* Limit size of the device to what's accessible */
 	if (flashParams[minor].size > controllerParams[minor].size) {

@@ -14,6 +14,7 @@
  */
 
 #include "cmd.h"
+#include "hal/armv7r/tda4vm/sciclient/sciclient.h"
 
 #include <devices/devs.h>
 #include <hal/hal.h>
