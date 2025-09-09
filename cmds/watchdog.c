@@ -69,6 +69,6 @@ static int cmd_watchdog(int argc, char *argv[])
 }
 
 
-static cmd_t wait_cmd __attribute__((section("commands"), used)) = {
+static cmd_t watchdog_cmd __attribute__((section("commands"), used)) = {
 	.name = "watchdog", .run = cmd_watchdog, .info = cmd_watchdogInfo
 };
