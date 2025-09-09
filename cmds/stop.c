@@ -44,6 +44,6 @@ static int cmd_stop(int argc, char *argv[])
 }
 
 
-static cmd_t stop_cmd __attribute__((section("commands"), used)) = {
+static const cmd_t stop_cmd __attribute__((section("commands"), used)) = {
 	.name = "stop", .run = cmd_stop, .info = cmd_stopInfo
 };
