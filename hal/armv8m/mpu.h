@@ -18,6 +18,10 @@
 
 #include <hal/hal.h>
 
+
+#define MPU_BASE ((void *)0xe000ed90)
+
+
 typedef struct {
 	u32 rbar;
 	u32 rlar;
