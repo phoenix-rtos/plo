@@ -79,10 +79,10 @@ static u32 flashdrv_calcEraseTime(u8 timeValue, int isChipErase)
 	static const u16 eraseChipUnits[4] = { 16, 256, 4000, 64000 };
 	static const u16 eraseBlockUnits[4] = { 1, 16, 128, 1000 };
 	if (isChipErase != 0) {
-		return eraseChipUnits[(timeValue >> 5) & 0x3] * (timeValue & 0x1f);
+		return eraseChipUnits[(timeValue >> 5) & 0x3] * ((timeValue & 0x1f) + 1);
 	}
 	else {
-		return eraseBlockUnits[(timeValue >> 5) & 0x3] * (timeValue & 0x1f);
+		return eraseBlockUnits[(timeValue >> 5) & 0x3] * ((timeValue & 0x1f) + 1);
 	}
 }
 

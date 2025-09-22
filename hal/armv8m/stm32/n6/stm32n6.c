@@ -14,8 +14,14 @@
  */
 
 #include <hal/hal.h>
+#include <board_config.h>
 #include "stm32n6.h"
 #include "stm32n6_regs.h"
+
+
+#ifndef USE_HSE_CLOCK_SOURCE
+#define USE_HSE_CLOCK_SOURCE 1
+#endif
 
 
 #define GPIOA_BASE ((void *)0x56020000)
@@ -255,6 +261,7 @@ static int _stm32_configureICLK(unsigned int ic, unsigned int src_pll, unsigned 
  */
 static void _stm32_configureClocks(void)
 {
+#if USE_HSE_CLOCK_SOURCE
 	/* On NUCLEO board HSE is 48 MHz */
 	static const pll_config_t plls[NUM_PLLS] = {
 		{
@@ -298,6 +305,50 @@ static void _stm32_configureClocks(void)
 			.bypass = 0,
 		},
 	};
+#else
+	static const pll_config_t plls[NUM_PLLS] = {
+		{
+			/* PLL1: (64 MHz / 4) * 75 => 1200 MHz */
+			.src = pll_src_hsi_ck,
+			.pre_div = 4,
+			.mul = 75,
+			.mul_frac = 0,
+			.post_div1 = 1,
+			.post_div2 = 1,
+			.bypass = 0,
+		},
+		{
+			/* PLL2: 64 MHz * 25  => 1600 MHz */
+			.src = pll_src_hsi_ck,
+			.pre_div = 1,
+			.mul = 25,
+			.mul_frac = 0,
+			.post_div1 = 1,
+			.post_div2 = 1,
+			.bypass = 0,
+		},
+		{
+			/* PLL3: (64 MHz / 4) * 75 => 1200 MHz */
+			.src = pll_src_hsi_ck,
+			.pre_div = 4,
+			.mul = 75,
+			.mul_frac = 0,
+			.post_div1 = 1,
+			.post_div2 = 1,
+			.bypass = 0,
+		},
+		{
+			/* PLL4: (64 MHz * 25) / 2 => 800 MHz */
+			.src = pll_src_hsi_ck,
+			.pre_div = 1,
+			.mul = 25,
+			.mul_frac = 0,
+			.post_div1 = 2,
+			.post_div2 = 1,
+			.bypass = 0,
+		},
+	};
+#endif
 
 	static const struct {
 		u8 iclk;
@@ -306,7 +357,7 @@ static void _stm32_configureClocks(void)
 	} iclks[] = {
 		{ .iclk = 1, .pll = 1, .div = 2 },  /* 1200 / 2 => 600 MHz (CPU) */
 		{ .iclk = 2, .pll = 1, .div = 3 },  /* 1200 / 3 => 400 MHz (buses) */
-		{ .iclk = 3, .pll = 1, .div = 3 },  /* 1200 / 3 => 600 MHz (XSPI) */
+		{ .iclk = 3, .pll = 1, .div = 3 },  /* 1200 / 3 => 400 MHz (XSPI) */
 		{ .iclk = 6, .pll = 2, .div = 2 },  /* 1600 / 2 => 800 MHz (NPU) */
 		{ .iclk = 11, .pll = 1, .div = 3 }, /* 1200 / 3 => 400 MHz (AXISRAM) */
 	};
@@ -345,9 +396,9 @@ static void _stm32_configureClocks(void)
 	}
 
 	v = *(stm32_common.rcc + rcc_cfgr2);
-	/* Set all PPREx to 1, HPRE to 2, TIMPRE to 4 */
+	/* Set all PPREx to 1, HPRE to 2, TIMPRE to 1 */
 	v &= ~((0x7 << 0) | (0x7 << 4) | (0x7 << 12) | (0x7 << 16) | (0x7 << 20) | (0x3 << 24));
-	v |= (0 << 0) | (0 << 4) | (0 << 12) | (0 << 16) | (1 << 20) | (2 << 24);
+	v |= (0 << 0) | (0 << 4) | (0 << 12) | (0 << 16) | (1 << 20) | (0 << 24);
 	*(stm32_common.rcc + rcc_cfgr2) = v;
 
 	v = *(stm32_common.rcc + rcc_cfgr1);
@@ -355,15 +406,20 @@ static void _stm32_configureClocks(void)
 	v |= (3 << 16); /* Set ic1_ck -> sysa_ck */
 	*(stm32_common.rcc + rcc_cfgr1) = v;
 
-	/* Set HSE as source for per_ck.
+	stm32_common.cpuclk = 600 * 1000 * 1000;
+
+	/* Set HSE or HSI as source for per_ck.
 	 * NOTE: DO NOT set this to any clock that depends on a PLL.
 	 * Doing so will cause a hang in BootROM after reset.
 	 * TODO: investigate why this happens, it shouldn't be like this */
+#if USE_HSE_CLOCK_SOURCE
 	_stm32_rccSetIPClk(ipclk_persel, ipclk_persel_hse_ck);
-	_stm32_rccSetDevClock(dev_per, 1);
-
-	stm32_common.cpuclk = 600 * 1000 * 1000;
 	stm32_common.perclk = 48 * 1000 * 1000;
+#else
+	_stm32_rccSetIPClk(ipclk_persel, ipclk_persel_hsi_ck);
+	stm32_common.perclk = 64 * 1000 * 1000;
+#endif
+	_stm32_rccSetDevClock(dev_per, 1);
 }
 
 
@@ -960,6 +1016,8 @@ void _stm32_init(void)
 	v &= 0xff;
 	v |= 0xb4b4b400;
 	*(stm32_common.bsec + bsec_dbgcr) = v;
+#else
+	(void)v;
 #endif
 
 	/* Enable System configuration controller */
