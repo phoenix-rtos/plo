@@ -509,7 +509,7 @@ static u32 flashdrv_changeCtrlMode(unsigned int minor, u32 new_mode)
 
 static inline int flashdrv_opHasAddr(const flash_opDefinition_t *opDef)
 {
-	return ((opDef->reg.ccr >> 24) & 0x7) != 0;
+	return ((opDef->reg.ccr >> 8) & 0x7) != 0;
 }
 
 
@@ -574,10 +574,10 @@ static int flashdrv_waitForWriteCompletion(unsigned int minor, const flash_opDef
 	*(p->ctrl + xspi_psmar) = 0x00; /* Check until it's cleared */
 	*(p->ctrl + xspi_pir) = 0x10;
 	*(p->ctrl + xspi_dlr) = opDef->dataLen - 1;
-	*(p->ctrl + xspi_tcr) = opDef->reg.tcr;
-	*(p->ctrl + xspi_ir) = opDef->reg.ir;
-	/* If command has no address, writing XSPI_CCR starts the operation */
 	*(p->ctrl + xspi_ccr) = opDef->reg.ccr;
+	*(p->ctrl + xspi_tcr) = opDef->reg.tcr;
+	/* If command has no address, writing XSPI_IR starts the operation */
+	*(p->ctrl + xspi_ir) = opDef->reg.ir;
 	if (flashdrv_opHasAddr(opDef)) {
 		/* If command has address, writing XSPI_AR starts the operation */
 		*(p->ctrl + xspi_ar) = opDef->addr;
@@ -656,6 +656,7 @@ static const u32 *flashdrv_mountSfdp(int minor)
 
 static int flashdrv_detectGeneric(int minor, flash_opParameters_t *res, unsigned char *device_id)
 {
+	(void)device_id;
 	return flashdrv_parseSfdp(flashdrv_mountSfdp(minor), res, 0);
 }
 
@@ -738,6 +739,7 @@ static int flashdrv_initGeneric(int minor)
 
 static int flashdrv_detectMacronixOcta(int minor, flash_opParameters_t *res, unsigned char *device_id)
 {
+	(void)device_id;
 	int ret = flashdrv_parseSfdp(flashdrv_mountSfdp(minor), res, 0);
 	if (ret < 0) {
 		return ret;
