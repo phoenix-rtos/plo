@@ -407,6 +407,8 @@ static const u32 opModeToCCR[operation_io_types] = {
 	[operation_io_222] = MAKE_CCR_VALUE(S2, S2, S2, S2, 1, 1, 1, 0),
 	[operation_io_444] = MAKE_CCR_VALUE(S4, S4, S4, S4, 1, 1, 1, 0),
 	[operation_io_444d] = MAKE_CCR_VALUE(D4, D4, D4, D4, 1, 1, 1, 1),
+	[operation_io_188] = MAKE_CCR_VALUE(S1, S8, S8, S8, 1, 1, 1, 0),
+	[operation_io_188d] = MAKE_CCR_VALUE(S1, D8, D8, D8, 1, 1, 1, 1),
 	[operation_io_888] = MAKE_CCR_VALUE(S8, S8, S8, S8, 1, 1, 1, 0),
 	[operation_io_888d] = MAKE_CCR_VALUE(D8, D8, D8, D8, 1, 1, 1, 1),
 };
@@ -714,7 +716,7 @@ static void flashdrv_fillOperations(struct flash_memParams *mp)
 	mp->write.ir = flashdrv_makeIRValue(fp->opcodeType, fp->writeOpcode);
 
 	mp->erase.ccr = flashdrv_makeCCRValue(
-			fp->writeIoType, fp->opcodeType, (fp->addrMode == ADDRMODE_3B) ? 3 : 4, 0, 0);
+			fp->eraseIoType, fp->opcodeType, (fp->addrMode == ADDRMODE_3B) ? 3 : 4, 0, 0);
 	mp->erase.tcr = 0;
 	mp->erase.ir = flashdrv_makeIRValue(fp->opcodeType, fp->eraseOpcode);
 }
@@ -756,6 +758,7 @@ static int flashdrv_detectMacronixOcta(int minor, flash_opParameters_t *res, uns
 	res->writeOpcode = 0x12; /* Page program 4B */
 	res->writeDummy = 0;
 	res->addrMode = ADDRMODE_4B;
+	res->eraseIoType = operation_io_888d;
 	res->eraseOpcode = 0xdc;
 	res->log_eraseSize = 16;
 	return 0;
@@ -799,6 +802,26 @@ static int flashdrv_initMacronixOcta(int minor)
 }
 
 
+static int flashdrv_detectMT35X(int minor, flash_opParameters_t *res, unsigned char *device_id)
+{
+	(void)device_id;
+	int ret = flashdrv_parseSfdp(flashdrv_mountSfdp(minor), res, 0);
+	if (ret < 0) {
+		return ret;
+	}
+
+	/* Temporary workaround - with a more advanced SFDP parser we can get this data from the chip itself. */
+	res->readIoType = operation_io_188d;
+	res->readOpcode = 0xfd; /* (1S-8D-8D) DTR_READ */
+	res->readDummy = 16;
+	res->readModeCyc = 0;
+	res->writeIoType = operation_io_188;
+	res->writeOpcode = 0x8e; /* (1S-8S-8S) Page Program */
+	res->writeDummy = 0;
+	return 0;
+}
+
+
 static int flashdrv_detectFlashType(unsigned int minor, flash_opParameters_t *res)
 {
 	flashdrv_fillDefaultParams(res);
@@ -809,6 +832,11 @@ static int flashdrv_detectFlashType(unsigned int minor, flash_opParameters_t *re
 		memParams[minor].name = "Macronix";
 		memParams[minor].init_fn = flashdrv_initMacronixOcta;
 		return flashdrv_detectMacronixOcta(minor, res, device_id);
+	}
+	else if ((device_id[0] == 0x2c) && (device_id[1] == 0x5b)) {
+		memParams[minor].name = "Micron MT35X";
+		memParams[minor].init_fn = flashdrv_initGeneric;
+		return flashdrv_detectMT35X(minor, res, device_id);
 	}
 
 	memParams[minor].name = "generic";

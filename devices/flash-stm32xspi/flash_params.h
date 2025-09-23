@@ -31,6 +31,8 @@ enum operation_io_type {
 	operation_io_222,
 	operation_io_444,
 	operation_io_444d,
+	operation_io_188,
+	operation_io_188d,
 	operation_io_888,
 	operation_io_888d,
 	operation_io_types,
@@ -57,6 +59,7 @@ typedef struct {
 	u8 readDummy;          /* Dummy cycles needed for a read operation */
 	u8 writeIoType;        /* One of enum operation_io_type */
 	u8 writeDummy;         /* Dummy cycles needed for a program operation */
+	u8 eraseIoType;        /* One of enum operation_io_type */
 	u8 eraseOpcode;        /* Opcode to perform an erase operation */
 	u8 addrMode;           /* One of ADDRMODE_* */
 	u8 log_chipSize;       /* log2 of chip size in bytes */
