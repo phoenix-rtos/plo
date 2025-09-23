@@ -911,7 +911,7 @@ static void _stm32_initSRAM(void)
 
 void _stm32_init(void)
 {
-	u32 i, v;
+	u32 i;
 	static const int gpioDevs[] = { dev_gpioa, dev_gpiob, dev_gpioc, dev_gpiod, dev_gpioe, dev_gpiof, dev_gpiog,
 		dev_gpioh, dev_gpion, dev_gpioo, dev_gpiop, dev_gpioq };
 
