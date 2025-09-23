@@ -66,6 +66,7 @@ void flashdrv_fillDefaultParams(flash_opParameters_t *res)
 	res->writeDummy = 0;
 	res->addrMode = ADDRMODE_3B;
 	res->log_chipSize = 24;        /* 16 MB */
+	res->eraseIoType = operation_io_111;
 	res->eraseOpcode = 0xd8;       /* Sector erase */
 	res->log_eraseSize = 16;       /* 64 KB sector size */
 	res->log_pageSize = 8;         /* 256 B page size */
