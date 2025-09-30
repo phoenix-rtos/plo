@@ -23,6 +23,7 @@
 
 #include <board_config.h>
 #include <hal/armv8m/stm32/n6/stm32n6.h>
+#include "mce.h"
 
 
 /* It's not practical to automatically determine if a given XSPI bus uses HyperBus protocol
@@ -54,6 +55,7 @@
 
 #define XSPI_FIFO_SIZE     64 /* Size of hardware FIFO */
 #define XSPI_N_CONTROLLERS 2
+#define XSPI_MCE_REGIONS   1 /* Hardware supports up to 4 */
 
 #define XSPI_SR_BUSY (1UL << 5) /* Controller busy */
 #define XSPI_SR_TOF  (1UL << 4) /* Timeout */
@@ -133,6 +135,22 @@ typedef struct {
 
 
 typedef struct {
+	addr_t start;
+	addr_t end; /* Exclusive */
+	int encrypt;
+} xspi_memregion_t; /* Encrypted memory region */
+
+
+typedef struct {
+	addr_t start; /* Address refers to the memory device, not cpu. */
+	addr_t end;   /* Same as above. Exclusive */
+	u32 cipher;
+	u32 mode;
+	u8 *key;
+} xspi_memcrypt_args_t;
+
+
+typedef struct {
 	void *start;
 	u32 size;
 	volatile u32 *ctrl;
@@ -149,6 +167,7 @@ typedef struct {
 	u8 spiPort;
 	u8 chipSelect;
 	u8 isHyperbus;
+	u8 mceDev;
 } xspi_ctrlParams_t;
 
 
@@ -189,6 +208,9 @@ ssize_t xspi_regcom_read(unsigned int minor, addr_t offs, void *buff, size_t len
 
 
 ssize_t xspi_regcom_write(unsigned int minor, addr_t offs, const void *buff, size_t len);
+
+
+ssize_t xspi_regcom_write_mapped(unsigned int minor, addr_t offs, const void *buff, size_t len);
 
 
 ssize_t xspi_regcom_erase(unsigned int minor, addr_t offs, size_t len, unsigned int flags);

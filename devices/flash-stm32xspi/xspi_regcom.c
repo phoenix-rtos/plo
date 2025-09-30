@@ -15,6 +15,7 @@
 
 #include "xspi_common.h"
 #include "flash_params.h"
+#include <config.h>
 
 typedef struct {
 	u32 ccr;
@@ -274,6 +275,8 @@ static u32 flashdrv_changeCtrlMode(unsigned int minor, u32 new_mode)
 		hal_cpuDataMemoryBarrier();
 		*(p->ctrl + xspi_cr) = v | (1 << 1); /* Abort operation in progress */
 		xspi_waitBusy(minor);
+		*(p->ctrl + xspi_cr) |= (1 << 26); /* Disable AXI prefetch */
+		hal_cpuDataMemoryBarrier();
 	}
 
 	v &= ~XSPI_CR_MODE_MASK;
@@ -285,6 +288,12 @@ static u32 flashdrv_changeCtrlMode(unsigned int minor, u32 new_mode)
 		*(p->ctrl + xspi_ccr) = mp->read.ccr;
 		*(p->ctrl + xspi_tcr) = mp->read.tcr;
 		*(p->ctrl + xspi_ir) = mp->read.ir;
+		/* todo: add write registers */
+		*(p->ctrl + xspi_wccr) = mp->write.ccr;
+		*(p->ctrl + xspi_wtcr) = mp->write.tcr;
+		*(p->ctrl + xspi_wir) = mp->write.ir;
+
+		*(p->ctrl + xspi_cr) &= ~(3 << 25); /* Enable prefetch */
 		hal_cpuDataMemoryBarrier();
 	}
 
@@ -704,6 +713,40 @@ static ssize_t flashdrv_write_internal(unsigned int minor, addr_t offs, const vo
 		if (ret < 0) {
 			return ret;
 		}
+	}
+
+	return (ssize_t)len;
+}
+
+
+ssize_t xspi_regcom_write_mapped(unsigned int minor, addr_t offs, const void *buff, size_t len)
+{
+	u32 remaining, i;
+	const xspi_ctrlParams_t *p = &xspi_ctrlParams[minor];
+	struct flash_memParams *mp = &memParams[minor];
+	// Each transacton must be exactly 32 bytes
+	if (len % 32 != 0 || len < 32) {
+		return (ssize_t)-1;
+	}
+
+	remaining = len;
+	i = 0;
+	while (remaining > 0) {
+		flashdrv_writeEnable(minor, 1);
+		flashdrv_changeCtrlMode(minor, XSPI_CR_MODE_MEMORY);
+
+		hal_cpuDataSyncBarrier();
+		hal_memcpy(p->start + offs + i, buff + i, 32);
+		hal_cleanDCache();
+		hal_cpuDataSyncBarrier();
+
+		flashdrv_waitForWriteCompletion(minor, mp->status, 10000);
+		flashdrv_changeCtrlMode(minor, XSPI_CR_MODE_IWRITE);
+		flashdrv_writeEnable(minor, 1);
+		flashdrv_changeCtrlMode(minor, XSPI_CR_MODE_MEMORY);
+
+		remaining -= 32;
+		i += 32;
 	}
 
 	return (ssize_t)len;

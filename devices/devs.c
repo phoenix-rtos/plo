@@ -17,7 +17,7 @@
 
 #include <lib/errno.h>
 
-#define SIZE_MAJOR 9
+#define SIZE_MAJOR 10
 #define SIZE_MINOR 16
 
 struct {

@@ -46,6 +46,7 @@
 #define RAMCFG_BASE ((void *)0x52023000)
 #define ICB_BASE    ((void *)0xe000e000)
 #define BSEC_BASE   ((void *)0x56009000)
+#define RNG_BASE    ((void *)0x54020000)
 
 static struct {
 	volatile u32 *rcc;
@@ -57,6 +58,7 @@ static struct {
 	volatile u32 *iwdg;
 	volatile u32 *ramcfg;
 	volatile u32 *bsec;
+	volatile u32 *rng;
 
 	u32 cpuclk;
 	u32 perclk;
@@ -916,6 +918,128 @@ int _stm32_gpioGetPort(unsigned int d, u16 *val)
 }
 
 
+/* RNG */
+
+
+static int _stm32_rngInit(void)
+{
+	u32 v;
+
+	/* Enable clock */
+	_stm32_rccSetDevClock(dev_rng, 1);
+
+	/* Disable RNG */
+	*(stm32_common.rng + rng_cr) &= ~(1u << 2);
+	hal_cpuDataMemoryBarrier();
+
+	v = *(stm32_common.rng + rng_cr);
+	v |= (1u << 30); /* Conditioning soft reset */
+	v &= ~(1u << 7); /* Enable auto reset if seed error detected */
+	v &= ~(1u << 5); /* Enable clock error detection */
+	/* AN4230 5.1.3 NIST compliant RNG configuration */
+	v &= ~0x03FFFF00;
+	v |= 0x00F00D00;
+	*(stm32_common.rng + rng_cr) = v; /* Apply new configuration, hold in reset */
+	/* AN4230 5.1.3 NIST compliant RNG configuration */
+	*(stm32_common.rng + rng_htcr) = 0xAAC7;
+	*(stm32_common.rng + rng_nscr) = 0x0003FFFF; /* Activate all noise sources */
+	*(stm32_common.rng + rng_cr) &= ~(1u << 30); /* Release from reset */
+	while ((*(stm32_common.rng + rng_cr) & (1u << 30)) != 0) {
+		/* Wait for peripheral to become ready (2 AHB cycles + 2 RNG clock cycles) */
+	}
+
+	/* Disable interrupt */
+	*(stm32_common.rng + rng_cr) &= ~(1u << 3);
+
+	return 0;
+}
+
+
+static void _stm32_rngEnable(void)
+{
+	*(stm32_common.rng + rng_cr) |= 1u << 2;
+}
+
+
+static void _stm32_rngDisable(void)
+{
+	/* Disable RNG */
+	*(stm32_common.rng + rng_cr) &= ~(1u << 2);
+}
+
+
+static int _stm32_rngReadDR(u32 *val)
+{
+	int ret = -EAGAIN;
+	u32 sr = *(stm32_common.rng + rng_sr);
+
+	if ((sr & 1u) != 0) {
+		*val = *(stm32_common.rng + rng_dr);
+
+		/* Zero check is recommended in Reference Manual due to rare race condition */
+		ret = (*val != 0) ? 0 : -EIO;
+	}
+
+	/* Has error been detected? */
+	if ((sr & (3u << 5)) != 0) {
+		/* Mark data as faulty, but check cause of interrupts */
+		if ((sr & (3u << 1)) == 0) {
+			/* Situation has been recovered from, try again */
+			ret = -EAGAIN;
+		}
+		else {
+			/* Request IP reinit only for SE */
+			ret = (sr & (1 << 6)) ? -EIO : -EAGAIN;
+		}
+
+		/* Clear flags */
+		*(stm32_common.rng + rng_sr) &= ~(sr & (3u << 5));
+		hal_cpuDataMemoryBarrier();
+	}
+
+	return ret;
+}
+
+
+ssize_t _stm32_rngRead(u8 *val, size_t len)
+{
+	size_t pos = 0, chunk;
+	int retry = 0;
+
+	_stm32_rngEnable();
+
+	while (pos < len) {
+		u32 t;
+		int err = _stm32_rngReadDR(&t);
+		if (err < 0) {
+			if (err != -EAGAIN) {
+				/* Reinitialize IP */
+				_stm32_rngDisable();
+				_stm32_rngEnable();
+			}
+
+			++retry;
+			if (retry < 1000) {
+				/* Retry */
+				continue;
+			}
+
+			_stm32_rngDisable();
+			return -EIO;
+		}
+
+		retry = 0;
+		chunk = ((len - pos) > sizeof(t)) ? sizeof(t) : len - pos;
+		hal_memcpy(val + pos, &t, chunk);
+		pos += chunk;
+	}
+
+	_stm32_rngDisable();
+
+	return (ssize_t)len;
+}
+
+
 /* Watchdog */
 
 
@@ -998,6 +1122,7 @@ void _stm32_init(void)
 	stm32_common.gpio[14] = GPIOO_BASE;
 	stm32_common.gpio[15] = GPIOP_BASE;
 	stm32_common.gpio[16] = GPIOQ_BASE;
+	stm32_common.rng = RNG_BASE;
 
 	/* Store reset flags and then clear them */
 	stm32_common.resetFlags = (*(stm32_common.rcc + rcc_rsr) >> 21);
@@ -1057,6 +1182,9 @@ void _stm32_init(void)
 	hal_cpuDataMemoryBarrier();
 
 	otp_init();
+	_stm32_rngInit();
+
+	hal_cpuDataMemoryBarrier();
 
 #if defined(WATCHDOG)
 	/* Init watchdog */
