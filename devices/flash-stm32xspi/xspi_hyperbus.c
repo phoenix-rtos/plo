@@ -38,6 +38,8 @@
 #define HYPERBUS_TYPE_RAM2 0x1UL /* HYPERRAM™ 2.0 */
 #define HYPERBUS_TYPE_RAM3 0x9UL /* HYPERRAM™ 3.0 a.k.a. HYPERRAM™ extended-IO */
 
+#define TEST_LEN 2 * 32 * 1024
+
 
 /* XSPI registers needed for configuring a HyperBus transaction */
 typedef struct {
@@ -122,7 +124,7 @@ static struct hb_memParams {
 } hb_memParams[XSPI_N_CONTROLLERS];
 
 
-static int psramdrv_changeXspiMode(unsigned int minor, psram_xspiMode_t mode)
+static int xspi_hb_changeXspiMode(unsigned int minor, psram_xspiMode_t mode)
 {
 	const psram_xspiSetup_t *newSetup = &psram_xspiModes[mode];
 	const psram_xspiSetup_t *toClear = &psram_toClear;
@@ -159,7 +161,7 @@ static int xspi_hb_transactionInternal(unsigned int minor, const psram_xspiMode_
 	const xspi_ctrlParams_t *p = &xspi_ctrlParams[minor];
 	u8 isRead = ((mode == xspi_memRead) || (mode == xspi_regRead)) ? 1 : 0;
 
-	psramdrv_changeXspiMode(minor, mode);
+	xspi_hb_changeXspiMode(minor, mode);
 	*(p->ctrl + xspi_dlr) = size - 1;
 	hal_cpuDataMemoryBarrier();
 	*(p->ctrl + xspi_ar) = sysaddr * ((hb_memParams[minor].is16Bit != 0) ? 4 : 2);
@@ -217,7 +219,7 @@ static void xspi_hb_psramInit(unsigned int minor)
 	xspi_hb_transactionInternal(minor, xspi_regWrite, HYPERRAM_CR0, (u8 *)&cr0, 4);
 
 	/* Set device to memory mapped mode */
-	psramdrv_changeXspiMode(minor, xspi_memMapped);
+	xspi_hb_changeXspiMode(minor, xspi_memMapped);
 }
 
 
@@ -341,4 +343,46 @@ int xspi_hb_init(unsigned int minor)
 
 	/* Non-RAM HyperBus devices currently not supported */
 	return -EINVAL;
+}
+
+void print_buf(u8 *buf, u32 size)
+{
+	for (u32 i = 0; i < size; i++) {
+		lib_printf("%02x ", buf[i]);
+		if (i % 16 == 15) {
+			lib_printf("\n");
+		}
+	}
+	lib_printf("\n");
+}
+
+void xspi_hb_test(unsigned int minor)
+{
+	static u8 buf[TEST_LEN] = {};
+	for (int i = 0; i < TEST_LEN; i++) {
+		buf[i] = 16 + i % 16;
+	}
+	print_buf(buf, 512);
+	xspi_hb_write(minor, 0, (void *)buf, TEST_LEN);
+	hal_cpuDataSyncBarrier();
+	hal_cpuInvCache(hal_cpuDCache, (addr_t)xspi_ctrlParams[minor].start, xspi_memSize[minor]);
+	xspi_hb_transactionInternal(minor, xspi_memRead, 0, buf, TEST_LEN);
+	// xspi_hb_read(minor, 0, (void *)buf, TEST_LEN, 0);
+	hal_cpuDataSyncBarrier();
+
+
+	print_buf(buf, 512);
+	// hal_cpuDataSyncBarrier();
+	// for (int i = 0; i < TEST_LEN; i++) {
+	// 	buf[i] = 0;
+	// }
+	// print_buf(buf, 512);
+
+	// xspi_hb_transactionInternal(minor, xspi_memRead, 0, buf, TEST_LEN);
+	// print_buf(buf, 512);
+
+	// xspi_hb_changeXspiMode(minor, xspi_memMapped);
+
+	// xspi_hb_read(minor, 0, buf, TEST_LEN, 0);
+	// print_buf(buf, 512);
 }

@@ -54,7 +54,7 @@ const xspi_ctrlParams_t xspi_ctrlParams[XSPI_N_CONTROLLERS] = {
 		.size = XSPI2_REG_SIZE,
 		.clksel = { .sel = ipclk_xspi2sel, .val = ipclk_sel_ic3_ck },
 		.divider_slow = 10,
-		.divider = 4,
+		.divider = 10,
 		.dev = dev_xspi2,
 		.rst = dev_rst_xspi2,
 		.ctrl = XSPI2_BASE,
@@ -62,6 +62,8 @@ const xspi_ctrlParams_t xspi_ctrlParams[XSPI_N_CONTROLLERS] = {
 		.spiPort = XSPIM_PORT2,
 		.chipSelect = XSPI_CHIPSELECT_NCS1,
 		.isHyperbus = XSPI2_IS_HYPERBUS,
+		.useMCE = USE_MCE2,
+		.mceDev = mce2,
 	},
 	{
 		.start = XSPI1_REG_BASE,
@@ -76,6 +78,8 @@ const xspi_ctrlParams_t xspi_ctrlParams[XSPI_N_CONTROLLERS] = {
 		.spiPort = XSPIM_PORT1,
 		.chipSelect = XSPI_CHIPSELECT_NCS2,
 		.isHyperbus = XSPI1_IS_HYPERBUS,
+		.useMCE = USE_MCE1,
+		.mceDev = mce1,
 	},
 };
 
@@ -281,6 +285,8 @@ static void xspi_commonInit(void)
 	*(mgrParams.base) = mgrParams.config;
 	hal_cpuDataMemoryBarrier();
 	(void)*(mgrParams.base);
+
+	mce_init();
 }
 
 
@@ -388,6 +394,7 @@ static int xspidrv_map(unsigned int minor, addr_t addr, size_t sz, int mode, add
 static int xspidrv_init(unsigned int minor)
 {
 	const xspi_ctrlParams_t *p;
+	int ret;
 	if (xspi_common.xspimDone == 0) {
 		xspi_commonInit();
 		xspi_common.xspimDone = 1;
@@ -441,11 +448,28 @@ static int xspidrv_init(unsigned int minor)
 	*(p->ctrl + xspi_dcr4) = 0;
 
 	if (p->isHyperbus != 0) {
-		return xspi_hb_init(minor);
+		ret = xspi_hb_init(minor);
 	}
 	else {
-		return xspi_regcom_init(minor);
+		ret = xspi_regcom_init(minor);
 	}
+	if (ret < 0) {
+		return ret;
+	}
+
+	if (p->useMCE != 0) {
+		static u8 tmpkey[32] = { 1, 2, 3 };
+		mce_configureKeys(p->mceDev, MCE_CIPHER_AES128, NULL, NULL, tmpkey, NULL);
+		mce_configureCipherContext(mce1, 1, 0x2137, MCE_MODE_NBLOCK, tmpkey);
+		mce_configureRegion(p->mceDev, mce_r1, MCE_MODE_NBLOCK, 1, (addr_t)p->start, ((addr_t)p->start) + 4 * 1024 - 1);
+		// mce_configureRegion(p->mceDev, mce_r2, MCE_MODE_FBLOCK, 0, (addr_t)p->start, ((addr_t)p->start) + p->size - 1);
+		mce_configureLock(p->mceDev, mce_globallock);
+		lib_printf("\nConfigured MCE\n");
+
+		xspi_hb_test(minor);
+	}
+
+	return EOK;
 }
 
 

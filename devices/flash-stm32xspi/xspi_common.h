@@ -23,6 +23,7 @@
 
 #include <board_config.h>
 #include <hal/armv8m/stm32/n6/stm32n6.h>
+#include "mce.h"
 
 
 /* It's not practical to automatically determine if a given XSPI bus uses HyperBus protocol
@@ -136,6 +137,8 @@ typedef struct {
 	u8 spiPort;
 	u8 chipSelect;
 	u8 isHyperbus;
+	u8 useMCE;
+	u8 mceDev;
 } xspi_ctrlParams_t;
 
 

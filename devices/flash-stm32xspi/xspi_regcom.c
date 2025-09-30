@@ -274,6 +274,8 @@ static u32 flashdrv_changeCtrlMode(unsigned int minor, u32 new_mode)
 		hal_cpuDataMemoryBarrier();
 		*(p->ctrl + xspi_cr) = v | (1 << 1); /* Abort operation in progress */
 		xspi_waitBusy(minor);
+		// *(p->ctrl + xspi_cr) &= ~(1 << 26); /* Disable AXI prefetch */
+		// hal_cpuDataMemoryBarrier();
 	}
 
 	v &= ~XSPI_CR_MODE_MASK;
@@ -286,6 +288,8 @@ static u32 flashdrv_changeCtrlMode(unsigned int minor, u32 new_mode)
 		*(p->ctrl + xspi_tcr) = mp->read.tcr;
 		*(p->ctrl + xspi_ir) = mp->read.ir;
 		hal_cpuDataMemoryBarrier();
+		// *(p->ctrl + xspi_cr) &= ~(3 << 25); /* Enable prefetch */
+		// hal_cpuDataMemoryBarrier();
 	}
 
 	v |= new_mode;
@@ -689,8 +693,27 @@ static ssize_t flashdrv_write_internal(unsigned int minor, addr_t offs, const vo
 }
 
 
+ssize_t flashdrv_mapped_write(unsigned int minor, addr_t offs, const void *buff, size_t len)
+{
+	const xspi_ctrlParams_t *p = &xspi_ctrlParams[minor];
+	struct flash_memParams *mp = &memParams[minor];
+	/* Enable prefetch AXI in CR */
+	if (len % 16 != 0) {
+		return (ssize_t)-1;
+	}
+	hal_cpuDataSyncBarrier();
+	hal_memcpy(p->start + offs, buff, len);
+	flashdrv_waitForWriteCompletion(minor, mp->status, 0);
+	flashdrv_performOp(minor, mp->wrEn, 0);
+	flashdrv_changeCtrlMode(minor, XSPI_CR_MODE_MEMORY);
+	hal_cpuDataSyncBarrier();
+	return (ssize_t)len;
+}
+
+
 ssize_t xspi_regcom_write(unsigned int minor, addr_t offs, const void *buff, size_t len)
 {
+	const xspi_ctrlParams_t *p = &xspi_ctrlParams[minor];
 	ssize_t ret;
 	u32 prev_mode;
 
@@ -698,9 +721,14 @@ ssize_t xspi_regcom_write(unsigned int minor, addr_t offs, const void *buff, siz
 		return 0;
 	}
 
-	prev_mode = flashdrv_changeCtrlMode(minor, XSPI_CR_MODE_IWRITE);
-	ret = flashdrv_write_internal(minor, offs, buff, len);
-	flashdrv_changeCtrlMode(minor, prev_mode);
+	if (p->useMCE) {
+		ret = flashdrv_mapped_write(minor, offs, buff, len);
+	}
+	else {
+		prev_mode = flashdrv_changeCtrlMode(minor, XSPI_CR_MODE_IWRITE);
+		ret = flashdrv_write_internal(minor, offs, buff, len);
+		flashdrv_changeCtrlMode(minor, prev_mode);
+	}
 	return ret;
 }
 
@@ -752,6 +780,25 @@ ssize_t xspi_regcom_erase(unsigned int minor, addr_t offs, size_t len, unsigned 
 	return ret;
 }
 
+// void print_buf(u8 *buf, u32 size)
+// {
+// 	for (u32 i = 0; i < size; i++) {
+// 		lib_printf("%02x ", buf[i]);
+// 		if (i % 16 == 15) {
+// 			lib_printf("\n");
+// 		}
+// 	}
+// 	lib_printf("\n");
+// }
+
+// #define BUFSIZE 1024
+// void flashdrv_mce_test(unsigned int minor)
+// {
+// 	// const xspi_ctrlParams_t *p = &xspi_ctrlParams[minor];
+// 	static u8 buf[BUFSIZE] = {};
+// 	xspi_regcom_read(minor, 0, buf, BUFSIZE, 0);
+// 	print_buf(buf, BUFSIZE);
+// }
 
 int xspi_regcom_init(unsigned int minor)
 {
@@ -834,6 +881,8 @@ int xspi_regcom_init(unsigned int minor)
 			xspi_memSize[minor] >> 20,
 			DEV_STORAGE,
 			minor);
+
+	// flashdrv_mce_test(minor);
 
 	return EOK;
 }
