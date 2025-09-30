@@ -3,7 +3,7 @@
  *
  * plo - operating system loader
  *
- * STM32 XSPI Flash driver
+ * STM32 XSPI Regular-command Flash driver
  *
  * Copyright 2020, 2025 Phoenix Systems
  * Author: Aleksander Kaminski, Jacek Maksymowicz
@@ -13,108 +13,8 @@
  * %LICENSE%
  */
 
-#include <hal/hal.h>
-#include <lib/lib.h>
-#include <devices/devs.h>
-
-#include <board_config.h>
-
-#include <hal/armv8m/stm32/n6/stm32n6.h>
-
+#include "xspi_common.h"
 #include "flash_params.h"
-
-
-#define XSPI1_BASE     ((void *)0x58025000)
-#define XSPI1_REG_BASE ((void *)0x90000000)
-#define XSPI1_REG_SIZE (256 * 1024 * 1024)
-#define XSPI1_IRQ      170
-#define XSPI2_BASE     ((void *)0x5802a000)
-#define XSPI2_REG_BASE ((void *)0x70000000)
-#define XSPI2_REG_SIZE (256 * 1024 * 1024)
-#define XSPI2_IRQ      171
-#define XSPI3_BASE     ((void *)0x5802d000)
-#define XSPI3_REG_BASE ((void *)0x80000000)
-#define XSPI3_REG_SIZE (256 * 1024 * 1024)
-#define XSPI3_IRQ      172
-#define XSPIM_BASE     ((void *)0x5802b400)
-#define FIFO_SIZE      64 /* Size of hardware FIFO */
-
-#define MAX_PINS      22
-#define N_CONTROLLERS 1
-
-
-enum {
-	ipclk_sel_hclk5 = 0x0,
-	ipclk_sel_per_ck = 0x1,
-	ipclk_sel_ic3_ck = 0x2,
-	ipclk_sel_ic4_ck = 0x3,
-};
-
-
-enum xspi_regs {
-	xspi_cr = 0x0,
-	xspi_dcr1 = 0x2,
-	xspi_dcr2,
-	xspi_dcr3,
-	xspi_dcr4,
-	xspi_sr = 0x8,
-	xspi_fcr,
-	xspi_dlr = 0x10,
-	xspi_ar = 0x12,
-	xspi_dr = 0x14,
-	xspi_psmkr = 0x20,
-	xspi_psmar = 0x22,
-	xspi_pir = 0x24,
-	xspi_ccr = 0x40,
-	xspi_tcr = 0x42,
-	xspi_ir = 0x44,
-	xspi_abr = 0x48,
-	xspi_lptr = 0x4c,
-	xspi_wpccr = 0x50,
-	xspi_wptcr = 0x52,
-	xspi_wpir = 0x54,
-	xspi_wpabr = 0x58,
-	xspi_wccr = 0x60,
-	xspi_wtcr = 0x62,
-	xspi_wir = 0x64,
-	xspi_wabr = 0x68,
-	xspi_hlcr = 0x80,
-	xspi_calfcr = 0x84,
-	xspi_calmr = 0x86,
-	xspi_calsor = 0x88,
-	xspi_calsir = 0x8a,
-};
-
-
-#define XSPI_SR_BUSY (1 << 5)
-#define XSPI_SR_TOF  (1 << 4)
-#define XSPI_SR_SMF  (1 << 3)
-#define XSPI_SR_FTF  (1 << 2)
-#define XSPI_SR_TCF  (1 << 1)
-#define XSPI_SR_TEF  (1 << 0)
-
-#define XSPI_CR_MODE_IWRITE   (0 << 28)
-#define XSPI_CR_MODE_IREAD    (1 << 28)
-#define XSPI_CR_MODE_AUTOPOLL (2 << 28)
-#define XSPI_CR_MODE_MEMORY   (3 << 28)
-#define XSPI_CR_MODE_MASK     (3 << 28)
-
-#define XSPI_DCR1_MTYP_MICRON       (0 << 24)
-#define XSPI_DCR1_MTYP_MACRONIX     (1 << 24)
-#define XSPI_DCR1_MTYP_STANDARD     (2 << 24)
-#define XSPI_DCR1_MTYP_MACRONIX_RAM (3 << 24)
-
-#define XSPIM_PORT1   0
-#define XSPIM_PORT2   1
-#define XSPIM_MUX_OFF 0 /* No multiplexed accesses */
-#define XSPIM_MUX_ON  1 /* XSPI1 and XSPI2 do multiplexed accesses on the same port */
-/* If MUX_OFF: XSPI1 to Port 1, XSPI2 to Port 2
- * If MUX_ON: XSPI1 and XSPI2 muxed to Port 1, XSPI3 to Port 2*/
-#define XSPIM_MODE_DIRECT 0
-/* If MUX_OFF: XSPI1 to Port 2, XSPI2 to Port 1
- * If MUX_ON: XSPI1 and XSPI2 muxed to Port 2, XSPI3 to Port 1 */
-#define XSPIM_MODE_SWAPPED (1 << 1)
-
 
 typedef struct {
 	u32 ccr;
@@ -129,111 +29,11 @@ typedef struct {
 	u8 isRead;
 } flash_opDefinition_t;
 
-typedef struct {
-	s16 port;
-	s8 pin;
-} flash_pin_t;
-
-
-/* TODO: Frequency after divider must be at most 100 MHz, otherwise we get data corruption
- * or controller hangs. */
-/* Parameters of XSPI controllers in use.
- * IMPORTANT: if you want to use XSPI1, DO NOT set its clock source to IC3 or IC4.
- * Doing so will result in a hang in BootROM after reset.
- * The same behavior exists in official STMicroelectronics code.
- */
-static const struct flash_ctrlParams {
-	void *start;
-	u32 size;
-	volatile u32 *ctrl;
-	struct {
-		u16 sel; /* Clock mux (ipclk_xspi?sel) */
-		u8 val;  /* Clock source (one of ipclk_sel_*) */
-	} clksel;
-	u16 divider_slow; /* Divider used for initialization - resulting clock must be under 50 MHz */
-	u16 divider;      /* Divider used for normal operation - can be as fast as Flash can handle */
-	u16 dev;
-	u16 rst;
-	u8 spiPort;
-} controllerParams[N_CONTROLLERS] = {
-	{
-		.start = XSPI2_REG_BASE,
-		.size = XSPI2_REG_SIZE,
-		.clksel = { .sel = ipclk_xspi2sel, .val = ipclk_sel_ic3_ck },
-		.divider_slow = 10,
-		.divider = 4,
-		.dev = dev_xspi2,
-		.rst = dev_rst_xspi2,
-		.ctrl = XSPI2_BASE,
-		.spiPort = XSPIM_PORT2,
-	},
-};
-
-
-/* Parameters of XSPI I/O manager */
-static const struct flash_mgrParams {
-	volatile u32 *base;
-	u32 config;
-	struct {
-		u8 pin_af;
-		flash_pin_t pins[MAX_PINS]; /* value < 0 signals end of list */
-	} spiPort[2];
-} mgrParams = {
-	.base = XSPIM_BASE,
-	.config = XSPIM_MODE_DIRECT | XSPIM_MUX_OFF,
-	.spiPort = {
-		[XSPIM_PORT1] = {
-			.pin_af = 9,
-			.pins = {
-				{ dev_gpioo, 0 },  /* XSPIM_P1_NCS1 */
-				{ dev_gpioo, 2 },  /* XSPIM_P1_DQS0 */
-				{ dev_gpioo, 3 },  /* XSPIM_P1_DQS1 */
-				{ dev_gpioo, 4 },  /* XSPIM_P1_CLK */
-				{ dev_gpiop, 0 },  /* XSPIM_P1_IO0 */
-				{ dev_gpiop, 1 },  /* XSPIM_P1_IO1 */
-				{ dev_gpiop, 2 },  /* XSPIM_P1_IO2 */
-				{ dev_gpiop, 3 },  /* XSPIM_P1_IO3 */
-				{ dev_gpiop, 4 },  /* XSPIM_P1_IO4 */
-				{ dev_gpiop, 5 },  /* XSPIM_P1_IO5 */
-				{ dev_gpiop, 6 },  /* XSPIM_P1_IO6 */
-				{ dev_gpiop, 7 },  /* XSPIM_P1_IO7 */
-				{ dev_gpiop, 8 },  /* XSPIM_P1_IO8 */
-				{ dev_gpiop, 9 },  /* XSPIM_P1_IO9 */
-				{ dev_gpiop, 10 }, /* XSPIM_P1_IO1O */
-				{ dev_gpiop, 11 }, /* XSPIM_P1_IO11 */
-				{ dev_gpiop, 12 }, /* XSPIM_P1_IO12 */
-				{ dev_gpiop, 13 }, /* XSPIM_P1_IO13 */
-				{ dev_gpiop, 14 }, /* XSPIM_P1_IO14 */
-				{ dev_gpiop, 15 }, /* XSPIM_P1_IO15 */
-				{ -1, -1 },
-			},
-		},
-		[XSPIM_PORT2] = {
-			.pin_af = 9,
-			.pins = {
-				{ dev_gpion, 0 },  /* XSPIM_P2_DQS0 */
-				{ dev_gpion, 1 },  /* XSPIM_P2_NCS1 */
-				{ dev_gpion, 2 },  /* XSPIM_P2_IO0 */
-				{ dev_gpion, 3 },  /* XSPIM_P2_IO1 */
-				{ dev_gpion, 4 },  /* XSPIM_P2_IO2 */
-				{ dev_gpion, 5 },  /* XSPIM_P2_IO3 */
-				{ dev_gpion, 6 },  /* XSPIM_P2_CLK */
-				{ dev_gpion, 8 },  /* XSPIM_P2_IO4 */
-				{ dev_gpion, 9 },  /* XSPIM_P2_IO5 */
-				{ dev_gpion, 10 }, /* XSPIM_P2_IO6 */
-				{ dev_gpion, 11 }, /* XSPIM_P2_IO7 */
-				{ -1, -1 },
-			},
-		},
-	},
-};
-
 
 /* Parameters of Flash memory connected to a controller */
 static struct flash_memParams {
 	unsigned char device_id[6];
 	int (*init_fn)(int minor);
-	u32 size;
 	flash_opParameters_t params;
 	u32 memoryType;
 	flash_xspiSetup_t read;
@@ -244,12 +44,7 @@ static struct flash_memParams {
 	const flash_opDefinition_t *wrEn;
 	const flash_opDefinition_t *wrDis;
 	const char *name;
-} memParams[N_CONTROLLERS];
-
-
-static struct {
-	int xspimDone;
-} xspi_common = { 0 };
+} memParams[XSPI_N_CONTROLLERS];
 
 
 #define PHASE_TYPE_NO  0
@@ -465,7 +260,7 @@ static u32 flashdrv_makeIRValue(u8 opcodeType, u16 opcode)
 
 static u32 flashdrv_changeCtrlMode(unsigned int minor, u32 new_mode)
 {
-	const struct flash_ctrlParams *p = &controllerParams[minor];
+	const xspi_ctrlParams_t *p = &xspi_ctrlParams[minor];
 	struct flash_memParams *mp = &memParams[minor];
 	u32 prev_mode, v;
 
@@ -478,18 +273,14 @@ static u32 flashdrv_changeCtrlMode(unsigned int minor, u32 new_mode)
 	if ((prev_mode == XSPI_CR_MODE_MEMORY) || (prev_mode == XSPI_CR_MODE_AUTOPOLL)) {
 		hal_cpuDataMemoryBarrier();
 		*(p->ctrl + xspi_cr) = v | (1 << 1); /* Abort operation in progress */
-		while ((*(p->ctrl + xspi_sr) & XSPI_SR_BUSY) != 0) {
-			/* Wait for controller to become ready */
-		}
+		xspi_waitBusy(minor);
 	}
 
 	v &= ~XSPI_CR_MODE_MASK;
 	if (new_mode == XSPI_CR_MODE_MEMORY) {
 		*(p->ctrl + xspi_cr) = v;
 		hal_cpuDataMemoryBarrier();
-		while ((*(p->ctrl + xspi_sr) & XSPI_SR_BUSY) != 0) {
-			/* Wait for controller to become ready */
-		}
+		xspi_waitBusy(minor);
 
 		*(p->ctrl + xspi_ccr) = mp->read.ccr;
 		*(p->ctrl + xspi_tcr) = mp->read.tcr;
@@ -499,9 +290,7 @@ static u32 flashdrv_changeCtrlMode(unsigned int minor, u32 new_mode)
 
 	v |= new_mode;
 	*(p->ctrl + xspi_cr) = v;
-	while ((*(p->ctrl + xspi_sr) & XSPI_SR_BUSY) != 0) {
-		/* Wait for controller to become ready */
-	}
+	xspi_waitBusy(minor);
 
 	/* Clear any flags that may have been set (e.g. in autopoll or memory-mapped mode) */
 	*(p->ctrl + xspi_fcr) = XSPI_SR_TCF | XSPI_SR_SMF;
@@ -517,10 +306,7 @@ static inline int flashdrv_opHasAddr(const flash_opDefinition_t *opDef)
 
 static void flashdrv_performOp(unsigned int minor, const flash_opDefinition_t *opDef, unsigned char *data)
 {
-	const struct flash_ctrlParams *p = &controllerParams[minor];
-	int i = 0, j = 0;
-	u32 status;
-
+	const xspi_ctrlParams_t *p = &xspi_ctrlParams[minor];
 	flashdrv_changeCtrlMode(minor, (opDef->isRead != 0) ? XSPI_CR_MODE_IREAD : XSPI_CR_MODE_IWRITE);
 	if (opDef->dataLen != 0) {
 		*(p->ctrl + xspi_dlr) = opDef->dataLen - 1;
@@ -535,40 +321,14 @@ static void flashdrv_performOp(unsigned int minor, const flash_opDefinition_t *o
 		*(p->ctrl + xspi_ar) = opDef->addr;
 	}
 
-	while (i < opDef->dataLen) {
-		do {
-			status = *(p->ctrl + xspi_sr);
-		} while ((status & (XSPI_SR_FTF | XSPI_SR_TCF)) == 0);
-
-		if (opDef->isRead != 0) {
-			j = FIFO_SIZE - ((status >> 8) & 0x7f);
-			for (; j < FIFO_SIZE && (i < opDef->dataLen); j++, i++) {
-				/* This controller allows byte and halfword reads from the XSPI_DR register */
-				data[i] = *(volatile u8 *)(p->ctrl + xspi_dr);
-			}
-		}
-		else {
-			j = (status >> 8) & 0x7f;
-			/* In indirect write mode, writing data triggers the operation */
-			for (; j < FIFO_SIZE && (i < opDef->dataLen); j++, i++) {
-				/* This controller allows byte and halfword writes to the XSPI_DR register */
-				*(volatile u8 *)(p->ctrl + xspi_dr) = data[i];
-			}
-		}
-	}
-
-	while ((*(p->ctrl + xspi_sr) & XSPI_SR_TCF) == 0) {
-		/* Wait for transfer completion */
-	}
-
-	*(p->ctrl + xspi_fcr) = XSPI_SR_TCF;
+	xspi_transferFifo(minor, data, opDef->dataLen, opDef->isRead);
 }
 
 
 static int flashdrv_waitForWriteCompletion(unsigned int minor, const flash_opDefinition_t *opDef, u32 timeout)
 {
 	int ret = 0;
-	const struct flash_ctrlParams *p = &controllerParams[minor];
+	const xspi_ctrlParams_t *p = &xspi_ctrlParams[minor];
 	time_t time_start = hal_timerGet();
 
 	flashdrv_changeCtrlMode(minor, XSPI_CR_MODE_AUTOPOLL);
@@ -645,7 +405,7 @@ static ssize_t flashdrv_performWriteOp(
  * Returns pointer to SFDP data. */
 static const u32 *flashdrv_mountSfdp(int minor)
 {
-	const struct flash_ctrlParams *p = &controllerParams[minor];
+	const xspi_ctrlParams_t *p = &xspi_ctrlParams[minor];
 	struct flash_memParams *mp = &memParams[minor];
 
 	mp->read.ccr = MAKE_CCR_VALUE(S1, S1, NO, S1, 1, 3, 0, 0);
@@ -845,100 +605,19 @@ static int flashdrv_detectFlashType(unsigned int minor, flash_opParameters_t *re
 }
 
 
-static int flashdrv_isValidAddress(unsigned int minor, u32 off, size_t size)
+int xspi_regcom_sync(unsigned int minor)
 {
-	size_t fsize = memParams[minor].size;
-	if ((off < fsize) && ((off + size) <= fsize)) {
-		return 1;
-	}
-
-	return 0;
-}
-
-
-static int flashdrv_isValidMinor(unsigned int minor)
-{
-	return minor < N_CONTROLLERS ? 1 : 0;
-}
-
-
-static void flashdrv_initPins(int p)
-{
-	unsigned int i;
-	for (i = 0; i < MAX_PINS; i++) {
-		if (mgrParams.spiPort[p].pins[i].port == -1) {
-			break;
-		}
-
-		_stm32_gpioConfig(
-				mgrParams.spiPort[p].pins[i].port,
-				mgrParams.spiPort[p].pins[i].pin,
-				gpio_mode_af,
-				mgrParams.spiPort[p].pin_af,
-				gpio_otype_pp,
-				gpio_ospeed_vhi,
-				gpio_pupd_nopull);
-	}
-}
-
-
-static void flashdrv_commonInit(void)
-{
-	/* After reset XSPI peripherals may be enabled because they were used by BootROM.
-	 * We want to disable them _AND_ put them in reset.
-	 * XSPIM configuration can be written ONLY if all XSPI peripherals are disabled
-	 * either by reset or their XSPI_CR register bit 0 is 0.
-	 * Disabling clocks for all XSPI peripherals is not enough. */
-	_stm32_rccSetDevClock(dev_xspi1, 0);
-	_stm32_rccSetDevClock(dev_xspi2, 0);
-	_stm32_rccSetDevClock(dev_xspi3, 0);
-	_stm32_rccSetDevClock(dev_xspim, 0);
-	_stm32_rccDevReset(dev_rst_xspi1, 1);
-	_stm32_rccDevReset(dev_rst_xspi2, 1);
-	_stm32_rccDevReset(dev_rst_xspi3, 1);
-	_stm32_rccDevReset(dev_rst_xspim, 1);
-
-	/* Enable XSPIPHYCOMP and reset XSPIPHY (not sure if it does anything) */
-	_stm32_rccSetDevClock(dev_xspiphycomp, 1);
-	_stm32_rccDevReset(dev_rst_xspiphy1, 1);
-	_stm32_rccDevReset(dev_rst_xspiphy1, 0);
-	_stm32_rccDevReset(dev_rst_xspiphy2, 1);
-	_stm32_rccDevReset(dev_rst_xspiphy2, 0);
-
-	/* Take XSPIM out of reset and enable clock */
-	_stm32_rccDevReset(dev_rst_xspim, 0);
-	_stm32_rccSetDevClock(dev_xspim, 1);
-
-	*(mgrParams.base) = mgrParams.config;
-	hal_cpuDataMemoryBarrier();
-	(void)*(mgrParams.base);
-}
-
-
-/* Below are functions for device's public interface */
-
-
-static int flashdrv_sync(unsigned int minor)
-{
-	if (flashdrv_isValidMinor(minor) == 0) {
-		return -EINVAL;
-	}
-
 	/* TODO: it may be faster to clear the whole DCache instead of doing it by address
 	 * or we can disable caching of this region using MPU */
-	hal_cpuInvCache(hal_cpuDCache, (addr_t)controllerParams[minor].start, memParams[minor].size);
+	hal_cpuInvCache(hal_cpuDCache, (addr_t)xspi_ctrlParams[minor].start, xspi_memSize[minor]);
 	return EOK;
 }
 
 
-static ssize_t flashdrv_read(unsigned int minor, addr_t offs, void *buff, size_t len, time_t timeout)
+ssize_t xspi_regcom_read(unsigned int minor, addr_t offs, void *buff, size_t len, time_t timeout)
 {
 	(void)timeout;
-	if ((flashdrv_isValidMinor(minor) == 0) || (flashdrv_isValidAddress(minor, offs, len) == 0)) {
-		return -EINVAL;
-	}
-
-	hal_memcpy(buff, controllerParams[minor].start + offs, len);
+	hal_memcpy(buff, xspi_ctrlParams[minor].start + offs, len);
 	return (ssize_t)len;
 }
 
@@ -1010,13 +689,10 @@ static ssize_t flashdrv_write_internal(unsigned int minor, addr_t offs, const vo
 }
 
 
-static ssize_t flashdrv_write(unsigned int minor, addr_t offs, const void *buff, size_t len)
+ssize_t xspi_regcom_write(unsigned int minor, addr_t offs, const void *buff, size_t len)
 {
 	ssize_t ret;
 	u32 prev_mode;
-	if ((flashdrv_isValidMinor(minor) == 0) || (flashdrv_isValidAddress(minor, offs, len) == 0)) {
-		return -EINVAL;
-	}
 
 	if (len == 0) {
 		return 0;
@@ -1039,7 +715,7 @@ static ssize_t flashdrv_erase_internal(unsigned int minor, addr_t offs, size_t l
 	ssize_t len_ret = (ssize_t)len;
 	if (len == (size_t)-1) {
 		ret = flashdrv_performWriteOp(minor, mp->chipErase, NULL, mp->params.eraseChipTimeout);
-		return (ret < 0) ? ret : (ssize_t)memParams[minor].size;
+		return (ret < 0) ? ret : (ssize_t)xspi_memSize[minor];
 	}
 	else {
 		eraseSize = 1 << mp->params.log_eraseSize;
@@ -1063,90 +739,29 @@ static ssize_t flashdrv_erase_internal(unsigned int minor, addr_t offs, size_t l
 }
 
 
-static ssize_t flashdrv_erase(unsigned int minor, addr_t offs, size_t len, unsigned int flags)
+ssize_t xspi_regcom_erase(unsigned int minor, addr_t offs, size_t len, unsigned int flags)
 {
 	ssize_t ret;
 	u32 prev_mode;
 
 	(void)flags;
-	if (flashdrv_isValidMinor(minor) == 0) {
-		return -EINVAL;
-	}
-
-	if ((len != (size_t)-1) && (flashdrv_isValidAddress(minor, offs, len) == 0)) {
-		return -EINVAL;
-	}
-
 	prev_mode = flashdrv_changeCtrlMode(minor, XSPI_CR_MODE_IWRITE);
 	ret = flashdrv_erase_internal(minor, offs, len);
-	flashdrv_sync(minor);
+	xspi_regcom_sync(minor);
 	flashdrv_changeCtrlMode(minor, prev_mode);
 	return ret;
 }
 
 
-static int flashdrv_done(unsigned int minor)
-{
-	if (flashdrv_isValidMinor(minor) == 0) {
-		return -EINVAL;
-	}
-
-	return EOK;
-}
-
-
-static int flashdrv_map(unsigned int minor, addr_t addr, size_t sz, int mode, addr_t memaddr, size_t memsz, int memmode, addr_t *a)
-{
-	size_t fSz, ctrlSz;
-	addr_t fStart;
-
-	if (flashdrv_isValidMinor(minor) == 0) {
-		return -EINVAL;
-	}
-
-	fStart = (addr_t)controllerParams[minor].start;
-	ctrlSz = controllerParams[minor].size;
-	fSz = memParams[minor].size;
-	*a = fStart;
-
-	/* Check if region is located on flash */
-	if ((addr + sz) >= fSz) {
-		return -EINVAL;
-	}
-
-	/* Check if flash is mappable to map region */
-	if (fStart <= memaddr && (fStart + ctrlSz) >= (memaddr + memsz)) {
-		return dev_isMappable;
-	}
-
-	/* Device mode cannot be higher than map mode to copy data */
-	if ((mode & memmode) != mode) {
-		return -EINVAL;
-	}
-
-	/* Data can be copied from device to map */
-	return dev_isNotMappable;
-}
-
-
-static int flashdrv_init(unsigned int minor)
+int xspi_regcom_init(unsigned int minor)
 {
 	int ret;
 	u32 v;
-	const struct flash_ctrlParams *p;
+	const xspi_ctrlParams_t *p;
 	struct flash_memParams *mp;
 	flash_opParameters_t *fp;
 
-	if (xspi_common.xspimDone == 0) {
-		flashdrv_commonInit();
-		xspi_common.xspimDone = 1;
-	}
-
-	if (flashdrv_isValidMinor(minor) == 0) {
-		return -EINVAL;
-	}
-
-	p = &controllerParams[minor];
+	p = &xspi_ctrlParams[minor];
 	mp = &memParams[minor];
 	fp = &mp->params;
 
@@ -1155,39 +770,12 @@ static int flashdrv_init(unsigned int minor)
 	mp->wrEn = &opDef_write_enable;
 	mp->wrDis = &opDef_write_disable;
 
-	_stm32_rccSetIPClk(p->clksel.sel, p->clksel.val);
-	_stm32_rccDevReset(p->rst, 0);
-	_stm32_rccSetDevClock(p->dev, 1);
-	flashdrv_initPins(p->spiPort);
-
-	*(p->ctrl + xspi_cr) = 0; /* Disable controller */
-	hal_cpuDataSyncBarrier();
-
-	/* NOTE: we set the NOPREF_AXI bit, during testing clearing it resulted in data corruption in some situations */
-	*(p->ctrl + xspi_cr) =
-			(1 << 26) | /* Prefetch is disabled when the AXI transaction is signaled as not-prefetchable */
-			(0 << 24) | /* Use Chip select 1 */
-			(1 << 22) | /* Stop auto-polling on match */
-			(3 << 8) |  /* FIFO threshold = 4 bytes */
-			(1 << 3);   /* Enable timeout for memory-mapped mode */
-
-	*(p->ctrl + xspi_lptr) = 64; /* Timeout for memory-mapped mode */
-
-	while ((*(p->ctrl + xspi_sr) & XSPI_SR_BUSY) != 0) {
-		/* Wait for controller to become ready */
-	}
-
 	mp->memoryType = XSPI_DCR1_MTYP_STANDARD;
 	*(p->ctrl + xspi_dcr1) =
 			mp->memoryType | /* Standard memory mode */
 			(23 << 16) |     /* 16 MB size */
 			(0 << 8) |       /* Chip-select high for at least 1 cycle */
 			(0 << 1);        /* Free-running clock disable */
-	*(p->ctrl + xspi_dcr2) =
-			(0 << 16) |                     /* Wrapped reads not supported */
-			((p->divider_slow - 1) & 0xff); /* Clock prescaler */
-	*(p->ctrl + xspi_dcr3) = 0;
-	*(p->ctrl + xspi_dcr4) = 0;
 
 	/* Disable writing in memory mapped mode */
 	*(p->ctrl + xspi_wccr) = 0;
@@ -1195,9 +783,7 @@ static int flashdrv_init(unsigned int minor)
 	*(p->ctrl + xspi_wir) = 0;
 
 	*(p->ctrl + xspi_cr) |= 1; /* Enable controller */
-	while ((*(p->ctrl + xspi_sr) & XSPI_SR_BUSY) != 0) {
-		/* Wait for controller to become ready */
-	}
+	xspi_waitBusy(minor);
 
 	/* Read Flash memory details (JEDEC ID and SFDP) */
 	ret = flashdrv_detectFlashType(minor, fp);
@@ -1216,34 +802,22 @@ static int flashdrv_init(unsigned int minor)
 
 	/* Configure higher clocks */
 	flashdrv_changeCtrlMode(minor, XSPI_CR_MODE_IWRITE);
-	*(p->ctrl + xspi_cr) &= ~1;
-	v = *(p->ctrl + xspi_dcr2);
-	v &= ~0xff;
-	v |= (p->divider - 1) & 0xff;
-	*(p->ctrl + xspi_dcr2) = v;
-	while ((*(p->ctrl + xspi_sr) & XSPI_SR_BUSY) != 0) {
-		/* Wait for controller to become ready */
-	}
+	xspi_setHigherClock(minor);
 
-	*(p->ctrl + xspi_cr) |= 1;
-
-	if (fp->log_chipSize <= 31) {
-		mp->size = 1 << fp->log_chipSize;
-	}
-	else {
+	if (fp->log_chipSize > 31) {
 		fp->log_chipSize = 31;
-		mp->size = 1 << 31;
 	}
 
+	xspi_memSize[minor] = 1 << fp->log_chipSize;
 	/* Limit size of the device to what's accessible */
-	if (mp->size > controllerParams[minor].size) {
-		mp->size = controllerParams[minor].size;
+	if (xspi_memSize[minor] > xspi_ctrlParams[minor].size) {
+		xspi_memSize[minor] = xspi_ctrlParams[minor].size;
 	}
 
-	if ((fp->addrMode == ADDRMODE_3B) && (mp->size > (1 << 24))) {
+	if ((fp->addrMode == ADDRMODE_3B) && (xspi_memSize[minor] > (1 << 24))) {
 		/* If flash was not fully recognized, it may be larger than 16 MB, but we don't know
 		 * how to put it into 4-byte addressing mode - so it's limited to 16 MB */
-		mp->size = (1 << 24);
+		xspi_memSize[minor] = (1 << 24);
 	}
 
 	/* Set new memory size into DCR1 */
@@ -1253,34 +827,13 @@ static int flashdrv_init(unsigned int minor)
 	*(p->ctrl + xspi_dcr1) = v;
 
 	flashdrv_changeCtrlMode(minor, XSPI_CR_MODE_MEMORY);
-	flashdrv_sync(minor);
+	xspi_regcom_sync(minor);
 
 	lib_printf("\ndev/flash: Configured %s %dMB NOR flash(%d.%d)",
 			mp->name,
-			mp->size >> 20,
+			xspi_memSize[minor] >> 20,
 			DEV_STORAGE,
 			minor);
 
 	return EOK;
-}
-
-
-__attribute__((constructor)) static void flashdrv_reg(void)
-{
-	static const dev_ops_t opsFlashSTM32_XSPI = {
-		.read = flashdrv_read,
-		.write = flashdrv_write,
-		.erase = flashdrv_erase,
-		.sync = flashdrv_sync,
-		.map = flashdrv_map,
-	};
-
-	static const dev_t devFlashSTM32_XSPI = {
-		.name = "flash-stm32xspi",
-		.init = flashdrv_init,
-		.done = flashdrv_done,
-		.ops = &opsFlashSTM32_XSPI,
-	};
-
-	devs_register(DEV_STORAGE, N_CONTROLLERS, &devFlashSTM32_XSPI);
 }
