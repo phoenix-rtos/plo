@@ -18,15 +18,16 @@
 
 #include <hal/hal.h>
 
-#define DEV_UART      0
-#define DEV_USB       1
-#define DEV_STORAGE   2
-#define DEV_TTY       3
-#define DEV_RAM       4
-#define DEV_NAND_DATA 5
-#define DEV_NAND_META 6
-#define DEV_NAND_RAW  7
-#define DEV_PIPE      8
+#define DEV_UART         0
+#define DEV_USB          1
+#define DEV_STORAGE      2
+#define DEV_TTY          3
+#define DEV_RAM          4
+#define DEV_NAND_DATA    5
+#define DEV_NAND_META    6
+#define DEV_NAND_RAW     7
+#define DEV_PIPE         8
+#define DEV_CRYP_STORAGE 9
 
 #define DEVS_ITER_STOP ((const dev_t *)-1)
 
@@ -34,6 +35,7 @@
 #define DEV_CONTROL_GETBAUD         2
 #define DEV_CONTROL_GETPROP_TOTALSZ 3
 #define DEV_CONTROL_GETPROP_BLOCKSZ 4
+#define DEV_CONTROL_MEMCRYPT        5
 
 /* clang-format off */
 enum { dev_isMappable = 0, dev_isNotMappable };
