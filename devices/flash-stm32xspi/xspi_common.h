@@ -23,6 +23,7 @@
 
 #include <board_config.h>
 #include <hal/armv8m/stm32/n6/stm32n6.h>
+#include "mce.h"
 
 
 /* It's not practical to automatically determine if a given XSPI bus uses HyperBus protocol
@@ -68,6 +69,7 @@
 
 #define XSPI_FIFO_SIZE     64 /* Size of hardware FIFO */
 #define XSPI_N_CONTROLLERS 2
+#define XSPI_MCE_REGIONS   1 /* Hardware supports up to 4 */
 
 #define XSPI_SR_BUSY (1UL << 5) /* Controller busy */
 #define XSPI_SR_TOF  (1UL << 4) /* Timeout */
@@ -164,6 +166,7 @@ typedef struct {
 	u16 divider_slow; /* Divider used for initialization - resulting clock must be under 50 MHz */
 	u16 divider;      /* Divider used for normal operation - can be as fast as Flash can handle */
 	u16 dev;
+	u16 mceDev;
 	u16 rst;
 	xspi_pin_t resetPin; /* Hardware reset pin for device (set to -1 if unused) */
 	u8 enabled;
