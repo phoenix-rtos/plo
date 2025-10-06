@@ -459,11 +459,11 @@ static int xspidrv_init(unsigned int minor)
 
 	if (p->useMCE != 0) {
 		static u8 tmpkey[32] = { 1, 2, 3 };
-		mce_configureKeys(p->mceDev, MCE_CIPHER_AES128, NULL, NULL, tmpkey, NULL);
-		mce_configureCipherContext(mce1, 1, 0x2137, MCE_MODE_NBLOCK, tmpkey);
-		mce_configureRegion(p->mceDev, mce_r1, MCE_MODE_NBLOCK, 1, (addr_t)p->start, ((addr_t)p->start) + 4 * 1024 - 1);
+		mce_configurePer(p->mceDev, MCE_CIPHER_AES128, tmpkey, NULL);
+		// mce_configureCipherContext(mce1, 1, 0, MCE_MODE_NBLOCK, NULL, tmpkey);
+		mce_configureRegion(p->mceDev, mce_r1, MCE_MODE_NBLOCK, 0, (addr_t)p->start, ((addr_t)p->start) + 4 * 1024 - 1);
 		// mce_configureRegion(p->mceDev, mce_r2, MCE_MODE_FBLOCK, 0, (addr_t)p->start, ((addr_t)p->start) + p->size - 1);
-		mce_configureLock(p->mceDev, mce_globallock);
+		// mce_configureLock(p->mceDev, mce_globallock);
 		lib_printf("\nConfigured MCE\n");
 
 		xspi_hb_test(minor);

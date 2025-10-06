@@ -360,16 +360,24 @@ void xspi_hb_test(unsigned int minor)
 {
 	static u8 buf[TEST_LEN] = {};
 	for (int i = 0; i < TEST_LEN; i++) {
-		buf[i] = 16 + i % 16;
+		buf[i] = i % 16;
 	}
 	print_buf(buf, 512);
 	xspi_hb_write(minor, 0, (void *)buf, TEST_LEN);
+	for (int i = 0; i < TEST_LEN; i++) {
+		buf[i] = 0;
+	}
+
 	hal_cpuDataSyncBarrier();
 	hal_cpuInvCache(hal_cpuDCache, (addr_t)xspi_ctrlParams[minor].start, xspi_memSize[minor]);
-	xspi_hb_transactionInternal(minor, xspi_memRead, 0, buf, TEST_LEN);
+	hal_cpuDataSyncBarrier();
 	// xspi_hb_read(minor, 0, (void *)buf, TEST_LEN, 0);
+
+	mce_disable(mce1, mce_r1);
 	hal_cpuDataSyncBarrier();
 
+	xspi_hb_read(minor, 0, buf, TEST_LEN, 0);
+	hal_cpuDataSyncBarrier();
 
 	print_buf(buf, 512);
 	// hal_cpuDataSyncBarrier();
@@ -381,7 +389,6 @@ void xspi_hb_test(unsigned int minor)
 	// xspi_hb_transactionInternal(minor, xspi_memRead, 0, buf, TEST_LEN);
 	// print_buf(buf, 512);
 
-	// xspi_hb_changeXspiMode(minor, xspi_memMapped);
 
 	// xspi_hb_read(minor, 0, buf, TEST_LEN, 0);
 	// print_buf(buf, 512);

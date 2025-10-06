@@ -53,7 +53,7 @@ static void mce_waitBusy(mce_t per, u32 reg, u32 flag)
 }
 
 
-int mce_configureKeys(mce_t per, u32 cipher, u8 *mk, u8 *fmk, u8 *ctxk1, u8 *ctxk2)
+int mce_configurePer(mce_t per, u32 cipher, u8 *mk, u8 *fmk)
 {
 	u32 keysize, t;
 	if (per < 0 || per >= mce_count) {
@@ -62,8 +62,8 @@ int mce_configureKeys(mce_t per, u32 cipher, u8 *mk, u8 *fmk, u8 *ctxk1, u8 *ctx
 	if (cipher != MCE_CIPHER_AES128 && cipher != MCE_CIPHER_AES256 && cipher != MCE_CIPHER_NOEKEON) {
 		return -EINVAL;
 	}
-	if (cipher == MCE_CIPHER_AES256 && (ctxk1 != NULL || ctxk2 != NULL)) {
-		return -EPERM;
+	if (cipher == MCE_CIPHER_AES256 && (mk == NULL && fmk == NULL)) {
+		return -EINVAL;
 	}
 	/* Select Cipher before writing key */
 	t = *(setup.base[per] + mce_cr) & ~MCE_CR_CIPHERSEL_MASK;
@@ -80,21 +80,14 @@ int mce_configureKeys(mce_t per, u32 cipher, u8 *mk, u8 *fmk, u8 *ctxk1, u8 *ctx
 		mce_storeKey(per, mce_fmkeyr1, mk, keysize);
 		mce_waitBusy(per, mce_sr, MCE_SR_FMKVALID);
 	}
-	if (ctxk1 != NULL) {
-		mce_storeKey(per, mce_cc1keyr0, ctxk1, keysize);
-		mce_waitBusy(per, mce_cc1cfgr, MCE_CCCFGR_CRC_MASK); /* Wait until key check sum computed */
-	}
-	if (ctxk2 != NULL) {
-		mce_storeKey(per, mce_cc2keyr0, ctxk1, keysize);
-		mce_waitBusy(per, mce_cc2cfgr, MCE_CCCFGR_CRC_MASK); /* Wait until key check sum computed */
-	}
 
 	return EOK;
 }
 
-int mce_configureCipherContext(mce_t per, u8 ctxid, u16 version, u32 mode, u8 *nonce)
+int mce_configureCipherContext(mce_t per, u8 ctxid, u16 version, u32 mode, u8 *nonce, u8 *ctxkey)
 {
 	volatile u32 *cccfgr;
+	u32 cckeyr0;
 	u32 ccnr0;
 	u32 t;
 	if (per < 0 || per >= mce_count) {
@@ -115,7 +108,7 @@ int mce_configureCipherContext(mce_t per, u8 ctxid, u16 version, u32 mode, u8 *n
 
 	cccfgr = setup.base[per] + MCE_CCCFGR(ctxid);
 	t = *cccfgr & ~((0xffff << MCE_CCCFGR_VERSION_OFF) | (MCE_MODE_MASK << MCE_CCCFGR_MODE_OFF));
-	t |= (mode << MCE_CCCFGR_MODE_OFF) | (MCE_CCCFGR_CCEN);
+	t |= (mode << MCE_CCCFGR_MODE_OFF);
 	if (mode == MCE_MODE_STREAM) {
 		ccnr0 = (ctxid == 1) ? (mce_cc1nr0) : (mce_cc2nr0);
 		mce_storeKey(per, ccnr0, nonce, 8);
@@ -124,7 +117,17 @@ int mce_configureCipherContext(mce_t per, u8 ctxid, u16 version, u32 mode, u8 *n
 	*cccfgr = t;
 	hal_cpuDataMemoryBarrier();
 
+	if (ctxkey != NULL) {
+		cckeyr0 = (ctxid == 1) ? (mce_cc1keyr0) : (mce_cc2keyr0);
+		mce_storeKey(per, cckeyr0, ctxkey, 16);
+		/* TODO: consider computing the expected checksum and compare it */
+		mce_waitBusy(per, MCE_CCCFGR(ctxid), MCE_CCCFGR_CRC_MASK); /* Wait until key check sum computed */
+		hal_cpuDataMemoryBarrier();
+	}
+
+	*cccfgr |= MCE_CCCFGR_CCEN;
 	mce_waitBusy(per, MCE_CCCFGR(ctxid), MCE_CCCFGR_CCEN);
+
 	return EOK;
 }
 
@@ -165,13 +168,13 @@ int mce_configureRegion(mce_t per, mce_reg_t reg, u32 mode, u32 ctxid, addr_t st
 		return -EINVAL;
 	}
 
-	*(setup.base[per] + MCE_SADDR(reg)) = start;
-	*(setup.base[per] + MCE_EADDR(reg)) = end;
-	hal_cpuDataMemoryBarrier();
-
 	t = *(setup.base[per] + MCE_REGCR(reg)) & ~(MCE_REGCR_CTXID_MASK | MCE_REGCR_ENC_MASK);
 	t |= (mode << MCE_REGCR_ENC_OFF) | (ctxid << MCE_REGCR_CTXID_OFF);
 	*(setup.base[per] + MCE_REGCR(reg)) = t;
+	hal_cpuDataMemoryBarrier();
+
+	*(setup.base[per] + MCE_SADDR(reg)) = start;
+	*(setup.base[per] + MCE_EADDR(reg)) = end;
 	hal_cpuDataMemoryBarrier();
 
 
@@ -227,24 +230,7 @@ void mce_init(void)
 	return;
 }
 
-void mce_test(mce_t per, mce_reg_t reg, u32 mode, u8 *key, addr_t start, addr_t end, u32 cipher)
+void mce_disable(mce_t per, mce_reg_t reg)
 {
-	// u32 t;
-	// /* Select Cipher before writing key */
-	// t = *(setup.base[per] + mce_cr) & ~MCE_CR_CIPHERSEL_MASK;
-	// t |= (cipher << MCE_CR_CIPHERSEL_OFF);
-	// *(setup.base[per] + mce_cr) = t;
-	// hal_cpuDataMemoryBarrier();
-
-	// *(setup.base[per] + MCE_SADDR(reg)) = start;
-	// *(setup.base[per] + MCE_EADDR(reg)) = end;
-	// hal_cpuDataMemoryBarrier();
-
-	// t = *(setup.base[per] + MCE_REGCR(reg)) & ~(MCE_REGCR_CTXID_MASK | MCE_REGCR_ENC_MASK);
-	// t |= (mode << MCE_REGCR_ENC_OFF) | (ctxid << MCE_REGCR_CTXID_OFF);
-	// *(setup.base[per] + MCE_REGCR(reg)) = t;
-	// hal_cpuDataMemoryBarrier();
-
-
-	*(setup.base[per] + MCE_REGCR(reg)) |= MCE_REGCR_BREN;
+	*(setup.base[per] + MCE_REGCR(reg)) &= ~MCE_REGCR_BREN;
 }

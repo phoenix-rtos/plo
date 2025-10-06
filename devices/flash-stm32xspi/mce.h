@@ -83,6 +83,7 @@
 #define MCE_CCCFGR_CCEN        (1UL << 0)
 #define MCE_CCCFGR(ctxid)      (((ctxid) == 1) ? (mce_cc1cfgr) : (mce_cc2cfgr))
 
+
 #define MCE1_REG_START 0x90000000
 #define MCE1_REG_END   0x9fffffff
 #define MCE2_REG_START 0x70000000
@@ -189,19 +190,19 @@ typedef struct mce_setup_t {
 } mce_setup_t;
 
 
-/* Configure all necessary keys that a given MCE peripheral can use.
+/* Configure MCE keysize and master/fast mastery key sources.
  * Key bytes in little endian.
  * Once a key is in use, you cannot change it.
  * Use NULL if you want to skip providing a key.
  * Keys must have correct length, according to cipher.
  * For restrictions see: RM0486 ch. 51 */
-int mce_configureKeys(mce_t per, u32 cipher, u8 *mk, u8 *fmk, u8 *ctxk1, u8 *ctxk2);
+int mce_configurePer(mce_t per, u32 cipher, u8 *mk, u8 *fmk);
 
 /* Configure and enable MCE cipher context z=1,2.
  * Cipher context key must already be written.
  * Cannot reconfigure context already in use.
  * If stream mode used, must provide 8 byte nonce value (little endian). Set to NULL otherwise. */
-int mce_configureCipherContext(mce_t per, u8 ctxid, u16 version, u32 mode, u8 *nonce);
+int mce_configureCipherContext(mce_t per, u8 ctxid, u16 version, u32 mode, u8 *nonce, u8 *ctxkey);
 
 /* Configure and enable a memory region to be enrypted/decrypted, by MCE.
  * Cannot reconfigure a region already in use.
@@ -218,5 +219,7 @@ void mce_init(void);
 
 
 void xspi_hb_test(unsigned int minor);
+
+void mce_disable(mce_t per, mce_reg_t reg);
 
 #endif
