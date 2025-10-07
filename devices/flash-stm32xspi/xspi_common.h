@@ -40,6 +40,18 @@
 #define XSPI3_IS_HYPERBUS 0
 #endif
 
+#ifndef XSPI1
+#define XSPI1 0
+#endif
+
+#ifndef XSPI2
+#define XSPI2 0
+#endif
+
+#ifndef XSPI3
+#define XSPI3 0
+#endif
+
 #define XSPI_FIFO_SIZE     64 /* Size of hardware FIFO */
 #define XSPI_N_CONTROLLERS 2
 
@@ -133,6 +145,7 @@ typedef struct {
 	u16 dev;
 	u16 rst;
 	xspi_pin_t resetPin; /* Hardware reset pin for device (set to -1 if unused) */
+	u8 enabled;
 	u8 spiPort;
 	u8 chipSelect;
 	u8 isHyperbus;
@@ -156,7 +169,7 @@ static inline void xspi_waitBusy(unsigned int minor)
  * `data`: output (if isRead == 0) or input (if isRead != 0) data buffer
  * `len`: length of data to transfer
  * `isRead`: == 0 if this is a write operation, != 0 otherwise */
-void xspi_transferFifo(unsigned int minor, u8 *data, size_t len, u8 isRead);
+int xspi_transferFifo(unsigned int minor, u8 *data, size_t len, u8 isRead);
 
 
 /* Switch to higher clock speed (defined by `xspi_ctrlParams_t::divider`)*/

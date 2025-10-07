@@ -59,6 +59,7 @@ const xspi_ctrlParams_t xspi_ctrlParams[XSPI_N_CONTROLLERS] = {
 		.rst = dev_rst_xspi2,
 		.ctrl = XSPI2_BASE,
 		.resetPin = { dev_gpion, 12 },
+		.enabled = XSPI2,
 		.spiPort = XSPIM_PORT2,
 		.chipSelect = XSPI_CHIPSELECT_NCS1,
 		.isHyperbus = XSPI2_IS_HYPERBUS,
@@ -73,6 +74,7 @@ const xspi_ctrlParams_t xspi_ctrlParams[XSPI_N_CONTROLLERS] = {
 		.rst = dev_rst_xspi1,
 		.ctrl = XSPI1_BASE,
 		.resetPin = { dev_gpioo, 5 },
+		.enabled = XSPI1,
 		.spiPort = XSPIM_PORT1,
 		.chipSelect = XSPI_CHIPSELECT_NCS2,
 		.isHyperbus = XSPI1_IS_HYPERBUS,
@@ -161,6 +163,12 @@ static void xspi_delay(void)
 static int xspidrv_isValidAddress(unsigned int minor, u32 off, size_t size)
 {
 	size_t fsize = xspi_memSize[minor];
+	size_t end = off + size;
+	if (end < off) {
+		/* Integer overflow has occurred */
+		return 0;
+	}
+
 	if ((off < fsize) && ((off + size) <= fsize)) {
 		return 1;
 	}
@@ -171,20 +179,38 @@ static int xspidrv_isValidAddress(unsigned int minor, u32 off, size_t size)
 
 static int xspidrv_isValidMinor(unsigned int minor)
 {
-	return (minor >= XSPI_N_CONTROLLERS) ? 0 : 1;
+	if (minor >= XSPI_N_CONTROLLERS) {
+		return 0;
+	}
+
+	return xspi_ctrlParams[minor].enabled;
 }
 
 
-void xspi_transferFifo(unsigned int minor, u8 *data, size_t len, u8 isRead)
+int xspi_transferFifo(unsigned int minor, u8 *data, size_t len, u8 isRead)
 {
 	const xspi_ctrlParams_t *p = &xspi_ctrlParams[minor];
 	int i = 0, j = 0;
 	u32 status;
+	time_t deadline;
 
 	while (i < len) {
-		do {
-			status = *(p->ctrl + xspi_sr);
-		} while ((status & (XSPI_SR_FTF | XSPI_SR_TCF)) == 0);
+		status = *(p->ctrl + xspi_sr);
+		/* Optimization - check status first, then calculate deadline.
+		 * Because XSPI is very fast we can get bytes in FIFO within a few CPU clock cycles. */
+		if ((status & (XSPI_SR_FTF | XSPI_SR_TCF)) == 0) {
+			/* Timeout is very generous - at least 1 ms per byte. Device should never time out
+			 * unless there is a hardware failure. */
+			deadline = hal_timerGet() + 2;
+			do {
+				status = *(p->ctrl + xspi_sr);
+				if (hal_timerGet() >= deadline) {
+					*(p->ctrl + xspi_cr) |= (1 << 1); /* Abort operation in progress */
+					xspi_waitBusy(minor);
+					return -ETIME;
+				}
+			} while ((status & (XSPI_SR_FTF | XSPI_SR_TCF)) == 0);
+		}
 
 		if (isRead != 0) {
 			j = XSPI_FIFO_SIZE - ((status >> 8) & 0x7f);
@@ -208,6 +234,7 @@ void xspi_transferFifo(unsigned int minor, u8 *data, size_t len, u8 isRead)
 	}
 
 	*(p->ctrl + xspi_fcr) = XSPI_SR_TCF;
+	return EOK;
 }
 
 
@@ -232,7 +259,7 @@ static void xspi_initPins(int p)
 {
 	unsigned int i;
 	for (i = 0; i < MAX_PINS; i++) {
-		if (mgrParams.spiPort[p].pins[i].port == -1) {
+		if ((mgrParams.spiPort[p].pins[i].port == -1) || (mgrParams.spiPort[p].pins[i].pin == -1)) {
 			break;
 		}
 
@@ -355,7 +382,7 @@ static ssize_t xspidrv_erase(unsigned int minor, addr_t offs, size_t len, unsign
 
 static int xspidrv_map(unsigned int minor, addr_t addr, size_t sz, int mode, addr_t memaddr, size_t memsz, int memmode, addr_t *a)
 {
-	size_t fSz, ctrlSz;
+	size_t ctrlSz;
 	addr_t fStart;
 
 	if (xspidrv_isValidMinor(minor) == 0) {
@@ -364,11 +391,10 @@ static int xspidrv_map(unsigned int minor, addr_t addr, size_t sz, int mode, add
 
 	fStart = (addr_t)xspi_ctrlParams[minor].start;
 	ctrlSz = xspi_ctrlParams[minor].size;
-	fSz = xspi_memSize[minor];
 	*a = fStart;
 
 	/* Check if region is located on device */
-	if ((addr + sz) >= fSz) {
+	if (xspidrv_isValidAddress(minor, addr, sz) == 0) {
 		return -EINVAL;
 	}
 
@@ -390,13 +416,13 @@ static int xspidrv_map(unsigned int minor, addr_t addr, size_t sz, int mode, add
 static int xspidrv_init(unsigned int minor)
 {
 	const xspi_ctrlParams_t *p;
+	if (xspidrv_isValidMinor(minor) == 0) {
+		return -EINVAL;
+	}
+
 	if (xspi_common.xspimDone == 0) {
 		xspi_commonInit();
 		xspi_common.xspimDone = 1;
-	}
-
-	if (xspidrv_isValidMinor(minor) == 0) {
-		return -EINVAL;
 	}
 
 	p = &xspi_ctrlParams[minor];
