@@ -304,7 +304,7 @@ static inline int flashdrv_opHasAddr(const flash_opDefinition_t *opDef)
 }
 
 
-static void flashdrv_performOp(unsigned int minor, const flash_opDefinition_t *opDef, unsigned char *data)
+static int flashdrv_performOp(unsigned int minor, const flash_opDefinition_t *opDef, unsigned char *data)
 {
 	const xspi_ctrlParams_t *p = &xspi_ctrlParams[minor];
 	flashdrv_changeCtrlMode(minor, (opDef->isRead != 0) ? XSPI_CR_MODE_IREAD : XSPI_CR_MODE_IWRITE);
@@ -321,7 +321,7 @@ static void flashdrv_performOp(unsigned int minor, const flash_opDefinition_t *o
 		*(p->ctrl + xspi_ar) = opDef->addr;
 	}
 
-	xspi_transferFifo(minor, data, opDef->dataLen, opDef->isRead);
+	return xspi_transferFifo(minor, data, opDef->dataLen, opDef->isRead);
 }
 
 
@@ -368,6 +368,7 @@ static int flashdrv_writeEnable(unsigned int minor, int enable)
 	u8 status[2];
 	const flash_opDefinition_t *opDef = enable ? memParams[minor].wrEn : memParams[minor].wrDis;
 	unsigned retries = 10;
+	int ret;
 	enable = (enable != 0) ? 1 : 0;
 
 	/* Set flag and verify until it's set - required according to Macronix datasheet */
@@ -377,11 +378,18 @@ static int flashdrv_writeEnable(unsigned int minor, int enable)
 		}
 
 		retries--;
-		flashdrv_performOp(minor, opDef, NULL);
-		flashdrv_performOp(minor, memParams[minor].status, status);
+		ret = flashdrv_performOp(minor, opDef, NULL);
+		if (ret < 0) {
+			return ret;
+		}
+
+		ret = flashdrv_performOp(minor, memParams[minor].status, status);
+		if (ret < 0) {
+			return ret;
+		}
 	} while (((status[0] >> 1) & 1) != enable);
 
-	return 0;
+	return EOK;
 }
 
 
@@ -392,11 +400,16 @@ static ssize_t flashdrv_performWriteOp(
 		const void *data,
 		u32 timeout)
 {
+	int ret;
 	if (flashdrv_writeEnable(minor, 1) < 0) {
 		return -EIO;
 	}
 
-	flashdrv_performOp(minor, opDef, (void *)data);
+	ret = flashdrv_performOp(minor, opDef, (void *)data);
+	if (ret < 0) {
+		return ret;
+	}
+
 	return flashdrv_waitForWriteCompletion(minor, memParams[minor].status, timeout);
 }
 
@@ -546,7 +559,11 @@ static int flashdrv_initMacronixOcta(int minor)
 		return -EIO;
 	}
 
-	flashdrv_performOp(minor, &opDef_writeWRCR2, &value);
+	ret = flashdrv_performOp(minor, &opDef_writeWRCR2, &value);
+	if (ret < 0) {
+		return ret;
+	}
+
 	ret = flashdrv_waitForWriteCompletion(minor, &opDef_octa_read_status, 1000);
 	if (ret < 0) {
 		return ret;
@@ -584,9 +601,13 @@ static int flashdrv_detectMT35X(int minor, flash_opParameters_t *res, unsigned c
 
 static int flashdrv_detectFlashType(unsigned int minor, flash_opParameters_t *res)
 {
-	flashdrv_fillDefaultParams(res);
 	unsigned char *device_id = memParams[minor].device_id;
-	flashdrv_performOp(minor, &opDef_read_id, device_id);
+	int ret;
+	flashdrv_fillDefaultParams(res);
+	ret = flashdrv_performOp(minor, &opDef_read_id, device_id);
+	if (ret < 0) {
+		return ret;
+	}
 
 	if ((device_id[0] == 0xc2) && (device_id[1] == 0x80)) {
 		memParams[minor].name = "Macronix";
@@ -718,7 +739,12 @@ static ssize_t flashdrv_erase_internal(unsigned int minor, addr_t offs, size_t l
 		return (ret < 0) ? ret : (ssize_t)xspi_memSize[minor];
 	}
 	else {
-		eraseSize = 1 << mp->params.log_eraseSize;
+		if (mp->params.log_eraseSize > 31) {
+			/* Erase size greater than 2 GB is very improbable - treat it as an error */
+			return -EINVAL;
+		}
+
+		eraseSize = 1UL << mp->params.log_eraseSize;
 		if ((offs & (eraseSize - 1)) != 0 || (len & (eraseSize - 1)) != 0) {
 			return -EINVAL;
 		}
@@ -808,7 +834,7 @@ int xspi_regcom_init(unsigned int minor)
 		fp->log_chipSize = 31;
 	}
 
-	xspi_memSize[minor] = 1 << fp->log_chipSize;
+	xspi_memSize[minor] = 1UL << fp->log_chipSize;
 	/* Limit size of the device to what's accessible */
 	if (xspi_memSize[minor] > xspi_ctrlParams[minor].size) {
 		xspi_memSize[minor] = xspi_ctrlParams[minor].size;

@@ -17,7 +17,7 @@
 
 #define XSPI_CCR_DQSE         (1UL << 29) /* DQS (data strobe) enable */
 #define XSPI_CCR_DDTR         (1UL << 27) /* Data double transfer rate. Always on in HyperBus */
-#define XPSI_CCR_DMODE_16BIT  (5UL << 24)
+#define XSPI_CCR_DMODE_16BIT  (5UL << 24)
 #define XSPI_CCR_DMODE_MASK   (7UL << 24)
 #define XSPI_CCR_ADMODE_MASK  (7UL << 8)
 #define XSPI_CCR_ADMODE_SHIFT 8UL
@@ -165,8 +165,7 @@ static int xspi_hb_transactionInternal(unsigned int minor, const psram_xspiMode_
 	*(p->ctrl + xspi_ar) = sysaddr * ((hb_memParams[minor].is16Bit != 0) ? 4 : 2);
 	hal_cpuDataMemoryBarrier();
 
-	xspi_transferFifo(minor, data, size, isRead);
-	return EOK;
+	return xspi_transferFifo(minor, data, size, isRead);
 }
 
 
@@ -174,7 +173,12 @@ static int xspi_hb_detectHyperbusDev(unsigned int minor)
 {
 	u16 idReg0, idReg1;
 	u8 dev_type;
-	xspi_hb_transactionInternal(minor, xspi_regRead, HYPERBUS_IR1, (u8 *)&idReg1, 2);
+	int ret;
+	ret = xspi_hb_transactionInternal(minor, xspi_regRead, HYPERBUS_IR1, (u8 *)&idReg1, 2);
+	if (ret < 0) {
+		return ret;
+	}
+
 	dev_type = idReg1 & 0xf;
 
 	/* HYPERBUS_TYPE_RAM and HYPERBUS_TYPE_RAM2 may also work, but have not been tested.
@@ -197,7 +201,10 @@ static int xspi_hb_detectHyperbusDev(unsigned int minor)
 		}
 	}
 
-	xspi_hb_transactionInternal(minor, xspi_regRead, HYPERBUS_IR0, (u8 *)&idReg0, 2);
+	ret = xspi_hb_transactionInternal(minor, xspi_regRead, HYPERBUS_IR0, (u8 *)&idReg0, 2);
+	if (ret < 0) {
+		return ret;
+	}
 	hb_memParams[minor].log_size =
 			((idReg0 >> 8) & 0x1f) +                       /* Row address bits - 1 */
 			((idReg0 >> 4) & 0xf) +                        /* Column address bits - 1 */
@@ -208,16 +215,25 @@ static int xspi_hb_detectHyperbusDev(unsigned int minor)
 }
 
 
-static void xspi_hb_psramInit(unsigned int minor)
+static int xspi_hb_psramInit(unsigned int minor)
 {
 	u32 cr0 = 0;
+	int ret;
 
-	xspi_hb_transactionInternal(minor, xspi_regRead, HYPERRAM_CR0, (u8 *)&cr0, 4);
+	ret = xspi_hb_transactionInternal(minor, xspi_regRead, HYPERRAM_CR0, (u8 *)&cr0, 4);
+	if (ret < 0) {
+		return ret;
+	}
+
 	cr0 = cr0 & ~0x8; /* Enable variable latency for better performance */
-	xspi_hb_transactionInternal(minor, xspi_regWrite, HYPERRAM_CR0, (u8 *)&cr0, 4);
+	ret = xspi_hb_transactionInternal(minor, xspi_regWrite, HYPERRAM_CR0, (u8 *)&cr0, 4);
+	if (ret < 0) {
+		return ret;
+	}
 
 	/* Set device to memory mapped mode */
 	psramdrv_changeXspiMode(minor, xspi_memMapped);
+	return EOK;
 }
 
 
@@ -312,7 +328,7 @@ int xspi_hb_init(unsigned int minor)
 		mp->log_size = 31;
 	}
 
-	xspi_memSize[minor] = 1 << hb_memParams[minor].log_size;
+	xspi_memSize[minor] = 1UL << mp->log_size;
 	/* Limit size of the device to what's accessible */
 	if (xspi_memSize[minor] > xspi_ctrlParams[minor].size) {
 		xspi_memSize[minor] = xspi_ctrlParams[minor].size;
@@ -323,14 +339,18 @@ int xspi_hb_init(unsigned int minor)
 	*(p->ctrl + xspi_dcr1) = v | ((mp->log_size - 1) << 16);
 
 	if (mp->is16Bit != 0) {
-		*(p->ctrl + xspi_ccr) |= XPSI_CCR_DMODE_16BIT;
-		*(p->ctrl + xspi_wccr) |= XPSI_CCR_DMODE_16BIT;
+		*(p->ctrl + xspi_ccr) |= XSPI_CCR_DMODE_16BIT;
+		*(p->ctrl + xspi_wccr) |= XSPI_CCR_DMODE_16BIT;
 	}
 
 	xspi_setHigherClock(minor);
 
 	if (mp->isRAM != 0) {
-		xspi_hb_psramInit(minor);
+		ret = xspi_hb_psramInit(minor);
+		if (ret < 0) {
+			return ret;
+		}
+
 		lib_printf("\ndev/psram: Configured HYPERRAM %dMB (%d.%d), addr 0x%p",
 				xspi_memSize[minor] >> 20,
 				DEV_STORAGE,
