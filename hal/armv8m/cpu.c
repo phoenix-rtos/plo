@@ -228,6 +228,19 @@ void hal_disableICache(void)
 }
 
 
+void hal_invalICache(void)
+{
+	/* Check if ICache is enabled */
+	if ((*(cpu_common.scb + scb_ccr) & (1u << 17)) != 0) {
+		hal_cpuDataSyncBarrier();
+		hal_cpuInstrBarrier();
+		*(cpu_common.scb + scb_iciallu) = 0u;
+		hal_cpuDataSyncBarrier();
+		hal_cpuInstrBarrier();
+	}
+}
+
+
 void hal_cpuInvCache(unsigned int type, addr_t addr, size_t sz)
 {
 	switch (type) {
