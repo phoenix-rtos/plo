@@ -86,6 +86,9 @@ extern void hal_invalDCacheAddr(void *addr, u32 sz);
 extern void hal_invalDCacheAll(void);
 
 
+extern void hal_invalICache(void);
+
+
 extern unsigned int hal_cpuID(void);
 
 

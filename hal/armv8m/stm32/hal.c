@@ -210,10 +210,12 @@ int hal_cpuJump(void)
 
 	mpu_getHalData(hal_common.hs);
 
+	hal_cleanDCache();
+	hal_invalICache();
 	__asm__ volatile("mov r9, %1\n"
 					 "blx %0\n"
 					 :
 					 : "r"(hal_common.entry), "r"((addr_t)hal_common.hs));
 
-	return 0;
+	__builtin_unreachable();
 }
