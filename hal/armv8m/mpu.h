@@ -21,6 +21,8 @@
 
 #define MPU_BASE ((void *)0xe000ed90)
 
+#define MPU_MAX_REGIONS 16
+
 
 typedef struct {
 	u32 rbar;
@@ -33,8 +35,8 @@ typedef struct {
 	u32 regCnt;
 	u32 regMax;
 	u32 mapCnt;
-	mpu_region_t region[16] __attribute__((aligned(8)));
-	u32 mapId[16];
+	mpu_region_t region[MPU_MAX_REGIONS] __attribute__((aligned(8)));
+	u32 mapId[MPU_MAX_REGIONS];
 } mpu_common_t;
 
 
