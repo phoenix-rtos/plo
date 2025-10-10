@@ -14,8 +14,12 @@
  */
 
 #include <lib/errno.h>
+#include <board_config.h>
 #include "mpu.h"
 
+#ifndef DISABLE_MPU
+#define DISABLE_MPU 0
+#endif
 
 static mpu_common_t mpu_common;
 
@@ -117,7 +121,7 @@ static void mpu_regionInvalidate(u8 first, u8 last)
 {
 	unsigned int i;
 
-	for (i = first; i < last && i < mpu_common.regMax; i++) {
+	for (i = first; (i < last) && (i < mpu_common.regMax); i++) {
 		/* set multi-map to none */
 		mpu_common.mapId[i] = (u32)-1;
 
@@ -132,24 +136,36 @@ static void mpu_regionInvalidate(u8 first, u8 last)
 
 void mpu_init(void)
 {
+#if DISABLE_MPU
+	mpu_common.type = 0;
+	mpu_common.regMax = 0;
+#else
 	volatile u32 *mpu_base = MPU_BASE;
+	/* MPU_TYPE register is always implemented on ARMv8-M. DREGION field indicates number of regions supported,
+	 * 0 indicates that processor does not implement an MPU. */
 	mpu_common.type = *(mpu_base + mpu_type);
-	mpu_common.regMax = (u8)(mpu_common.type >> 8);
+	mpu_common.regMax = (mpu_common.type >> 8) & 0xff;
+	/* Hardware may support more regions than can be stored in our code. */
+	if (mpu_common.regMax > MPU_MAX_REGIONS) {
+		mpu_common.regMax = MPU_MAX_REGIONS;
+	}
+
+	if (mpu_common.regMax != 0) {
+		/*
+		 * syspage structure lacks fields for MAIR registers, instead programming them in plo
+		 * MPU_MAIR0 Attr<n>:
+		 * 3: Cacheable & Bufferable -> outer and inner write back, read alloc policy
+		 * 1: Cacheable & !Bufferable -> outer and inner Write-Through, read alloc policy
+		 * 2: !Cacheable & Bufferable -> device memory (armv7m), nGnRE
+		 * 0: !Cacheable & !Bufferable -> device memory (armv7m strongly ordered) nGnRnE
+		 */
+		*(mpu_base + mpu_mair0) = 0xee04aa00;
+	}
+#endif
 	mpu_common.regCnt = 0;
 	mpu_common.mapCnt = 0;
 
-	mpu_regionInvalidate(0, sizeof(mpu_common.region) / sizeof(mpu_common.region[0]));
-
-	/*
-	 * syspage structure lacks fields for mair registers, instead programming them in plo
-	 * MPU_MAIR0 Attrn:
-	 * 3: Cacheable & Bufferable -> outer and inner write back, read alloc policy
-	 * 1: Cacheable & !Bufferable -> outer and inner Write-Through, read alloc policy
-	 * 2: !Cacheable & Bufferable -> device memory (armv7m), nGnRE
-	 * 0: !Cacheable & !Bufferable -> device memory (armv7m strongly ordered) nGnRnE
-	 */
-
-	*(mpu_base + mpu_mair0) = 0xee04aa00;
+	mpu_regionInvalidate(0, MPU_MAX_REGIONS);
 }
 
 
@@ -157,8 +173,16 @@ int mpu_regionAlloc(addr_t addr, addr_t end, u32 attr, u32 mapId, unsigned int e
 {
 	int res;
 	unsigned int regCur = mpu_common.regCnt;
-	u32 rbarAttr = mpu_regionAttrsRbar(attr);
-	u32 rlarAttr = mpu_regionAttrsRlar(attr, enable);
+	u32 rbarAttr, rlarAttr;
+
+	if (mpu_common.regMax == 0) {
+		/* regMax == 0 indicates no MPU support - return without error, otherwise targets
+		 * without MPU wouldn't work at all. */
+		return EOK;
+	}
+
+	rbarAttr = mpu_regionAttrsRbar(attr);
+	rlarAttr = mpu_regionAttrsRlar(attr, enable);
 
 	res = mpu_regionSet(&regCur, addr, end, rbarAttr, rlarAttr, mapId);
 	if (res != EOK) {
@@ -174,16 +198,31 @@ int mpu_regionAlloc(addr_t addr, addr_t end, u32 attr, u32 mapId, unsigned int e
 
 void mpu_getHalData(hal_syspage_t *hal)
 {
+	const unsigned int syspageTableSize = sizeof(hal->mpu.table) / sizeof(hal->mpu.table[0]);
 	unsigned int i;
 
 	mpu_regionInvalidate(mpu_common.regCnt, mpu_common.regMax);
 
+	if (mpu_common.regCnt > syspageTableSize) {
+		/* TODO: We need a way to handle errors here that can happen due to misconfiguration
+		 * (size of table in syspage too small). This way to do it silently truncates the list
+		 * which may cause undesired behaviors. */
+		mpu_common.regCnt = syspageTableSize;
+	}
+
 	hal->mpu.type = mpu_common.type;
 	hal->mpu.allocCnt = mpu_common.regCnt;
 
-	for (i = 0; i < sizeof(hal->mpu.table) / sizeof(hal->mpu.table[0]); i++) {
+	for (i = 0; i < mpu_common.regCnt; i++) {
 		hal->mpu.table[i].rbar = mpu_common.region[i].rbar;
 		hal->mpu.table[i].rlar = mpu_common.region[i].rlar;
 		hal->mpu.map[i] = mpu_common.mapId[i];
+	}
+
+	/* Ensure all entries are initialized if mpu_common.regCnt or mpu_common.regMax is smaller than syspageTableSize */
+	for (; i < syspageTableSize; i++) {
+		hal->mpu.map[i] = (u32)-1;  /* set multi-map to none */
+		hal->mpu.table[i].rlar = 0; /* mark i-th region as disabled */
+		hal->mpu.table[i].rbar = 1; /* set exec never */
 	}
 }
