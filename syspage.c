@@ -285,7 +285,6 @@ int syspage_mapAdd(const char *name, addr_t start, addr_t end, const char *attr)
 		syspage_sortedInsert(map, entry);
 		start = entry->end;
 	}
-	res = hal_memoryAddMap(map->start, map->end, map->attr, map->id);
 	if (res < 0) {
 		return res;
 	}

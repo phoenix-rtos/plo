@@ -24,13 +24,22 @@ typedef struct {
 } mpu_region_t;
 
 
+#ifdef MPUTEST_ORGIMPL
+#error "To run ORGIMPL checkout plo to master!"
+#endif
+
+
 typedef struct {
-	u32 type;
 	u32 regCnt;
-	u32 regMax;
-	u32 mapCnt;
 	mpu_region_t region[16] __attribute__((aligned(8)));
 	u32 mapId[16];
+} mpu_part_t;
+
+
+typedef struct {
+	u32 type;
+	u32 regMax;
+	mpu_part_t curPart;
 } mpu_common_t;
 
 
@@ -42,12 +51,11 @@ extern const mpu_common_t *const mpu_getCommon(void);
 extern void mpu_init(void);
 
 
-/* Allocate MPU sub-regions and link with a map */
-extern int mpu_regionAlloc(addr_t addr, addr_t end, u32 attr, u32 mapId, unsigned int enable);
-
-
 /* Get MPU regions setup into hal_syspage_t structure */
 extern void mpu_getHalData(hal_syspage_t *hal);
+
+
+extern void mpu_getProgHal(hal_syspage_prog_t *progHal, const char *imaps, size_t imapSz, const char *dmaps, size_t dmapSz);
 
 
 #endif
