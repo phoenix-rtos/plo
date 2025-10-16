@@ -6,6 +6,13 @@
 # %LICENSE%
 #
 
+
+ifdef MPUTEST_ORGIMPL
+    CFLAGS += -DMPUTEST_ORGIMPL
+endif
+
+
+
 ifneq (, $(findstring imxrt, $(TARGET_SUBFAMILY)))
   include hal/armv7m/imxrt/Makefile
 endif

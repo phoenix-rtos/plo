@@ -65,7 +65,7 @@ static void mpu_regionPrint(const char *name, u32 rbar, u32 rasr)
 		for (subregion = 0; subregion < 8; subregion++) {
 			if ((srdMask & (1u << subregion)) == 0) {
 				lib_printf("%-9s %d%-5s%s %d%-3s 0x%08x  0x%08x%2s",
-					name, region, "", region > 9 ? "" : " ", subregion, "", srBase, srBase + srSize - 1, "");
+						name, region, "", region > 9 ? "" : " ", subregion, "", srBase, srBase + srSize - 1, "");
 				mpu_attrPrint(attr, (rasr & 1));
 			}
 
@@ -74,7 +74,7 @@ static void mpu_regionPrint(const char *name, u32 rbar, u32 rasr)
 	}
 	else {
 		lib_printf("%-9s %d%-5s%s %-4s 0x%08x  0x%08x%2s",
-			name, region, "", region > 9 ? "" : " ", "all", srBase, srBase + (1ul << sizeBit) - 1, "");
+				name, region, "", region > 9 ? "" : " ", "all", srBase, srBase + (1ul << sizeBit) - 1, "");
 		mpu_attrPrint(attr, (rasr & 1));
 	}
 }
@@ -92,9 +92,10 @@ static int cmd_mpu(int argc, char *argv[])
 	unsigned int i, regCnt;
 	const mpu_region_t *region;
 	const mpu_common_t *const mpu_common = mpu_getCommon();
+	const mpu_part_t *mpu = &mpu_common->curPart;
 
 	if (argc == 1) {
-		regCnt = mpu_common->regCnt;
+		regCnt = mpu->regCnt;
 	}
 	else if (argc == 2) {
 		if (hal_strcmp(argv[1], "all") != 0) {
@@ -115,11 +116,12 @@ static int cmd_mpu(int argc, char *argv[])
 	}
 
 	lib_printf(CONSOLE_BOLD "\n%-9s %-7s %-4s %-11s %-11s %-3s %-3s %-9s %-4s %-2s %-2s %-2s\n" CONSOLE_NORMAL,
-		"MAP NAME", "REGION", "SUB", "START", "END", "EN", "XN", "PERM P/U", "TEX", "S", "C", "B");
+			"MAP NAME", "REGION", "SUB", "START", "END", "EN", "XN", "PERM P/U", "TEX", "S", "C", "B");
 
+	// TODO: loop over programs
 	for (i = 0; i < regCnt; i++) {
-		region = &mpu_common->region[i];
-		name = syspage_mapName(mpu_common->mapId[i]);
+		region = &mpu->region[i];
+		name = syspage_mapName(mpu->mapId[i]);
 
 		if (name == NULL) {
 			name = "<none>";
@@ -129,7 +131,7 @@ static int cmd_mpu(int argc, char *argv[])
 	}
 
 	lib_printf("\nConfigured %d of %d MPU regions based on %d map definitions.\n",
-		mpu_common->regCnt, mpu_common->regMax, mpu_common->mapCnt);
+			mpu->regCnt, mpu_common->regMax, mpu->regCnt);
 
 	return CMD_EXIT_SUCCESS;
 }
