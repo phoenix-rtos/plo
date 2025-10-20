@@ -89,6 +89,12 @@ int csr_emulateWrite(u32 csr, u64 val);
 #define IRQ_M_EXT   11
 #define IRQ_PMU_OVF 13
 
+/* Unprivileged FP CSRs */
+
+#define CSR_FFLAGS 0x001U
+#define CSR_FRM    0x002U
+#define CSR_FCSR   0x003U
+
 /* Unprivileged CSRs */
 
 #define CSR_CYCLE   0xc00u

@@ -205,7 +205,7 @@ static void exceptions_setRegval(unsigned int regNum, u64 regVal, exc_context_t 
 }
 
 
-static void exceptions_illSystem(unsigned int n, exc_context_t *ctx)
+static int exceptions_illSystem(unsigned int n, exc_context_t *ctx)
 {
 	/* Assuming we trapped on CSR instruction (not checked) */
 	u64 insn = ctx->mtval;
@@ -220,6 +220,11 @@ static void exceptions_illSystem(unsigned int n, exc_context_t *ctx)
 	if (prevMode == PRV_M) {
 		/* Trapped on CSR access from M-mode, halt */
 		exceptions_defaultHandler(n, ctx);
+	}
+
+	if ((csr == CSR_FFLAGS) || (csr == CSR_FRM) || (csr == CSR_FCSR)) {
+		/* Redirect FP CSR writes to S-Mode */
+		return 0;
 	}
 
 	if (csr_emulateRead(csr, &csrVal) < 0) {
@@ -273,6 +278,8 @@ static void exceptions_illSystem(unsigned int n, exc_context_t *ctx)
 
 	/* Skip instruction */
 	ctx->mepc += 4;
+
+	return 1;
 }
 
 
@@ -282,12 +289,14 @@ static void exceptions_illegalHandler(unsigned int n, exc_context_t *ctx)
 	u64 prevMode = (ctx->mstatus & MSTATUS_MPP) >> MSTATUS_MPP_SHIFT;
 	unsigned long unpriv_insn;
 
+	int handled = 0;
 	/* Check failing instruction */
 	if (((insn & 3) == 3) && (((insn & 0x7c) >> 2) == 0x1c)) {
 		/* Non-compressed, SYSTEM opcode */
-		exceptions_illSystem(n, ctx);
+		handled = exceptions_illSystem(n, ctx);
 	}
-	else {
+
+	if (handled == 0) {
 		if (prevMode == PRV_M) {
 			/* Trapped on illegal instruction in M-mode */
 			exceptions_defaultHandler(n, ctx);
