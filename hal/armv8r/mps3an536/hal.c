@@ -27,6 +27,7 @@ static struct {
 extern char __init_start[], __init_end[];
 extern char __text_start[], __etext[];
 extern char __rodata_start[], __rodata_end[];
+extern char __cmd_start[], __cmd_end[];
 extern char __init_array_start[], __init_array_end[];
 extern char __fini_array_start[], __fini_array_end[];
 extern char __ramtext_start[], __ramtext_end[];
@@ -122,6 +123,7 @@ int hal_memoryGetNextEntry(addr_t start, addr_t end, mapent_t *entry)
 		{ .start = (addr_t)__init_start, .end = (addr_t)__init_end, .type = hal_entryTemp },
 		{ .start = (addr_t)__text_start, .end = (addr_t)__etext, .type = hal_entryTemp },
 		{ .start = (addr_t)__rodata_start, .end = (addr_t)__rodata_end, .type = hal_entryTemp },
+		{ .start = (addr_t)__cmd_start, .end = (addr_t)__cmd_end, .type = hal_entryTemp },
 		{ .start = (addr_t)__init_array_start, .end = (addr_t)__init_array_end, .type = hal_entryTemp },
 		{ .start = (addr_t)__fini_array_start, .end = (addr_t)__fini_array_end, .type = hal_entryTemp },
 		{ .start = (addr_t)__ramtext_start, .end = (addr_t)__ramtext_end, .type = hal_entryTemp },
