@@ -29,83 +29,266 @@
 /* SLCR (System Level Control Registers) */
 enum {
 	/* SLCR protection registers */
-	slcr_scl = 0, slcr_lock, slcr_unlock, slcr_locksta,
+	slcr_scl = 0,
+	slcr_lock,
+	slcr_unlock,
+	slcr_locksta,
 	/* PLL configuration registers */
-	slcr_arm_pll_ctrl = 0x40 ,slcr_ddr_pll_ctrl, slcr_io_pll_ctrl, slcr_pll_status, slcr_arm_pll_cfg, slcr_ddr_pll_cfg, slcr_io_pll_cfg,
+	slcr_arm_pll_ctrl = 0x40,
+	slcr_ddr_pll_ctrl,
+	slcr_io_pll_ctrl,
+	slcr_pll_status,
+	slcr_arm_pll_cfg,
+	slcr_ddr_pll_cfg,
+	slcr_io_pll_cfg,
 	/* Clock control registers */
-	slcr_arm_clk_ctrl = 0x48, slcr_ddr_clk_ctrl, slcr_dci_clk_ctrl, slcr_aper_clk_ctrl, slcr_usb0_clk_ctrl, slcr_usb1_clk_ctrl, slcr_gem0_rclk_ctrl,
-	slcr_gem1_rclk_ctrl, slcr_gem0_clk_ctrl, slcr_gem1_clk_ctrl, slcr_smc_clk_ctrl, slcr_lqspi_clk_ctrl, slcr_sdio_clk_ctrl, slcr_uart_clk_ctrl,
-	slcr_spi_clk_ctrl, slcr_can_clk_ctrl, slcr_can_mioclk_ctrl, slcr_dbg_clk_ctrl, slcr_pcap_clk_ctrl, slcr_topsw_clk_ctrl, slcr_fpga0_clk_ctrl,
+	slcr_arm_clk_ctrl = 0x48,
+	slcr_ddr_clk_ctrl,
+	slcr_dci_clk_ctrl,
+	slcr_aper_clk_ctrl,
+	slcr_usb0_clk_ctrl,
+	slcr_usb1_clk_ctrl,
+	slcr_gem0_rclk_ctrl,
+	slcr_gem1_rclk_ctrl,
+	slcr_gem0_clk_ctrl,
+	slcr_gem1_clk_ctrl,
+	slcr_smc_clk_ctrl,
+	slcr_lqspi_clk_ctrl,
+	slcr_sdio_clk_ctrl,
+	slcr_uart_clk_ctrl,
+	slcr_spi_clk_ctrl,
+	slcr_can_clk_ctrl,
+	slcr_can_mioclk_ctrl,
+	slcr_dbg_clk_ctrl,
+	slcr_pcap_clk_ctrl,
+	slcr_topsw_clk_ctrl,
+	slcr_fpga0_clk_ctrl,
 	/* FPGA configuration registers */
-	slcr_fpga0_thr_ctrl, slcr_fpga0_thr_cnt, slcr_fpga0_thr_sta, slcr_fpga1_clk_ctrl, slcr_fpga1_thr_ctrl, slcr_fpga1_thr_cnt, slcr_fpga1_thr_sta,
-	slcr_fpga2_clk_ctrl, slcr_fpga2_thr_ctrl, slcr_fpga2_thr_cnt, slcr_fpga2_thr_sta, slcr_fpga3_clk_ctrl, slcr_fpga3_thr_ctrl, slcr_fpga3_thr_cnt,
+	slcr_fpga0_thr_ctrl,
+	slcr_fpga0_thr_cnt,
+	slcr_fpga0_thr_sta,
+	slcr_fpga1_clk_ctrl,
+	slcr_fpga1_thr_ctrl,
+	slcr_fpga1_thr_cnt,
+	slcr_fpga1_thr_sta,
+	slcr_fpga2_clk_ctrl,
+	slcr_fpga2_thr_ctrl,
+	slcr_fpga2_thr_cnt,
+	slcr_fpga2_thr_sta,
+	slcr_fpga3_clk_ctrl,
+	slcr_fpga3_thr_ctrl,
+	slcr_fpga3_thr_cnt,
 	slcr_fpga3_thr_sta,
 	/* Clock ratio register */
 	slcr_clk_621_true = 0x71,
 	/* Reset registers */
-	slcr_pss_rst_ctrl = 0x80, slcr_ddr_rst_ctrl, slcr_topsw_rst_ctrl, slcr_dmac_rst_ctrl, slcr_usb_rst_ctrl, slcr_gem_rst_ctrl, slcr_sdio_rst_ctrl,
-	slcr_spi_rst_ctrl, slcr_can_rst_ctrl, slcr_i2c_rst_ctrl, slcr_uart_rst_ctrl, slcr_gpio_rst_ctrl, slcr_lqspi_rst_ctrl, slcr_smc_rst_ctrl, slcr_ocm_rst_ctrl,
-	slcr_fpga_rst_ctrl = 0x90, slcr_a9_cpu_rst_ctrl,
+	slcr_pss_rst_ctrl = 0x80,
+	slcr_ddr_rst_ctrl,
+	slcr_topsw_rst_ctrl,
+	slcr_dmac_rst_ctrl,
+	slcr_usb_rst_ctrl,
+	slcr_gem_rst_ctrl,
+	slcr_sdio_rst_ctrl,
+	slcr_spi_rst_ctrl,
+	slcr_can_rst_ctrl,
+	slcr_i2c_rst_ctrl,
+	slcr_uart_rst_ctrl,
+	slcr_gpio_rst_ctrl,
+	slcr_lqspi_rst_ctrl,
+	slcr_smc_rst_ctrl,
+	slcr_ocm_rst_ctrl,
+	slcr_fpga_rst_ctrl = 0x90,
+	slcr_a9_cpu_rst_ctrl,
 	/* APU watchdog register */
 	slcr_rs_awdt_rst_ctrl = 0x93,
-	slcr_reboot_status = 0x96, slcr_boot_mode,
-	slcr_apu_control = 0xc0, slcr_wdt_clk_sel,
-	slcr_tz_dma_ns = 0x110, slcr_tz_dma_irq_ns, slcr_tz_dma_periph_ns,
+	slcr_reboot_status = 0x96,
+	slcr_boot_mode,
+	slcr_apu_control = 0xc0,
+	slcr_wdt_clk_sel,
+	slcr_tz_dma_ns = 0x110,
+	slcr_tz_dma_irq_ns,
+	slcr_tz_dma_periph_ns,
 	slcr_pss_idcode = 0x14c,
 	slcr_ddr_urgent = 0x180,
 	slcr_ddr_cal_start = 0x183,
-	slcr_ddr_ref_start = 0x185, slcr_ddr_cmd_sta, slcr_ddr_urgent_sel, slcr_ddr_dfi_status,
+	slcr_ddr_ref_start = 0x185,
+	slcr_ddr_cmd_sta,
+	slcr_ddr_urgent_sel,
+	slcr_ddr_dfi_status,
 	/* MIO pins config registers */
 	slcr_mio_pin_00 = 0x1c0 /* 53 registers */,
 	slcr_mio_loopback = 0x201,
-	slcr_mio_mst_tri0 = 0x203, slcr_mio_mst_tri1,
-	slcr_sd0_wp_cd_sel = 0x20c, slcr_sd1_wp_cd_sel,
+	slcr_mio_mst_tri0 = 0x203,
+	slcr_mio_mst_tri1,
+	slcr_sd0_wp_cd_sel = 0x20c,
+	slcr_sd1_wp_cd_sel,
 	slcr_lvl_shftr_en = 0x240,
 	slcr_ocm_cfg = 0x244,
 	/* GPIO config registers */
-	slcr_gpiob_ctrl = 0x2c0, slcr_gpiob_cfg_cmos18, slcr_gpiob_cfg_cmos25, slcr_gpiob_cfg_cmos33,
-	slcr_gpiob_cfg_hstl = 0x2c5, slcr_gpiob_drvr_bias_ctrl,
+	slcr_gpiob_ctrl = 0x2c0,
+	slcr_gpiob_cfg_cmos18,
+	slcr_gpiob_cfg_cmos25,
+	slcr_gpiob_cfg_cmos33,
+	slcr_gpiob_cfg_hstl = 0x2c5,
+	slcr_gpiob_drvr_bias_ctrl,
 	/* DDR config registers */
-	slcr_ddriob_addr0 = 0x2d0, slcr_ddriob_addr1, slcr_ddriob_data0, slcr_ddriob_data1, slcr_ddriob_diff0, slcr_ddriob_diff1, slcr_ddriob_clock, slcr_ddriob_drive_slew_addr,
-	slcr_ddriob_drive_slew_data, slcr_ddriob_drive_slew_diff, slcr_ddriob_drive_slew_clock, slcr_ddriob_ddr_ctrl, slcr_ddriob_dci_ctrl, slcr_ddriob_dci_status,
+	slcr_ddriob_addr0 = 0x2d0,
+	slcr_ddriob_addr1,
+	slcr_ddriob_data0,
+	slcr_ddriob_data1,
+	slcr_ddriob_diff0,
+	slcr_ddriob_diff1,
+	slcr_ddriob_clock,
+	slcr_ddriob_drive_slew_addr,
+	slcr_ddriob_drive_slew_data,
+	slcr_ddriob_drive_slew_diff,
+	slcr_ddriob_drive_slew_clock,
+	slcr_ddriob_ddr_ctrl,
+	slcr_ddriob_dci_ctrl,
+	slcr_ddriob_dci_status,
 };
 
 
 /* DDRC (DDR Memory Controler Registers) */
 enum {
-	ddrc_ctrl = 0, ddrc_two_rank_cfg, ddrc_hpr_reg, ddrc_lpr_reg, ddrc_wr_reg, ddrc_dram_param_reg0, ddrc_dram_param_reg1, ddrc_dram_param_reg2, ddrc_dram_param_reg3,
-	ddrc_dram_param_reg4, ddrc_dram_init_param, ddrc_dram_emr_reg, ddrc_dram_emr_mr_reg, ddrc_dram_burst8_rdwr, ddrc_dram_disable_dq, ddrc_dram_addr_map_bank,
-	ddrc_dram_addr_map_col, ddrc_dram_addr_map_row, ddrc_dram_odt_reg, ddrc_phy_dbg_reg, ddrc_phy_cmd_timeout_rddata_cpt, ddrc_mode_sts_reg, ddrc_dll_calib,
-	ddrc_odt_delay_hold, ddrc_ctrl_reg1, ddrc_ctrl_reg2, ddrc_ctrl_reg3, ddrc_ctrl_reg4,
-	ddrc_ctrl_reg5 = 0x1e, ddrc_ctrl_reg6,
-	ddrc_che_refresh_timer01 = 0x28, ddrc_che_t_zq, ddrc_che_t_zq_short_interval_reg, ddrc_deep_pwrdwn_reg, ddrc_reg_2c, ddrc_reg_2d, ddrc_dfi_timinig,
-	ddrc_che_ecc_ctrl_reg_offs = 0x31, ddrc_che_corr_ecc_log_reg_offs, ddrc_che_corr_ecc_addr_reg_offs, ddrc_che_corr_ecc_data_31_0_reg_offs, ddrc_che_corr_ecc_data_63_32_reg_offs,
-	ddrc_che_corr_ecc_data_71_64_reg_offs, ddrc_che_uncorr_ecc_log_reg_offs, ddrc_che_uncorr_ecc_addr_reg_offs, ddrc_che_uncorr_ecc_data_31_0_reg_offs, ddrc_che_uncorr_ecc_data_63_32_reg_offs,
-	ddrc_che_uncorr_ecc_data_71_64_reg_offs, ddrc_che_ecc_stats_reg_offs, ddrc_ecc_scrub, ddrc_che_ecc_corr_bit_mask_31_0_reg_offs, ddrc_che_ecc_corr_bit_mask_63_32_reg_offs,
-	ddrc_phy_rcvr_enable = 0x45, ddrc_phy_config0, ddrc_phy_config1, ddrc_phy_config2, ddrc_phy_config3,
-	ddrc_phy_init_ratio0 = 0x4b, ddrc_phy_init_ratio1, ddrc_phy_init_ratio2, ddrc_phy_init_ratio3,
-	ddrc_phy_rd_dqs_cfg0 = 0x50, ddrc_phy_rd_dqs_cfg1, ddrc_phy_rd_dqs_cfg2, ddrc_phy_rd_dqs_cfg3,
-	ddrc_phy_wr_dqs_cfg0 = 0x55, ddrc_phy_wr_dqs_cfg1, ddrc_phy_wr_dqs_cfg2, ddrc_phy_wr_dqs_cfg3,
-	ddrc_phy_we_cfg0 = 0x5a, ddrc_phy_we_cfg1, ddrc_phy_we_cfg2, ddrc_phy_we_cfg3,
-	ddrc_wr_data_slv0 = 0x5f, ddrc_wr_data_slv1, ddrc_wr_data_slv2, ddrc_wr_data_slv3,
-	ddrc_reg_64 = 0x64, ddrc_reg_65,
-	ddrc_reg69_6a0 = 0x69, ddrc_reg69_6a1,
-	ddrc_reg6c_6d2 = 0x6c, ddrc_reg6c_6d3, ddrc_reg6e_710, ddrc_reg6e_711, ddrc_reg6e_712, ddrc_reg6e_713,
-	ddrc_phy_dll_sts0 = 0x73, ddrc_phy_dll_sts1, ddrc_phy_dll_sts2, ddrc_phy_dll_sts3,
-	ddrc_dll_lock_sts = 0x78, ddrc_phy_ctrl_sts, ddrc_phy_ctrl_sts_reg2,
-	ddrc_axi_id = 0x80, ddrc_page_mask, ddrc_axi_priority_wr_port0, ddrc_axi_priority_wr_port1, ddrc_axi_priority_wr_port2, ddrc_axi_priority_wr_port3, ddrc_axi_priority_rd_port0,
-	ddrc_axi_priority_rd_port1, ddrc_axi_priority_rd_port2, ddrc_axi_priority_rd_port3,
-	ddrc_excl_access_cfg0 = 0xa5, ddrc_excl_access_cfg1, ddrc_excl_access_cfg2, ddrc_excl_access_cfg3, ddrc_mode_reg_read, ddrc_lpddr_ctrl0, ddrc_lpddr_ctrl1, ddrc_lpddr_ctrl2, ddrc_lpddr_ctrl3
+	ddrc_ctrl = 0,
+	ddrc_two_rank_cfg,
+	ddrc_hpr_reg,
+	ddrc_lpr_reg,
+	ddrc_wr_reg,
+	ddrc_dram_param_reg0,
+	ddrc_dram_param_reg1,
+	ddrc_dram_param_reg2,
+	ddrc_dram_param_reg3,
+	ddrc_dram_param_reg4,
+	ddrc_dram_init_param,
+	ddrc_dram_emr_reg,
+	ddrc_dram_emr_mr_reg,
+	ddrc_dram_burst8_rdwr,
+	ddrc_dram_disable_dq,
+	ddrc_dram_addr_map_bank,
+	ddrc_dram_addr_map_col,
+	ddrc_dram_addr_map_row,
+	ddrc_dram_odt_reg,
+	ddrc_phy_dbg_reg,
+	ddrc_phy_cmd_timeout_rddata_cpt,
+	ddrc_mode_sts_reg,
+	ddrc_dll_calib,
+	ddrc_odt_delay_hold,
+	ddrc_ctrl_reg1,
+	ddrc_ctrl_reg2,
+	ddrc_ctrl_reg3,
+	ddrc_ctrl_reg4,
+	ddrc_ctrl_reg5 = 0x1e,
+	ddrc_ctrl_reg6,
+	ddrc_che_refresh_timer01 = 0x28,
+	ddrc_che_t_zq,
+	ddrc_che_t_zq_short_interval_reg,
+	ddrc_deep_pwrdwn_reg,
+	ddrc_reg_2c,
+	ddrc_reg_2d,
+	ddrc_dfi_timinig,
+	ddrc_che_ecc_ctrl_reg_offs = 0x31,
+	ddrc_che_corr_ecc_log_reg_offs,
+	ddrc_che_corr_ecc_addr_reg_offs,
+	ddrc_che_corr_ecc_data_31_0_reg_offs,
+	ddrc_che_corr_ecc_data_63_32_reg_offs,
+	ddrc_che_corr_ecc_data_71_64_reg_offs,
+	ddrc_che_uncorr_ecc_log_reg_offs,
+	ddrc_che_uncorr_ecc_addr_reg_offs,
+	ddrc_che_uncorr_ecc_data_31_0_reg_offs,
+	ddrc_che_uncorr_ecc_data_63_32_reg_offs,
+	ddrc_che_uncorr_ecc_data_71_64_reg_offs,
+	ddrc_che_ecc_stats_reg_offs,
+	ddrc_ecc_scrub,
+	ddrc_che_ecc_corr_bit_mask_31_0_reg_offs,
+	ddrc_che_ecc_corr_bit_mask_63_32_reg_offs,
+	ddrc_phy_rcvr_enable = 0x45,
+	ddrc_phy_config0,
+	ddrc_phy_config1,
+	ddrc_phy_config2,
+	ddrc_phy_config3,
+	ddrc_phy_init_ratio0 = 0x4b,
+	ddrc_phy_init_ratio1,
+	ddrc_phy_init_ratio2,
+	ddrc_phy_init_ratio3,
+	ddrc_phy_rd_dqs_cfg0 = 0x50,
+	ddrc_phy_rd_dqs_cfg1,
+	ddrc_phy_rd_dqs_cfg2,
+	ddrc_phy_rd_dqs_cfg3,
+	ddrc_phy_wr_dqs_cfg0 = 0x55,
+	ddrc_phy_wr_dqs_cfg1,
+	ddrc_phy_wr_dqs_cfg2,
+	ddrc_phy_wr_dqs_cfg3,
+	ddrc_phy_we_cfg0 = 0x5a,
+	ddrc_phy_we_cfg1,
+	ddrc_phy_we_cfg2,
+	ddrc_phy_we_cfg3,
+	ddrc_wr_data_slv0 = 0x5f,
+	ddrc_wr_data_slv1,
+	ddrc_wr_data_slv2,
+	ddrc_wr_data_slv3,
+	ddrc_reg_64 = 0x64,
+	ddrc_reg_65,
+	ddrc_reg69_6a0 = 0x69,
+	ddrc_reg69_6a1,
+	ddrc_reg6c_6d2 = 0x6c,
+	ddrc_reg6c_6d3,
+	ddrc_reg6e_710,
+	ddrc_reg6e_711,
+	ddrc_reg6e_712,
+	ddrc_reg6e_713,
+	ddrc_phy_dll_sts0 = 0x73,
+	ddrc_phy_dll_sts1,
+	ddrc_phy_dll_sts2,
+	ddrc_phy_dll_sts3,
+	ddrc_dll_lock_sts = 0x78,
+	ddrc_phy_ctrl_sts,
+	ddrc_phy_ctrl_sts_reg2,
+	ddrc_axi_id = 0x80,
+	ddrc_page_mask,
+	ddrc_axi_priority_wr_port0,
+	ddrc_axi_priority_wr_port1,
+	ddrc_axi_priority_wr_port2,
+	ddrc_axi_priority_wr_port3,
+	ddrc_axi_priority_rd_port0,
+	ddrc_axi_priority_rd_port1,
+	ddrc_axi_priority_rd_port2,
+	ddrc_axi_priority_rd_port3,
+	ddrc_excl_access_cfg0 = 0xa5,
+	ddrc_excl_access_cfg1,
+	ddrc_excl_access_cfg2,
+	ddrc_excl_access_cfg3,
+	ddrc_mode_reg_read,
+	ddrc_lpddr_ctrl0,
+	ddrc_lpddr_ctrl1,
+	ddrc_lpddr_ctrl2,
+	ddrc_lpddr_ctrl3
 };
 
 
 /* DCFG (Device Configuration Interface) */
 enum {
-	dcfg_ctrl = 0, dcfg_lock, dcfg_cfg, dcfg_int_sts, dcfg_int_mask, dcfg_status, dcfg_dma_src_addr, dcfg_dma_dest_addr, dcfg_dma_src_len, dcfg_dma_dest_len,
+	dcfg_ctrl = 0,
+	dcfg_lock,
+	dcfg_cfg,
+	dcfg_int_sts,
+	dcfg_int_mask,
+	dcfg_status,
+	dcfg_dma_src_addr,
+	dcfg_dma_dest_addr,
+	dcfg_dma_src_len,
+	dcfg_dma_dest_len,
 	dcfg_multiboot_addr = 0xb,
 	dcfg_unlock = 0xd,
 	dcfg_mctrl = 0x20,
-	dcfg_adcif_cfg = 0x40, dcfg_adcif_int_sts, dcfg_adcif_int_mask, dcfg_adcif_msts, dcfg_adcif_cmdfifo, dcfg_adcif_rdfifo, dcfg_adcif_mctl
+	dcfg_adcif_cfg = 0x40,
+	dcfg_adcif_int_sts,
+	dcfg_adcif_int_mask,
+	dcfg_adcif_msts,
+	dcfg_adcif_cmdfifo,
+	dcfg_adcif_rdfifo,
+	dcfg_adcif_mctl
 };
 
 
@@ -172,49 +355,49 @@ int _zynq_setCtlClock(const ctl_clock_t *clk)
 		case ctrl_gem1_rclk:
 			id = clk->dev - ctrl_gem0_rclk;
 			*(zynq_common.slcr + slcr_gem0_rclk_ctrl + id) = (*(zynq_common.slcr + ctrl_gem0_rclk + id) & ~0x00000011) | (!!clk->pll.clkact0) |
-				((!!clk->pll.srcsel) << 4);
+					((!!clk->pll.srcsel) << 4);
 			break;
 
 		case ctrl_gem0_clk:
 		case ctrl_gem1_clk:
 			id = clk->dev - ctrl_gem0_clk;
 			*(zynq_common.slcr + slcr_gem0_clk_ctrl + id) = (*(zynq_common.slcr + slcr_gem0_clk_ctrl + id) & ~0x03f03f71) | (!!clk->pll.clkact0) |
-				((clk->pll.srcsel & 0x7) << 4) | ((clk->pll.divisor0 & 0x3f) << 8) | ((clk->pll.divisor1 & 0x3f) << 20);
+					((clk->pll.srcsel & 0x7) << 4) | ((clk->pll.divisor0 & 0x3f) << 8) | ((clk->pll.divisor1 & 0x3f) << 20);
 			break;
 
 		case ctrl_smc_clk:
 			*(zynq_common.slcr + slcr_smc_clk_ctrl) = (*(zynq_common.slcr + slcr_smc_clk_ctrl) & ~0x00003f31) | (!!clk->pll.clkact0) |
-				((clk->pll.srcsel & 0x3) << 4) | ((clk->pll.divisor0 & 0x3f) << 8);
+					((clk->pll.srcsel & 0x3) << 4) | ((clk->pll.divisor0 & 0x3f) << 8);
 			break;
 
 		case ctrl_lqspi_clk:
 			*(zynq_common.slcr + slcr_lqspi_clk_ctrl) = (*(zynq_common.slcr + slcr_lqspi_clk_ctrl) & ~0x00003f31) | (!!clk->pll.clkact0) |
-				((clk->pll.srcsel & 0x3) << 4) | ((clk->pll.divisor0 & 0x3f) << 8);
+					((clk->pll.srcsel & 0x3) << 4) | ((clk->pll.divisor0 & 0x3f) << 8);
 			break;
 
 		case ctrl_sdio_clk:
 			*(zynq_common.slcr + slcr_sdio_clk_ctrl) = (*(zynq_common.slcr + slcr_sdio_clk_ctrl) & ~0x00003f33) | (!!clk->pll.clkact0) | ((!!clk->pll.clkact1) << 1) |
-				((clk->pll.srcsel & 0x3) << 4) | ((clk->pll.divisor0 & 0x3f) << 8);
+					((clk->pll.srcsel & 0x3) << 4) | ((clk->pll.divisor0 & 0x3f) << 8);
 			break;
 
 		case ctrl_uart_clk:
 			*(zynq_common.slcr + slcr_uart_clk_ctrl) = (*(zynq_common.slcr + slcr_uart_clk_ctrl) & ~0x00003f33) | (!!clk->pll.clkact0) |
-				((!!clk->pll.clkact1) << 1) | ((clk->pll.srcsel & 0x3) << 4) | ((clk->pll.divisor0 & 0x3f) << 8);
+					((!!clk->pll.clkact1) << 1) | ((clk->pll.srcsel & 0x3) << 4) | ((clk->pll.divisor0 & 0x3f) << 8);
 			break;
 
 		case ctrl_spi_clk:
 			*(zynq_common.slcr + slcr_spi_clk_ctrl) = (*(zynq_common.slcr + slcr_spi_clk_ctrl) & ~0x00003f33) | (!!clk->pll.clkact0) |
-				((!!clk->pll.clkact1) << 1) | ((clk->pll.srcsel & 0x3) << 4) | ((clk->pll.divisor0 & 0x3f) << 8);
+					((!!clk->pll.clkact1) << 1) | ((clk->pll.srcsel & 0x3) << 4) | ((clk->pll.divisor0 & 0x3f) << 8);
 			break;
 
 		case ctrl_can_clk:
 			*(zynq_common.slcr + slcr_can_clk_ctrl) = (*(zynq_common.slcr + slcr_can_clk_ctrl) & ~0x03f03f33) | (!!clk->pll.clkact0) |
-				((!!clk->pll.clkact1) << 1) | ((clk->pll.srcsel & 0x3) << 4) | ((clk->pll.divisor0 & 0x3f) << 8) | ((clk->pll.divisor1 & 0x3f) << 20);
+					((!!clk->pll.clkact1) << 1) | ((clk->pll.srcsel & 0x3) << 4) | ((clk->pll.divisor0 & 0x3f) << 8) | ((clk->pll.divisor1 & 0x3f) << 20);
 			break;
 
 		case ctrl_can_mioclk:
 			*(zynq_common.slcr + slcr_can_mioclk_ctrl) = (*(zynq_common.slcr + slcr_can_mioclk_ctrl) & ~0x007f007f) | (clk->mio.mux0 & 0x3f) | ((!!clk->mio.ref0) << 6) |
-				((clk->mio.mux1 & 0x3f) << 16) | ((!!clk->mio.ref1) << 22);
+					((clk->mio.mux1 & 0x3f) << 16) | ((!!clk->mio.ref1) << 22);
 			break;
 
 		default:
@@ -338,8 +521,8 @@ int _zynq_setMIO(const ctl_mio_t *mio)
 		return -1;
 
 	val = (!!mio->triEnable) | (!!mio->l0 << 1) | (!!mio->l1 << 2) | ((mio->l2 & 0x3) << 3) |
-		((mio->l3 & 0x7) << 5) | (!!mio->speed << 8) | ((mio->ioType & 0x7) << 9) | (!!mio->pullup << 12) |
-		(!!mio->disableRcvr << 13);
+			((mio->l3 & 0x7) << 5) | (!!mio->speed << 8) | ((mio->ioType & 0x7) << 9) | (!!mio->pullup << 12) |
+			(!!mio->disableRcvr << 13);
 
 	_zynq_slcrUnlock();
 	*(zynq_common.slcr + slcr_mio_pin_00 + mio->pin) = (*(zynq_common.slcr + slcr_mio_pin_00 + mio->pin) & ~0x00003fff) | val;
@@ -372,7 +555,7 @@ int _zynq_getMIO(ctl_mio_t *mio)
 }
 
 
-int _zynq_setSDWpCd(char dev, unsigned char wpPin, unsigned char cdPin)
+int _zynq_setSDWpCd(u32 dev, u8 wpPin, u8 cdPin)
 {
 	if ((dev != 0) && (dev != 1)) {
 		return -1;
@@ -389,7 +572,7 @@ int _zynq_setSDWpCd(char dev, unsigned char wpPin, unsigned char cdPin)
 }
 
 
-int _zynq_getSDWpCd(char dev, unsigned char *wpPin, unsigned char *cdPin)
+int _zynq_getSDWpCd(u32 dev, u8 *wpPin, u8 *cdPin)
 {
 	u32 val = 0;
 	if ((dev != 0) && (dev != 1)) {
@@ -809,7 +992,7 @@ static void _zynq_ioPllInit(u16 fdiv)
 	*(zynq_common.slcr + slcr_io_pll_ctrl) = (*(zynq_common.slcr + slcr_io_pll_ctrl) & ~0x00000001) | 0x00000000;
 
 	/* Check pll status */
-	while(!(*(zynq_common.slcr + slcr_pll_status) & 0x00000004))
+	while (!(*(zynq_common.slcr + slcr_pll_status) & 0x00000004))
 		;
 
 	/* Remove pll by pass
@@ -844,7 +1027,7 @@ static void _zynq_ddrPllInit(u16 fdiv)
 	*(zynq_common.slcr + slcr_ddr_pll_ctrl) = (*(zynq_common.slcr + slcr_ddr_pll_ctrl) & ~0x00000001) | 0x00000000;
 
 	/* Check pll status */
-	while(!(*(zynq_common.slcr + slcr_pll_status) & 0x00000002))
+	while (!(*(zynq_common.slcr + slcr_pll_status) & 0x00000002))
 		;
 
 	/* Remove pll by pass
@@ -881,7 +1064,7 @@ static void _zynq_armPllInit(u16 fdiv)
 	*(zynq_common.slcr + slcr_arm_pll_ctrl) = (*(zynq_common.slcr + slcr_arm_pll_ctrl) & ~0x00000001) | 0x00000000;
 
 	/* Check pll status */
-	while(!(*(zynq_common.slcr + slcr_pll_status) & 0x00000001))
+	while (!(*(zynq_common.slcr + slcr_pll_status) & 0x00000001))
 		;
 
 	/* Remove pll by pass

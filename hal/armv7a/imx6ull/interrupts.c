@@ -27,21 +27,56 @@ typedef struct {
 enum {
 	/* Distributor register map */
 
-	/* 1024 reserved */ gicd_ctlr = 0x400, gicd_typer, gicd_iidr, /* 29 reserved */ gicd_igroupr0 = 0x420, /* 16 registers */
-	/* 16 reserved */ gicd_isenabler0 = 0x440, /* 16 registers */ /* 16 reserved */ gicd_icenabler0 = 0x460, /* 16 registers */
-	/* 16 reserved */ gicd_ispendr0 = 0x480, /* 16 registers */ /* 16 reserved */ gicd_icpendr0 = 0x4a0, /* 16 registers */
-	/* 16 reserved */ gicd_isactiver0 = 0x4c0, /* 16 registers */ /* 16 reserved */ gicd_icactiver0 = 0x4e0, /* 16 registers */
-	/* 16 reserved */ gicd_ipriorityr0 = 0x500, /* 64 registers */ /* 128 reserved */ gicd_itargetsr0 = 0x600, /* 64 registers */
-	/* 128 reserved */ gicd_icfgr0 = 0x700, /* 32 registers */ /* 32 reserved */ gicd_ppisr = 0x740, gicd_spisr0, /* 15 registers */
-	/* 112 reserved */ gicd_sgir = 0x7c0, /* 3 reserved */ gicd_cpendsgir = 0x7c4, /* 4 registers */ gicd_spendsgir = 0x7c8, /* 4 registers */
-	/* 40 reserved */ gicd_pidr4 = 0x7f4, gicd_pidr5, gicd_pidr6, gicd_pidr7, gicd_pidr0, gicd_pidr1, gicd_pidr2, gicd_pidr3,
-	gicd_cidr0, gicd_cidr1, gicd_cidr2, gicd_cidr3,
+	/* 1024 reserved */ gicd_ctlr = 0x400,
+	gicd_typer,
+	gicd_iidr,
+	/* 29 reserved */ gicd_igroupr0 = 0x420, /* 16 registers */
+	/* 16 reserved */ gicd_isenabler0 = 0x440,
+	/* 16 registers */ /* 16 reserved */ gicd_icenabler0 = 0x460, /* 16 registers */
+	/* 16 reserved */ gicd_ispendr0 = 0x480,
+	/* 16 registers */ /* 16 reserved */ gicd_icpendr0 = 0x4a0, /* 16 registers */
+	/* 16 reserved */ gicd_isactiver0 = 0x4c0,
+	/* 16 registers */ /* 16 reserved */ gicd_icactiver0 = 0x4e0, /* 16 registers */
+	/* 16 reserved */ gicd_ipriorityr0 = 0x500,
+	/* 64 registers */ /* 128 reserved */ gicd_itargetsr0 = 0x600, /* 64 registers */
+	/* 128 reserved */ gicd_icfgr0 = 0x700,
+	/* 32 registers */ /* 32 reserved */ gicd_ppisr = 0x740,
+	gicd_spisr0, /* 15 registers */
+	/* 112 reserved */ gicd_sgir = 0x7c0,
+	/* 3 reserved */ gicd_cpendsgir = 0x7c4,
+	/* 4 registers */ gicd_spendsgir = 0x7c8, /* 4 registers */
+	/* 40 reserved */ gicd_pidr4 = 0x7f4,
+	gicd_pidr5,
+	gicd_pidr6,
+	gicd_pidr7,
+	gicd_pidr0,
+	gicd_pidr1,
+	gicd_pidr2,
+	gicd_pidr3,
+	gicd_cidr0,
+	gicd_cidr1,
+	gicd_cidr2,
+	gicd_cidr3,
 
 	/* GIC virtual CPU interface register map */
 
-	gicv_ctlr = 0x800, gicv_pmr, gicv_bpr, gicv_iar, gicv_eoir, gicv_rpr, gicv_hppir, gicv_abpr, gicv_aiar, gicv_aeoir, gicv_ahppir
-	/* 41 reserved */, gicv_apr0 = 0x834, /* 3 reserved */ gicv_nsapr0 = 0x838, /* 6 reserved */ gicv_ciidr = 0x83f,
-	/* 960 reserved */ gicv_dir = 0xc00 };
+	gicv_ctlr = 0x800,
+	gicv_pmr,
+	gicv_bpr,
+	gicv_iar,
+	gicv_eoir,
+	gicv_rpr,
+	gicv_hppir,
+	gicv_abpr,
+	gicv_aiar,
+	gicv_aeoir,
+	gicv_ahppir
+	/* 41 reserved */,
+	gicv_apr0 = 0x834,
+	/* 3 reserved */ gicv_nsapr0 = 0x838,
+	/* 6 reserved */ gicv_ciidr = 0x83f,
+	/* 960 reserved */ gicv_dir = 0xc00
+};
 
 
 struct {
@@ -146,7 +181,7 @@ static void interrupts_initAddr(void)
 {
 	asm volatile(" \
 		mrc p15, 4, %0, c15, c0, 0"
-		: "=r" (interrupts_common.gic));
+				 : "=r"(interrupts_common.gic));
 }
 
 
