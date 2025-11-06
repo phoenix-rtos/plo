@@ -15,7 +15,11 @@
 
 #include "cmd.h"
 
+#if defined(__CPU_STM32N6)
+#include <hal/armv8m/stm32/n6/otp.h>
+#else
 #include <hal/armv7m/imxrt/otp.h>
+#endif
 #include <lib/lib.h>
 
 

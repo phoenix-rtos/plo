@@ -17,6 +17,7 @@
 #include <board_config.h>
 #include "stm32n6.h"
 #include "stm32n6_regs.h"
+#include "otp.h"
 
 
 #ifndef USE_HSE_CLOCK_SOURCE
@@ -1054,6 +1055,8 @@ void _stm32_init(void)
 	}
 
 	hal_cpuDataMemoryBarrier();
+
+	otp_init();
 
 #if defined(WATCHDOG)
 	/* Init watchdog */
