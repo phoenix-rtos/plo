@@ -107,12 +107,6 @@ void hal_kernelEntryPoint(addr_t addr)
 }
 
 
-int hal_memoryAddMap(addr_t start, addr_t end, u32 attr, u32 mapId)
-{
-	return mpu_regionAlloc(start, end, attr, mapId, 1);
-}
-
-
 static void hal_getMinOverlappedRange(addr_t start, addr_t end, mapent_t *entry, mapent_t *minEntry)
 {
 	if ((start < entry->end) && (end > entry->start)) {
