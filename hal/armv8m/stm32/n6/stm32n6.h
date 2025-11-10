@@ -17,6 +17,7 @@
 #define _HAL_STM32N6_H_
 
 #include "../types.h"
+#include "stm32n6_regs.h"
 
 #ifndef EIO
 #define EIO    5
