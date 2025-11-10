@@ -14,11 +14,13 @@
  */
 
 #include <hal/hal.h>
+#include <hal/armv8m/mpu.h>
 #include <board_config.h>
 #include "stm32n6.h"
 #include "stm32n6_regs.h"
 #include "otp.h"
-
+#include "pka.h"
+#include "hash.h"
 
 #ifndef USE_HSE_CLOCK_SOURCE
 #define USE_HSE_CLOCK_SOURCE 1
@@ -59,6 +61,7 @@ static struct {
 	volatile u32 *ramcfg;
 	volatile u32 *bsec;
 	volatile u32 *rng;
+	volatile u32 *mpu;
 
 	u32 cpuclk;
 	u32 perclk;
@@ -114,6 +117,24 @@ enum {
 	icb_systick_rvr,
 	icb_systick_cvr,
 	icb_systick_calib,
+};
+
+
+/* Pasted here to avoid confict with registers defined in hal/armv8m/mpu.c */
+enum {
+	mpu_type,
+	mpu_ctrl,
+	mpu_rnr,
+	mpu_rbar,
+	mpu_rlar,
+	mpu_rbar_a1,
+	mpu_rlar_a1,
+	mpu_rbar_a2,
+	mpu_rlar_a2,
+	mpu_rbar_a3,
+	mpu_rlar_a3,
+	mpu_mair0 = 0xC,
+	mpu_mair1
 };
 
 
@@ -1040,6 +1061,35 @@ ssize_t _stm32_rngRead(u8 *val, size_t len)
 }
 
 
+/* MPU */
+
+
+/* MPU configuration needed by other peripherals */
+static void _stm32_mpuInit(void)
+{
+	u32 pka_ramBase = (u32)(((u32 *)PKA_BASE) + pka_ram);
+	u32 pka_ramEnd = (u32)(((u8 *)PKA_BASE) + PKA_RAM_SIZE - 1);
+	volatile u32 *shcsr = (volatile u32 *)0xe000ed24;
+	stm32_common.mpu = MPU_BASE;
+
+	/* Configure PKA RAM as device memory */
+
+	*(stm32_common.mpu + mpu_rnr) = 0;
+	hal_cpuDataMemoryBarrier();
+
+	/* Read only by privileged */
+	*(stm32_common.mpu + mpu_rbar) = (pka_ramBase & ~0x1f) | 1;
+	*(stm32_common.mpu + mpu_rlar) = (pka_ramEnd & ~0x1f) | (1 << 4) | (0 << 1) | 1;
+	hal_cpuDataMemoryBarrier();
+
+	*(stm32_common.mpu + mpu_ctrl) |= (1 << 2) | 1;
+
+
+	/* Enable MemManage exception */
+	*shcsr |= (1u << 16);
+}
+
+
 /* Watchdog */
 
 
@@ -1183,6 +1233,9 @@ void _stm32_init(void)
 
 	otp_init();
 	_stm32_rngInit();
+	hash_init();
+	_stm32_mpuInit();
+	pka_init();
 
 	hal_cpuDataMemoryBarrier();
 
