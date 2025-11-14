@@ -16,6 +16,8 @@
 #include <lib/errno.h>
 #include <board_config.h>
 #include "mpu.h"
+#include "lib/log.h"
+#include "syspage.h"
 
 #ifndef DISABLE_MPU
 #define DISABLE_MPU 0
@@ -82,6 +84,7 @@ static int mpu_regionSet(unsigned int *idx, addr_t start, addr_t end, u32 rbarAt
 	/* Allow end == 0, this means end of address range */
 	const size_t size = (end - start) & 0xffffffffu;
 	u32 limit = end - 1;
+	mpu_part_t *mpu = &mpu_common.curPart;
 
 	if (*idx >= mpu_common.regMax) {
 		return -EPERM;
@@ -101,9 +104,9 @@ static int mpu_regionSet(unsigned int *idx, addr_t start, addr_t end, u32 rbarAt
 		return -EPERM;
 	}
 
-	mpu_common.region[*idx].rbar = (start & ~0x1f) | rbarAttr;
-	mpu_common.region[*idx].rlar = (limit & ~0x1f) | rlarAttr;
-	mpu_common.mapId[*idx] = mapId;
+	mpu->region[*idx].rbar = (start & ~0x1f) | rbarAttr;
+	mpu->region[*idx].rlar = (limit & ~0x1f) | rlarAttr;
+	mpu->mapId[*idx] = mapId;
 
 	*idx += 1;
 	return EOK;
@@ -120,16 +123,17 @@ const mpu_common_t *const mpu_getCommon(void)
 static void mpu_regionInvalidate(u8 first, u8 last)
 {
 	unsigned int i;
+	mpu_part_t *mpu = &mpu_common.curPart;
 
 	for (i = first; (i < last) && (i < mpu_common.regMax); i++) {
 		/* set multi-map to none */
-		mpu_common.mapId[i] = (u32)-1;
+		mpu->mapId[i] = (u32)-1;
 
 		/* mark i-th region as disabled */
-		mpu_common.region[i].rlar = 0;
+		mpu->region[i].rlar = 0;
 
 		/* set exec never */
-		mpu_common.region[i].rbar = 1;
+		mpu->region[i].rbar = 1;
 	}
 }
 
@@ -162,17 +166,39 @@ void mpu_init(void)
 		*(mpu_base + mpu_mair0) = 0xee04aa00;
 	}
 #endif
-	mpu_common.regCnt = 0;
-	mpu_common.mapCnt = 0;
-
-	mpu_regionInvalidate(0, MPU_MAX_REGIONS);
 }
 
 
-int mpu_regionAlloc(addr_t addr, addr_t end, u32 attr, u32 mapId, unsigned int enable)
+static int mpu_isMapAlloced(u32 mapId)
+{
+	unsigned int i;
+	mpu_part_t *mpu = &mpu_common.curPart;
+
+	for (i = 0; i < mpu->regCnt; i++) {
+		if (mpu->mapId[i] == mapId) {
+			return 1;
+		}
+	}
+
+	return 0;
+}
+
+
+static void mpu_initPart(void)
+{
+	mpu_part_t *mpu = &mpu_common.curPart;
+
+	hal_memset(mpu, 0, sizeof(mpu_part_t));
+	mpu->regCnt = 0;
+	mpu_regionInvalidate(0, sizeof(mpu->region) / sizeof(mpu->region[0]));
+}
+
+
+static int mpu_regionAlloc(addr_t addr, addr_t end, u32 attr, u32 mapId, unsigned int enable)
 {
 	int res;
-	unsigned int regCur = mpu_common.regCnt;
+	mpu_part_t *mpu = &mpu_common.curPart;
+	unsigned int regCur = mpu->regCnt;
 	u32 rbarAttr, rlarAttr;
 
 	if (mpu_common.regMax == 0) {
@@ -186,43 +212,73 @@ int mpu_regionAlloc(addr_t addr, addr_t end, u32 attr, u32 mapId, unsigned int e
 
 	res = mpu_regionSet(&regCur, addr, end, rbarAttr, rlarAttr, mapId);
 	if (res != EOK) {
-		mpu_regionInvalidate(mpu_common.regCnt, regCur);
+		mpu_regionInvalidate(mpu->regCnt, regCur);
 		return res;
 	}
 
-	mpu_common.regCnt = regCur;
-	mpu_common.mapCnt++;
+	mpu->regCnt = regCur;
 
 	return EOK;
 }
 
+
 void mpu_getHalData(hal_syspage_t *hal)
 {
-	const unsigned int syspageTableSize = sizeof(hal->mpu.table) / sizeof(hal->mpu.table[0]);
-	unsigned int i;
-
-	mpu_regionInvalidate(mpu_common.regCnt, mpu_common.regMax);
-
-	if (mpu_common.regCnt > syspageTableSize) {
-		/* TODO: We need a way to handle errors here that can happen due to misconfiguration
-		 * (size of table in syspage too small). This way to do it silently truncates the list
-		 * which may cause undesired behaviors. */
-		mpu_common.regCnt = syspageTableSize;
-	}
-
 	hal->mpu.type = mpu_common.type;
-	hal->mpu.allocCnt = mpu_common.regCnt;
+}
 
-	for (i = 0; i < mpu_common.regCnt; i++) {
-		hal->mpu.table[i].rbar = mpu_common.region[i].rbar;
-		hal->mpu.table[i].rlar = mpu_common.region[i].rlar;
-		hal->mpu.map[i] = mpu_common.mapId[i];
+
+static void mpu_mapsAlloc(const char *maps, size_t cnt)
+{
+	int i, res;
+	addr_t start, end;
+	u32 attr;
+	u8 id;
+
+	for (i = 0; i < cnt; i++) {
+		// TODO: merge regions with same attributes and adjacent addresses
+		// TODO: more sophisticated merging? (hole punching, common subregions etc.)
+		if ((res = syspage_mapNameResolve(maps, &id)) < 0) {
+			log_error("\nCan't add map %s", maps);
+			// return res;
+		}
+		if (mpu_isMapAlloced(id) != 0) {
+			maps += hal_strlen(maps) + 1; /* name + '\0' */
+			continue;
+		}
+		if ((res = syspage_mapRangeResolve(maps, &start, &end)) < 0) {
+			log_error("\nCan't resolve range for %s", maps);
+			// return res;
+		}
+		if ((res = syspage_mapAttrResolve(maps, &attr)) < 0) {
+			log_error("\nCan't resolve attributes for %s", maps);
+			// return res;
+		}
+		maps += hal_strlen(maps) + 1; /* name + '\0' */
+
+		mpu_regionAlloc(start, end, attr, id, 1);
 	}
+}
 
-	/* Ensure all entries are initialized if mpu_common.regCnt or mpu_common.regMax is smaller than syspageTableSize */
-	for (; i < syspageTableSize; i++) {
-		hal->mpu.map[i] = (u32)-1;  /* set multi-map to none */
-		hal->mpu.table[i].rlar = 0; /* mark i-th region as disabled */
-		hal->mpu.table[i].rbar = 1; /* set exec never */
+
+extern void mpu_getProgHal(hal_syspage_prog_t *progHal, const char *imaps, size_t imapSz, const char *dmaps, size_t dmapSz)
+{
+	unsigned int i;
+	mpu_part_t *mpu = &mpu_common.curPart;
+
+	mpu_initPart();
+
+	mpu_mapsAlloc("itcm", 1);  // - TODO: where is kernel data???
+	mpu_mapsAlloc(imaps, imapSz);
+	mpu_mapsAlloc(dmaps, dmapSz);
+
+	mpu_regionInvalidate(mpu->regCnt, mpu_common.regMax);
+
+	progHal->allocCnt = mpu->regCnt;
+
+	for (i = 0; i < sizeof(progHal->table) / sizeof(progHal->table[0]); i++) {
+		progHal->table[i].rbar = mpu->region[i].rbar;
+		progHal->table[i].rlar = mpu->region[i].rlar;
+		progHal->map[i] = mpu->mapId[i];  // TODO: is this still needed?
 	}
 }
