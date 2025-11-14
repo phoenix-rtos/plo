@@ -20,10 +20,12 @@
 #ifndef __ASSEMBLY__
 
 #include "../types.h"
-#include "../cpu.h"
 
 #include <phoenix/arch/armv8r/mps3an536/syspage.h>
 #include <phoenix/syspage.h>
+
+#include "../cpu.h"
+#include "../mpu.h"
 
 #include <board_config.h>
 

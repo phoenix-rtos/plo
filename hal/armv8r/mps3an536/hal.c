@@ -46,6 +46,7 @@ void hal_init(void)
 {
 	console_init();
 	interrupts_init();
+	mpu_init();
 	timer_init();
 
 	hal_common.entry = (addr_t)-1;
@@ -85,12 +86,6 @@ void hal_kernelGetEntryPointOffset(addr_t *off, int *indirect)
 void hal_kernelEntryPoint(addr_t addr)
 {
 	hal_common.entry = addr;
-}
-
-
-int hal_memoryAddMap(addr_t start, addr_t end, u32 attr, u32 mapId)
-{
-	return 0;
 }
 
 

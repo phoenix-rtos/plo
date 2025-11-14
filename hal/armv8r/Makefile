@@ -10,4 +10,4 @@ ifneq (, $(findstring mps3an536, $(TARGET_SUBFAMILY)))
   include hal/armv8r/mps3an536/Makefile
 endif
 
-OBJS += $(addprefix $(PREFIX_O)hal/$(TARGET_SUFF)/, _cache.o _exceptions.o _interrupts.o cpu.o exceptions.o string.o)
+OBJS += $(addprefix $(PREFIX_O)hal/$(TARGET_SUFF)/, _cache.o _exceptions.o _interrupts.o cpu.o mpu.o exceptions.o string.o)
