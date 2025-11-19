@@ -97,4 +97,7 @@ extern void hal_consoleSetHooks(ssize_t (*writeHook)(int, const void *, size_t))
 extern void hal_consolePrint(const char *s);
 
 
+extern int hal_getProgData(syspage_prog_t *prog, const char *imaps, size_t imapSz, const char *dmaps, size_t dmapSz);
+
+
 #endif

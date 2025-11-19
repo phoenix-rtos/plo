@@ -14,4 +14,10 @@ else ifneq (, $(findstring stm32, $(TARGET_SUBFAMILY)))
   include hal/armv8m/stm32/Makefile
 endif
 
+
+ifdef MPUTEST_ORGIMPL
+    CFLAGS += -DMPUTEST_ORGIMPL
+endif
+
+
 OBJS += $(addprefix $(PREFIX_O)hal/$(TARGET_SUFF)/, cpu.o interrupts.o mpu.o string.o)

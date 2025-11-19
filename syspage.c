@@ -529,6 +529,11 @@ syspage_prog_t *syspage_progAdd(const char *argv, u32 flags)
 }
 
 
+syspage_prog_t *syspage_progsGet(void)
+{
+	return syspage_common.syspage->progs;
+}
+
 
 /* Set console */
 

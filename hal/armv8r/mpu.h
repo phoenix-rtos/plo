@@ -46,10 +46,6 @@ typedef struct {
 } mpu_common_t;
 
 
-/* Get const pointer to read only mpu_common structure */
-extern const mpu_common_t *const mpu_getCommon(void);
-
-
 /* Reset structures and detect MPU type */
 extern void mpu_init(void);
 
@@ -58,7 +54,7 @@ extern void mpu_init(void);
 extern void mpu_getHalData(hal_syspage_t *hal);
 
 
-extern void mpu_getProgHal(hal_syspage_prog_t *progHal, const char *imaps, size_t imapSz, const char *dmaps, size_t dmapSz);
+extern int mpu_getHalProgData(syspage_prog_t *prog, const char *imaps, size_t imapSz, const char *dmaps, size_t dmapSz);
 
 
 #endif

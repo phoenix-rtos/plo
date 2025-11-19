@@ -96,12 +96,6 @@ static int mpu_regionSet(unsigned int *idx, addr_t start, addr_t end, u32 rbarAt
 }
 
 
-const mpu_common_t *const mpu_getCommon(void)
-{
-	return &mpu_common;
-}
-
-
 /* Invalidate range of regions */
 static void mpu_regionInvalidate(u8 first, u8 last)
 {
@@ -244,7 +238,7 @@ static void mpu_mapsAlloc(const char *maps, size_t cnt)
 }
 
 
-extern void mpu_getProgHal(hal_syspage_prog_t *progHal, const char *imaps, size_t imapSz, const char *dmaps, size_t dmapSz)
+extern int mpu_getHalProgData(syspage_prog_t *prog, const char *imaps, size_t imapSz, const char *dmaps, size_t dmapSz)
 {
 	unsigned int i;
 	mpu_part_t *mpu = &mpu_common.curPart;
@@ -257,11 +251,11 @@ extern void mpu_getProgHal(hal_syspage_prog_t *progHal, const char *imaps, size_
 
 	mpu_regionInvalidate(mpu->regCnt, mpu_common.regMax);
 
-	progHal->allocCnt = mpu->regCnt;
+	prog->hal.allocCnt = mpu->regCnt;
 
-	for (i = 0; i < sizeof(progHal->table) / sizeof(progHal->table[0]); i++) {
-		progHal->table[i].rbar = mpu->region[i].rbar;
-		progHal->table[i].rlar = mpu->region[i].rlar;
-		progHal->map[i] = mpu->mapId[i];  // TODO: is this still needed?
+	for (i = 0; i < sizeof(prog->hal.table) / sizeof(prog->hal.table[0]); i++) {
+		prog->hal.table[i].rbar = mpu->region[i].rbar;
+		prog->hal.table[i].rlar = mpu->region[i].rlar;
+		prog->hal.map[i] = mpu->mapId[i];  // TODO: is this still needed?
 	}
 }

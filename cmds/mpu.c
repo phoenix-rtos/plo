@@ -82,56 +82,47 @@ static void mpu_regionPrint(const char *name, u32 rbar, u32 rasr)
 
 static void cmd_mpuInfo(void)
 {
-	lib_printf("prints the use of MPU regions, usage: mpu [all]");
+	lib_printf("prints the use of MPU regions, usage: mpu [prog name]");
 }
 
 
 static int cmd_mpu(int argc, char *argv[])
 {
 	const char *name;
-	unsigned int i, regCnt;
-	const mpu_region_t *region;
-	const mpu_common_t *const mpu_common = mpu_getCommon();
-	const mpu_part_t *mpu = &mpu_common->curPart;
+	unsigned int i;
+	const syspage_prog_t *prog = syspage_progsGet();
+	const syspage_prog_t *firstProg = prog;
 
-	if (argc == 1) {
-		regCnt = mpu->regCnt;
-	}
-	else if (argc == 2) {
-		if (hal_strcmp(argv[1], "all") != 0) {
-			log_error("\n%s: Wrong arguments", argv[0]);
-			return CMD_EXIT_FAILURE;
-		}
-
-		regCnt = mpu_common->regMax;
-	}
-	else {
-		log_error("\n%s: Wrong argument count", argv[0]);
-		return CMD_EXIT_FAILURE;
-	}
-
-	if (mpu_common->regMax != sizeof(((hal_syspage_t *)0)->mpu.table) / sizeof(((hal_syspage_t *)0)->mpu.table[0])) {
-		log_error("\n%s: MPU hal is not initialized or unsupported type was detected", argv[0]);
-		return CMD_EXIT_FAILURE;
-	}
+	// if (mpu_common->regMax != sizeof(((hal_syspage_t *)0)->mpu.table) / sizeof(((hal_syspage_t *)0)->mpu.table[0])) {
+	// 	log_error("\n%s: MPU hal is not initialized or unsupported type was detected", argv[0]);
+	// 	return CMD_EXIT_FAILURE;
+	// }
 
 	lib_printf(CONSOLE_BOLD "\n%-9s %-7s %-4s %-11s %-11s %-3s %-3s %-9s %-4s %-2s %-2s %-2s\n" CONSOLE_NORMAL,
 			"MAP NAME", "REGION", "SUB", "START", "END", "EN", "XN", "PERM P/U", "TEX", "S", "C", "B");
 
-	// TODO: loop over programs
-	for (i = 0; i < regCnt; i++) {
-		region = &mpu->region[i];
-		name = syspage_mapName(mpu->mapId[i]);
-
-		if (name == NULL) {
-			name = "<none>";
-		}
-
-		mpu_regionPrint(name, region->rbar, region->rasr);
+	if (prog == NULL) {
+		lib_printf("\nApps number: 0");
+		return CMD_EXIT_FAILURE;
 	}
 
-	lib_printf("\nConfigured %d of %d MPU regions based on %d map definitions.\n",
-			mpu->regCnt, mpu_common->regMax, mpu->regCnt);
+	do {
+		// TODO: filter progname if argc > 1
+		name = (prog->argv[0] == 'X') ? prog->argv + 1 : prog->argv;
+		lib_printf("%-16s 0x%08x%4s 0x%08x", name, prog->start, "", prog->end);
+		for (i = 0; i < prog->hal.allocCnt; i++) {
+			name = syspage_mapName(prog->hal.map[i]);
+			if (name == NULL) {
+				name = "<none>";
+			}
+			mpu_regionPrint(name, prog->hal.table[i].rbar, prog->hal.table[i].rasr);
+		}
+		lib_printf("\n");
+		prog = prog->next;
+	} while (prog != firstProg);
+
+	// lib_printf("\nConfigured %d of %d MPU regions.\n",
+	// 		mpu->allocCnt, mpu_common->regMax);
 
 	return CMD_EXIT_SUCCESS;
 }

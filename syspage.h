@@ -70,6 +70,9 @@ extern mapent_t *syspage_entryAdd(const char *mapName, addr_t start, size_t size
 extern syspage_prog_t *syspage_progAdd(const char *argv, u32 flags);
 
 
+extern syspage_prog_t *syspage_progsGet(void);
+
+
 extern void syspage_progShow(void);
 
 

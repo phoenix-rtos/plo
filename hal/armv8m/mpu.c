@@ -23,6 +23,10 @@
 #define DISABLE_MPU 0
 #endif
 
+#ifdef MPUTEST_ORGIMPL
+#error "PLEASE CHECKOUT plo to master for MPUTEST_ORGIMPL"
+#endif
+
 static mpu_common_t mpu_common;
 
 
@@ -79,12 +83,11 @@ static u32 mpu_regionAttrsRbar(u32 attr)
 
 
 /* Setup single MPU region entry in local MPU context */
-static int mpu_regionSet(unsigned int *idx, addr_t start, addr_t end, u32 rbarAttr, u32 rlarAttr, u32 mapId)
+static int mpu_regionSet(hal_syspage_prog_t *mpu, unsigned int *idx, addr_t start, addr_t end, u32 rbarAttr, u32 rlarAttr, u32 mapId)
 {
 	/* Allow end == 0, this means end of address range */
 	const size_t size = (end - start) & 0xffffffffu;
 	u32 limit = end - 1;
-	mpu_part_t *mpu = &mpu_common.curPart;
 
 	if (*idx >= mpu_common.regMax) {
 		return -EPERM;
@@ -104,36 +107,29 @@ static int mpu_regionSet(unsigned int *idx, addr_t start, addr_t end, u32 rbarAt
 		return -EPERM;
 	}
 
-	mpu->region[*idx].rbar = (start & ~0x1f) | rbarAttr;
-	mpu->region[*idx].rlar = (limit & ~0x1f) | rlarAttr;
-	mpu->mapId[*idx] = mapId;
+	mpu->table[*idx].rbar = (start & ~0x1f) | rbarAttr;
+	mpu->table[*idx].rlar = (limit & ~0x1f) | rlarAttr;
+	mpu->map[*idx] = mapId;
 
 	*idx += 1;
 	return EOK;
 }
 
 
-const mpu_common_t *const mpu_getCommon(void)
-{
-	return &mpu_common;
-}
-
-
 /* Invalidate range of regions */
-static void mpu_regionInvalidate(u8 first, u8 last)
+static void mpu_regionInvalidate(hal_syspage_prog_t *mpu, u8 first, u8 last)
 {
 	unsigned int i;
-	mpu_part_t *mpu = &mpu_common.curPart;
 
 	for (i = first; (i < last) && (i < mpu_common.regMax); i++) {
 		/* set multi-map to none */
-		mpu->mapId[i] = (u32)-1;
+		mpu->map[i] = (u32)-1;
 
 		/* mark i-th region as disabled */
-		mpu->region[i].rlar = 0;
+		mpu->table[i].rlar = 0;
 
 		/* set exec never */
-		mpu->region[i].rbar = 1;
+		mpu->table[i].rbar = 1;
 	}
 }
 
@@ -169,13 +165,12 @@ void mpu_init(void)
 }
 
 
-static int mpu_isMapAlloced(u32 mapId)
+static int mpu_isMapAlloced(hal_syspage_prog_t *mpu, u32 mapId)
 {
 	unsigned int i;
-	mpu_part_t *mpu = &mpu_common.curPart;
 
-	for (i = 0; i < mpu->regCnt; i++) {
-		if (mpu->mapId[i] == mapId) {
+	for (i = 0; i < mpu->allocCnt; i++) {
+		if (mpu->map[i] == mapId) {
 			return 1;
 		}
 	}
@@ -184,21 +179,18 @@ static int mpu_isMapAlloced(u32 mapId)
 }
 
 
-static void mpu_initPart(void)
+static void mpu_initPart(hal_syspage_prog_t *mpu)
 {
-	mpu_part_t *mpu = &mpu_common.curPart;
-
-	hal_memset(mpu, 0, sizeof(mpu_part_t));
-	mpu->regCnt = 0;
-	mpu_regionInvalidate(0, sizeof(mpu->region) / sizeof(mpu->region[0]));
+	hal_memset(mpu, 0, sizeof(hal_syspage_prog_t));
+	mpu->allocCnt = 0;
+	mpu_regionInvalidate(mpu, 0, sizeof(mpu->table) / sizeof(mpu->table[0]));
 }
 
 
-static int mpu_regionAlloc(addr_t addr, addr_t end, u32 attr, u32 mapId, unsigned int enable)
+static int mpu_regionAlloc(hal_syspage_prog_t *mpu, addr_t addr, addr_t end, u32 attr, u32 mapId, unsigned int enable)
 {
 	int res;
-	mpu_part_t *mpu = &mpu_common.curPart;
-	unsigned int regCur = mpu->regCnt;
+	unsigned int regCur = mpu->allocCnt;
 	u32 rbarAttr, rlarAttr;
 
 	if (mpu_common.regMax == 0) {
@@ -210,13 +202,13 @@ static int mpu_regionAlloc(addr_t addr, addr_t end, u32 attr, u32 mapId, unsigne
 	rbarAttr = mpu_regionAttrsRbar(attr);
 	rlarAttr = mpu_regionAttrsRlar(attr, enable);
 
-	res = mpu_regionSet(&regCur, addr, end, rbarAttr, rlarAttr, mapId);
+	res = mpu_regionSet(mpu, &regCur, addr, end, rbarAttr, rlarAttr, mapId);
 	if (res != EOK) {
-		mpu_regionInvalidate(mpu->regCnt, regCur);
+		mpu_regionInvalidate(mpu, mpu->allocCnt, regCur);
 		return res;
 	}
 
-	mpu->regCnt = regCur;
+	mpu->allocCnt = regCur;
 
 	return EOK;
 }
@@ -228,7 +220,7 @@ void mpu_getHalData(hal_syspage_t *hal)
 }
 
 
-static void mpu_mapsAlloc(const char *maps, size_t cnt)
+static int mpu_mapsAlloc(hal_syspage_prog_t *mpu, const char *maps, size_t cnt)
 {
 	int i, res;
 	addr_t start, end;
@@ -240,45 +232,57 @@ static void mpu_mapsAlloc(const char *maps, size_t cnt)
 		// TODO: more sophisticated merging? (hole punching, common subregions etc.)
 		if ((res = syspage_mapNameResolve(maps, &id)) < 0) {
 			log_error("\nCan't add map %s", maps);
-			// return res;
+			return res;
 		}
-		if (mpu_isMapAlloced(id) != 0) {
+		if (mpu_isMapAlloced(mpu, id) != 0) {
 			maps += hal_strlen(maps) + 1; /* name + '\0' */
 			continue;
 		}
 		if ((res = syspage_mapRangeResolve(maps, &start, &end)) < 0) {
 			log_error("\nCan't resolve range for %s", maps);
-			// return res;
+			return res;
 		}
 		if ((res = syspage_mapAttrResolve(maps, &attr)) < 0) {
 			log_error("\nCan't resolve attributes for %s", maps);
-			// return res;
+			return res;
 		}
 		maps += hal_strlen(maps) + 1; /* name + '\0' */
 
-		mpu_regionAlloc(start, end, attr, id, 1);
+		mpu_regionAlloc(mpu, start, end, attr, id, 1);
 	}
+	return EOK;
 }
 
 
-extern void mpu_getProgHal(hal_syspage_prog_t *progHal, const char *imaps, size_t imapSz, const char *dmaps, size_t dmapSz)
+extern int mpu_getHalProgData(syspage_prog_t *prog, const char *imaps, size_t imapSz, const char *dmaps, size_t dmapSz)
 {
 	unsigned int i;
-	mpu_part_t *mpu = &mpu_common.curPart;
+	int ret;
+	hal_syspage_prog_t mpu;
 
-	mpu_initPart();
+	mpu_initPart(&mpu);
 
-	mpu_mapsAlloc("itcm", 1);  // - TODO: where is kernel data???
-	mpu_mapsAlloc(imaps, imapSz);
-	mpu_mapsAlloc(dmaps, dmapSz);
-
-	mpu_regionInvalidate(mpu->regCnt, mpu_common.regMax);
-
-	progHal->allocCnt = mpu->regCnt;
-
-	for (i = 0; i < sizeof(progHal->table) / sizeof(progHal->table[0]); i++) {
-		progHal->table[i].rbar = mpu->region[i].rbar;
-		progHal->table[i].rlar = mpu->region[i].rlar;
-		progHal->map[i] = mpu->mapId[i];  // TODO: is this still needed?
+	ret = mpu_mapsAlloc(&mpu, "flash0", 1);  // - TODO: where is kernel data???
+	if (ret != 0) {
+		return ret;
 	}
+	mpu_mapsAlloc(&mpu, imaps, imapSz);
+	if (ret != 0) {
+		return ret;
+	}
+	mpu_mapsAlloc(&mpu, dmaps, dmapSz);
+	if (ret != 0) {
+		return ret;
+	}
+
+	mpu_regionInvalidate(&mpu, mpu.allocCnt, mpu_common.regMax);
+
+	prog->hal.allocCnt = mpu.allocCnt;
+
+	for (i = 0; i < sizeof(prog->hal.table) / sizeof(prog->hal.table[0]); i++) {
+		prog->hal.table[i].rbar = mpu.table[i].rbar;
+		prog->hal.table[i].rlar = mpu.table[i].rlar;
+		prog->hal.map[i] = mpu.map[i];  // TODO: is this still needed?
+	}
+	return EOK;
 }

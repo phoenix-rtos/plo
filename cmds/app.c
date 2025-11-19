@@ -50,31 +50,15 @@ static int cmd_mapsAdd2Prog(u8 *mapIDs, size_t nb, const char *mapNames)
 {
 	u8 id;
 	int res, i;
-	// addr_t addr, end;
-	// u32 attr;
 
 	for (i = 0; i < nb; ++i) {
 		if ((res = syspage_mapNameResolve(mapNames, &id)) < 0) {
 			log_error("\nCan't add map %s", mapNames);
 			return res;
 		}
-		// if ((res = syspage_mapRangeResolve(mapNames, &addr, &end)) < 0) {
-		// 	log_error("\nCan't resolve range for %s", mapNames);
-		// 	return res;
-		// }
-		// if ((res = syspage_mapAttrResolve(mapNames, &attr)) < 0) {
-		// 	log_error("\nCan't resolve attributes for %s", mapNames);
-		// 	return res;
-		// }
 
-		// hal_consolePrint(mapNames);
 		mapIDs[i] = id;
 		mapNames += hal_strlen(mapNames) + 1; /* name + '\0' */
-
-
-		// //TODO: rewrite to collect all and simplify (merge) inside mpu.c
-		// //TODO: this is fcked up, imaps and dmaps are being duplicated
-		// mpu_regionAlloc(addr, end, attr, id, 1);
 	}
 
 	return EOK;
@@ -108,7 +92,6 @@ static int cmd_appLoad(handler_t handler, size_t size, const char *name, char *i
 
 	syspage_prog_t *prog;
 	const mapent_t *entry;
-	hal_syspage_prog_t hal;
 
 	/* Check ELF header */
 	if ((res = phfs_read(handler, 0, &hdr, sizeof(Elf32_Ehdr))) < 0) {
@@ -172,16 +155,12 @@ static int cmd_appLoad(handler_t handler, size_t size, const char *name, char *i
 			(res = cmd_mapsAdd2Prog(prog->dmaps, dmapSz, dmaps)) < 0)
 		return res;
 
-
-	// TODO: merge imaps and dmaps without duplicates
-	// TODO: pass imaps+dmaps to mpu_getProgHal
-	mpu_getProgHal(&hal, imaps, imapSz, dmaps, dmapSz);
-
 	prog->imapSz = imapSz;
 	prog->dmapSz = dmapSz;
 	prog->start = entry->start;
 	prog->end = entry->end;
-	hal_memcpy(&prog->hal, &hal, sizeof(hal));
+
+	hal_getProgData(prog, imaps, imapSz, dmaps, dmapSz);
 
 	return EOK;
 }
