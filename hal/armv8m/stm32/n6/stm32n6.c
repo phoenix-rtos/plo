@@ -24,6 +24,40 @@
 #define USE_HSE_CLOCK_SOURCE 1
 #endif
 
+/* By default chose the higher voltage range (3.3 V), which is the safer option.
+ * If there is a mismatch the performance will be degraded (slower GPIO pin performance),
+ * but no damage to hardware will occur. */
+#ifndef VDDIO2_RANGE_MV
+#define VDDIO2_RANGE_MV 3300
+#else
+#if (VDDIO2_RANGE_MV != 1800) && (VDDIO2_RANGE_MV != 3300)
+#error "Invalid voltage range selected"
+#endif
+#endif
+
+#ifndef VDDIO3_RANGE_MV
+#define VDDIO3_RANGE_MV 3300
+#else
+#if (VDDIO3_RANGE_MV != 1800) && (VDDIO3_RANGE_MV != 3300)
+#error "Invalid voltage range selected"
+#endif
+#endif
+
+#ifndef VDDIO4_RANGE_MV
+#define VDDIO4_RANGE_MV 3300
+#else
+#if (VDDIO4_RANGE_MV != 1800) && (VDDIO4_RANGE_MV != 3300)
+#error "Invalid voltage range selected"
+#endif
+#endif
+
+#ifndef VDDIO5_RANGE_MV
+#define VDDIO5_RANGE_MV 3300
+#else
+#if (VDDIO5_RANGE_MV != 1800) && (VDDIO5_RANGE_MV != 3300)
+#error "Invalid voltage range selected"
+#endif
+#endif
 
 #define GPIOA_BASE ((void *)0x56020000)
 #define GPIOB_BASE ((void *)0x56020400)
@@ -133,6 +167,14 @@ enum pll_srcs {
 	pll_src_i2s_ckin,
 };
 
+
+/* 0 - default voltage range requested, 1 - lower voltage range requested */
+static const int stm32_voltageRangeConfig[pwr_supplies_count] = {
+	[pwr_supply_vddio4] = (VDDIO4_RANGE_MV == 1800) ? 1 : 0,
+	[pwr_supply_vddio5] = (VDDIO5_RANGE_MV == 1800) ? 1 : 0,
+	[pwr_supply_vddio2] = (VDDIO2_RANGE_MV == 1800) ? 1 : 0,
+	[pwr_supply_vddio3] = (VDDIO3_RANGE_MV == 1800) ? 1 : 0,
+};
 
 #define NUM_PLLS  4
 #define NUM_ICLKS 20
@@ -670,6 +712,7 @@ int _stm32_pwrSupplyOperation(unsigned int supply, unsigned int operation, int s
 				[pwr_supply_op_ready] = 16,
 				[pwr_supply_op_range_sel] = 24,
 				[pwr_supply_op_range_sel_standby] = 25,
+				[pwr_supply_op_get_range_sel] = 24,
 			},
 		},
 		[pwr_supply_vddio5] = {
@@ -680,6 +723,7 @@ int _stm32_pwrSupplyOperation(unsigned int supply, unsigned int operation, int s
 				[pwr_supply_op_ready] = 16,
 				[pwr_supply_op_range_sel] = 24,
 				[pwr_supply_op_range_sel_standby] = 25,
+				[pwr_supply_op_get_range_sel] = 24,
 			},
 		},
 		[pwr_supply_vddio2] = {
@@ -690,6 +734,7 @@ int _stm32_pwrSupplyOperation(unsigned int supply, unsigned int operation, int s
 				[pwr_supply_op_ready] = 16,
 				[pwr_supply_op_range_sel] = 25,
 				[pwr_supply_op_range_sel_standby] = -1,
+				[pwr_supply_op_get_range_sel] = 25,
 			},
 		},
 		[pwr_supply_vddio3] = {
@@ -700,6 +745,7 @@ int _stm32_pwrSupplyOperation(unsigned int supply, unsigned int operation, int s
 				[pwr_supply_op_ready] = 17,
 				[pwr_supply_op_range_sel] = 26,
 				[pwr_supply_op_range_sel_standby] = -1,
+				[pwr_supply_op_get_range_sel] = 26,
 			},
 		},
 		[pwr_supply_vusb33] = {
@@ -710,6 +756,7 @@ int _stm32_pwrSupplyOperation(unsigned int supply, unsigned int operation, int s
 				[pwr_supply_op_ready] = 18,
 				[pwr_supply_op_range_sel] = -1,
 				[pwr_supply_op_range_sel_standby] = -1,
+				[pwr_supply_op_get_range_sel] = -1,
 			},
 		},
 		[pwr_supply_vdda] = {
@@ -720,6 +767,7 @@ int _stm32_pwrSupplyOperation(unsigned int supply, unsigned int operation, int s
 				[pwr_supply_op_ready] = 20,
 				[pwr_supply_op_range_sel] = -1,
 				[pwr_supply_op_range_sel_standby] = -1,
+				[pwr_supply_op_get_range_sel] = -1,
 			},
 		},
 	};
@@ -736,7 +784,7 @@ int _stm32_pwrSupplyOperation(unsigned int supply, unsigned int operation, int s
 		return -1;
 	}
 
-	if (operation == pwr_supply_op_ready) {
+	if ((operation == pwr_supply_op_ready) || (operation == pwr_supply_op_get_range_sel)) {
 		return (*reg >> bit_offs) & 1;
 	}
 
@@ -751,9 +799,31 @@ int _stm32_pwrSupplyOperation(unsigned int supply, unsigned int operation, int s
 }
 
 
-static void _stm32_initPowerSupply(unsigned int supply, int doLowerVoltageRange)
+int _stm32_pwrSupplyValidateRange(unsigned int supply)
+{
+	int ret;
+	if (supply >= pwr_supplies_count) {
+		return -1;
+	}
+
+	ret = _stm32_pwrSupplyOperation(supply, pwr_supply_op_get_range_sel, 1);
+	if (ret < 0) {
+		/* Error here means that the selected power supply does not have configurable range;
+		 * so if it's not configurable, it is always configured correctly. */
+		return 0;
+	}
+
+	return (ret == stm32_voltageRangeConfig[supply]) ? 0 : -1;
+}
+
+
+static void _stm32_initPowerSupply(unsigned int supply)
 {
 	volatile int i;
+	if (supply >= pwr_supplies_count) {
+		return;
+	}
+
 	_stm32_pwrSupplyOperation(supply, pwr_supply_op_monitor_enable, 1);
 	for (i = 0; i < 1000; i++) {
 		/* TODO: implement wait in a better way */
@@ -763,7 +833,9 @@ static void _stm32_initPowerSupply(unsigned int supply, int doLowerVoltageRange)
 		/* Wait */
 	}
 
-	if (doLowerVoltageRange) {
+	if (stm32_voltageRangeConfig[supply] != 0) {
+		/* IMPORTANT NOTE: Here we may configure a power supply to be in the lower voltage range.
+		 * This will only take effect if the appropriate bits in OTP word 124 (HCONF1) are set to 1. */
 		_stm32_pwrSupplyOperation(supply, pwr_supply_op_range_sel, 1);
 		_stm32_pwrSupplyOperation(supply, pwr_supply_op_range_sel_standby, 1);
 	}
@@ -1032,15 +1104,15 @@ void _stm32_init(void)
 
 	_stm32_initSRAM();
 
-	/* Enable independent power supplies for GPIOs */
-	_stm32_initPowerSupply(pwr_supply_vddio2, 0); /* PO[5:0], PP[15:0] */
-	_stm32_initPowerSupply(pwr_supply_vddio3, 0); /* PN[12:0] */
-	_stm32_initPowerSupply(pwr_supply_vddio4, 0); /* PC[1], PC[12:6], PH[9:2] */
-	_stm32_initPowerSupply(pwr_supply_vddio5, 0); /* PC[0], PC[5:2], PE[4] */
+	/* Enable independent power supplies for GPIOs. */
+	_stm32_initPowerSupply(pwr_supply_vddio2); /* PO[5:0], PP[15:0] */
+	_stm32_initPowerSupply(pwr_supply_vddio3); /* PN[12:0] */
+	_stm32_initPowerSupply(pwr_supply_vddio4); /* PC[1], PC[12:6], PH[9:2] */
+	_stm32_initPowerSupply(pwr_supply_vddio5); /* PC[0], PC[5:2], PE[4] */
 	/* Enable independent power supply for ADCs */
-	_stm32_initPowerSupply(pwr_supply_vdda, 0);
+	_stm32_initPowerSupply(pwr_supply_vdda);
 	/* Enable independent power supply for USB */
-	_stm32_initPowerSupply(pwr_supply_vusb33, 0);
+	_stm32_initPowerSupply(pwr_supply_vusb33);
 
 	/* Disable all RCC interrupts */
 	*(stm32_common.rcc + rcc_cier) = 0;
