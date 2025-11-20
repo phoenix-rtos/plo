@@ -63,6 +63,7 @@ const xspi_ctrlParams_t xspi_ctrlParams[XSPI_N_CONTROLLERS] = {
 		.spiPort = XSPIM_PORT2,
 		.chipSelect = XSPI_CHIPSELECT_NCS1,
 		.isHyperbus = XSPI2_IS_HYPERBUS,
+		.mceDev = mce2,
 	},
 	{
 		.start = XSPI1_REG_BASE,
@@ -78,6 +79,7 @@ const xspi_ctrlParams_t xspi_ctrlParams[XSPI_N_CONTROLLERS] = {
 		.spiPort = XSPIM_PORT1,
 		.chipSelect = XSPI_CHIPSELECT_NCS2,
 		.isHyperbus = XSPI1_IS_HYPERBUS,
+		.mceDev = mce1,
 	},
 };
 
@@ -142,12 +144,20 @@ static const struct {
 };
 
 
+/* Note: Consider moving this to xspi_CtrlParams[minor] ? */
 u32 xspi_memSize[XSPI_N_CONTROLLERS];
 
 
 static struct {
 	int xspimDone;
-} xspi_common;
+	int xspiDone[XSPI_N_CONTROLLERS];
+	u8 regions[XSPI_N_CONTROLLERS]; /* Allocated region count */
+	xspi_memregion_t region[XSPI_N_CONTROLLERS][XSPI_MCE_REGIONS];
+} xspi_common = {
+	.xspiDone = {},
+	.regions = {},
+	.region = {},
+};
 
 
 /* Function waits between 1 and 2 ms */
@@ -169,8 +179,49 @@ static int xspidrv_isValidAddress(unsigned int minor, u32 off, size_t size)
 		return 0;
 	}
 
-	if ((off < fsize) && ((off + size) <= fsize)) {
-		return 1;
+	if (!((off < fsize) && ((off + size) <= fsize))) {
+		return 0;
+	}
+
+	for (int i = 0; i < XSPI_MCE_REGIONS; i++) {
+		if (xspi_common.region[minor][i].encrypt == 0) {
+			continue;
+		}
+		/* Range overlaps */
+		if ((xspi_common.region[minor][i].start <= off) && (end >= xspi_common.region[minor][i].start)) {
+			return 0;
+		}
+		else if ((off < xspi_common.region[minor][i].end) && (end > xspi_common.region[minor][i].start)) {
+			return 0;
+		}
+	}
+
+	return 1;
+}
+
+
+static int xspidrv_cryp_isValidAddress(unsigned int minor, u32 off, size_t size)
+{
+	size_t fsize = xspi_memSize[minor];
+	size_t end = off + size;
+	if (end < off) {
+		/* Integer overflow has occurred */
+		return 0;
+	}
+
+	/* Note: shouldn't this be ((off + size) < fsize) ?  */
+	if (!((off < fsize) && ((off + size) <= fsize))) {
+		return 0;
+	}
+
+	for (int i = 0; i < mce_regcount; i++) {
+		if (xspi_common.region[minor][i].encrypt == 0) {
+			continue;
+		}
+		/* Range inside region */
+		if ((xspi_common.region[minor][i].start >= off) && (end <= xspi_common.region[minor][i].end)) {
+			return 1;
+		}
 	}
 
 	return 0;
@@ -331,9 +382,39 @@ static int xspidrv_sync(unsigned int minor)
 }
 
 
+static int xspidrv_cryp_sync(unsigned int minor)
+{
+	if (xspidrv_isValidMinor(minor) == 0) {
+		return -EINVAL;
+	}
+
+	if (xspi_ctrlParams[minor].isHyperbus != 0) {
+		return xspi_hb_sync(minor);
+	}
+	else {
+		return xspi_regcom_sync(minor);
+	}
+}
+
+
 static ssize_t xspidrv_read(unsigned int minor, addr_t offs, void *buff, size_t len, time_t timeout)
 {
 	if ((xspidrv_isValidMinor(minor) == 0) || (xspidrv_isValidAddress(minor, offs, len) == 0)) {
+		return -EINVAL;
+	}
+
+	if (xspi_ctrlParams[minor].isHyperbus != 0) {
+		return xspi_hb_read(minor, offs, buff, len, timeout);
+	}
+	else {
+		return xspi_regcom_read(minor, offs, buff, len, timeout);
+	}
+}
+
+
+static ssize_t xspidrv_cryp_read(unsigned int minor, addr_t offs, void *buff, size_t len, time_t timeout)
+{
+	if ((xspidrv_isValidMinor(minor) == 0) || (xspidrv_cryp_isValidAddress(minor, offs, len) == 0)) {
 		return -EINVAL;
 	}
 
@@ -361,6 +442,21 @@ static ssize_t xspidrv_write(unsigned int minor, addr_t offs, const void *buff, 
 }
 
 
+static ssize_t xspidrv_cryp_write(unsigned int minor, addr_t offs, const void *buff, size_t len)
+{
+	if ((xspidrv_isValidMinor(minor) == 0) || (xspidrv_cryp_isValidAddress(minor, offs, len) == 0)) {
+		return -EINVAL;
+	}
+
+	if (xspi_ctrlParams[minor].isHyperbus != 0) {
+		return xspi_hb_write(minor, offs, buff, len);
+	}
+	else {
+		return xspi_regcom_write_mapped(minor, offs, buff, len);
+	}
+}
+
+
 static ssize_t xspidrv_erase(unsigned int minor, addr_t offs, size_t len, unsigned int flags)
 {
 	if (xspidrv_isValidMinor(minor) == 0) {
@@ -368,6 +464,25 @@ static ssize_t xspidrv_erase(unsigned int minor, addr_t offs, size_t len, unsign
 	}
 
 	if ((len != (size_t)-1) && (xspidrv_isValidAddress(minor, offs, len) == 0)) {
+		return -EINVAL;
+	}
+
+	if (xspi_ctrlParams[minor].isHyperbus != 0) {
+		return xspi_hb_erase(minor, offs, len, flags);
+	}
+	else {
+		return xspi_regcom_erase(minor, offs, len, flags);
+	}
+}
+
+
+static ssize_t xspidrv_cryp_erase(unsigned int minor, addr_t offs, size_t len, unsigned int flags)
+{
+	if (xspidrv_isValidMinor(minor) == 0) {
+		return -EINVAL;
+	}
+
+	if ((len != (size_t)-1) && (xspidrv_cryp_isValidAddress(minor, offs, len) == 0)) {
 		return -EINVAL;
 	}
 
@@ -413,6 +528,89 @@ static int xspidrv_map(unsigned int minor, addr_t addr, size_t sz, int mode, add
 }
 
 
+static int xspidrv_cryp_map(unsigned int minor, addr_t addr, size_t sz, int mode, addr_t memaddr, size_t memsz, int memmode, addr_t *a)
+{
+	size_t ctrlSz;
+	addr_t fStart;
+
+	if (xspidrv_isValidMinor(minor) == 0) {
+		return -EINVAL;
+	}
+
+	fStart = (addr_t)xspi_ctrlParams[minor].start;
+	ctrlSz = xspi_ctrlParams[minor].size;
+	*a = fStart;
+
+	/* Check if region is located on device */
+	if (xspidrv_cryp_isValidAddress(minor, addr, sz) == 0) {
+		return -EINVAL;
+	}
+
+	/* Check if flash is mappable to map region */
+	if (fStart <= memaddr && (fStart + ctrlSz) >= (memaddr + memsz)) {
+		return dev_isMappable;
+	}
+
+	/* Device mode cannot be higher than map mode to copy data */
+	if ((mode & memmode) != mode) {
+		return -EINVAL;
+	}
+
+	/* Data can be copied from device to map */
+	return dev_isNotMappable;
+}
+
+
+static int xspidrv_cryp_control(unsigned int minor, int cmd, void *args)
+{
+	const xspi_ctrlParams_t *p;
+	const xspi_memcrypt_args_t *mce_args;
+	mce_reg_t reg;
+	int ret;
+	u32 size;
+
+	ret = xspidrv_isValidMinor(minor);
+	if (ret < 0) {
+		return -EINVAL;
+	}
+	p = &xspi_ctrlParams[minor];
+	if (cmd != DEV_CONTROL_MEMCRYPT) {
+		return -EINVAL;
+	}
+	if (args == NULL) {
+		return -EINVAL;
+	}
+	mce_args = (const xspi_memcrypt_args_t *)args;
+	if (xspi_common.regions[minor] >= XSPI_MCE_REGIONS) {
+		return -EINVAL;
+	}
+	if (mce_args->start >= mce_args->end) {
+		return -EINVAL;
+	}
+	size = mce_args->end - mce_args->start;
+	/* Check if the region is currently non encrypted memory. Note: Is it a bad idea depend on a xspidrv_ function? */
+	ret = xspidrv_isValidAddress(minor, mce_args->start, size);
+	if (ret < 0) {
+		return -EINVAL;
+	}
+
+	reg = xspi_common.regions[minor];
+
+	ret = mce_configureRegion(p->mceDev, reg, mce_args->start, mce_args->end, mce_args->cipher, mce_args->mode, mce_args->key);
+	if (ret < 0) {
+		return -EINVAL;
+	}
+
+	/* Remember that region is configured */
+	xspi_common.region[minor][reg].start = mce_args->start;
+	xspi_common.region[minor][reg].end = mce_args->end;
+	xspi_common.region[minor][reg].encrypt = 1;
+	xspi_common.regions[minor]++;
+
+	return EOK;
+}
+
+
 static int xspidrv_init(unsigned int minor)
 {
 	const xspi_ctrlParams_t *p;
@@ -423,6 +621,10 @@ static int xspidrv_init(unsigned int minor)
 	if (xspi_common.xspimDone == 0) {
 		xspi_commonInit();
 		xspi_common.xspimDone = 1;
+	}
+
+	if (xspi_common.xspiDone[minor] != 0) {
+		return EOK;
 	}
 
 	p = &xspi_ctrlParams[minor];
@@ -468,6 +670,8 @@ static int xspidrv_init(unsigned int minor)
 	*(p->ctrl + xspi_dcr3) = 0;
 	*(p->ctrl + xspi_dcr4) = 0;
 
+	xspi_common.xspiDone[minor] = 1;
+
 	if (p->isHyperbus != 0) {
 		return xspi_hb_init(minor);
 	}
@@ -487,7 +691,7 @@ static int xspidrv_done(unsigned int minor)
 }
 
 
-__attribute__((constructor)) static void xspidrv_reg(void)
+__attribute__((constructor)) static void xspi_common_reg(void)
 {
 	static const dev_ops_t opsStorageSTM32_XSPI = {
 		.sync = xspidrv_sync,
@@ -506,4 +710,22 @@ __attribute__((constructor)) static void xspidrv_reg(void)
 	};
 
 	devs_register(DEV_STORAGE, XSPI_N_CONTROLLERS, &devStorageSTM32_XSPI);
+
+	static const dev_ops_t opsCrypStorageSTM32_XSPI = {
+		.sync = xspidrv_cryp_sync,
+		.map = xspidrv_cryp_map,
+		.control = xspidrv_cryp_control,
+		.read = xspidrv_cryp_read,
+		.write = xspidrv_cryp_write,
+		.erase = xspidrv_cryp_erase,
+	};
+
+	static const dev_t devCrypStorageSTM32_XSPI = {
+		.name = "storage-cryp-stm32xspi",
+		.init = xspidrv_init,
+		.done = xspidrv_done,
+		.ops = &opsCrypStorageSTM32_XSPI,
+	};
+
+	devs_register(DEV_CRYP_STORAGE, XSPI_N_CONTROLLERS, &devCrypStorageSTM32_XSPI);
 }

@@ -18,6 +18,14 @@
 
 #include "../types.h"
 
+#ifndef EIO
+#define EIO    5
+#endif
+
+#ifndef EAGAIN
+#define EAGAIN 11
+#endif
+
 /* Device clocks */
 enum {
 	dev_aclkn = 0x0,
@@ -487,6 +495,8 @@ extern int _stm32_gpioGet(unsigned int d, u8 pin, u8 *val);
 
 extern int _stm32_gpioGetPort(unsigned int d, u16 *val);
 
+
+extern ssize_t _stm32_rngRead(u8 *val, size_t len);
 
 /* Range = 0 - VOS low, 1 - VOS high */
 extern void _stm32_pwrSetCPUVolt(u8 range);

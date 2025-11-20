@@ -462,4 +462,13 @@ enum bsec_regs {
 	bsec_wrcr,
 };
 
+
+enum rng_regs {
+	rng_cr,
+	rng_sr,
+	rng_dr,
+	rng_nscr,
+	rng_htcr,
+};
+
 #endif /* _STM32N6_REGS_H_ */
