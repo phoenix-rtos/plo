@@ -414,6 +414,7 @@ enum pwr_supply_ops {
 	pwr_supply_op_ready,
 	pwr_supply_op_range_sel,
 	pwr_supply_op_range_sel_standby,
+	pwr_supply_op_get_range_sel,
 	pwr_supply_ops_count
 };
 
@@ -494,6 +495,11 @@ extern void _stm32_pwrSetCPUVolt(u8 range);
 
 /* Perform an operation (pwr_supply_op_*) on a selected power supply (pwr_supply_*) */
 extern int _stm32_pwrSupplyOperation(unsigned int supply, unsigned int operation, int status);
+
+
+/* Validate if the selected power supply is in the voltage range that was requested in compile-time config.
+ * Returns 0 if voltage is in the requested range, -1 if it is not or an error occurred. */
+extern int _stm32_pwrSupplyValidateRange(unsigned int supply);
 
 
 extern void _stm32_rtcUnlockRegs(void);
