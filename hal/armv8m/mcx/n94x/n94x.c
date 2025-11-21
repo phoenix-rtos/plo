@@ -60,7 +60,7 @@ enum {
 	syscon_flexcan1clksel, syscon_flexcan1clkdiv, syscon_enetrmiiclksel, syscon_enetrmiiclkdiv,
 	syscon_enetptprefclksel, syscon_enetptprefclkdiv, syscon_enetphyintfsel, syscon_enetsbdflowctrl,
 	syscon_ewm0clksel = 373, syscon_wdt1clksel, syscon_wdt1clkdiv, syscon_ostimerclksel,
-	syscon_cmp0fclksel = 380, syscon_cmp0fclkdiv, syscon_cmp0rrclksel, syscon_rrclkdiv,
+	syscon_cmp0fclksel = 380, syscon_cmp0fclkdiv, syscon_cmp0rrclksel, syscon_cmp0rrclkdiv,
 	syscon_cmp1fclksel, syscon_cmp1fclkdiv, syscon_cmp1rrclksel, syscon_cmp1rrclkdiv,
 	syscon_cmp2fclksel, syscon_cmp2fclkdiv, syscon_cmp2rrclksel, syscon_cmp2rrclkdiv,
 	syscon_cpuctrl = 512, syscon_cpboot, syscon_cpustat = 514, syscon_lpcacctrl = 521,
@@ -346,14 +346,17 @@ static int _mcxn94x_sysconGetRegs(int dev, volatile u32 **selr, volatile u32 **d
 
 		case pctl_cmp0rr:
 			*selr = n94x_common.syscon + syscon_cmp0rrclksel;
+			*divr = n94x_common.syscon + syscon_cmp0rrclkdiv;
 			break;
 
 		case pctl_cmp1rr:
 			*selr = n94x_common.syscon + syscon_cmp1rrclksel;
+			*divr = n94x_common.syscon + syscon_cmp1rrclkdiv;
 			break;
 
 		case pctl_cmp2rr:
 			*selr = n94x_common.syscon + syscon_cmp2rrclksel;
+			*divr = n94x_common.syscon + syscon_cmp2rrclkdiv;
 			break;
 
 		case pctl_fc0:
