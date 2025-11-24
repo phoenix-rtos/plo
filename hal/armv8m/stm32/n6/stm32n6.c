@@ -400,7 +400,7 @@ static void _stm32_configureClocks(void)
 	} iclks[] = {
 		{ .iclk = 1, .pll = 1, .div = 2 },  /* 1200 / 2 => 600 MHz (CPU) */
 		{ .iclk = 2, .pll = 1, .div = 3 },  /* 1200 / 3 => 400 MHz (buses) */
-		{ .iclk = 3, .pll = 1, .div = 3 },  /* 1200 / 3 => 400 MHz (XSPI) */
+		{ .iclk = 3, .pll = 1, .div = 3 },  /* 1200 / 3 => 400 MHz (currently unused) */
 		{ .iclk = 6, .pll = 2, .div = 2 },  /* 1600 / 2 => 800 MHz (NPU) */
 		{ .iclk = 11, .pll = 1, .div = 3 }, /* 1200 / 3 => 400 MHz (AXISRAM) */
 	};

@@ -40,6 +40,20 @@
 #define XSPI3_IS_HYPERBUS 0
 #endif
 
+/* Set default divider to result in 50 MHz frequency. This is slow, but safe. */
+
+#ifndef XSPI1_CLOCK_DIV
+#define XSPI1_CLOCK_DIV 4
+#endif
+
+#ifndef XSPI2_CLOCK_DIV
+#define XSPI2_CLOCK_DIV 4
+#endif
+
+#ifndef XSPI3_CLOCK_DIV
+#define XSPI3_CLOCK_DIV 4
+#endif
+
 #ifndef XSPI1
 #define XSPI1 0
 #endif
