@@ -41,8 +41,6 @@ enum {
 };
 
 
-/* TODO: Frequency after divider must be at most 100 MHz, otherwise we get data corruption
- * or controller hangs. */
 /* Parameters of XSPI controllers in use.
  * IMPORTANT: if you want to use XSPI1, DO NOT set its clock source to IC3 or IC4.
  * Doing so will result in a hang in BootROM after reset.
@@ -52,9 +50,9 @@ const xspi_ctrlParams_t xspi_ctrlParams[XSPI_N_CONTROLLERS] = {
 	{
 		.start = XSPI2_REG_BASE,
 		.size = XSPI2_REG_SIZE,
-		.clksel = { .sel = ipclk_xspi2sel, .val = ipclk_sel_ic3_ck },
-		.divider_slow = 10,
-		.divider = 4,
+		.clksel = { .sel = ipclk_xspi2sel, .val = ipclk_sel_hclk5 },
+		.divider_slow = 6,
+		.divider = XSPI2_CLOCK_DIV,
 		.dev = dev_xspi2,
 		.rst = dev_rst_xspi2,
 		.ctrl = XSPI2_BASE,
@@ -68,8 +66,8 @@ const xspi_ctrlParams_t xspi_ctrlParams[XSPI_N_CONTROLLERS] = {
 		.start = XSPI1_REG_BASE,
 		.size = XSPI1_REG_SIZE,
 		.clksel = { .sel = ipclk_xspi1sel, .val = ipclk_sel_hclk5 },
-		.divider_slow = 10,
-		.divider = 4,
+		.divider_slow = 6,
+		.divider = XSPI1_CLOCK_DIV,
 		.dev = dev_xspi1,
 		.rst = dev_rst_xspi1,
 		.ctrl = XSPI1_BASE,
@@ -87,6 +85,7 @@ static const struct {
 	volatile u32 *base;
 	u32 config;
 	struct {
+		u8 supplyVoltage;
 		u8 pin_af;
 		xspi_pin_t pins[MAX_PINS]; /* value < 0 signals end of list */
 	} spiPort[2];
@@ -95,6 +94,7 @@ static const struct {
 	.config = XSPIM_MODE_DIRECT | XSPIM_MUX_OFF,
 	.spiPort = {
 		[XSPIM_PORT1] = {
+			.supplyVoltage = pwr_supply_vddio2,
 			.pin_af = 9,
 			.pins = {
 				{ dev_gpioo, 0 },  /* XSPIM_P1_NCS1 */
@@ -122,6 +122,7 @@ static const struct {
 			},
 		},
 		[XSPIM_PORT2] = {
+			.supplyVoltage = pwr_supply_vddio3,
 			.pin_af = 9,
 			.pins = {
 				{ dev_gpion, 0 },  /* XSPIM_P2_DQS0 */
@@ -242,6 +243,14 @@ void xspi_setHigherClock(unsigned int minor)
 {
 	const xspi_ctrlParams_t *p = &xspi_ctrlParams[minor];
 	u32 v;
+
+	if (_stm32_pwrSupplyValidateRange(mgrParams.spiPort[p->spiPort].supplyVoltage) < 0) {
+		lib_printf(
+				"\nERROR: GPIO port for device %d.%d is in incorrect voltage range. Clock frequency lowered.",
+				DEV_STORAGE,
+				minor);
+		return;
+	}
 
 	*(p->ctrl + xspi_cr) &= ~1;
 	hal_cpuDataMemoryBarrier();
@@ -453,7 +462,6 @@ static int xspidrv_init(unsigned int minor)
 
 	/* NOTE: we set the NOPREF_AXI bit, during testing clearing it resulted in data corruption in some situations */
 	*(p->ctrl + xspi_cr) =
-			(1 << 26) | /* Prefetch is disabled when the AXI transaction is signaled as not-prefetchable */
 			(p->chipSelect << 24) |
 			(1 << 22) | /* Stop auto-polling on match */
 			(3 << 8) |  /* FIFO threshold = 4 bytes */
