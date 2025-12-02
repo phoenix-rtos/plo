@@ -18,36 +18,23 @@
 
 #include <hal/hal.h>
 
-typedef struct {
-	u32 rbar;
-	u32 rasr;
-} mpu_region_t;
 
-
-typedef struct {
-	u32 type;
-	u32 regCnt;
-	u32 regMax;
-	u32 mapCnt;
-	mpu_region_t region[16] __attribute__((aligned(8)));
-	u32 mapId[16];
-} mpu_common_t;
-
-
-/* Get const pointer to read only mpu_common structure */
-extern const mpu_common_t *const mpu_getCommon(void);
+extern unsigned int mpu_getMaxRegionsCount(void);
 
 
 /* Reset structures and detect MPU type */
 extern void mpu_init(void);
 
 
-/* Allocate MPU sub-regions and link with a map */
-extern int mpu_regionAlloc(addr_t addr, addr_t end, u32 attr, u32 mapId, unsigned int enable);
+extern void mpu_kernelEntryPoint(addr_t addr);
 
 
-/* Get MPU regions setup into hal_syspage_t structure */
+/* Get MPU info into hal_syspage_t structure */
 extern void mpu_getHalData(hal_syspage_t *hal);
+
+
+/* Get MPU regions setup into syspage_prog_t structure */
+extern int mpu_getHalProgData(syspage_prog_t *prog, const char *imaps, size_t imapSz, const char *dmaps, size_t dmapSz);
 
 
 #endif
