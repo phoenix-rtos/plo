@@ -15,9 +15,15 @@
 
 #include <lib/errno.h>
 #include "mpu.h"
+#include "lib/log.h"
+#include "syspage.h"
 
 
-static mpu_common_t mpu_common;
+struct {
+	u32 type;
+	u32 regMax;
+	addr_t kernelEntryPoint;
+} mpu_common;
 
 
 /* Removes all RASR attribute bits except ENABLE */
@@ -25,18 +31,18 @@ static mpu_common_t mpu_common;
 
 
 /* Setup single MPU region entry in a local MPU context */
-static int mpu_regionSet(unsigned int *idx, u32 baseAddr, u8 srdMask, u8 sizeBit, u32 rasrAttr)
+static int mpu_regionSet(hal_syspage_prog_t *progHal, unsigned int *idx, u32 baseAddr, u8 srdMask, u8 sizeBit, u32 rasrAttr)
 {
 	if ((sizeBit < 5) || (*idx >= mpu_common.regMax)) {
 		return -EPERM;
 	}
 
-	mpu_common.region[*idx].rbar =
+	progHal->mpu.table[*idx].rbar =
 			baseAddr |
 			(1u << 4) | /* mark region as valid */
 			(*idx & 0xfu);
 
-	mpu_common.region[*idx].rasr =
+	progHal->mpu.table[*idx].rasr =
 			rasrAttr |
 			(((u32)srdMask) << 8) |
 			((((u32)sizeBit - 1) & 0x1fu) << 1);
@@ -70,20 +76,20 @@ static u32 mpu_regionAttrs(u32 attr, unsigned int enable)
 }
 
 
-static int mpu_checkOverlap(unsigned int idx, u32 start, u32 end)
+static int mpu_checkOverlap(hal_syspage_prog_t *progHal, unsigned int idx, u32 start, u32 end)
 {
 	unsigned int i, j;
 	u32 srStart, srEnd;
 	u8 sizeBit, subregions;
 	end -= 1;
 	for (i = 0; i < idx; i++) {
-		if (((mpu_common.region[i].rbar & 0x10u) == 0) || ((mpu_common.region[i].rasr & 0x1u) == 0)) {
+		if (((progHal->mpu.table[i].rbar & 0x10u) == 0) || ((progHal->mpu.table[i].rasr & 0x1u) == 0)) {
 			continue;
 		}
 
-		sizeBit = ((mpu_common.region[i].rasr >> 1) & 0x1fu) + 1;
-		srStart = mpu_common.region[i].rbar & ~((1u << sizeBit) - 1);
-		subregions = (mpu_common.region[i].rasr >> 8) & 0xffu;
+		sizeBit = ((progHal->mpu.table[i].rasr >> 1) & 0x1fu) + 1;
+		srStart = progHal->mpu.table[i].rbar & ~((1u << sizeBit) - 1);
+		subregions = (progHal->mpu.table[i].rasr >> 8) & 0xffu;
 		for (j = 0; j < 8; j++) {
 			srEnd = srStart + (1u << (sizeBit - 3)) - 1;
 			if (((subregions & 1u) == 0) && (start <= srEnd) && (srStart <= end)) {
@@ -99,7 +105,7 @@ static int mpu_checkOverlap(unsigned int idx, u32 start, u32 end)
 }
 
 
-static int mpu_regionCalculateAndSet(unsigned int *idx, addr_t start, addr_t end, u8 sizeBit, u32 rasrAttr)
+static int mpu_regionCalculateAndSet(hal_syspage_prog_t *progHal, unsigned int *idx, addr_t start, addr_t end, u8 sizeBit, u32 rasrAttr)
 {
 	u8 srdMask;
 	/* RBAR contains all MSBs that are the same */
@@ -110,12 +116,12 @@ static int mpu_regionCalculateAndSet(unsigned int *idx, addr_t start, addr_t end
 	srEnd = (srEnd == 0) ? 8 : srEnd;
 	/* Bit set means disable region - negate result */
 	srdMask = ~(((1u << srEnd) - 1) & (0xffu << srStart));
-	return mpu_regionSet(idx, baseAddr, srdMask, sizeBit, rasrAttr);
+	return mpu_regionSet(progHal, idx, baseAddr, srdMask, sizeBit, rasrAttr);
 }
 
 
 /* Create up to 2 regions that will represent a given map */
-static int mpu_regionGenerate(unsigned int *idx, addr_t start, addr_t end, u32 rasrAttr)
+static int mpu_regionGenerate(hal_syspage_prog_t *progHal, unsigned int *idx, addr_t start, addr_t end, u32 rasrAttr)
 {
 	int res;
 	int commonTrailingZeroes, sigBits;
@@ -132,7 +138,7 @@ static int mpu_regionGenerate(unsigned int *idx, addr_t start, addr_t end, u32 r
 	/* Check if size is power of 2 and start is aligned - necessary for handling
 	   small regions (below 256 bytes) */
 	if (size == 0) {
-		return mpu_regionSet(idx, 0, 0, 32, rasrAttr);
+		return mpu_regionSet(progHal, idx, 0, 0, 32, rasrAttr);
 	}
 
 	if ((size == (1u << __builtin_ctz(size))) && ((start & (size - 1)) == 0)) {
@@ -141,7 +147,7 @@ static int mpu_regionGenerate(unsigned int *idx, addr_t start, addr_t end, u32 r
 			return -EPERM;
 		}
 
-		return mpu_regionSet(idx, start, 0, __builtin_ctz(size), rasrAttr);
+		return mpu_regionSet(progHal, idx, start, 0, __builtin_ctz(size), rasrAttr);
 	}
 
 	commonTrailingZeroes = __builtin_ctz(start | end);
@@ -155,15 +161,15 @@ static int mpu_regionGenerate(unsigned int *idx, addr_t start, addr_t end, u32 r
 	if (sigBits <= 3) {
 		/* Can be represented with one region + 8 subregions */
 		sizeBit = commonTrailingZeroes + 3;
-		return mpu_regionCalculateAndSet(idx, start, end, sizeBit, rasrAttr);
+		return mpu_regionCalculateAndSet(progHal, idx, start, end, sizeBit, rasrAttr);
 	}
 	else if (sigBits == 4) {
 		/* Can be represented with 2 regions + up to 8 subregions each */
 		sizeBit = commonTrailingZeroes + 3;
 		diffMask = (1u << sizeBit) - 1;
 		reg1End = (start & (~diffMask)) + diffMask + 1;
-		res = mpu_regionCalculateAndSet(idx, start, reg1End, sizeBit, rasrAttr);
-		return (res == EOK) ? mpu_regionCalculateAndSet(idx, reg1End, end, sizeBit, rasrAttr) : res;
+		res = mpu_regionCalculateAndSet(progHal, idx, start, reg1End, sizeBit, rasrAttr);
+		return (res == EOK) ? mpu_regionCalculateAndSet(progHal, idx, reg1End, end, sizeBit, rasrAttr) : res;
 	}
 	else if (rasrAttr == HOLE_ATTR(rasrAttr)) {
 		/* Cannot attempt another cutout - we are already trying to make a hole */
@@ -192,49 +198,115 @@ static int mpu_regionGenerate(unsigned int *idx, addr_t start, addr_t end, u32 r
 	}
 
 	/* First check if our "hole" overrides any existing mappings. This would lead to unintuitive behaviors. */
-	if (mpu_checkOverlap(*idx, holeStart, holeEnd) != 0) {
+	if (mpu_checkOverlap(progHal, *idx, holeStart, holeEnd) != 0) {
 		return -EPERM;
 	}
 
-	res = mpu_regionCalculateAndSet(idx, alignedStart, alignedEnd, commonMsb, rasrAttr);
-	return (res == EOK) ? mpu_regionGenerate(idx, holeStart, holeEnd, HOLE_ATTR(rasrAttr)) : res;
+	res = mpu_regionCalculateAndSet(progHal, idx, alignedStart, alignedEnd, commonMsb, rasrAttr);
+	return (res == EOK) ? mpu_regionGenerate(progHal, idx, holeStart, holeEnd, HOLE_ATTR(rasrAttr)) : res;
 }
 
 
 /* Invalidate range of regions */
-static void mpu_regionInvalidate(u8 first, u8 last)
+static void mpu_regionInvalidate(hal_syspage_prog_t *progHal, u8 first, u8 last)
 {
 	unsigned int i;
 
 	for (i = first; i < last && i < mpu_common.regMax; i++) {
 		/* set multi-map to none */
-		mpu_common.mapId[i] = (u32)-1;
+		progHal->mpu.map[i] = (u32)-1;
 
 		/* mark i-th region as invalid */
-		mpu_common.region[i].rbar = i & 0xfu;
+		progHal->mpu.table[i].rbar = i & 0xfu;
 
 		/* set exec never and mark whole region as disabled */
-		mpu_common.region[i].rasr = (1u << 28) | (0x1fu << 1);
+		progHal->mpu.table[i].rasr = (1u << 28) | (0x1fu << 1);
 	}
 }
 
 
 /* Assign range of regions a multi-map id */
-static void mpu_regionAssignMap(u8 first, u8 last, u32 mapId)
+static void mpu_regionAssignMap(hal_syspage_prog_t *progHal, u8 first, u8 last, u32 mapId)
 {
 	unsigned int i;
 
 	for (i = first; i < last && i < mpu_common.regMax; i++) {
-		/* assign map only if region is valid */
-		if (mpu_common.region[i].rbar & (1u << 4))
-			mpu_common.mapId[i] = mapId;
+		progHal->mpu.map[i] = mapId;
 	}
 }
 
 
-const mpu_common_t *const mpu_getCommon(void)
+static int mpu_isMapAlloced(hal_syspage_prog_t *progHal, u32 mapId)
 {
-	return &mpu_common;
+	unsigned int i;
+
+	for (i = 0; i < progHal->mpu.allocCnt; i++) {
+		if (progHal->mpu.map[i] == mapId) {
+			return 1;
+		}
+	}
+
+	return 0;
+}
+
+
+static int mpu_regionAlloc(hal_syspage_prog_t *progHal, addr_t addr, addr_t end, u32 attr, u32 mapId, unsigned int enable)
+{
+	int res;
+	unsigned int regCur = progHal->mpu.allocCnt;
+	u32 rasrAttr = mpu_regionAttrs(attr, enable);
+
+	res = mpu_regionGenerate(progHal, &regCur, addr, end, rasrAttr);
+	if (res != EOK) {
+		mpu_regionInvalidate(progHal, progHal->mpu.allocCnt, regCur);
+		return res;
+	}
+
+	mpu_regionAssignMap(progHal, progHal->mpu.allocCnt, regCur, mapId);
+
+	progHal->mpu.allocCnt = regCur;
+
+	return EOK;
+}
+
+
+static int mpu_allocKernelMap(hal_syspage_prog_t *progHal)
+{
+	addr_t start, end;
+	u32 attr;
+	u8 id;
+	int res;
+	const char *kcodemap = NULL;
+
+	start = mpu_common.kernelEntryPoint;
+	if (start == (addr_t)-1) {
+		log_error("\nMissing kernel entry point!");
+		return -EINVAL;
+	}
+	if ((res = syspage_mapAddrResolve(start, &kcodemap)) < 0) {
+		return res;
+	}
+	if ((res = syspage_mapNameResolve(kcodemap, &id)) < 0) {
+		return res;
+	}
+	if ((res = syspage_mapRangeResolve(kcodemap, &start, &end)) < 0) {
+		return res;
+	}
+	if ((res = syspage_mapAttrResolve(kcodemap, &attr)) < 0) {
+		return res;
+	}
+	if ((res = mpu_regionAlloc(progHal, start, end, attr, id, 1)) < 0) {
+		log_error("\nCan't allocate MPU region for kernel code map (%s)", kcodemap);
+		return res;
+	}
+	return EOK;
+}
+
+
+static void mpu_initPart(hal_syspage_prog_t *progHal)
+{
+	hal_memset(progHal, 0, sizeof(hal_syspage_prog_t));
+	progHal->mpu.allocCnt = 0;
 }
 
 
@@ -245,45 +317,87 @@ void mpu_init(void)
 	__asm__ volatile("mrc p15, 0, %0, c0, c0, 4" : "=r"(mpu_type));
 	mpu_common.type = mpu_type;
 	mpu_common.regMax = (u8)(mpu_common.type >> 8);
-	mpu_common.regCnt = mpu_common.mapCnt = 0;
-
-	mpu_regionInvalidate(0, sizeof(mpu_common.region) / sizeof(mpu_common.region[0]));
+	mpu_common.kernelEntryPoint = (addr_t)-1;
 }
 
 
-int mpu_regionAlloc(addr_t addr, addr_t end, u32 attr, u32 mapId, unsigned int enable)
+void mpu_kernelEntryPoint(addr_t addr)
 {
-	int res;
-	unsigned int regCur = mpu_common.regCnt;
-	u32 rasrAttr = mpu_regionAttrs(attr, enable);
-
-	res = mpu_regionGenerate(&regCur, addr, end, rasrAttr);
-	if (res != EOK) {
-		mpu_regionInvalidate(mpu_common.regCnt, regCur);
-		return res;
-	}
-
-	mpu_regionAssignMap(mpu_common.regCnt, regCur, mapId);
-
-	mpu_common.regCnt = regCur;
-	mpu_common.mapCnt++;
-
-	return EOK;
+	mpu_common.kernelEntryPoint = addr;
 }
 
 
 void mpu_getHalData(hal_syspage_t *hal)
 {
-	unsigned int i;
+	hal->mpuType = mpu_common.type;
+}
 
-	mpu_regionInvalidate(mpu_common.regCnt, mpu_common.regMax);
 
-	hal->mpu.type = mpu_common.type;
-	hal->mpu.allocCnt = mpu_common.regCnt;
+unsigned int mpu_getMaxRegionsCount(void)
+{
+	return mpu_common.regMax;
+}
 
-	for (i = 0; i < sizeof(hal->mpu.table) / sizeof(hal->mpu.table[0]); i++) {
-		hal->mpu.table[i].rbar = mpu_common.region[i].rbar;
-		hal->mpu.table[i].rasr = mpu_common.region[i].rasr;
-		hal->mpu.map[i] = mpu_common.mapId[i];
+
+static int mpu_mapsAlloc(hal_syspage_prog_t *progHal, const char *maps, size_t cnt)
+{
+	int i, res;
+	addr_t start, end;
+	u32 attr;
+	u8 id;
+
+	for (i = 0; i < cnt; i++) {
+		if ((res = syspage_mapNameResolve(maps, &id)) < 0) {
+			return res;
+		}
+		if (mpu_isMapAlloced(progHal, id) != 0) {
+			maps += hal_strlen(maps) + 1; /* name + '\0' */
+			continue;
+		}
+		if ((res = syspage_mapRangeResolve(maps, &start, &end)) < 0) {
+			return res;
+		}
+		if ((res = syspage_mapAttrResolve(maps, &attr)) < 0) {
+			return res;
+		}
+		if ((res = mpu_regionAlloc(progHal, start, end, attr, id, 1)) < 0) {
+			log_error("\nCan't allocate MPU region for %s", maps);
+			return res;
+		}
+		maps += hal_strlen(maps) + 1; /* name + '\0' */
 	}
+	return EOK;
+}
+
+
+extern int mpu_getHalProgData(syspage_prog_t *prog, const char *imaps, size_t imapSz, const char *dmaps, size_t dmapSz)
+{
+	int ret;
+
+	mpu_initPart(&prog->hal);
+
+	/* FIXME HACK
+	 * allow all programs to execute (and read) kernel code map.
+	 * Needed because of hal_jmp, syscalls handler and signals handler.
+	 * In these functions we need to switch to the user mode when still
+	 * executing kernel code. This will cause memory management fault
+	 * if the application does not have access to the kernel instruction
+	 * map. Possible fix - place return to the user code in the separate
+	 * region and allow this region instead. */
+	ret = mpu_allocKernelMap(&prog->hal);
+	if (ret != EOK) {
+		return ret;
+	}
+	ret = mpu_mapsAlloc(&prog->hal, imaps, imapSz);
+	if (ret != EOK) {
+		return ret;
+	}
+	ret = mpu_mapsAlloc(&prog->hal, dmaps, dmapSz);
+	if (ret != EOK) {
+		return ret;
+	}
+
+	mpu_regionInvalidate(&prog->hal, prog->hal.mpu.allocCnt, mpu_common.regMax);
+
+	return EOK;
 }
