@@ -57,6 +57,9 @@ extern int syspage_mapRangeResolve(const char *name, addr_t *start, addr_t *end)
 extern unsigned int syspage_mapRangeCheck(addr_t start, addr_t end, unsigned int *attrOut);
 
 
+extern int syspage_mapAddrResolve(addr_t addr, const char **name);
+
+
 extern const char *syspage_mapName(u8 id);
 
 
@@ -68,6 +71,9 @@ extern mapent_t *syspage_entryAdd(const char *mapName, addr_t start, size_t size
 
 /* Program's functions */
 extern syspage_prog_t *syspage_progAdd(const char *argv, u32 flags);
+
+
+extern syspage_prog_t *syspage_progsGet(void);
 
 
 extern void syspage_progShow(void);
