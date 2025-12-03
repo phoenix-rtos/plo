@@ -102,12 +102,13 @@ void hal_kernelGetEntryPointOffset(addr_t *off, int *indirect)
 void hal_kernelEntryPoint(addr_t addr)
 {
 	hal_common.entry = addr;
+	mpu_kernelEntryPoint(addr);
 }
 
 
-int hal_memoryAddMap(addr_t start, addr_t end, u32 attr, u32 mapId)
+int hal_getProgData(syspage_prog_t *prog, const char *imaps, size_t imapSz, const char *dmaps, size_t dmapSz)
 {
-	return mpu_regionAlloc(start, end, attr, mapId, 1);
+	return mpu_getHalProgData(prog, imaps, imapSz, dmaps, dmapSz);
 }
 
 

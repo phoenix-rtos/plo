@@ -161,6 +161,10 @@ static int cmd_appLoad(handler_t handler, size_t size, const char *name, char *i
 	prog->start = entry->start;
 	prog->end = entry->end;
 
+	if ((res = hal_getProgData(prog, imaps, imapSz, dmaps, dmapSz)) < 0) {
+		return res;
+	}
+
 	return EOK;
 }
 

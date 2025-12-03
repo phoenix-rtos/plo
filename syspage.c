@@ -285,10 +285,6 @@ int syspage_mapAdd(const char *name, addr_t start, addr_t end, const char *attr)
 		syspage_sortedInsert(map, entry);
 		start = entry->end;
 	}
-	res = hal_memoryAddMap(map->start, map->end, map->attr, map->id);
-	if (res < 0) {
-		return res;
-	}
 
 	return EOK;
 }
@@ -465,6 +461,27 @@ unsigned int syspage_mapRangeCheck(addr_t start, addr_t end, unsigned int *attrO
 }
 
 
+int syspage_mapAddrResolve(addr_t addr, const char **name)
+{
+	const syspage_map_t *map = syspage_common.syspage->maps;
+
+	if (map == NULL) {
+		log_error("\nsyspage: %x does not match any map", addr);
+		return -EINVAL;
+	}
+
+	do {
+		if (addr < map->end && addr >= map->start) {
+			*name = map->name;
+			return EOK;
+		}
+	} while ((map = map->next) != syspage_common.syspage->maps);
+
+	log_error("\nsyspage: %x does not match any map", addr);
+	return -EINVAL;
+}
+
+
 const char *syspage_mapName(u8 id)
 {
 	const syspage_map_t *map = syspage_common.syspage->maps;
@@ -529,6 +546,11 @@ syspage_prog_t *syspage_progAdd(const char *argv, u32 flags)
 	return prog;
 }
 
+
+syspage_prog_t *syspage_progsGet(void)
+{
+	return syspage_common.syspage->progs;
+}
 
 
 /* Set console */
