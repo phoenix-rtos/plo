@@ -17,9 +17,10 @@
 #define _PLIC_H_
 
 #include <types.h>
+#include <config.h>
 
 
-#define PLIC_SCONTEXT(hartId) (2 * (hartId) + 1)
+#define PLIC_SCONTEXT(hartId) (PLIC_CONTEXTS_PER_HART * (hartId) + 1)
 
 
 void plic_priority(unsigned int n, unsigned int priority);

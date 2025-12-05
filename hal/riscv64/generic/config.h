@@ -22,7 +22,6 @@
 #include "peripherals.h"
 #include "types.h"
 #include "hal/riscv64/cpu.h"
-#include "hal/riscv64/plic.h"
 #include "hal/riscv64/sbi.h"
 #include "hal/riscv64/dtb.h"
 
@@ -32,6 +31,8 @@
 #define PATH_KERNEL "phoenix-riscv64-generic.elf"
 
 #endif /* __ASSEMBLY__ */
+
+#define PLIC_CONTEXTS_PER_HART 2
 
 /* Import platform specific definitions */
 #include "ld/riscv64-generic.ldt"
