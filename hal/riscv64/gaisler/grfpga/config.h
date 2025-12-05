@@ -21,7 +21,6 @@
 
 #include "types.h"
 #include "hal/riscv64/cpu.h"
-#include "hal/riscv64/plic.h"
 #include "hal/riscv64/sbi.h"
 #include "hal/riscv64/dtb.h"
 
@@ -34,6 +33,8 @@
 #define CPU_INFO    "RISC-V 64-bit GRFPGA"
 
 #endif /* __ASSEMBLY__ */
+
+#define PLIC_CONTEXTS_PER_HART 4
 
 #include "grfpga.h"
 

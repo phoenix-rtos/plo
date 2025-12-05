@@ -19,8 +19,6 @@
 #include <board_config.h>
 
 
-/* clang-format off */
-
 /* PLIC register offsets */
 #define PLIC_PRIORITY(irqn)            (0x0000 + (irqn) * 4)
 #define PLIC_REG_PENDING(irqn)         (0x1000 + ((irqn) / 32) * 4)
@@ -28,7 +26,6 @@
 #define PLIC_REG_THRESHOLD(context)    (0x200000 + (context) * 0x1000)
 #define PLIC_REG_CLAIM(context)        (0x200004 + (context) * 0x1000)
 
-/* clang-format on */
 
 static struct {
 	volatile u8 *base;

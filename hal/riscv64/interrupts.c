@@ -15,6 +15,7 @@
 
 #include "dtb.h"
 #include "csr.h"
+#include "plic.h"
 
 #include <hal/hal.h>
 #include <board_config.h>

@@ -21,7 +21,6 @@
 
 #include "types.h"
 #include "hal/riscv64/cpu.h"
-#include "hal/riscv64/plic.h"
 #include "hal/riscv64/sbi.h"
 #include "hal/riscv64/dtb.h"
 
@@ -35,6 +34,8 @@
 
 
 #endif /* __ASSEMBLY__ */
+
+#define PLIC_CONTEXTS_PER_HART 4
 
 #include "gr765.h"
 
