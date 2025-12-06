@@ -222,5 +222,5 @@ __attribute__((unused)) static int cmd_hashtest(int argc, char *argv[])
 
 
 static const cmd_t pkatest_cmd __attribute__((section("commands"), used)) = {
-	.name = "pka-test", .run = cmd_pkatest, .info = cmd_pkaInfo
+	.name = "pka-test", .run = cmd_hashtest, .info = cmd_pkaInfo
 };
