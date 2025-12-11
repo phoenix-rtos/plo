@@ -462,10 +462,11 @@ static int xspidrv_init(unsigned int minor)
 
 	/* NOTE: we set the NOPREF_AXI bit, during testing clearing it resulted in data corruption in some situations */
 	*(p->ctrl + xspi_cr) =
+			(1UL << 26) | /* Prefetch is disabled when the AXI transaction is signaled as not-prefetchable */
 			(p->chipSelect << 24) |
-			(1 << 22) | /* Stop auto-polling on match */
-			(3 << 8) |  /* FIFO threshold = 4 bytes */
-			(1 << 3);   /* Enable timeout for memory-mapped mode */
+			(1UL << 22) | /* Stop auto-polling on match */
+			(3UL << 8) |  /* FIFO threshold = 4 bytes */
+			(1UL << 3);   /* Enable timeout for memory-mapped mode */
 
 	*(p->ctrl + xspi_lptr) = 64; /* Timeout for memory-mapped mode */
 	xspi_waitBusy(minor);
