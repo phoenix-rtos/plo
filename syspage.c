@@ -34,10 +34,15 @@ struct {
 
 void syspage_init(void)
 {
+	syspage_sched_window_t *schedWindow;
+	syspage_part_t *partition;
+
 	syspage_common.syspage = (syspage_t *)__heap_base;
 
 	syspage_common.syspage->maps = NULL;
+	syspage_common.syspage->partitions = NULL;
 	syspage_common.syspage->progs = NULL;
+	syspage_common.syspage->schedWindows = NULL;
 	syspage_common.syspage->console = console_default;
 
 	syspage_common.heapTop = (void *)ALIGN_ADDR((addr_t)__heap_base + sizeof(syspage_t), sizeof(long long));
@@ -46,6 +51,36 @@ void syspage_init(void)
 	syspage_common.syspage->size = (size_t)(syspage_common.heapTop - (void *)syspage_common.syspage);
 
 	hal_syspageSet(&syspage_common.syspage->hs);
+
+	/* Initialize background scheduler window */
+	schedWindow = (syspage_sched_window_t *)syspage_alloc(sizeof(syspage_sched_window_t));
+	if (schedWindow != NULL) {
+		schedWindow->next = schedWindow;
+		schedWindow->prev = schedWindow;
+		schedWindow->stop = 0;
+		schedWindow->id = 0;
+		syspage_common.syspage->schedWindows = schedWindow;
+	}
+	else {
+		log_error("\nsyspage: Cannot allocate memory for background scheduler window");
+	}
+
+	/* Initialize background partition */
+	partition = syspage_alloc(sizeof(syspage_part_t) + sizeof(NAME_PART_DEFAULT) + 1U);
+	if (partition != NULL) {
+		partition->next = partition;
+		partition->prev = partition;
+		partition->name = (char *)partition + sizeof(syspage_part_t);
+		hal_strcpy(partition->name, NAME_PART_DEFAULT);
+		partition->availableMem = (size_t)-1;
+		partition->schedWindowsMask = 1U;
+		partition->hal = NULL;
+		partition->id = 0U;
+		syspage_common.syspage->partitions = partition;
+	}
+	else {
+		log_error("\nsyspage: Cannot allocate memory for background partition");
+	}
 }
 
 
@@ -500,6 +535,98 @@ const char *syspage_mapName(u8 id)
 }
 
 
+/* Scheduler's functions */
+
+syspage_sched_window_t *syspage_schedWindowAdd(void)
+{
+	syspage_sched_window_t *window;
+
+	window = syspage_alloc(sizeof(syspage_sched_window_t));
+	if (window == NULL) {
+		return NULL;
+	}
+
+	if (syspage_common.syspage->schedWindows == NULL) {
+		window->next = window;
+		window->prev = window;
+		syspage_common.syspage->schedWindows = window;
+	}
+	else {
+		window->prev = syspage_common.syspage->schedWindows->prev;
+		syspage_common.syspage->schedWindows->prev->next = window;
+		window->next = syspage_common.syspage->schedWindows;
+		syspage_common.syspage->schedWindows->prev = window;
+	}
+
+	return window;
+}
+
+size_t syspage_schedulerWindowCount(void)
+{
+	size_t count = 0;
+	syspage_sched_window_t *window = syspage_common.syspage->schedWindows;
+
+	if (window == NULL) {
+		return 0;
+	}
+
+	do {
+		count++;
+		window = window->next;
+	} while (window != syspage_common.syspage->schedWindows);
+
+	return count;
+}
+
+/* Partition's functions */
+
+syspage_part_t *syspage_partAdd(void)
+{
+	syspage_part_t *part;
+
+	part = syspage_alloc(sizeof(syspage_part_t));
+	if (part == NULL) {
+		return NULL;
+	}
+
+	part->prev = syspage_common.syspage->partitions->prev;
+	syspage_common.syspage->partitions->prev->next = part;
+	part->next = syspage_common.syspage->partitions;
+	syspage_common.syspage->partitions->prev = part;
+	part->id = part->prev->id + 1;
+
+	return part;
+}
+
+
+int syspage_partResolve(const char *name, syspage_part_t **result)
+{
+	syspage_part_t *part = syspage_common.syspage->partitions;
+
+	*result = NULL;
+
+	if (part == NULL) {
+		return -EINVAL;
+	}
+
+	do {
+		if (hal_strcmp(name, part->name) == 0) {
+			*result = part;
+			return EOK;
+		}
+		part = part->next;
+	} while (part != syspage_common.syspage->partitions);
+
+	return -EINVAL;
+}
+
+
+syspage_part_t *syspage_partsGet(void)
+{
+	return syspage_common.syspage->partitions;
+}
+
+
 /* Program's functions */
 
 syspage_prog_t *syspage_progAdd(const char *argv, u32 flags)
@@ -545,12 +672,6 @@ syspage_prog_t *syspage_progAdd(const char *argv, u32 flags)
 	}
 
 	return prog;
-}
-
-
-syspage_prog_t *syspage_progsGet(void)
-{
-	return syspage_common.syspage->progs;
 }
 
 

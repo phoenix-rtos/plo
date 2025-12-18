@@ -30,8 +30,8 @@ extern void mpu_init(void);
 extern void mpu_getHalData(hal_syspage_t *hal);
 
 
-/* Get MPU regions setup into syspage_prog_t structure */
-extern int mpu_getHalProgData(syspage_prog_t *prog, const char *imaps, size_t imapSz, const char *dmaps, size_t dmapSz);
+/* Get MPU regions setup into syspage_part_t structure */
+extern int mpu_getHalPartData(hal_syspage_part_t *prog, const char *imaps, size_t imapSz, const char *dmaps, size_t dmapSz);
 
 
 #endif
