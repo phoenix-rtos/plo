@@ -81,7 +81,46 @@ static size_t cmd_mapsParse(char *maps, char sep)
 }
 
 
-static int cmd_appLoad(handler_t handler, size_t size, const char *name, char *imaps, char *dmaps, const char *appArgv, u32 flags)
+static int cmd_partitionCreate(const char *name, syspage_part_t **part, char *imaps, size_t imapSz, char *dmaps, size_t dmapSz)
+{
+	int res;
+	syspage_part_t *partition;
+
+	partition = syspage_partAdd();
+	if (partition == NULL) {
+		log_error("\nCannot allocate memory for %s", name);
+		return -ENOMEM;
+	}
+
+	partition->allocMaps = syspage_alloc(sizeof(u8));
+	partition->accessMaps = syspage_alloc((imapSz + dmapSz - 1) * sizeof(u8));
+	partition->name = syspage_alloc(hal_strlen(name) + 1);
+	if ((partition->allocMaps == NULL) ||
+			(partition->accessMaps == NULL) ||
+			(partition->name == NULL)) {
+		log_error("\nCannot allocate memory for %s", name);
+		return -ENOMEM;
+	}
+
+	cmd_mapsAdd2Prog(partition->allocMaps, 1, dmaps);
+	cmd_mapsAdd2Prog(partition->accessMaps, dmapSz - 1, dmaps + (hal_strlen(dmaps) + 1));
+	cmd_mapsAdd2Prog(partition->accessMaps + dmapSz - 1, imapSz, imaps);
+	partition->allocMapSz = 1;
+	partition->accessMapSz = imapSz + dmapSz - 1;
+	partition->flags = pFlagIPCAll | pFlagSpawnAll; /* For backwards compatibility */
+	hal_strcpy(partition->name, name);
+
+	res = hal_getPartData(partition, imaps, imapSz, dmaps, dmapSz);
+	if (res < 0) {
+		return res;
+	}
+	*part = partition;
+
+	return EOK;
+}
+
+
+static int cmd_appLoad(handler_t handler, size_t size, const char *name, char *imaps, char *dmaps, const char *appArgv, u32 flags, char *partName)
 {
 	int res;
 	Elf32_Ehdr hdr;
@@ -92,6 +131,7 @@ static int cmd_appLoad(handler_t handler, size_t size, const char *name, char *i
 
 	syspage_prog_t *prog;
 	const mapent_t *entry;
+	syspage_part_t *partition;
 
 	/* Check ELF header */
 	if ((res = phfs_read(handler, 0, &hdr, sizeof(Elf32_Ehdr))) < 0) {
@@ -144,6 +184,16 @@ static int cmd_appLoad(handler_t handler, size_t size, const char *name, char *i
 		return -ENOMEM;
 	}
 
+	if (partName == NULL) {
+		if ((res = cmd_partitionCreate(name, &partition, imaps, imapSz, dmaps, dmapSz)) != EOK) {
+			return res;
+		}
+	}
+	else if (syspage_partResolve(partName, &partition) != EOK) {
+		log_error("\nPartition `%s` does not exist!", partName);
+		return -EINVAL;
+	}
+
 	if ((prog = syspage_progAdd(appArgv, flags)) == NULL ||
 			(prog->imaps = syspage_alloc(imapSz * sizeof(u8))) == NULL ||
 			(prog->dmaps = syspage_alloc(dmapSz * sizeof(u8))) == NULL) {
@@ -160,10 +210,7 @@ static int cmd_appLoad(handler_t handler, size_t size, const char *name, char *i
 	prog->dmapSz = dmapSz;
 	prog->start = entry->start;
 	prog->end = entry->end;
-
-	if ((res = hal_getProgData(prog, imaps, imapSz, dmaps, dmapSz)) < 0) {
-		return res;
-	}
+	prog->partition = partition;
 
 	return EOK;
 }
@@ -179,6 +226,7 @@ static int cmd_app(int argc, char *argv[])
 
 	const char *appArgv;
 	char name[SIZE_CMD_ARG_LINE];
+	char *part;
 
 	handler_t handler;
 	phfs_stat_t stat;
@@ -188,7 +236,7 @@ static int cmd_app(int argc, char *argv[])
 		syspage_progShow();
 		return CMD_EXIT_SUCCESS;
 	}
-	else if (argc < 5 || argc > 6) {
+	else if (argc < 5 || argc > 7) {
 		log_error("\n%s: Wrong argument count", argv[0]);
 		return CMD_EXIT_FAILURE;
 	}
@@ -214,7 +262,7 @@ static int cmd_app(int argc, char *argv[])
 		}
 	}
 
-	if (argvID != (argc - 3)) {
+	if (argvID > (argc - 3)) {
 		log_error("\n%s: Invalid arg, 'dmap' is not declared", argv[0]);
 		return CMD_EXIT_FAILURE;
 	}
@@ -235,6 +283,14 @@ static int cmd_app(int argc, char *argv[])
 	/* ARG_5: maps for data */
 	dmaps = argv[++argvID];
 
+	/* ARG_6: partition name */
+	if (argc > ++argvID) {
+		part = argv[argvID];
+	}
+	else {
+		part = NULL;
+	}
+
 	/* Open file */
 	res = phfs_open(argv[1], name, 0, &handler);
 	if (res < 0) {
@@ -250,7 +306,7 @@ static int cmd_app(int argc, char *argv[])
 		return CMD_EXIT_FAILURE;
 	}
 
-	res = cmd_appLoad(handler, stat.size, name, imaps, dmaps, appArgv, flags);
+	res = cmd_appLoad(handler, stat.size, name, imaps, dmaps, appArgv, flags, part);
 	if (res < 0) {
 		log_error("\nCan't load %s to %s via %s (%d)", name, imaps, argv[1], res);
 		phfs_close(handler);

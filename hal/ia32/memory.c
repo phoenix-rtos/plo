@@ -269,7 +269,7 @@ static int memory_enableA20(void)
 }
 
 
-int hal_getProgData(syspage_prog_t *prog, const char *imaps, size_t imapSz, const char *dmaps, size_t dmapSz)
+int hal_getPartData(syspage_part_t *part, const char *imaps, size_t imapSz, const char *dmaps, size_t dmapSz)
 {
 	return 0;
 }
