@@ -81,7 +81,7 @@ static size_t cmd_mapsParse(char *maps, char sep)
 }
 
 
-static int cmd_appLoad(handler_t handler, size_t size, const char *name, char *imaps, char *dmaps, const char *appArgv, u32 flags)
+static int cmd_appLoad(handler_t handler, size_t size, const char *name, char *imaps, char *dmaps, const char *appArgv, u32 flags, char *partName)
 {
 	int res;
 	Elf32_Ehdr hdr;
@@ -92,6 +92,7 @@ static int cmd_appLoad(handler_t handler, size_t size, const char *name, char *i
 
 	syspage_prog_t *prog;
 	const mapent_t *entry;
+	syspage_part_t *partition;
 
 	/* Check ELF header */
 	if ((res = phfs_read(handler, 0, &hdr, sizeof(Elf32_Ehdr))) < 0) {
@@ -151,19 +152,39 @@ static int cmd_appLoad(handler_t handler, size_t size, const char *name, char *i
 		return -ENOMEM;
 	}
 
-
 	if ((res = cmd_mapsAdd2Prog(prog->imaps, imapSz, imaps)) < 0 ||
 			(res = cmd_mapsAdd2Prog(prog->dmaps, dmapSz, dmaps)) < 0)
 		return res;
+
+	/* create hal structures */
+	prog->hal = NULL;
+	if (partName == NULL) {
+		/* Default partition apps have their own hal structures */
+		partName = NAME_PART_DEFAULT;
+		prog->hal = syspage_alloc(sizeof(*prog->hal));
+		if (prog->hal == NULL) {
+			log_error("\nCannot allocate memory for %s", name);
+			return -ENOMEM;
+		}
+		res = hal_getPartData(prog->hal, imaps, imapSz, dmaps, dmapSz);
+		if (res < 0) {
+			log_error("\nCannot get partition data for %s", name);
+			return res;
+		}
+	}
+	if (syspage_partResolve(partName, &partition) != EOK) {
+		log_error("\nPartition `%s` does not exist!", partName);
+		return -EINVAL;
+	}
+	if (prog->hal == NULL) {
+		prog->hal = partition->hal;
+	}
 
 	prog->imapSz = imapSz;
 	prog->dmapSz = dmapSz;
 	prog->start = entry->start;
 	prog->end = entry->end;
-
-	if ((res = hal_getProgData(prog, imaps, imapSz, dmaps, dmapSz)) < 0) {
-		return res;
-	}
+	prog->partition = partition;
 
 	return EOK;
 }
@@ -179,6 +200,7 @@ static int cmd_app(int argc, char *argv[])
 
 	const char *appArgv;
 	char name[SIZE_CMD_ARG_LINE];
+	char *part;
 
 	handler_t handler;
 	phfs_stat_t stat;
@@ -188,7 +210,7 @@ static int cmd_app(int argc, char *argv[])
 		syspage_progShow();
 		return CMD_EXIT_SUCCESS;
 	}
-	else if (argc < 5 || argc > 6) {
+	else if (argc < 5 || argc > 7) {
 		log_error("\n%s: Wrong argument count", argv[0]);
 		return CMD_EXIT_FAILURE;
 	}
@@ -214,7 +236,7 @@ static int cmd_app(int argc, char *argv[])
 		}
 	}
 
-	if (argvID != (argc - 3)) {
+	if (argvID > (argc - 3)) {
 		log_error("\n%s: Invalid arg, 'dmap' is not declared", argv[0]);
 		return CMD_EXIT_FAILURE;
 	}
@@ -235,6 +257,14 @@ static int cmd_app(int argc, char *argv[])
 	/* ARG_5: maps for data */
 	dmaps = argv[++argvID];
 
+	/* ARG_6: partition name */
+	if (argc > ++argvID) {
+		part = argv[argvID];
+	}
+	else {
+		part = NULL;
+	}
+
 	/* Open file */
 	res = phfs_open(argv[1], name, 0, &handler);
 	if (res < 0) {
@@ -250,7 +280,7 @@ static int cmd_app(int argc, char *argv[])
 		return CMD_EXIT_FAILURE;
 	}
 
-	res = cmd_appLoad(handler, stat.size, name, imaps, dmaps, appArgv, flags);
+	res = cmd_appLoad(handler, stat.size, name, imaps, dmaps, appArgv, flags, part);
 	if (res < 0) {
 		log_error("\nCan't load %s to %s via %s (%d)", name, imaps, argv[1], res);
 		phfs_close(handler);

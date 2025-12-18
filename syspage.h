@@ -19,7 +19,12 @@
 #include <hal/hal.h>
 
 
+#define NAME_PART_DEFAULT "default"
+
+
+/* clang-format off */
 enum { flagSyspageExec = 0x01, flagSyspageNoCopy = 0x02 };
+/* clang-format on */
 
 
 typedef struct {
@@ -68,6 +73,21 @@ extern void syspage_mapShow(void);
 
 extern mapent_t *syspage_entryAdd(const char *mapName, addr_t start, size_t size, unsigned int align);
 
+/* Scheduler's functions */
+extern syspage_sched_window_t *syspage_schedWindowAdd(void);
+
+
+extern size_t syspage_schedulerWindowCount(void);
+
+/* Partition's functions */
+extern syspage_part_t *syspage_partAdd(void);
+
+
+extern syspage_part_t *syspage_partsGet(void);
+
+
+extern int syspage_partResolve(const char *partName, syspage_part_t **result);
+
 
 /* Program's functions */
 extern syspage_prog_t *syspage_progAdd(const char *argv, u32 flags);
@@ -81,9 +101,6 @@ extern syspage_prog_t *syspage_progAdd(const char *argv, u32 flags);
  * Caller can then write desired contents into the memory pointed by the return pointer.
  */
 extern void *syspage_progAllocateAndAdd(const char *map, size_t size, const char *argv, u32 flags, int allowOverwrite);
-
-
-extern syspage_prog_t *syspage_progsGet(void);
 
 
 extern void syspage_progShow(void);
