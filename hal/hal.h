@@ -63,7 +63,7 @@ extern void hal_kernelGetEntryPointOffset(addr_t *off, int *indirect);
 
 
 /* Function validates and adds program memory maps at hal region level */
-extern int hal_getProgData(syspage_prog_t *prog, const char *imaps, size_t imapSz, const char *dmaps, size_t dmapSz);
+extern int hal_getPartData(syspage_part_t *part, const char *imaps, size_t imapSz, const char *dmaps, size_t dmapSz);
 
 
 /* Function returns entry located near the start of the declared memory */

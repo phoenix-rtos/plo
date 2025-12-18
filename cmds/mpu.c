@@ -90,11 +90,11 @@ static int cmd_mpu(int argc, char *argv[])
 {
 	const char *name;
 	unsigned int i;
-	const syspage_prog_t *prog = syspage_progsGet();
-	const syspage_prog_t *firstProg = prog;
+	const syspage_part_t *part = syspage_partsGet();
+	const syspage_part_t *firstPart = part;
 	const unsigned int regMax = mpu_getMaxRegionsCount();
 
-	if (prog == NULL) {
+	if (part == NULL) {
 		log_error("\nNo programs in syspage!");
 		return CMD_EXIT_FAILURE;
 	}
@@ -105,33 +105,34 @@ static int cmd_mpu(int argc, char *argv[])
 	}
 
 	do {
-		name = (prog->argv[0] == 'X') ? prog->argv + 1 : prog->argv;
+		name = part->name;
 		if ((argc == 2) && (hal_strcmp(name, argv[1]) != 0)) {
-			prog = prog->next;
+			part = part->next;
 			continue;
 		}
-		lib_printf("\n%-16s 0x%08x%4s 0x%08x", name, prog->start, "", prog->end);
+		// lib_printf("\n%-16s 0x%08x%4s 0x%08x", name, part->start, "", part->end);
+		lib_printf("\n%-16s", name);
 		lib_printf(CONSOLE_BOLD "\n%-9s %-7s %-4s %-11s %-11s %-3s %-3s %-9s %-4s %-2s %-2s %-2s\n" CONSOLE_NORMAL,
 				"MAP NAME", "REGION", "SUB", "START", "END", "EN", "XN", "PERM P/U", "TEX", "S", "C", "B");
-		for (i = 0; i < prog->hal.mpu.allocCnt; i++) {
-			name = syspage_mapName(prog->hal.mpu.map[i]);
+		for (i = 0; i < part->hal.mpu.allocCnt; i++) {
+			name = syspage_mapName(part->hal.mpu.map[i]);
 			if (name == NULL) {
 				name = "<none>";
 			}
-			mpu_regionPrint(name, prog->hal.mpu.table[i].rbar, prog->hal.mpu.table[i].rasr);
+			mpu_regionPrint(name, part->hal.mpu.table[i].rbar, part->hal.mpu.table[i].rasr);
 		}
 
-		lib_printf("Configured %d of %d MPU regions.\n", prog->hal.mpu.allocCnt, regMax);
+		lib_printf("Configured %d of %d MPU regions.\n", part->hal.mpu.allocCnt, regMax);
 
 		if (argc == 2) {
 			return CMD_EXIT_SUCCESS;
 		}
 
-		prog = prog->next;
-	} while (prog != firstProg);
+		part = part->next;
+	} while (part != firstPart);
 
 	if (argc == 2) {
-		log_error("\nProgram %s not found in syspage!", argv[1]);
+		log_error("\nPartition %s not found in syspage!", argv[1]);
 		return CMD_EXIT_FAILURE;
 	}
 
