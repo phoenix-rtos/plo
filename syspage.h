@@ -69,11 +69,18 @@ extern void syspage_mapShow(void);
 extern mapent_t *syspage_entryAdd(const char *mapName, addr_t start, size_t size, unsigned int align);
 
 
+/* Partition's functions */
+extern syspage_part_t *syspage_partAdd(void);
+
+
+extern syspage_part_t *syspage_partsGet(void);
+
+
+int syspage_partResolve(const char *partName, syspage_part_t **result);
+
+
 /* Program's functions */
 extern syspage_prog_t *syspage_progAdd(const char *argv, u32 flags);
-
-
-extern syspage_prog_t *syspage_progsGet(void);
 
 
 extern void syspage_progShow(void);

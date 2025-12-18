@@ -37,6 +37,7 @@ void syspage_init(void)
 	syspage_common.syspage = (syspage_t *)__heap_base;
 
 	syspage_common.syspage->maps = NULL;
+	syspage_common.syspage->partitions = NULL;
 	syspage_common.syspage->progs = NULL;
 	syspage_common.syspage->console = console_default;
 
@@ -499,6 +500,62 @@ const char *syspage_mapName(u8 id)
 }
 
 
+/* Partition's functions */
+
+syspage_part_t *syspage_partAdd(void)
+{
+	syspage_part_t *part;
+
+	part = syspage_alloc(sizeof(syspage_part_t));
+	if (part == NULL) {
+		return NULL;
+	}
+
+
+	if (syspage_common.syspage->partitions == NULL) {
+		part->next = part;
+		part->prev = part;
+		syspage_common.syspage->partitions = part;
+	}
+	else {
+		part->prev = syspage_common.syspage->partitions->prev;
+		syspage_common.syspage->partitions->prev->next = part;
+		part->next = syspage_common.syspage->partitions;
+		syspage_common.syspage->partitions->prev = part;
+	}
+
+	return part;
+}
+
+
+int syspage_partResolve(const char *name, syspage_part_t **result)
+{
+	syspage_part_t *part = syspage_common.syspage->partitions;
+
+	*result = NULL;
+
+	if (part == NULL) {
+		return -EINVAL;
+	}
+
+	do {
+		if (hal_strcmp(name, part->name) == 0) {
+			*result = part;
+			return EOK;
+		}
+		part = part->next;
+	} while (part != syspage_common.syspage->partitions);
+
+	return -EINVAL;
+}
+
+
+syspage_part_t *syspage_partsGet(void)
+{
+	return syspage_common.syspage->partitions;
+}
+
+
 /* Program's functions */
 
 syspage_prog_t *syspage_progAdd(const char *argv, u32 flags)
@@ -544,12 +601,6 @@ syspage_prog_t *syspage_progAdd(const char *argv, u32 flags)
 	}
 
 	return prog;
-}
-
-
-syspage_prog_t *syspage_progsGet(void)
-{
-	return syspage_common.syspage->progs;
 }
 
 

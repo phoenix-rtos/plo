@@ -13,7 +13,7 @@ CFLAGS := $(filter-out -mfloat-abi% , $(CFLAGS))
 CFLAGS += -mfloat-abi=soft
 
 PLO_COMMANDS ?= alias app bankswitch blob call console copy devices dump echo go help kernelimg \
-  map mem mpu phfs reboot script stop wait
+  map mem mpu part phfs reboot script stop wait
 
 PLO_ALLDEVICES := pipe-rtt uart-stm32 flash-stm32 ram-storage
 

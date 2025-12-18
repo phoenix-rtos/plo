@@ -88,7 +88,7 @@ static u32 mpu_regionAttrsRbar(u32 attr)
 
 
 /* Setup single MPU region entry in local MPU context */
-static int mpu_regionSet(hal_syspage_prog_t *progHal, unsigned int *idx, addr_t start, addr_t end, u32 rbarAttr, u32 rlarAttr, u32 mapId)
+static int mpu_regionSet(hal_syspage_part_t *partHal, unsigned int *idx, addr_t start, addr_t end, u32 rbarAttr, u32 rlarAttr, u32 mapId)
 {
 	/* Allow end == 0, this means end of address range */
 	const size_t size = (end - start) & 0xffffffffu;
@@ -112,9 +112,9 @@ static int mpu_regionSet(hal_syspage_prog_t *progHal, unsigned int *idx, addr_t 
 		return -EPERM;
 	}
 
-	progHal->mpu.table[*idx].rbar = (start & ~0x1f) | rbarAttr;
-	progHal->mpu.table[*idx].rlar = (limit & ~0x1f) | rlarAttr;
-	progHal->mpu.map[*idx] = mapId;
+	partHal->mpu.table[*idx].rbar = (start & ~0x1f) | rbarAttr;
+	partHal->mpu.table[*idx].rlar = (limit & ~0x1f) | rlarAttr;
+	partHal->mpu.map[*idx] = mapId;
 
 	*idx += 1;
 	return EOK;
@@ -122,19 +122,19 @@ static int mpu_regionSet(hal_syspage_prog_t *progHal, unsigned int *idx, addr_t 
 
 
 /* Invalidate range of regions */
-static void mpu_regionInvalidate(hal_syspage_prog_t *progHal, u8 first, u8 last)
+static void mpu_regionInvalidate(hal_syspage_part_t *partHal, u8 first, u8 last)
 {
 	unsigned int i;
 
 	for (i = first; (i < last) && (i < mpu_common.regMax); i++) {
 		/* set multi-map to none */
-		progHal->mpu.map[i] = (u32)-1;
+		partHal->mpu.map[i] = (u32)-1;
 
 		/* mark i-th region as disabled */
-		progHal->mpu.table[i].rlar = 0;
+		partHal->mpu.table[i].rlar = 0;
 
 		/* set exec never */
-		progHal->mpu.table[i].rbar = 1;
+		partHal->mpu.table[i].rbar = 1;
 	}
 }
 
@@ -176,12 +176,12 @@ void mpu_kernelEntryPoint(addr_t addr)
 }
 
 
-static int mpu_isMapAlloced(hal_syspage_prog_t *progHal, u32 mapId)
+static int mpu_isMapAlloced(hal_syspage_part_t *partHal, u32 mapId)
 {
 	unsigned int i;
 
-	for (i = 0; i < progHal->mpu.allocCnt; i++) {
-		if (progHal->mpu.map[i] == mapId) {
+	for (i = 0; i < partHal->mpu.allocCnt; i++) {
+		if (partHal->mpu.map[i] == mapId) {
 			return 1;
 		}
 	}
@@ -190,10 +190,10 @@ static int mpu_isMapAlloced(hal_syspage_prog_t *progHal, u32 mapId)
 }
 
 
-static int mpu_regionAlloc(hal_syspage_prog_t *progHal, addr_t addr, addr_t end, u32 attr, u32 mapId, unsigned int enable)
+static int mpu_regionAlloc(hal_syspage_part_t *partHal, addr_t addr, addr_t end, u32 attr, u32 mapId, unsigned int enable)
 {
 	int res;
-	unsigned int regCur = progHal->mpu.allocCnt;
+	unsigned int regCur = partHal->mpu.allocCnt;
 	u32 rbarAttr, rlarAttr;
 
 	if (mpu_common.regMax == 0) {
@@ -205,19 +205,19 @@ static int mpu_regionAlloc(hal_syspage_prog_t *progHal, addr_t addr, addr_t end,
 	rbarAttr = mpu_regionAttrsRbar(attr);
 	rlarAttr = mpu_regionAttrsRlar(attr, enable);
 
-	res = mpu_regionSet(progHal, &regCur, addr, end, rbarAttr, rlarAttr, mapId);
+	res = mpu_regionSet(partHal, &regCur, addr, end, rbarAttr, rlarAttr, mapId);
 	if (res != EOK) {
-		mpu_regionInvalidate(progHal, progHal->mpu.allocCnt, regCur);
+		mpu_regionInvalidate(partHal, partHal->mpu.allocCnt, regCur);
 		return res;
 	}
 
-	progHal->mpu.allocCnt = regCur;
+	partHal->mpu.allocCnt = regCur;
 
 	return EOK;
 }
 
 
-static int mpu_allocKernelMap(hal_syspage_prog_t *progHal)
+static int mpu_allocKernelMap(hal_syspage_part_t *partHal)
 {
 	addr_t start, end;
 	u32 attr;
@@ -242,7 +242,7 @@ static int mpu_allocKernelMap(hal_syspage_prog_t *progHal)
 	if ((res = syspage_mapAttrResolve(kcodemap, &attr)) < 0) {
 		return res;
 	}
-	if ((res = mpu_regionAlloc(progHal, start, end, attr, id, 1)) < 0) {
+	if ((res = mpu_regionAlloc(partHal, start, end, attr, id, 1)) < 0) {
 		log_error("\nCan't allocate MPU region for kernel code map (%s)", kcodemap);
 		return res;
 	}
@@ -250,10 +250,10 @@ static int mpu_allocKernelMap(hal_syspage_prog_t *progHal)
 }
 
 
-static void mpu_initPart(hal_syspage_prog_t *progHal)
+static void mpu_initPart(hal_syspage_part_t *partHal)
 {
-	hal_memset(progHal, 0, sizeof(hal_syspage_prog_t));
-	progHal->mpu.allocCnt = 0;
+	hal_memset(partHal, 0, sizeof(hal_syspage_part_t));
+	partHal->mpu.allocCnt = 0;
 }
 
 
@@ -263,7 +263,7 @@ void mpu_getHalData(hal_syspage_t *hal)
 }
 
 
-static int mpu_mapsAlloc(hal_syspage_prog_t *progHal, const char *maps, size_t cnt)
+static int mpu_mapsAlloc(hal_syspage_part_t *partHal, const char *maps, size_t cnt)
 {
 	int i, res;
 	addr_t start, end;
@@ -274,7 +274,7 @@ static int mpu_mapsAlloc(hal_syspage_prog_t *progHal, const char *maps, size_t c
 		if ((res = syspage_mapNameResolve(maps, &id)) < 0) {
 			return res;
 		}
-		if (mpu_isMapAlloced(progHal, id) != 0) {
+		if (mpu_isMapAlloced(partHal, id) != 0) {
 			maps += hal_strlen(maps) + 1; /* name + '\0' */
 			continue;
 		}
@@ -284,7 +284,7 @@ static int mpu_mapsAlloc(hal_syspage_prog_t *progHal, const char *maps, size_t c
 		if ((res = syspage_mapAttrResolve(maps, &attr)) < 0) {
 			return res;
 		}
-		if ((res = mpu_regionAlloc(progHal, start, end, attr, id, 1)) < 0) {
+		if ((res = mpu_regionAlloc(partHal, start, end, attr, id, 1)) < 0) {
 			log_error("\nCan't allocate MPU region for %s", maps);
 			return res;
 		}
@@ -294,11 +294,11 @@ static int mpu_mapsAlloc(hal_syspage_prog_t *progHal, const char *maps, size_t c
 }
 
 
-extern int mpu_getHalProgData(syspage_prog_t *prog, const char *imaps, size_t imapSz, const char *dmaps, size_t dmapSz)
+extern int mpu_getHalPartData(syspage_part_t *part, const char *imaps, size_t imapSz, const char *dmaps, size_t dmapSz)
 {
 	int ret;
 
-	mpu_initPart(&prog->hal);
+	mpu_initPart(&part->hal);
 
 	/* FIXME HACK
 	 * allow all programs to execute (and read) kernel code map.
@@ -308,20 +308,20 @@ extern int mpu_getHalProgData(syspage_prog_t *prog, const char *imaps, size_t im
 	 * if the application does not have access to the kernel instruction
 	 * map. Possible fix - place return to the user code in the separate
 	 * region and allow this region instead. */
-	ret = mpu_allocKernelMap(&prog->hal);
+	ret = mpu_allocKernelMap(&part->hal);
 	if (ret != EOK) {
 		return ret;
 	}
-	ret = mpu_mapsAlloc(&prog->hal, imaps, imapSz);
+	ret = mpu_mapsAlloc(&part->hal, imaps, imapSz);
 	if (ret != EOK) {
 		return ret;
 	}
-	ret = mpu_mapsAlloc(&prog->hal, dmaps, dmapSz);
+	ret = mpu_mapsAlloc(&part->hal, dmaps, dmapSz);
 	if (ret != EOK) {
 		return ret;
 	}
 
-	mpu_regionInvalidate(&prog->hal, prog->hal.mpu.allocCnt, mpu_common.regMax);
+	mpu_regionInvalidate(&part->hal, part->hal.mpu.allocCnt, mpu_common.regMax);
 
 	return EOK;
 }

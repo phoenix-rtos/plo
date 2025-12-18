@@ -15,7 +15,7 @@ CFLAGS := $(filter-out -mfpu% , $(CFLAGS))
 CFLAGS += -Ihal/armv7r/tda4vm
 
 PLO_COMMANDS ?= alias app blob call console copy devices dump echo erase go help jffs2 kernel \
-  map mem mpu phfs reboot script stop test-dev wait
+  map mem mpu part phfs reboot script stop test-dev wait
 
 PLO_ALLDEVICES := ram-storage uart-16550 flash-tda4vm
 

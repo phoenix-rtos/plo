@@ -12,8 +12,8 @@ LDFLAGS := $(filter-out -Tdata% , $(LDFLAGS))
 CFLAGS := $(filter-out -mfloat-abi% , $(CFLAGS))
 CFLAGS += -mfloat-abi=soft
 
-PLO_COMMANDS ?= alias app blob call console copy dump echo go help kernel kernelimg map mem phfs \
-  reboot script wait
+PLO_COMMANDS ?= alias app blob call console copy dump echo go help kernel kernelimg map mem part \
+  phfs reboot script wait
 
 PLO_ALLDEVICES := uart-mcxn94x flash-mcxn94x ram-storage
 

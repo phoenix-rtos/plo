@@ -13,7 +13,7 @@ CFLAGS := $(filter-out -mfloat-abi% , $(CFLAGS))
 CFLAGS += -mfloat-abi=soft
 
 PLO_COMMANDS ?= alias app blob call console copy devices dump echo go help kernel kernelimg map \
-  mem phfs reboot script stop wait
+  mem part phfs reboot script stop wait
 
 PLO_ALLDEVICES := uart-nrf9160 flash-nrf9160
 
