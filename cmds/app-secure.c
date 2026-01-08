@@ -3,9 +3,9 @@
  *
  * Operating system loader
  *
- * Load application
+ * Load secure application
  *
- * Copyright 2020-2021 Phoenix Systems
+ * Copyright 2020-2021 2026 Phoenix Systems
  * Author: Hubert Buczynski, Gerard Swiderski, Aleksander Kaminski
  *
  * This file is part of Phoenix-RTOS.
@@ -21,18 +21,55 @@
 #include <phfs/phfs.h>
 #include <syspage.h>
 
+#include <hal/armv8m/stm32/n6/pka.h>
+#include <hal/armv8m/stm32/n6/hash.h>
 
-static void cmd_appInfo(void)
+#define HASH_ALGO_STR "sha2-256"
+#define HASH_BYTES    32
+
+
+static void cmd_appsecureInfo(void)
 {
-	lib_printf("loads app, usage: app [<dev> [-x | -xn] <name> <imap1;imap2...> <dmap1;dmap2...>]");
+	lib_printf("checks app hash and loads it, usage: app-secure [<dev> [-x | -xn] <name> <imap1;imap2...> <dmap1;dmap2...> <hash_algorithm> <app_hash>]");
 }
 
 
-static int cmd_cp2ent(handler_t handler, const mapent_t *entry)
+static int cmd_checkHash(handler_t handler, size_t filesz, u8 *expected)
+{
+	ssize_t len;
+	u8 buff[SIZE_MSG_BUFF];
+	u8 calcHash[HASH_BYTES];
+	size_t offs;
+
+	(void)hash_initDigest(HASH_ALGO_SHA2_256);
+
+	for (offs = 0; offs < filesz; offs += len) {
+		if ((len = phfs_read(handler, offs, buff, min(SIZE_MSG_BUFF, filesz - offs))) < 0) {
+			log_error("\nCan't read data");
+			return len;
+		}
+		hash_feedMessage(buff, len);
+	}
+	hash_getDigest(calcHash, HASH_BYTES);
+
+	for (offs = 0; offs < HASH_BYTES; offs++) {
+		if (calcHash[offs] != expected[offs]) {
+			return -EINVAL;
+		}
+	}
+
+	return EOK;
+}
+
+
+static int cmd_cp2entSecure(handler_t handler, const mapent_t *entry, u8 *expected)
 {
 	ssize_t len;
 	u8 buff[SIZE_MSG_BUFF];
 	size_t offs, sz = entry->end - entry->start;
+	u8 calcHash[HASH_BYTES];
+
+	(void)hash_initDigest(HASH_ALGO_SHA2_256);
 
 	for (offs = 0; offs < sz; offs += len) {
 		if ((len = phfs_read(handler, offs, buff, min(SIZE_MSG_BUFF, sz - offs))) < 0) {
@@ -40,6 +77,16 @@ static int cmd_cp2ent(handler_t handler, const mapent_t *entry)
 			return len;
 		}
 		hal_memcpy((void *)(entry->start + offs), buff, len);
+		hash_feedMessage(buff, len);
+	}
+
+	hash_getDigest(calcHash, HASH_BYTES);
+
+	for (offs = 0; offs < HASH_BYTES; offs++) {
+		if (calcHash[offs] != expected[offs]) {
+			log_error("\nInvalid app hash");
+			return -EINVAL;
+		}
 	}
 
 	return EOK;
@@ -81,7 +128,7 @@ static size_t cmd_mapsParse(char *maps, char sep)
 }
 
 
-static int cmd_appLoad(handler_t handler, size_t size, const char *name, char *imaps, char *dmaps, const char *appArgv, u32 flags)
+static int cmd_appLoadSecure(handler_t handler, size_t size, const char *name, char *imaps, char *dmaps, const char *appArgv, u32 flags, u8 *hash)
 {
 	int res;
 	Elf32_Ehdr hdr;
@@ -92,6 +139,7 @@ static int cmd_appLoad(handler_t handler, size_t size, const char *name, char *i
 
 	syspage_prog_t *prog;
 	const mapent_t *entry;
+
 
 	/* Check ELF header */
 	if ((res = phfs_read(handler, 0, &hdr, sizeof(Elf32_Ehdr))) < 0) {
@@ -113,18 +161,24 @@ static int cmd_appLoad(handler_t handler, size_t size, const char *name, char *i
 		log_error("\n%s does not exist", imaps);
 		return -EINVAL;
 	}
-	lib_printf("instruction map: %s %08x %08x\n", imaps, start, end);
 
 	if (phfs_aliasAddrResolve(handler, &offs) < 0)
 		offs = 0;
-	lib_printf("%s alias offset: %08x\n", imaps, offs);
+
 	/* Check whether map's range coincides with device's address space */
 	if ((res = phfs_map(handler, offs, size, mAttrRead | mAttrExec, start, end - start, attr, &addr)) < 0) {
 		log_error("\nDevice is not mappable in %s", imaps);
 		return res;
 	}
-	lib_printf("%s phfs_map address: %08x\n", imaps, addr);
+
 	if (res == dev_isMappable || (res == dev_isNotMappable && (flags & flagSyspageNoCopy) != 0)) {
+		/* Program is not copied, so verification must be done in the kernel. Checking the hash here is optional */
+		res = cmd_checkHash(handler, size, hash);
+		if (res < 0) {
+			log_error("\nInvalid hash for %d", name);
+			return -EINVAL;
+		}
+
 		if ((entry = syspage_entryAdd(NULL, addr + offs, size, SIZE_PAGE)) == NULL) {
 			log_error("\nCannot allocate memory for %s", name);
 			return -ENOMEM;
@@ -136,8 +190,8 @@ static int cmd_appLoad(handler_t handler, size_t size, const char *name, char *i
 			return -ENOMEM;
 		}
 
-		/* Copy elf file to selected entry */
-		if ((res = cmd_cp2ent(handler, entry)) < 0)
+		/* Copy elf file to selected entry. Check the hash of the copied file */
+		if ((res = cmd_cp2entSecure(handler, entry, hash)) < 0)
 			return res;
 	}
 	else {
@@ -166,7 +220,7 @@ static int cmd_appLoad(handler_t handler, size_t size, const char *name, char *i
 }
 
 
-static int cmd_app(int argc, char *argv[])
+static int cmd_appsecure(int argc, char *argv[])
 {
 	size_t pos;
 	int res, argvID = 0;
@@ -176,6 +230,10 @@ static int cmd_app(int argc, char *argv[])
 
 	const char *appArgv;
 	char name[SIZE_CMD_ARG_LINE];
+	const char *hashAlgo;
+	const char *argvHash;
+	u8 hash[HASH_BYTES];
+	u32 hashb64len = ((HASH_BYTES + 3 - 1) / 3) * 4;
 
 	handler_t handler;
 	phfs_stat_t stat;
@@ -185,7 +243,7 @@ static int cmd_app(int argc, char *argv[])
 		syspage_progShow();
 		return CMD_EXIT_SUCCESS;
 	}
-	else if (argc < 5 || argc > 6) {
+	else if (argc < 7 || argc > 8) {
 		log_error("\n%s: Wrong argument count", argv[0]);
 		return CMD_EXIT_FAILURE;
 	}
@@ -211,8 +269,8 @@ static int cmd_app(int argc, char *argv[])
 		}
 	}
 
-	if (argvID != (argc - 3)) {
-		log_error("\n%s: Invalid arg, 'dmap' is not declared", argv[0]);
+	if (argvID != (argc - 5)) {
+		log_error("\n%s: Invalid arg, '<app_hash>' is not declared", argv[0]);
 		return CMD_EXIT_FAILURE;
 	}
 
@@ -232,6 +290,19 @@ static int cmd_app(int argc, char *argv[])
 	/* ARG_5: maps for data */
 	dmaps = argv[++argvID];
 
+	/* ARG_6: hash algorithm */
+	hashAlgo = argv[++argvID];
+	if (hal_strcmp(hashAlgo, HASH_ALGO_STR) != 0) {
+		log_error("\nHash algorithm: %s not supported.", argv[4]);
+		return CMD_EXIT_FAILURE;
+	}
+	argvHash = argv[++argvID];
+	res = hash_base64_decode(argvHash, hashb64len, hash, HASH_BYTES);
+	if (res < 0) {
+		log_error("\nInvalid base64 format %s", argv[5]);
+		return CMD_EXIT_SUCCESS;
+	}
+
 	/* Open file */
 	res = phfs_open(argv[1], name, 0, &handler);
 	if (res < 0) {
@@ -247,7 +318,7 @@ static int cmd_app(int argc, char *argv[])
 		return CMD_EXIT_FAILURE;
 	}
 
-	res = cmd_appLoad(handler, stat.size, name, imaps, dmaps, appArgv, flags);
+	res = cmd_appLoadSecure(handler, stat.size, name, imaps, dmaps, appArgv, flags, hash);
 	if (res < 0) {
 		log_error("\nCan't load %s to %s via %s (%d)", name, imaps, argv[1], res);
 		phfs_close(handler);
@@ -262,5 +333,5 @@ static int cmd_app(int argc, char *argv[])
 
 
 static const cmd_t app_cmd __attribute__((section("commands"), used)) = {
-	.name = "app", .run = cmd_app, .info = cmd_appInfo
+	.name = "app-secure", .run = cmd_appsecure, .info = cmd_appsecureInfo
 };

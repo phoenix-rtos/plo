@@ -6,8 +6,8 @@
 # %LICENSE%
 #
 
-PLO_ALLCOMMANDS = alias app bankswitch bitstream blob bootcm4 bootrom bridge call console \
-  copy devices dump echo erase go help jffs2 kernel kernelimg lspci map mem memcrypt mpu otp phfs \
+PLO_ALLCOMMANDS = alias app app-secure bankswitch bitstream blob blob-secure bootcm4 bootrom bridge call call-secure console \
+  copy devices dump echo erase go help jffs2 kernel kernelimg kernel-sec lspci map mem mpu otp phfs \
   ptable reboot script stop test-dev test-ddr wait watchdog vbe
 
 PLO_COMMANDS ?= $(PLO_ALLCOMMANDS)

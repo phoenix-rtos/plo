@@ -17,6 +17,7 @@
 #define _HASH_H__
 
 #include <hal/hal.h>
+#include <phfs/phfs.h>
 #include "stm32n6_regs.h"
 #include "stm32n6.h"
 
@@ -62,6 +63,9 @@ void hash_cancelOperation(void);
 
 
 int hash_digest(u32 algo, const u8 *mess, u32 mbytes, u8 *out, u32 outbytes);
+
+
+int hash_base64_decode(const char *data, size_t datasize, u8 *out, size_t outsize);
 
 
 #endif

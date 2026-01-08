@@ -19,8 +19,8 @@
 
 static struct {
 	volatile u32 *base;
-	u32 blocksize; /* Blocksize of ongoing digest operation. 0 means operation finished */
-	u32 written;   /* Total written bytes to last block */
+	u32 blocksize;     /* Blocksize of ongoing digest operation. 0 means operation finished */
+	u32 written;       /* Total written bytes to last block */
 	u32 leftover;      /* Leftover bytes from message that couldn't be written to fifo */
 	u32 leftoverCount; /* Number of leftover bytes */
 } common;
@@ -187,9 +187,7 @@ int hash_getDigest(u8 *out, u32 outbytes)
 }
 
 
-/* Calculate hash digest in a single function call. Message length counted in bytes. Output digest in little endian.
- * HASH peripheral supports message sizes measured in bits, but we don't need that kind of granularity.
- * User has to provide bith algorithm type and the number of bytes of the output hash. */
+/* Calculate hash digest in a single function call. */
 int hash_digest(u32 algo, const u8 *mess, u32 mbytes, u8 *out, u32 outbytes)
 {
 	/* Assume correct arguments */
@@ -219,4 +217,70 @@ void hash_init(void)
 	_stm32_rccSetDevClock(dev_hash, 1);
 
 	return;
+}
+
+
+/* Helper base 64 functions */
+
+static int hash_base64_value(char c)
+{
+	if (lib_islower(c)) {
+		return c - 'a' + 26;
+	}
+	if (lib_isupper(c)) {
+		return c - 'A';
+	}
+	if (lib_isdigit(c)) {
+		return c - '0' + 52;
+	}
+	if (c == '+') {
+		return 62;
+	}
+	if (c == '/') {
+		return 63;
+	}
+	return -EINVAL;
+}
+
+
+int hash_base64_decode(const char *data, size_t datasize, u8 *out, size_t outsize)
+{
+	u32 v = 0;
+	size_t i, j;
+	if ((datasize % 4) != 0) {
+		return -EINVAL;
+	}
+	if (outsize > (3 * datasize / 4)) {
+		return -EINVAL;
+	}
+	if (outsize < (3 * datasize / 4 - 3)) {
+		return -EINVAL;
+	}
+	for (i = 0, j = 0; i < datasize; i++) {
+		if (data[i] == '=') {
+			/* Ingore the data that comes after the first '=' */
+			if ((i % 4) == 0) {
+				/* Unnecessary padding */
+				return -EINVAL;
+			}
+			i = 3;
+			while (j < outsize) {
+				*(out + (j++)) = (v >> (8 * (--i))) & 0xff;
+			}
+			break;
+		}
+		int val = hash_base64_value(data[i]);
+		if (val < 0) {
+			return -EINVAL;
+		}
+		v |= ((val & 0x3f) << (18 - 6 * (i % 4)));
+		if ((i % 4) == 3) {
+			*(out + (j++)) = (v >> 16) & 0xff;
+			*(out + (j++)) = (v >> 8) & 0xff;
+			*(out + (j++)) = v & 0xff;
+			v = 0;
+		}
+	}
+
+	return EOK;
 }
