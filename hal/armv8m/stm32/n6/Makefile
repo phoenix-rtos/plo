@@ -12,7 +12,7 @@ LDFLAGS := $(filter-out -Tdata% , $(LDFLAGS))
 CFLAGS := $(filter-out -mfloat-abi% , $(CFLAGS))
 CFLAGS += -mfloat-abi=soft
 
-PLO_COMMANDS ?= alias app blob call console copy devices dump echo erase go help kernel kernelimg \
+PLO_COMMANDS ?= alias app blob call call-secure console copy devices dump echo erase go help kernel kernelimg \
   map mem memcrypt otp phfs pka-test reboot script sigverif stop wait test-dev
 
 
