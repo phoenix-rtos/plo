@@ -1,0 +1,211 @@
+/*
+ * Phoenix-RTOS
+ *
+ * plo - operating system loader
+ *
+ * Peripheral register definitions for STM32U5 platform
+ * Based on stm32u585xx.h by STMicroelectronics
+ *
+ * Copyright 2026 Apator Metrix
+ * Authors: Mateusz Karcz
+ *
+ * This file is part of Phoenix-RTOS.
+ *
+ * %LICENSE%
+ */
+
+#ifndef _STM32U5_REGS_H_
+#define _STM32U5_REGS_H_
+
+enum rcc_regs {
+	rcc_cr = 0x0,
+	rcc_icscr1 = 0x2,
+	rcc_icscr2,
+	rcc_icscr3,
+	rcc_crrcr,
+	rcc_cfgr1 = 0x7,
+	rcc_cfgr2,
+	rcc_cfgr3,
+	rcc_pll1cfgr,
+	rcc_pll2cfgr,
+	rcc_pll3cfgr,
+	rcc_pll1divr,
+	rcc_pll1fracr,
+	rcc_pll2divr,
+	rcc_pll2fracr,
+	rcc_pll3divr,
+	rcc_pll3fracr,
+	rcc_cier = 0x14,
+	rcc_cifr,
+	rcc_cicr,
+	rcc_ahb1rstr = 0x18,
+	rcc_ahb2lrstr,
+	rcc_ahb2hrstr,
+	rcc_ahb3rstr,
+	rcc_apb1lrstr = 0x1d,
+	rcc_apb1hrstr,
+	rcc_apb2rstr,
+	rcc_apb3rstr,
+	rcc_ahb1enr = 0x22,
+	rcc_ahb2lenr,
+	rcc_ahb2henr,
+	rcc_ahb3enr,
+	rcc_apb1lenr = 0x27,
+	rcc_apb1henr,
+	rcc_apb2enr,
+	rcc_apb3enr,
+	rcc_ahb1smenr = 0x2c,
+	rcc_ahb2smlenr,
+	rcc_ahb2smhenr,
+	rcc_ahb3smenr,
+	rcc_apb1smlenr = 0x31,
+	rcc_apb1smhenr,
+	rcc_apb2smenr,
+	rcc_apb3smenr,
+	rcc_srdamr = 0x36,
+	rcc_ccipr1 = 0x38,
+	rcc_ccipr2,
+	rcc_ccipr3,
+	rcc_bdcr = 0x3c,
+	rcc_csr,
+	rcc_seccfgr = 0x44,
+	rcc_privcfgr,
+};
+
+
+enum gpio_regs {
+	gpio_moder = 0x0,
+	gpio_otyper,
+	gpio_ospeedr,
+	gpio_pupdr,
+	gpio_idr,
+	gpio_odr,
+	gpio_bsrr,
+	gpio_lckr,
+	gpio_afrl,
+	gpio_afrh,
+	gpio_brr,
+	gpio_hslvr,
+	gpio_seccfgr,
+};
+
+
+enum pwr_regs {
+	pwr_cr1 = 0x0,
+	pwr_cr2,
+	pwr_cr3,
+	pwr_vosr,
+	pwr_svmcr,
+	pwr_wucr1,
+	pwr_wucr2,
+	pwr_wucr3,
+	pwr_bdcr1,
+	pwr_bdcr2,
+	pwr_dbpr,
+	pwr_ucpdr,
+	pwr_seccfgr,
+	pwr_privcfgr,
+	pwr_sr,
+	pwr_svmsr,
+	pwr_bdsr,
+	pwr_wusr,
+	pwr_wuscr,
+	pwr_apcr,
+	pwr_pucra,
+	pwr_pdcra,
+	pwr_pucrb,
+	pwr_pdcrb,
+	pwr_pucrc,
+	pwr_pdcrc,
+	pwr_pucrd,
+	pwr_pdcrd,
+	pwr_pucre,
+	pwr_pdcre,
+	pwr_pucrf,
+	pwr_pdcrf,
+	pwr_pucrg,
+	pwr_pdcrg,
+	pwr_pucrh,
+	pwr_pdcrh,
+	pwr_pucri,
+	pwr_pdcri,
+};
+
+
+enum iwdg_regs {
+	iwdg_kr = 0x0,
+	iwdg_pr,
+	iwdg_rlr,
+	iwdg_sr,
+	iwdg_winr,
+	iwdg_ewcr,
+};
+
+enum syscfg_regs {
+	syscfg_seccfgr = 0x0,
+	syscfg_cfgr1,
+	syscfg_fpuimr,
+	syscfg_cnslckr,
+	syscfg_cslckr,
+	syscfg_cfgr2,
+	syscfg_mesr,
+	syscfg_cccsr,
+	syscfg_ccvr,
+	syscfg_cccr,
+	syscfg_rsscmdr = 0xb,
+};
+
+enum ramcfg_regs {
+	ramcfg_sram1cr = 0x0,
+	ramcfg_sram1ier,
+	ramcfg_sram1isr,
+	ramcfg_sram1sear,
+	ramcfg_sram1dear,
+	ramcfg_sram1icr,
+	ramcfg_sram1wpr1,
+	ramcfg_sram1wpr2,
+	ramcfg_sram1ecckey = 0x9,
+	ramcfg_sram1erkeyr,
+	ramcfg_sram2cr = 0x10,
+	ramcfg_sram2ier,
+	ramcfg_sram2isr,
+	ramcfg_sram2sear,
+	ramcfg_sram2dear,
+	ramcfg_sram2icr,
+	ramcfg_sram2wpr1,
+	ramcfg_sram2wpr2,
+	ramcfg_sram2ecckey = 0x19,
+	ramcfg_sram2erkeyr,
+	ramcfg_sram3cr = 0x20,
+	ramcfg_sram3ier,
+	ramcfg_sram3isr,
+	ramcfg_sram3sear,
+	ramcfg_sram3dear,
+	ramcfg_sram3icr,
+	ramcfg_sram3wpr1,
+	ramcfg_sram3wpr2,
+	ramcfg_sram3ecckey = 0x29,
+	ramcfg_sram3erkeyr,
+	ramcfg_sram4cr = 0x30,
+	ramcfg_sram4ier,
+	ramcfg_sram4isr,
+	ramcfg_sram4sear,
+	ramcfg_sram4dear,
+	ramcfg_sram4icr,
+	ramcfg_sram4wpr1,
+	ramcfg_sram4wpr2,
+	ramcfg_sram4ecckey = 0x39,
+	ramcfg_sram4erkeyr,
+	ramcfg_bkpsramcr = 0x40,
+	ramcfg_bkpsramier,
+	ramcfg_bkpsramisr,
+	ramcfg_bkpsramsear,
+	ramcfg_bkpsramdear,
+	ramcfg_bkpsramicr,
+	ramcfg_bkpsramwpr1,
+	ramcfg_bkpsramwpr2,
+	ramcfg_bkpsramecckey = 0x49,
+	ramcfg_bkpsramerkeyr,
+};
+
+#endif /* _STM32U5_REGS_H_ */
