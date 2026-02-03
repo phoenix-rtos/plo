@@ -279,6 +279,9 @@ enum gpio_pupds {
 extern int _stm32_rccSetDevClock(unsigned int dev, u32 status);
 
 
+extern int _stm32_rccSetCPUClock(u32 hz);
+
+
 /* Sets independent peripheral clock configuration */
 extern int _stm32_rccSetIPClk(unsigned int ipclk, u8 setting);
 
@@ -295,6 +298,12 @@ extern int _stm32_gpioConfig(unsigned int d, u8 pin, u8 mode, u8 af, u8 otype, u
 
 /* Perform an operation (pwr_supply_op_*) on a selected power supply (pwr_supply_*) */
 extern int _stm32_pwrSupplyOperation(unsigned int supply, unsigned int operation, int status);
+
+
+extern u8 _stm32_pwrGetCPUVolt(void);
+
+
+extern void _stm32_pwrSetCPUVolt(u8 range);
 
 
 extern int _stm32_systickInit(u32 interval);

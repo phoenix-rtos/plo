@@ -16,6 +16,7 @@
 
 #include <hal/hal.h>
 #include <board_config.h>
+#include <errno.h>
 #include "stm32u5.h"
 
 
@@ -60,6 +61,27 @@ enum {
 };
 
 
+/* MSIS clock range mappings */
+#define MSIS_MAX_RANGE 15
+#define VOLTAGE_MAX_RANGE 4
+
+typedef struct {
+	u32 hz;
+	int range;
+} range_mapping;
+
+static const range_mapping msis_ranges[MSIS_MAX_RANGE + 1] = {
+	{100000, 15}, {133000, 14}, {200000, 13}, {400000, 12}, /* 100-400 kHz */
+	{768000, 11}, {1000000, 7}, {1024000, 10}, {1330000, 6}, /* 0.768-1.33 MHz */
+	{1536000, 9}, {2000000, 5}, {3072000, 8}, {4000000, 4}, /* 1.536-4 MHz */
+	{12000000, 3}, {16000000, 2}, {24000000, 1}, {48000000, 0}, /* 12-48 MHz */
+};
+
+static const range_mapping voltage_ranges[VOLTAGE_MAX_RANGE] = {
+	{24000000, 4}, {55000000, 3}, {110000000, 2}, {160000000, 1},
+};
+
+
 unsigned int hal_getBootReason(void)
 {
 	return stm32_common.resetFlags;
@@ -80,21 +102,13 @@ unsigned int hal_getBootReason(void)
  */
 static void _stm32_configureClocks(void)
 {
-	u32 v, clock_source;
+	u32 v;
 
 	/* Disable HSE */
 	*(stm32_common.rcc + rcc_cr) &= ~(1 << 16); /* HSEON off */
 
-	/* Select the system clock source */
-	clock_source = 0; /* MSI */
-	v = *(stm32_common.rcc + rcc_cfgr1);
-	v |= (clock_source << 0); /* Set SW */
-	*(stm32_common.rcc + rcc_cfgr1) = v;
-
-	while (((*(stm32_common.rcc + rcc_cfgr1) >> 2) & 0x3) != clock_source) {
-		/* Wait for SWS */
-	}
-	stm32_common.cpuclk = 4 * 1000 * 1000;
+	/* Select the system clock frequency */
+	_stm32_rccSetCPUClock(16 * 1000 * 1000);
 
 	/* Set peripheral bus clock prescalers */
 	v = *(stm32_common.rcc + rcc_cfgr2);
@@ -106,6 +120,69 @@ static void _stm32_configureClocks(void)
 	v &= ~(0x7 << 0); /* Clear PPRE3 */
 	v |= (0 << 4); /* Set PPRE3 to 1 */
 	*(stm32_common.rcc + rcc_cfgr3) = v;
+}
+
+static const range_mapping *_stm32_findRange(u32 hz, const range_mapping *ranges, int length)
+{
+	int i;
+
+	for (i = 0; i < length; i++) {
+		if (hz <= ranges[i].hz)
+		{
+			return ranges + i;
+		}
+	}
+
+	return NULL;
+}
+
+
+int _stm32_rccSetCPUClock(u32 hz)
+{
+	u32 v;
+	const range_mapping *msis_range, *voltage_range;
+
+	if (!(voltage_range = _stm32_findRange(hz, voltage_ranges, VOLTAGE_MAX_RANGE))) {
+		return -ERANGE;
+	}
+
+	if (!(msis_range = _stm32_findRange(hz, msis_ranges, MSIS_MAX_RANGE + 1))) {
+		return -ERANGE;
+	}
+
+	/* Step up */
+	if (voltage_range->range < _stm32_pwrGetCPUVolt()) {
+		_stm32_pwrSetCPUVolt(voltage_range->range);
+	}
+
+	/* Configure MSIS */
+	v = *(stm32_common.rcc + rcc_icscr1) & ~(0xf << 28);
+	v |= (msis_range->range << 28) | (1 << 23); /* Set MSISRANGE | MSIRGSEL */
+	*(stm32_common.rcc + rcc_icscr1) = v;
+	hal_cpuDataMemoryBarrier();
+	
+	while ((*(stm32_common.rcc + rcc_cr) & (1 << 2)) == 0) {
+		/* Wait for MSISRDY */
+	}
+
+	/* Step down */
+	if (voltage_range->range > _stm32_pwrGetCPUVolt()) {
+		_stm32_pwrSetCPUVolt(voltage_range->range);
+	}
+
+	/* Configure SYSCLK source */
+	v = *(stm32_common.rcc + rcc_cfgr1);
+	v &= ~(0x3 << 0); /* Set SW to MSIS */
+	*(stm32_common.rcc + rcc_cfgr1) = v;
+	hal_cpuDataMemoryBarrier();
+
+	while (((*(stm32_common.rcc + rcc_cfgr1) >> 2) & 0x3) != 0) {
+		/* Wait for SWS */
+	}
+
+	/* Update the current frequency */
+	stm32_common.cpuclk = msis_range->hz;
+	return 0;
 }
 
 
@@ -281,6 +358,30 @@ static void _stm32_initPowerSupply(unsigned int supply)
 	}
 
 	_stm32_pwrSupplyOperation(supply, pwr_supply_op_valid, 1);
+}
+
+
+u8 _stm32_pwrGetCPUVolt(void)
+{
+	return 4 - (u8)((*(stm32_common.pwr + pwr_vosr) >> 16) & 0x3);
+}
+
+
+void _stm32_pwrSetCPUVolt(u8 range)
+{
+	u32 t;
+
+	if ((range < 1) || (range > VOLTAGE_MAX_RANGE))
+		return;
+
+	range = 4 - range;
+	t = *(stm32_common.pwr + pwr_vosr) & ~(0x3 << 16);
+	*(stm32_common.pwr + pwr_vosr) = t | (range << 16);
+	hal_cpuDataMemoryBarrier();
+
+	while ((*(stm32_common.pwr + pwr_vosr) & (1 << 15)) == 0) {
+		/* Wait for VOSRDY */
+	}
 }
 
 
