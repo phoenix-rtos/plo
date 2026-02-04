@@ -36,6 +36,7 @@
 #define SYSCFG_BASE ((void *)0x46000400)
 #define RAMCFG_BASE ((void *)0x40026000)
 #define ICB_BASE    ((void *)0xe000e000)
+#define FLASH_BASE  ((void *)0x40022000)
 
 static struct {
 	volatile u32 *rcc;
@@ -45,6 +46,7 @@ static struct {
 	volatile u32 *syscfg;
 	volatile u32 *iwdg;
 	volatile u32 *ramcfg;
+	volatile u32 *flash;
 
 	u32 cpuclk;
 
@@ -458,6 +460,62 @@ int _stm32_gpioConfig(unsigned int d, u8 pin, u8 mode, u8 af, u8 otype, u8 ospee
 }
 
 
+/* Flash banks */
+
+
+int _stm32_getFlashBank(void)
+{
+	return (*(stm32_common.flash + flash_optr) >> 20) & 1;
+}
+
+
+void _stm32_switchFlashBank(int bank)
+{
+	u32 optr;
+
+	if (bank == _stm32_getFlashBank())
+		return;
+
+	while (*(stm32_common.flash + flash_nssr) & (1 << 16)) {
+		/* Wait for BSY to clear */
+	}
+
+	/* Unlock Flash control registers */
+	*(stm32_common.flash + flash_nskeyr) = 0x45670123; /* KEY1 */
+	*(stm32_common.flash + flash_nskeyr) = 0xcdef89ab; /* KEY2 */
+	if (*(stm32_common.flash + flash_nscr) & (1 << 31)) /* LOCK */
+		return;
+
+	/* Unlock Flash option-byte */
+	*(stm32_common.flash + flash_optkeyr) = 0x08192a3b; /* OPTKEY1 */
+	*(stm32_common.flash + flash_optkeyr) = 0x4c5d6e7f; /* OPTKEY2 */
+	if (*(stm32_common.flash + flash_nscr) & (1 << 30)) /* OPTLOCK */
+		return;
+
+	/* Modify bank selection */
+	optr = *(stm32_common.flash + flash_optr) & ~(1 << 20);
+	if (bank != 0) {
+		optr |= (1 << 20); /* Set SWAP_BANK */
+	}
+	*(stm32_common.flash + flash_optr) = optr;
+
+	/* Commit option-byte */
+	*(stm32_common.flash + flash_nscr) |= (1 << 17); /* OPTSTRT */
+	while (*(stm32_common.flash + flash_nssr) & (1 << 16)) {
+		/* Wait for BSY to clear */
+	}
+
+	/* Reload option-byte */
+	*(stm32_common.flash + flash_nscr) |= (1 << 27); /* OBL_LAUNCH */
+	while (*(stm32_common.flash + flash_nssr) & (1 << 16)) {
+		/* Wait for BSY to clear */
+	}
+
+	/* Lock Flash configuration registers */
+	*(stm32_common.flash + flash_nscr) |= (1 << 31) | (1 << 30);
+}
+
+
 /* Watchdog */
 
 
@@ -540,6 +598,7 @@ void _stm32_init(void)
 	stm32_common.gpio[6] = GPIOG_BASE;
 	stm32_common.gpio[7] = GPIOH_BASE;
 	stm32_common.gpio[8] = GPIOI_BASE;
+	stm32_common.flash = FLASH_BASE;
 
 	/* Store reset flags and then clear them */
 	stm32_common.resetFlags = (*(stm32_common.rcc + rcc_csr) >> 25); /* LPWRRSTF ~ OBLRSTF */

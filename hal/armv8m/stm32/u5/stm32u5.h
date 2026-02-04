@@ -296,6 +296,12 @@ extern void _stm32_rccClearResetFlags(void);
 extern int _stm32_gpioConfig(unsigned int d, u8 pin, u8 mode, u8 af, u8 otype, u8 ospeed, u8 pupd);
 
 
+extern int _stm32_getFlashBank(void);
+
+
+extern void _stm32_switchFlashBank(int bank);
+
+
 /* Perform an operation (pwr_supply_op_*) on a selected power supply (pwr_supply_*) */
 extern int _stm32_pwrSupplyOperation(unsigned int supply, unsigned int operation, int status);
 

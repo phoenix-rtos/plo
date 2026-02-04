@@ -13,7 +13,7 @@ LDFLAGS := $(filter-out -Tdata% , $(LDFLAGS))
 CFLAGS := $(filter-out -mfloat-abi% , $(CFLAGS))
 CFLAGS += -mfloat-abi=soft
 
-PLO_COMMANDS ?= alias app blob call console copy devices dump echo go help kernelimg \
+PLO_COMMANDS ?= alias app bankswitch blob call console copy devices dump echo go help kernelimg \
   map mem phfs reboot script stop wait
 
 PLO_ALLDEVICES := uart-stm32 flash-stm32 ram-storage
