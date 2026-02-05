@@ -779,6 +779,16 @@ ssize_t xspi_regcom_erase(unsigned int minor, addr_t offs, size_t len, unsigned 
 }
 
 
+size_t xspi_regcom_getBlockSize(unsigned int minor)
+{
+	if (memParams[minor].params.log_eraseSize > 31) {
+		return 0;
+	}
+
+	return 1UL << memParams[minor].params.log_eraseSize;
+}
+
+
 int xspi_regcom_init(unsigned int minor)
 {
 	int ret;
@@ -790,6 +800,7 @@ int xspi_regcom_init(unsigned int minor)
 	p = &xspi_ctrlParams[minor];
 	mp = &memParams[minor];
 	fp = &mp->params;
+	hal_memset(fp, 0, sizeof(*fp));
 
 	mp->chipErase = &opDef_chip_erase;
 	mp->status = &opDef_read_status;

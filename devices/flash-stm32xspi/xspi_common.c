@@ -422,6 +422,41 @@ static int xspidrv_map(unsigned int minor, addr_t addr, size_t sz, int mode, add
 }
 
 
+static int xspidrv_control(unsigned int minor, int cmd, void *args)
+{
+	size_t *outSz = args;
+
+	if (args == NULL) {
+		return -EINVAL;
+	}
+
+	if (xspidrv_isValidMinor(minor) == 0) {
+		return -EINVAL;
+	}
+
+	switch (cmd) {
+		case DEV_CONTROL_GETPROP_TOTALSZ:
+			*outSz = xspi_memSize[minor];
+			return EOK;
+
+		case DEV_CONTROL_GETPROP_BLOCKSZ:
+			if (xspi_ctrlParams[minor].isHyperbus != 0) {
+				*outSz = xspi_hb_getBlockSize(minor);
+			}
+			else {
+				*outSz = xspi_regcom_getBlockSize(minor);
+			}
+
+			return (*outSz != 0) ? 0 : -EIO;
+
+		default:
+			break;
+	}
+
+	return -ENOSYS;
+}
+
+
 static int xspidrv_init(unsigned int minor)
 {
 	const xspi_ctrlParams_t *p;
@@ -501,7 +536,7 @@ __attribute__((constructor)) static void xspidrv_reg(void)
 	static const dev_ops_t opsStorageSTM32_XSPI = {
 		.sync = xspidrv_sync,
 		.map = xspidrv_map,
-		.control = NULL,
+		.control = xspidrv_control,
 		.read = xspidrv_read,
 		.write = xspidrv_write,
 		.erase = xspidrv_erase,
