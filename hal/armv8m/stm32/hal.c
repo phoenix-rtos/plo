@@ -6,7 +6,8 @@
  * Hardware Abstraction Layer
  *
  * Copyright 2020-2025 Phoenix Systems
- * Author: Hubert Buczynski, Marcin Baran, Gerard Swiderski, Aleksander Kaminski
+ * Copyright 2026 Apator Metrix
+ * Author: Hubert Buczynski, Marcin Baran, Gerard Swiderski, Aleksander Kaminski, Mateusz Karcz
  *
  * This file is part of Phoenix-RTOS.
  *
@@ -98,7 +99,13 @@ void hal_syspageSet(hal_syspage_t *hs)
 
 const char *hal_cpuInfo(void)
 {
+#if defined(__CPU_STM32N6)
 	return "Cortex-M55 STM32N6";
+#elif defined(__CPU_STM32U5)
+	return "Cortex-M33 STM32U5";
+#else
+#error "Unsupported platform"
+#endif
 }
 
 

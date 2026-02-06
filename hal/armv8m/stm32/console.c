@@ -6,7 +6,8 @@
  * Console
  *
  * Copyright 2021, 2025 Phoenix Systems
- * Authors: Aleksander Kaminski, Jacek Maksymowicz
+ * Copyright 2026 Apator Metrix
+ * Authors: Aleksander Kaminski, Jacek Maksymowicz, Mateusz Karcz
  *
  * This file is part of Phoenix-RTOS.
  *
@@ -18,7 +19,7 @@
 
 #include <board_config.h>
 
-#include "stm32n6.h"
+#include "stm32.h"
 
 #if !ISEMPTY(UART_CONSOLE_PLO)
 
@@ -39,12 +40,18 @@
 /* Values for selecting the peripheral clock for an UART */
 enum {
 	uart_clk_sel_pclk = 0, /* pclk1 or pclk2 depending on peripheral */
+#if defined(__CPU_STM32N6)
 	uart_clk_sel_per_ck,
 	uart_clk_sel_ic9_ck,
 	uart_clk_sel_ic14_ck,
 	uart_clk_sel_lse_ck,
 	uart_clk_sel_msi_ck,
 	uart_clk_sel_hsi_div_ck,
+#elif defined(__CPU_STM32U5)
+	uart_clk_sel_sysclk,
+	uart_clk_sel_hsi_ck,
+	uart_clk_sel_lse_ck,
+#endif
 };
 
 
@@ -100,11 +107,13 @@ void console_init(void)
 		{ UART3_BASE, UART3_CLK, ipclk_usart3sel },
 		{ UART4_BASE, UART4_CLK, ipclk_uart4sel },
 		{ UART5_BASE, UART5_CLK, ipclk_uart5sel },
+#if defined(__CPU_STM32N6)
 		{ UART6_BASE, UART6_CLK, ipclk_usart6sel },
 		{ UART7_BASE, UART7_CLK, ipclk_uart7sel },
 		{ UART8_BASE, UART8_CLK, ipclk_uart8sel },
 		{ UART9_BASE, UART9_CLK, ipclk_uart9sel },
 		{ UART10_BASE, UART10_CLK, ipclk_usart10sel },
+#endif
 	};
 
 	const int uart = UART_CONSOLE_PLO - 1, port = UART_IO_PORT_DEV, txpin = UART_PIN_TX, rxpin = UART_PIN_RX, af = UART_IO_AF;
@@ -119,8 +128,13 @@ void console_init(void)
 	/* Init rxd pin - input, push-pull, low speed, no pull-up */
 	_stm32_gpioConfig(port, rxpin, gpio_mode_af, af, gpio_otype_pp, gpio_ospeed_low, gpio_pupd_nopull);
 
+#if defined(__CPU_STM32N6)
 	_stm32_rccSetIPClk(uarts[uart].ipclk_sel, uart_clk_sel_hsi_div_ck);
 	halconsole_common.refclkfreq = 64 * 1000 * 1000;
+#elif defined(__CPU_STM32U5)
+	_stm32_rccSetIPClk(uarts[uart].ipclk_sel, uart_clk_sel_sysclk);
+	halconsole_common.refclkfreq = _stm32_rccGetCPUClock();
+#endif
 
 	/* Enable uart clock */
 	_stm32_rccSetDevClock(uarts[uart].dev_clk, 1);

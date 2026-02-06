@@ -14,7 +14,7 @@
  */
 
 #include <hal/hal.h>
-#include "stm32n6.h"
+#include "stm32.h"
 
 #define SYSTICK_IRQ 15
 
