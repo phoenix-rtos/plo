@@ -135,21 +135,22 @@ static int flashdrv_cfiRead(flash_cfi_t *cfi)
 }
 
 
-static int flashdrv_statusRegGet(unsigned int *val)
+static int flashdrv_statusRegGet(u8 *val)
 {
 	ssize_t res;
 	size_t cmdSz;
 	const flash_cmd_t cmd = fdrv_common.info.cmds[flash_cmd_rdsr1];
 
-	*val = 0;
+	cmdSz = cmd.size + STATUS_REG_SIZE;
 
-	cmdSz = cmd.size + (cmd.dummyCyc * cmd.dataLines) / 8;
 	hal_memset(fdrv_common.cmdTx, 0, cmdSz);
+	fdrv_common.cmdTx[0] = cmd.opCode;
 
 	qspi_start();
-	fdrv_common.cmdTx[0] = cmd.opCode;
-	res = qspi_polledTransfer(fdrv_common.cmdTx, (u8 *)val, cmdSz, TIMEOUT_CMD_MS);
+	res = qspi_polledTransfer(fdrv_common.cmdTx, fdrv_common.cmdRx, cmdSz, TIMEOUT_CMD_MS);
 	qspi_stop();
+
+	*val = fdrv_common.cmdRx[cmd.size];
 
 	return res;
 }
@@ -158,7 +159,7 @@ static int flashdrv_statusRegGet(unsigned int *val)
 static int flashdrv_wipCheck(time_t timeout)
 {
 	int res;
-	unsigned int st;
+	u8 st;
 	const time_t stop = hal_timerGet() + timeout;
 
 	do {
@@ -170,20 +171,16 @@ static int flashdrv_wipCheck(time_t timeout)
 		if (hal_timerGet() >= stop) {
 			return -ETIME;
 		}
-	} while ((st >> 8) & 0x1);
+	} while (st & 0x1);
 
 	return EOK;
 }
 
 
-static int flashdrv_welSet(unsigned int cmdID)
+static int flashdrv_optionSet(unsigned int cmdID)
 {
 	ssize_t res;
 	flash_cmd_t cmd;
-
-	if ((cmdID != flash_cmd_wrdi) && (cmdID != flash_cmd_wren)) {
-		return -EINVAL;
-	}
 
 	cmd = fdrv_common.info.cmds[cmdID];
 
@@ -200,13 +197,14 @@ static int flashdrv_welSet(unsigned int cmdID)
 
 static int flashdrv_chipErase(void)
 {
+
 	int res;
 	time_t timeout;
 
 	const flash_cfi_t *cfi = &fdrv_common.info.cfi;
 	flash_cmd_t cmd = fdrv_common.info.cmds[flash_cmd_be];
 
-	res = flashdrv_welSet(flash_cmd_wren);
+	res = flashdrv_optionSet(flash_cmd_wren);
 	if (res < 0) {
 		return res;
 	}
@@ -250,7 +248,7 @@ static int flashdrv_sectorErase(addr_t offs, size_t sectSz)
 			return -EINVAL;
 	}
 
-	res = flashdrv_welSet(flash_cmd_wren);
+	res = flashdrv_optionSet(flash_cmd_wren);
 	if (res < 0) {
 		return res;
 	}
@@ -286,7 +284,7 @@ static ssize_t flashdrv_pageProgram(addr_t offs, const void *buff, size_t len)
 		return -EINVAL;
 	}
 
-	res = flashdrv_welSet(flash_cmd_wren);
+	res = flashdrv_optionSet(flash_cmd_wren);
 	if (res < 0) {
 		return res;
 	}
@@ -637,12 +635,12 @@ static int flashdrv_init(unsigned int minor)
 	/* Require data RXed due to dummy cycles to be byte aligned. */
 	/* This requirement is in place to simplify implementation of read. */
 	if ((info->cmds[info->readCmd].dummyCyc == CFI_DUMMY_CYCLES_NOT_SET) ||
-		(((info->cmds[info->readCmd].dummyCyc * info->cmds[info->readCmd].dataLines) % 8) != 0)) {
+			(((info->cmds[info->readCmd].dummyCyc * info->cmds[info->readCmd].dataLines) % 8) != 0)) {
 		return -EINVAL;
 	}
 
 	lib_printf("\ndev/flash: Configured %s %dMB nor flash(%d.%d)", info->name,
-		CFI_SIZE_FLASH(info->cfi.chipSize) >> 20u, DEV_STORAGE, minor);
+			CFI_SIZE_FLASH(info->cfi.chipSize) >> 20u, DEV_STORAGE, minor);
 
 	return EOK;
 }

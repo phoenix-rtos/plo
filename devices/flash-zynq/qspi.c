@@ -360,8 +360,13 @@ static void qspi_IOMode(void)
 	/* Set master mode, not Legacy mode */
 	*(qspi_common.base + cr) = 0x1 | (1u << 31);
 
-	/* Set baud rate to 100 MHz: 200 MHz / 2 */
-	*(qspi_common.base + cr) &= ~(0x7 << 3);
+	/* Set baud rate to 50 MHz: (200 MHz / 4) by default */
+#ifdef QSPI_SCLK_DIV
+	*(qspi_common.base + cr) |= (QSPI_SCLK_DIV << 3);
+#else
+	*(qspi_common.base + cr) |= (0x1 << 3);
+#endif
+
 	if (QSPI_FCLK < 0) {
 		/* Set baud rate to 50 MHz: 200 MHz / 4 */
 		*(qspi_common.base + cr) |= (0x1 << 3);
@@ -386,6 +391,10 @@ static void qspi_IOMode(void)
 
 	/* Disable linear mode */
 	*(qspi_common.base + lqspi_cr) = 0;
+
+	/* Enable IRQs */
+	*(qspi_common.base + ier) = 0x7d;
+
 	hal_cpuDataMemoryBarrier();
 }
 
