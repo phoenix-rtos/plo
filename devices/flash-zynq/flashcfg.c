@@ -18,13 +18,15 @@
 #include "qspi.h"
 #include <lib/errno.h>
 
-
 /* Generic flash commands */
 
 #define FLASH_CMD_RDID       0x9f /* Read JEDEC ID */
 #define FLASH_CMD_RDSR1      0x05 /* Read Status Register - 1 */
+#define FLASH_CMD_RDFSR      0x70 /* Read Flag Status Register */
 #define FLASH_CMD_WRDI       0x04 /* Write enable */
 #define FLASH_CMD_WREN       0x06 /* Write disable */
+#define FLASH_CMD_4BEN       0xb7 /* Enable 4-byte address mode */
+#define FLASH_CMD_QIOEN      0x35 /* Enable Quad Input/Output mode */
 #define FLASH_CMD_READ       0x03 /* Read data */
 #define FLASH_CMD_4READ      0x13 /* 4-byte Read data */
 #define FLASH_CMD_FAST_READ  0x0b /* Fast read data */
@@ -46,6 +48,7 @@
 #define FLASH_CMD_SE         0xd8 /* 64KB sector erase*/
 #define FLASH_CMD_4SE        0xdc /* 4-byte 64KB sector erase*/
 #define FLASH_CMD_BE         0x60 /* Chip erase */
+#define FLASH_CMD_DE         0xc4 /* Die erase*/
 
 #define FLASH_TIMEOUT_CMD_MS 1000
 #define FLASH_TIMEOUT_WIP_MS 1000
@@ -54,8 +57,11 @@
 static const flash_cmd_t flash_defCmds[flash_cmd_end] = {
 	{ FLASH_CMD_RDID, 1, 24, 1 },
 	{ FLASH_CMD_RDSR1, 1, 8, 1 },
+	{ FLASH_CMD_RDFSR, 1, 0, 1 },
 	{ FLASH_CMD_WRDI, 1, 0, 1 },
 	{ FLASH_CMD_WREN, 1, 0, 1 },
+	{ FLASH_CMD_4BEN, 1, 0, 1 },
+	{ FLASH_CMD_QIOEN, 1, 0, 1 },
 	{ FLASH_CMD_READ, 4, 0, 1 },
 	{ FLASH_CMD_4READ, 5, 0, 1 },
 	{ FLASH_CMD_FAST_READ, 4, CFI_DUMMY_CYCLES_NOT_SET, 1 },
@@ -76,14 +82,15 @@ static const flash_cmd_t flash_defCmds[flash_cmd_end] = {
 	{ FLASH_CMD_4P4E, 5, 0, 1 },
 	{ FLASH_CMD_SE, 4, 0, 1 },
 	{ FLASH_CMD_4SE, 5, 0, 1 },
+	{ FLASH_CMD_DE, 5, 0, 1 },
 	{ FLASH_CMD_BE, 1, 0, 1 }
 };
 
 
-static int flashcfg_wren(const flash_info_t *info)
+static int flashcfg_optionSet(const flash_info_t *info, unsigned int cmdID)
 {
 	int res;
-	u8 cmdOpCode = info->cmds[flash_cmd_wren].opCode;
+	u8 cmdOpCode = info->cmds[cmdID].opCode;
 
 	qspi_start();
 	res = qspi_polledTransfer(&cmdOpCode, NULL, 1, FLASH_TIMEOUT_CMD_MS);
@@ -91,7 +98,6 @@ static int flashcfg_wren(const flash_info_t *info)
 
 	return res;
 }
-
 
 static int flashcfg_statusRegGet(const flash_info_t *info, u8 *val)
 {
@@ -137,7 +143,8 @@ static int flashcfg_spansionInit(const flash_info_t *info)
 	int res;
 	u8 tx[3];
 
-	res = flashcfg_wren(info);
+	/* enable write */
+	res = flashcfg_optionSet(info, flash_cmd_wren);
 	if (res < 0) {
 		return res;
 	}
@@ -211,7 +218,8 @@ static int flashcfg_micronVolatileCRWREN(const flash_info_t *info, int enable)
 	int res;
 	u8 tx[3];
 
-	res = flashcfg_wren(info);
+	/* enable write */
+	res = flashcfg_optionSet(info, flash_cmd_wren);
 	if (res < 0) {
 		return res;
 	}
@@ -386,6 +394,53 @@ static void flashcfg_micron512(flash_info_t *info)
 	info->init = flashcfg_micronInit;
 }
 
+static void flash_micron2G(flash_info_t *info)
+{
+	info->name = "Micron MT25QU02";
+
+	/* Lack of CFI support, filled based on specification */
+	info->cfi.timeoutTypical.byteWrite = 0x5;
+	info->cfi.timeoutTypical.pageWrite = 0x7;
+	info->cfi.timeoutTypical.sectorErase = 0x8;
+	info->cfi.timeoutTypical.chipErase = 0xf;
+	info->cfi.timeoutMax.byteWrite = 0x6;
+	info->cfi.timeoutMax.pageWrite = 0x4;
+	info->cfi.timeoutMax.sectorErase = 0x2;
+	info->cfi.timeoutMax.chipErase = 0x3;
+	info->cfi.chipSize = 0x1c;
+	info->cfi.fdiDesc = 0;
+	info->cfi.pageSize = 0x08;
+	info->cfi.regsCount = 1;
+	info->cfi.regs[0].count = 0xfff;
+	info->cfi.regs[0].size = 0x100;
+
+	hal_memcpy(info->cmds, flash_defCmds, sizeof(flash_defCmds));
+
+	/* Specific configuration */
+	/* Dummy cycles chosen for 100MHz clock speed. */
+	/* Dummy cycles * data lines must be divisible by 8. */
+
+	/* Single line */
+	info->cmds[flash_cmd_fast_read].dummyCyc = 8;
+	info->cmds[flash_cmd_4fast_read].dummyCyc = 8;
+	/* Two lines */
+	info->cmds[flash_cmd_dor].dummyCyc = 4;
+	info->cmds[flash_cmd_4dor].dummyCyc = 4;
+	info->cmds[flash_cmd_dior].dummyCyc = 8;
+	info->cmds[flash_cmd_4dior].dummyCyc = 8;
+	/* Four lines */
+	info->cmds[flash_cmd_qor].dummyCyc = 6;
+	info->cmds[flash_cmd_4qor].dummyCyc = 6;
+	info->cmds[flash_cmd_qior].dummyCyc = 10;
+	info->cmds[flash_cmd_4qior].dummyCyc = 10;
+
+	/* Default read and page program commands */
+	info->readCmd = flash_cmd_4qior;
+	info->ppCmd = flash_cmd_4qpp;
+
+	info->init = flashcfg_micronInit;
+}
+
 
 static int flashcfg_winbondInit(const flash_info_t *info)
 {
@@ -493,6 +548,9 @@ int flashcfg_infoResolve(flash_info_t *info)
 	}
 	else if ((info->cfi.vendorData[0] == 0x20) && (info->cfi.vendorData[1] == 0xbb) && (info->cfi.vendorData[2] == 0x20)) {
 		flashcfg_micron512(info);
+	}
+	else if ((info->cfi.vendorData[0] == 0x20) && (info->cfi.vendorData[1] == 0xbb) && (info->cfi.vendorData[2] == 0x22)) {
+		flash_micron2G(info);
 	}
 	/* Winbond W25Q128JV - IM/JM */
 	else if ((info->cfi.vendorData[0] == 0xef) && (info->cfi.vendorData[1] == 0x40) && (info->cfi.vendorData[2] == 0x18)) {
