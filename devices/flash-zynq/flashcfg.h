@@ -29,13 +29,17 @@
 #define CFI_SIZE_REGION(regSize, regCount) (CFI_SIZE_SECTION(regSize) * (size_t)(regCount + 1u))
 
 #define CFI_DUMMY_CYCLES_NOT_SET 0xff
+#define STATUS_REG_SIZE          0x1
 
 /* Order in command's table */
 enum {
 	flash_cmd_rdid = 0,
 	flash_cmd_rdsr1,
+	flash_cmd_rdfsr,
 	flash_cmd_wrdi,
 	flash_cmd_wren,
+	flash_cmd_4ben,
+	flash_cmd_qioen,
 	flash_cmd_read,
 	flash_cmd_4read,
 	flash_cmd_fast_read,
@@ -56,6 +60,7 @@ enum {
 	flash_cmd_4p4e,
 	flash_cmd_p64e,
 	flash_cmd_4p64e,
+	flash_cmd_de,
 	flash_cmd_be,
 	flash_cmd_end
 };
