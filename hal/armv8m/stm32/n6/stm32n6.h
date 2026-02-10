@@ -502,6 +502,10 @@ extern int _stm32_pwrSupplyOperation(unsigned int supply, unsigned int operation
 extern int _stm32_pwrSupplyValidateRange(unsigned int supply);
 
 
+/* Initialize selected power supply (pwr_supply_*) for use. */
+extern void _stm32_pwrSupplyInit(unsigned int supply);
+
+
 extern void _stm32_rtcUnlockRegs(void);
 
 
@@ -515,6 +519,10 @@ extern void _stm32_systickDone(void);
 
 
 extern void _stm32_wdgReload(void);
+
+
+/* Initialize only STM32 HAL functions for use without initializing the platform. */
+extern void _stm32_initHalOnly(void);
 
 
 extern void _stm32_init(void);
