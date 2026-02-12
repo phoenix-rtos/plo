@@ -489,6 +489,15 @@ extern int _stm32_gpioGet(unsigned int d, u8 pin, u8 *val);
 extern int _stm32_gpioGetPort(unsigned int d, u16 *val);
 
 
+/* Initialize RNG for use. */
+extern void _stm32_rngInit(void);
+
+
+/* Generate `len` random bytes into buffer pointed to by `val`.
+ * Return number of bytes read or < 0 if an error occurred. */
+extern ssize_t _stm32_rngRead(u8 *val, size_t len);
+
+
 /* Range = 0 - VOS low, 1 - VOS high */
 extern void _stm32_pwrSetCPUVolt(u8 range);
 
