@@ -75,26 +75,78 @@ u32 hal_scbGetPriority(s8 excpn)
 }
 
 
+/* Cache management */
+
+
+/* Get CCSIDR value of L1 data cache */
+static u32 hal_cache_getCCSIDR(void)
+{
+	*(cpu_common.scb + scb_csselr) = 0;
+	hal_cpuInstrBarrier();
+	return *(cpu_common.scb + scb_ccsidr);
+}
+
+
+static inline u32 hal_cache_getSets(u32 ccsidr)
+{
+	return ((ccsidr >> 13) & 0x7fffu) + 1;
+}
+
+
+static inline u32 hal_cache_getWays(u32 ccsidr)
+{
+	return ((ccsidr >> 3) & 0x3ffu) + 1;
+}
+
+
+/* Get Log2 of line size in bytes */
+static inline u32 hal_cache_getLogLine(u32 ccsidr)
+{
+	return (ccsidr & 0x7) + 4;
+}
+
+
+/* Loop over sets and ways */
+static void hal_cache_loopSetWay(u32 ccsidr, u32 reg_offset)
+{
+	u32 sets = hal_cache_getSets(ccsidr);
+	u32 ways = hal_cache_getWays(ccsidr);
+	hal_cpuDataSyncBarrier();
+	for (u32 set = 0; set < sets; set++) {
+		for (u32 way = 0; way < ways; way++) {
+			*(cpu_common.scb + reg_offset) = ((set & 0x1ffu) << 5) | ((way & 0x3u) << 30);
+		}
+	}
+	hal_cpuDataSyncBarrier();
+}
+
+
+/* Loop over memory locations */
+static void hal_cache_loopMemory(u32 ccsidr, u32 reg_offset, addr_t start, size_t size)
+{
+	u32 lineSize = 1UL << hal_cache_getLogLine(ccsidr);
+	size += start & (lineSize - 1);
+	start &= ~(lineSize - 1);
+	hal_cpuDataSyncBarrier();
+	while (size >= lineSize) {
+		*(cpu_common.scb + reg_offset) = start;
+		start += lineSize;
+		size -= lineSize;
+	}
+
+	if (size > 0) {
+		/* If size is not aligned to line end, perform the operation on one additional line */
+		*(cpu_common.scb + reg_offset) = start;
+	}
+
+	hal_cpuDataSyncBarrier();
+}
+
+
 void hal_enableDCache(void)
 {
-	u32 ccsidr, sets, ways;
-
-	if (!(*(cpu_common.scb + scb_ccr) & (1 << 16))) {
-		*(cpu_common.scb + scb_csselr) = 0;
-		hal_cpuDataSyncBarrier();
-
-		ccsidr = *(cpu_common.scb + scb_ccsidr);
-
-		/* Invalidate D$ */
-		sets = (ccsidr >> 13) & 0x7fffu;
-		do {
-			ways = (ccsidr >> 3) & 0x3ffu;
-			do {
-				*(cpu_common.scb + scb_dcisw) = ((sets & 0x1ffu) << 5) | ((ways & 0x3u) << 30);
-			} while (ways-- != 0);
-		} while (sets-- != 0);
-		hal_cpuDataSyncBarrier();
-
+	if ((*(cpu_common.scb + scb_ccr) & (1 << 16)) == 0) {
+		hal_cache_loopSetWay(hal_cache_getCCSIDR(), scb_dcisw);
 		*(cpu_common.scb + scb_ccr) |= 1u << 16;
 
 		hal_cpuDataSyncBarrier();
@@ -105,97 +157,38 @@ void hal_enableDCache(void)
 
 void hal_disableDCache(void)
 {
-	register u32 ccsidr, sets, ways;
-
-	if (*(cpu_common.scb + scb_ccr) & (1u << 16)) {
-		*(cpu_common.scb + scb_csselr) = 0;
-		hal_cpuDataSyncBarrier();
-
+	if ((*(cpu_common.scb + scb_ccr) & (1u << 16)) != 0) {
 		*(cpu_common.scb + scb_ccr) &= ~(1u << 16);
-		hal_cpuDataSyncBarrier();
-
-		ccsidr = *(cpu_common.scb + scb_ccsidr);
-
-		sets = (ccsidr >> 13) & 0x7fffu;
-		do {
-			ways = (ccsidr >> 3) & 0x3ffu;
-			do {
-				*(cpu_common.scb + scb_dcisw) = ((sets & 0x1ffu) << 5) | ((ways & 0x3u) << 30);
-			} while (ways-- != 0);
-		} while (sets-- != 0);
-
-		hal_cpuDataSyncBarrier();
+		hal_cache_loopSetWay(hal_cache_getCCSIDR(), scb_dcisw);
 		hal_cpuInstrBarrier();
 	}
 }
 
 
+void hal_cleanInvalDCacheAddr(void *addr, u32 sz)
+{
+	hal_cache_loopMemory(hal_cache_getCCSIDR(), scb_dccimvac, (addr_t)addr, sz);
+	hal_cpuInstrBarrier();
+}
+
+
 void hal_cleanDCache(void)
 {
-	register u32 ccsidr, sets, ways;
-
-	*(cpu_common.scb + scb_csselr) = 0;
-
-	hal_cpuDataSyncBarrier();
-	ccsidr = *(cpu_common.scb + scb_ccsidr);
-
-	/* Clean D$ */
-	sets = (ccsidr >> 13) & 0x7fffu;
-	do {
-		ways = (ccsidr >> 3) & 0x3ffu;
-		do {
-			*(cpu_common.scb + scb_dccsw) = ((sets & 0x1ffu) << 5) | ((ways & 0x3u) << 30);
-		} while (ways-- != 0);
-	} while (sets-- != 0);
-
-	hal_cpuDataSyncBarrier();
+	hal_cache_loopSetWay(hal_cache_getCCSIDR(), scb_dccsw);
 	hal_cpuInstrBarrier();
 }
 
 
 void hal_invalDCacheAddr(void *addr, u32 sz)
 {
-	u32 daddr;
-	int dsize;
-
-	if (sz == 0) {
-		return;
-	}
-
-	daddr = (((u32)addr) & ~0x1fu);
-	dsize = sz + ((u32)addr & 0x1fu);
-
-	hal_cpuDataSyncBarrier();
-
-	do {
-		*(cpu_common.scb + scb_dcimvac) = daddr;
-		daddr += 0x20u;
-		dsize -= 0x20u;
-	} while (dsize > 0);
-
-	hal_cpuDataSyncBarrier();
+	hal_cache_loopMemory(hal_cache_getCCSIDR(), scb_dcimvac, (addr_t)addr, sz);
 	hal_cpuInstrBarrier();
 }
 
 
 void hal_invalDCacheAll(void)
 {
-	u32 ccsidr, sets, ways;
-
-	/* select Level 1 data cache */
-	*(cpu_common.scb + scb_csselr) = 0;
-	hal_cpuDataSyncBarrier();
-	ccsidr = *(cpu_common.scb + scb_ccsidr);
-
-	sets = (ccsidr >> 13) & 0x7fffu;
-	do {
-		ways = (ccsidr >> 3) & 0x3ffu;
-		do {
-			*(cpu_common.scb + scb_dcisw) = ((sets & 0x1ffu) << 5) | ((ways & 0x3u) << 30);
-		} while (ways-- != 0U);
-	} while (sets-- != 0U);
-
-	hal_cpuDataSyncBarrier();
+	hal_cache_loopSetWay(hal_cache_getCCSIDR(), scb_dcisw);
 	hal_cpuInstrBarrier();
 }
 

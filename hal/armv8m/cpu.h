@@ -77,6 +77,9 @@ extern void hal_disableDCache(void);
 extern void hal_disableICache(void);
 
 
+extern void hal_cleanInvalDCacheAddr(void *addr, u32 sz);
+
+
 extern void hal_cleanDCache(void);
 
 
