@@ -122,7 +122,7 @@ static struct hb_memParams {
 } hb_memParams[XSPI_N_CONTROLLERS];
 
 
-static int psramdrv_changeXspiMode(unsigned int minor, psram_xspiMode_t mode)
+static int xspi_hb_changeXspiMode(unsigned int minor, psram_xspiMode_t mode)
 {
 	const psram_xspiSetup_t *newSetup = &psram_xspiModes[mode];
 	const psram_xspiSetup_t *toClear = &psram_toClear;
@@ -159,7 +159,7 @@ static int xspi_hb_transactionInternal(unsigned int minor, const psram_xspiMode_
 	const xspi_ctrlParams_t *p = &xspi_ctrlParams[minor];
 	u8 isRead = ((mode == xspi_memRead) || (mode == xspi_regRead)) ? 1 : 0;
 
-	psramdrv_changeXspiMode(minor, mode);
+	xspi_hb_changeXspiMode(minor, mode);
 	*(p->ctrl + xspi_dlr) = size - 1;
 	hal_cpuDataMemoryBarrier();
 	*(p->ctrl + xspi_ar) = sysaddr * ((hb_memParams[minor].is16Bit != 0) ? 4 : 2);
@@ -232,7 +232,7 @@ static int xspi_hb_psramInit(unsigned int minor)
 	}
 
 	/* Set device to memory mapped mode */
-	psramdrv_changeXspiMode(minor, xspi_memMapped);
+	xspi_hb_changeXspiMode(minor, xspi_memMapped);
 	return EOK;
 }
 

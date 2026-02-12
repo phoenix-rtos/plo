@@ -285,6 +285,10 @@ static u32 flashdrv_changeCtrlMode(unsigned int minor, u32 new_mode)
 		*(p->ctrl + xspi_ccr) = mp->read.ccr;
 		*(p->ctrl + xspi_tcr) = mp->read.tcr;
 		*(p->ctrl + xspi_ir) = mp->read.ir;
+		*(p->ctrl + xspi_wccr) = mp->write.ccr;
+		*(p->ctrl + xspi_wtcr) = mp->write.tcr;
+		*(p->ctrl + xspi_wir) = mp->write.ir;
+
 		hal_cpuDataMemoryBarrier();
 	}
 
@@ -643,70 +647,61 @@ ssize_t xspi_regcom_read(unsigned int minor, addr_t offs, void *buff, size_t len
 }
 
 
+static int xspi_write_line(unsigned int minor, void *dest, const void *src, size_t *i, size_t n)
+{
+	int ret;
+
+	ret = flashdrv_writeEnable(minor, 1);
+	if (ret < 0) {
+		return ret;
+	}
+
+	flashdrv_changeCtrlMode(minor, XSPI_CR_MODE_MEMORY);
+	hal_cpuDataSyncBarrier();
+	hal_memcpy(dest + *i, src + *i, n);
+	hal_cpuDataSyncBarrier();
+	hal_cleanInvalDCacheAddr(dest + *i, n);
+	ret = flashdrv_waitForWriteCompletion(minor, memParams[minor].status, 10000);
+	if (ret < 0) {
+		return ret;
+	}
+
+	*i += n;
+	return 0;
+}
+
+
 static ssize_t flashdrv_write_internal(unsigned int minor, addr_t offs, const void *buff, size_t len)
 {
-	flash_opDefinition_t opDef;
-	const struct flash_memParams *mp;
-	size_t remaining = len;
-	u32 pageSize;
-	u32 pageRemaining, unalignedEnd = 0;
-	ssize_t ret = 0;
-	u8 tmp[2];
-	const u8 *data = buff;
+	const xspi_ctrlParams_t *p = &xspi_ctrlParams[minor];
+	int ret;
 
-	/* In DTR mode both offset and length must be aligned to 2 bytes */
-	mp = &memParams[minor];
-	pageSize = 1 << mp->params.log_pageSize;
-	opDef.reg = mp->write;
-	opDef.isRead = 0;
-	if ((offs % 2) != 0) {
-		tmp[0] = 0xff;
-		tmp[1] = data[0];
-		opDef.addr = offs - 1;
-		opDef.dataLen = 2;
-		ret = flashdrv_performWriteOp(minor, &opDef, tmp, 1000);
-		if (ret < 0) {
-			return ret;
-		}
-
-		offs++;
-		data++;
-		remaining--;
-	}
-
-	unalignedEnd = remaining % 2;
-	remaining -= unalignedEnd;
-
-	while (remaining > 0) {
-		pageRemaining = pageSize - (offs & (pageSize - 1));
-		if (pageRemaining > remaining) {
-			pageRemaining = remaining;
-		}
-
-		opDef.addr = offs;
-		opDef.dataLen = pageRemaining;
-		ret = flashdrv_performWriteOp(minor, &opDef, data, 1000);
-		if (ret < 0) {
-			return ret;
-		}
-
-		offs += pageRemaining;
-		data += pageRemaining;
-		remaining -= pageRemaining;
-	}
-
-	if (unalignedEnd != 0) {
-		tmp[0] = data[0];
-		tmp[1] = 0xff;
-		opDef.addr = offs;
-		opDef.dataLen = 2;
-		ret = flashdrv_performWriteOp(minor, &opDef, tmp, 1000);
+	/* TODO: in my testing it seems that this can be at most 1 cache line. Less than 1 cache line results
+	 * in invalid writes (only the last line in a write actually gets written). */
+	const size_t CACHE_LINE_SIZE = 32;
+	size_t i = 0;
+	if ((offs % CACHE_LINE_SIZE) != 0) {
+		ret = xspi_write_line(minor, p->start + offs, buff, &i, min(CACHE_LINE_SIZE - (offs % CACHE_LINE_SIZE), len));
 		if (ret < 0) {
 			return ret;
 		}
 	}
 
-	return (ssize_t)len;
+	while ((len - i) >= CACHE_LINE_SIZE) {
+		ret = xspi_write_line(minor, p->start + offs, buff, &i, CACHE_LINE_SIZE);
+		if (ret < 0) {
+			return ret;
+		}
+	}
+
+	if ((len - i) > 0) {
+		ret = xspi_write_line(minor, p->start + offs, buff, &i, len - i);
+		if (ret < 0) {
+			return ret;
+		}
+	}
+
+	return (ssize_t)i;
 }
 
 
@@ -721,6 +716,7 @@ ssize_t xspi_regcom_write(unsigned int minor, addr_t offs, const void *buff, siz
 
 	prev_mode = flashdrv_changeCtrlMode(minor, XSPI_CR_MODE_IWRITE);
 	ret = flashdrv_write_internal(minor, offs, buff, len);
+	/* TODO: lock write again? */
 	flashdrv_changeCtrlMode(minor, prev_mode);
 	return ret;
 }
