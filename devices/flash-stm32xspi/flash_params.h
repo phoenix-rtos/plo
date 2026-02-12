@@ -67,6 +67,7 @@ typedef struct {
 	u8 log_pageSize;       /* log2 of page size in bytes */
 	u32 eraseBlockTimeout; /* Max time in ms to erase block of (1 << log_eraseSize) bytes */
 	u32 eraseChipTimeout;  /* Max time in ms to erase the whole chip */
+	u32 programTimeout_us; /* Max time in us to write one page */
 } flash_opParameters_t;
 
 

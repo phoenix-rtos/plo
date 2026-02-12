@@ -65,13 +65,14 @@ void flashdrv_fillDefaultParams(flash_opParameters_t *res)
 	res->writeOpcode = 0x02; /* PAGE PROGRAM opcode */
 	res->writeDummy = 0;
 	res->addrMode = ADDRMODE_3B;
-	res->log_chipSize = 24;        /* 16 MB */
+	res->log_chipSize = 24; /* 16 MB */
 	res->eraseIoType = operation_io_111;
-	res->eraseOpcode = 0xd8;       /* Sector erase */
-	res->log_eraseSize = 16;       /* 64 KB sector size */
-	res->log_pageSize = 8;         /* 256 B page size */
-	res->eraseBlockTimeout = 1000; /* 1 second to erase block */
-	res->eraseChipTimeout = 60000; /* 60 seconds to erase chip */
+	res->eraseOpcode = 0xd8;        /* Sector erase */
+	res->log_eraseSize = 16;        /* 64 KB sector size */
+	res->log_pageSize = 8;          /* 256 B page size */
+	res->eraseBlockTimeout = 1000;  /* 1 second to erase block */
+	res->eraseChipTimeout = 60000;  /* 60 seconds to erase chip */
+	res->programTimeout_us = 65536; /* 65 ms to write page */
 }
 
 
@@ -191,6 +192,9 @@ int flashdrv_parseSfdp(const u32 *data, flash_opParameters_t *res, int tryMultiI
 		eraseTimeValue = ptable[10] >> 24;
 		res->eraseChipTimeout = eraseTimeoutMultiplier * flashdrv_calcEraseTime(eraseTimeValue, 1);
 		res->log_pageSize = (ptable[10] >> 4) & 0xf;
+		res->programTimeout_us = ((ptable[10] >> 8) & 0x1f) + 1;
+		res->programTimeout_us *= (((ptable[10] >> 13) & 0x1) != 0) ? 64 : 8;
+		res->programTimeout_us *= 2 * ((ptable[10] & 0xf) + 1);
 	}
 
 	return 0;
