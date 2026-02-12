@@ -81,6 +81,13 @@
 #define XSPI_CR_MODE_AUTOPOLL (2UL << 28) /* Auto-polling mode */
 #define XSPI_CR_MODE_MEMORY   (3UL << 28) /* Memory-mapped mode */
 #define XSPI_CR_MODE_MASK     (3UL << 28) /* Mask of mode bits */
+#define XSPI_CR_NOPREF_AXI    (1UL << 26) /* Disable prefetch when the AXI transaction is signaled as not-prefetchable */
+#define XSPI_CR_NOPREF        (1UL << 25) /* Disable prefetch always */
+#define XSPI_CR_TCEN          (1UL << 3)  /* Enable timeout in memory-mapped mode */
+
+/* Default settings for prefetch and timeout */
+#define XSPI_DEFAULT_PREFETCH (XSPI_CR_NOPREF_AXI)
+#define XSPI_DEFAULT_TIMEOUT  (XSPI_CR_TCEN)
 
 #define XSPI_DCR1_MTYP_MICRON       (0UL << 24) /* In DDR 8-bit data mode: D0 comes before D1, DQS polarity inverted */
 #define XSPI_DCR1_MTYP_MACRONIX     (1UL << 24) /* In DDR 8-bit data mode: D1 comes before D0 */
