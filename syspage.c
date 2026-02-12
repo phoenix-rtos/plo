@@ -52,7 +52,6 @@ void syspage_init(void)
 	hal_syspageSet(&syspage_common.syspage->hs);
 
 	/* Initialize background scheduler window */
-	// TODO: somewhere else??
 	schedWindow = (syspage_sched_window_t *)syspage_alloc(sizeof(syspage_sched_window_t));
 	if (schedWindow != NULL) {
 		schedWindow->next = schedWindow;

@@ -125,6 +125,7 @@ static int cmd_part(int argc, char *argv[])
 		log_error("\nCannot allocate memory for %s", name);
 		return -ENOMEM;
 	}
+
 	cmd_mapsAdd2Part(part->allocMaps, allocSz, allocMaps);
 	cmd_mapsAdd2Part(part->accessMaps, accessSz, accessMaps);
 	if ((res = cmd_schedWindowAdd2Part(&part->schedWindowsMask, schedWinSz, schedWindows)) < 0) {
