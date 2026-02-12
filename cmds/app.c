@@ -108,6 +108,7 @@ static int cmd_partitionCreate(const char *name, syspage_part_t **part, char *im
 	partition->allocMapSz = 1;
 	partition->accessMapSz = imapSz + dmapSz - 1;
 	partition->flags = pFlagIPCAll | pFlagSpawnAll; /* For backwards compatibility */
+	partition->schedWindowsMask = 1U;
 	hal_strcpy(partition->name, name);
 
 	res = hal_getPartData(partition, imaps, imapSz, dmaps, dmapSz);

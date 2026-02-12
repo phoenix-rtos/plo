@@ -22,7 +22,7 @@
 
 static void cmd_partInfo(void)
 {
-	lib_printf("creates partition, usage: part <name> [flags] <allocmap1;allocmap2...> <accessmap1;accessmap2...>");
+	lib_printf("creates partition, usage: part <name> [flags] <allocmap1;allocmap2...> <accessmap1;accessmap2...> <schedwindowNr1;schedwindowNr2...>");
 }
 
 
@@ -47,16 +47,41 @@ static int cmd_mapsAddToPart(u8 *mapIDs, size_t nb, const char *mapNames)
 }
 
 
-static size_t cmd_mapsParse(char *maps, char sep)
+static int cmd_schedWindowAddToPart(u32 *schedIds, size_t nb, char *schedStr, const char *cmd)
+{
+	unsigned long window;
+	size_t i;
+
+	*schedIds = 0;
+
+	for (i = 0; i < nb; ++i) {
+		window = lib_strtoul(schedStr, &schedStr, 10);
+		if (*schedStr != '\0') {
+			log_error("\n%s: Scheduler window is not a valid number", cmd);
+			return -EINVAL;
+		}
+		if (window >= syspage_schedulerWindowCount()) {
+			log_error("\n%s: Invalid scheduler window index", cmd);
+			return -EINVAL;
+		}
+
+		*schedIds |= 1U << window;
+		schedStr += 1; /* '\0' */
+	}
+	return EOK;
+}
+
+
+static size_t cmd_listParse(char *list, char sep)
 {
 	size_t nb = 0;
 
-	while (*maps != '\0') {
-		if (*maps == sep) {
-			*maps = '\0';
+	while (*list != '\0') {
+		if (*list == sep) {
+			*list = '\0';
 			++nb;
 		}
-		maps++;
+		list++;
 	}
 
 	return ++nb;
@@ -67,16 +92,17 @@ static int cmd_part(int argc, char *argv[])
 {
 	int res, argvID = 0;
 
-	char *allocMaps, *accessMaps;
-	size_t allocSz, accessSz;
+	char *allocMaps, *accessMaps, *schedWindows;
+	size_t allocSz, accessSz, schedWinSz;
+	u32 schedWindowsMask;
 
 	unsigned int i, flags = 0;
 
 	const char *name;
-	syspage_part_t *part;
+	syspage_part_t *part, *other;
 
 	/* Parse command arguments */
-	if ((argc < 4) || (argc > 5)) {
+	if ((argc < 5) || (argc > 6)) {
 		log_error("\n%s: Wrong argument count", argv[0]);
 		return CMD_EXIT_FAILURE;
 	}
@@ -108,10 +134,14 @@ static int cmd_part(int argc, char *argv[])
 	allocMaps = argv[argvID++];
 
 	/* ARG_4: accessible maps */
-	accessMaps = argv[argvID];
+	accessMaps = argv[argvID++];
 
-	allocSz = cmd_mapsParse(allocMaps, ';');
-	accessSz = cmd_mapsParse(accessMaps, ';');
+	/* ARG_5: scheduler windows */
+	schedWindows = argv[argvID];
+
+	allocSz = cmd_listParse(allocMaps, ';');
+	accessSz = cmd_listParse(accessMaps, ';');
+	schedWinSz = cmd_listParse(schedWindows, ';');
 
 	part = syspage_partAdd();
 	if (part == NULL) {
@@ -137,6 +167,22 @@ static int cmd_part(int argc, char *argv[])
 	if (res < 0) {
 		return res;
 	}
+	res = cmd_schedWindowAddToPart(&schedWindowsMask, schedWinSz, schedWindows, argv[0]);
+	if (res < 0) {
+		return res;
+	}
+	part->schedWindowsMask = schedWindowsMask;
+
+	other = syspage_partsGet();
+	do {
+		if (((part->schedWindowsMask & other->schedWindowsMask) != 0U) &&
+				(part->schedWindowsMask != other->schedWindowsMask)) {
+			log_error("\nUnsupported scheduler windows configuration for partitions %s and %s", name, other->name);
+			return -EINVAL;
+		}
+		other = other->next;
+	} while (other != syspage_partsGet());
+
 	part->allocMapSz = allocSz;
 	part->accessMapSz = accessSz;
 	part->flags = flags;
