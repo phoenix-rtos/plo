@@ -100,6 +100,8 @@ static int cmd_partitionCreate(const char *name, syspage_part_t **part, char *im
 	partition->accessMapSz = imapSz + dmapSz + 1;
 	hal_strcpy(partition->name, name);
 
+	partition->schedWindowsMask = 1U;
+
 	if ((res = hal_getPartData(partition, imaps, imapSz, dmaps, dmapSz)) < 0) {
 		return res;
 	}

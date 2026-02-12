@@ -34,11 +34,14 @@ struct {
 
 void syspage_init(void)
 {
+	syspage_sched_window_t *schedWindow;
+
 	syspage_common.syspage = (syspage_t *)__heap_base;
 
 	syspage_common.syspage->maps = NULL;
 	syspage_common.syspage->partitions = NULL;
 	syspage_common.syspage->progs = NULL;
+	syspage_common.syspage->schedWindows = NULL;
 	syspage_common.syspage->console = console_default;
 
 	syspage_common.heapTop = (void *)ALIGN_ADDR((addr_t)__heap_base + sizeof(syspage_t), sizeof(long long));
@@ -47,6 +50,20 @@ void syspage_init(void)
 	syspage_common.syspage->size = (size_t)(syspage_common.heapTop - (void *)syspage_common.syspage);
 
 	hal_syspageSet(&syspage_common.syspage->hs);
+
+	/* Initialize background scheduler window */
+	schedWindow = (syspage_sched_window_t *)syspage_alloc(sizeof(syspage_sched_window_t));
+	if (schedWindow != NULL) {
+		schedWindow->next = schedWindow;
+		schedWindow->prev = schedWindow;
+		schedWindow->start = 0;
+		schedWindow->stop = 0;
+		schedWindow->idx = 0;
+		syspage_common.syspage->schedWindows = schedWindow;
+	}
+	else {
+		log_error("\nsyspage: Cannot allocate memory for background scheduler window");
+	}
 }
 
 
@@ -499,6 +516,49 @@ const char *syspage_mapName(u8 id)
 	return NULL;
 }
 
+
+/* Scheduler's functions */
+
+syspage_sched_window_t *syspage_schedWindowAdd(void)
+{
+	syspage_sched_window_t *window;
+
+	window = syspage_alloc(sizeof(syspage_sched_window_t));
+	if (window == NULL) {
+		return NULL;
+	}
+
+	if (syspage_common.syspage->schedWindows == NULL) {
+		window->next = window;
+		window->prev = window;
+		syspage_common.syspage->schedWindows = window;
+	}
+	else {
+		window->prev = syspage_common.syspage->schedWindows->prev;
+		syspage_common.syspage->schedWindows->prev->next = window;
+		window->next = syspage_common.syspage->schedWindows;
+		syspage_common.syspage->schedWindows->prev = window;
+	}
+
+	return window;
+}
+
+size_t syspage_schedulerWindowCount(void)
+{
+	size_t count = 0;
+	syspage_sched_window_t *window = syspage_common.syspage->schedWindows;
+
+	if (window == NULL) {
+		return 0;
+	}
+
+	do {
+		count++;
+		window = window->next;
+	} while (window != syspage_common.syspage->schedWindows);
+
+	return count;
+}
 
 /* Partition's functions */
 

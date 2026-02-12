@@ -68,6 +68,11 @@ extern void syspage_mapShow(void);
 
 extern mapent_t *syspage_entryAdd(const char *mapName, addr_t start, size_t size, unsigned int align);
 
+/* Scheduler's functions */
+syspage_sched_window_t *syspage_schedWindowAdd(void);
+
+
+size_t syspage_schedulerWindowCount(void);
 
 /* Partition's functions */
 extern syspage_part_t *syspage_partAdd(void);
