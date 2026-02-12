@@ -258,7 +258,7 @@ static u32 flashdrv_makeIRValue(u8 opcodeType, u16 opcode)
 }
 
 
-static u32 flashdrv_changeCtrlMode(unsigned int minor, u32 new_mode)
+static u32 flashdrv_changeCtrlMode(unsigned int minor, u32 new_mode, int doMemWriting)
 {
 	const xspi_ctrlParams_t *p = &xspi_ctrlParams[minor];
 	struct flash_memParams *mp = &memParams[minor];
@@ -285,6 +285,20 @@ static u32 flashdrv_changeCtrlMode(unsigned int minor, u32 new_mode)
 		*(p->ctrl + xspi_ccr) = mp->read.ccr;
 		*(p->ctrl + xspi_tcr) = mp->read.tcr;
 		*(p->ctrl + xspi_ir) = mp->read.ir;
+		/* Clear prefetch and timeout bits */
+		v &= ~(XSPI_CR_NOPREF_AXI | XSPI_CR_NOPREF | XSPI_CR_TCEN);
+		if (doMemWriting != 0) {
+			*(p->ctrl + xspi_wccr) = mp->write.ccr;
+			*(p->ctrl + xspi_wtcr) = mp->write.tcr;
+			*(p->ctrl + xspi_wir) = mp->write.ir;
+			/* Leave prefetch and timeout bits cleared to enable prefetch and disable timeout */
+		}
+		else {
+			/* Disable writing. Attempting to write will cause an exception. */
+			*(p->ctrl + xspi_wccr) = 0;
+			v |= XSPI_DEFAULT_PREFETCH | XSPI_DEFAULT_TIMEOUT;
+		}
+
 		hal_cpuDataMemoryBarrier();
 	}
 
@@ -307,7 +321,7 @@ static inline int flashdrv_opHasAddr(const flash_opDefinition_t *opDef)
 static int flashdrv_performOp(unsigned int minor, const flash_opDefinition_t *opDef, unsigned char *data)
 {
 	const xspi_ctrlParams_t *p = &xspi_ctrlParams[minor];
-	flashdrv_changeCtrlMode(minor, (opDef->isRead != 0) ? XSPI_CR_MODE_IREAD : XSPI_CR_MODE_IWRITE);
+	flashdrv_changeCtrlMode(minor, (opDef->isRead != 0) ? XSPI_CR_MODE_IREAD : XSPI_CR_MODE_IWRITE, 0);
 	if (opDef->dataLen != 0) {
 		*(p->ctrl + xspi_dlr) = opDef->dataLen - 1;
 	}
@@ -331,7 +345,7 @@ static int flashdrv_waitForWriteCompletion(unsigned int minor, const flash_opDef
 	const xspi_ctrlParams_t *p = &xspi_ctrlParams[minor];
 	time_t time_start = hal_timerGet();
 
-	flashdrv_changeCtrlMode(minor, XSPI_CR_MODE_AUTOPOLL);
+	flashdrv_changeCtrlMode(minor, XSPI_CR_MODE_AUTOPOLL, 0);
 	*(p->ctrl + xspi_psmkr) = 0x01; /* Check bit 0 */
 	*(p->ctrl + xspi_psmar) = 0x00; /* Check until it's cleared */
 	*(p->ctrl + xspi_pir) = 0x10;
@@ -424,7 +438,7 @@ static const u32 *flashdrv_mountSfdp(int minor)
 	mp->read.ccr = MAKE_CCR_VALUE(S1, S1, NO, S1, 1, 3, 0, 0);
 	mp->read.tcr = 8;   /* 8 dummy cycles, no sample shifting */
 	mp->read.ir = 0x5a; /* Set read command to 0x5a (READ SERIAL FLASH DISCOVERY PARAMETER) */
-	flashdrv_changeCtrlMode(minor, XSPI_CR_MODE_MEMORY);
+	flashdrv_changeCtrlMode(minor, XSPI_CR_MODE_MEMORY, 0);
 	return p->start;
 }
 
@@ -643,70 +657,93 @@ ssize_t xspi_regcom_read(unsigned int minor, addr_t offs, void *buff, size_t len
 }
 
 
+static int xspi_endAlignedMemcpy(unsigned int minor, void *dest, const void *src, size_t n)
+{
+	/* The Flash memory may be in 8-bit or 16-bit DTR mode that requires writes to be aligned to 2 or 4 bytes.
+	 * The controller is smart enough to align transactions at the start and uses DQS line(s) to signal
+	 * which bytes are valid. Unfortunately, it is not smart enough to align the end of the transaction,
+	 * so we have to re-write a few bytes after the end.
+	 * For MCE in block mode we assume both dest and n were previously verified to be aligned. */
+	int ret;
+	void *end = dest + n;
+	u32 misalign = 4 - ((addr_t)end % 4);
+	u8 misalign_data[4];
+	if (misalign < 4) {
+		/* This read must occur before any writes */
+		hal_memcpy(misalign_data, end, misalign);
+	}
+
+	ret = xspi_dmaMemcpy(minor, dest, src, n);
+	if (ret < 0) {
+		return ret;
+	}
+
+	if (misalign < 4) {
+		return xspi_dmaMemcpy(minor, end, misalign_data, misalign);
+	}
+
+	return EOK;
+}
+
+
+static int xspi_writePage(unsigned int minor, void *dest, const void *src, size_t *i, size_t n)
+{
+	int ret;
+	/* Add 2 extra ms to the timeout to make sure there's at least 1 ms margin */
+	u32 timeout = (memParams[minor].params.programTimeout_us / 1000) + 2;
+
+	ret = flashdrv_writeEnable(minor, 1);
+	if (ret < 0) {
+		return ret;
+	}
+
+	flashdrv_changeCtrlMode(minor, XSPI_CR_MODE_MEMORY, 1);
+	ret = xspi_endAlignedMemcpy(minor, dest + *i, src + *i, n);
+	if (ret < 0) {
+		return ret;
+	}
+
+	ret = flashdrv_waitForWriteCompletion(minor, memParams[minor].status, timeout);
+	if (ret < 0) {
+		return ret;
+	}
+
+	hal_invalDCacheAddr(dest + *i, n);
+	*i += n;
+	return 0;
+}
+
+
 static ssize_t flashdrv_write_internal(unsigned int minor, addr_t offs, const void *buff, size_t len)
 {
-	flash_opDefinition_t opDef;
-	const struct flash_memParams *mp;
-	size_t remaining = len;
-	u32 pageSize;
-	u32 pageRemaining, unalignedEnd = 0;
-	ssize_t ret = 0;
-	u8 tmp[2];
-	const u8 *data = buff;
+	const xspi_ctrlParams_t *p = &xspi_ctrlParams[minor];
+	/* Limit transactions to 32 KB (DMA supports 65535 bytes max) */
+	size_t pageSize = 1UL << min(memParams[minor].params.log_pageSize, 15);
+	size_t i = 0;
+	int ret;
 
-	/* In DTR mode both offset and length must be aligned to 2 bytes */
-	mp = &memParams[minor];
-	pageSize = 1 << mp->params.log_pageSize;
-	opDef.reg = mp->write;
-	opDef.isRead = 0;
-	if ((offs % 2) != 0) {
-		tmp[0] = 0xff;
-		tmp[1] = data[0];
-		opDef.addr = offs - 1;
-		opDef.dataLen = 2;
-		ret = flashdrv_performWriteOp(minor, &opDef, tmp, 1000);
-		if (ret < 0) {
-			return ret;
-		}
-
-		offs++;
-		data++;
-		remaining--;
-	}
-
-	unalignedEnd = remaining % 2;
-	remaining -= unalignedEnd;
-
-	while (remaining > 0) {
-		pageRemaining = pageSize - (offs & (pageSize - 1));
-		if (pageRemaining > remaining) {
-			pageRemaining = remaining;
-		}
-
-		opDef.addr = offs;
-		opDef.dataLen = pageRemaining;
-		ret = flashdrv_performWriteOp(minor, &opDef, data, 1000);
-		if (ret < 0) {
-			return ret;
-		}
-
-		offs += pageRemaining;
-		data += pageRemaining;
-		remaining -= pageRemaining;
-	}
-
-	if (unalignedEnd != 0) {
-		tmp[0] = data[0];
-		tmp[1] = 0xff;
-		opDef.addr = offs;
-		opDef.dataLen = 2;
-		ret = flashdrv_performWriteOp(minor, &opDef, tmp, 1000);
+	if ((offs % pageSize) != 0) {
+		ret = xspi_writePage(minor, p->start + offs, buff, &i, min(pageSize - (offs % pageSize), len));
 		if (ret < 0) {
 			return ret;
 		}
 	}
 
-	return (ssize_t)len;
+	while ((len - i) >= pageSize) {
+		ret = xspi_writePage(minor, p->start + offs, buff, &i, pageSize);
+		if (ret < 0) {
+			return ret;
+		}
+	}
+
+	if ((len - i) > 0) {
+		ret = xspi_writePage(minor, p->start + offs, buff, &i, len - i);
+		if (ret < 0) {
+			return ret;
+		}
+	}
+
+	return (ssize_t)i;
 }
 
 
@@ -719,9 +756,9 @@ ssize_t xspi_regcom_write(unsigned int minor, addr_t offs, const void *buff, siz
 		return 0;
 	}
 
-	prev_mode = flashdrv_changeCtrlMode(minor, XSPI_CR_MODE_IWRITE);
+	prev_mode = flashdrv_changeCtrlMode(minor, XSPI_CR_MODE_IWRITE, 0);
 	ret = flashdrv_write_internal(minor, offs, buff, len);
-	flashdrv_changeCtrlMode(minor, prev_mode);
+	flashdrv_changeCtrlMode(minor, prev_mode, 0);
 	return ret;
 }
 
@@ -771,10 +808,10 @@ ssize_t xspi_regcom_erase(unsigned int minor, addr_t offs, size_t len, unsigned 
 	u32 prev_mode;
 
 	(void)flags;
-	prev_mode = flashdrv_changeCtrlMode(minor, XSPI_CR_MODE_IWRITE);
+	prev_mode = flashdrv_changeCtrlMode(minor, XSPI_CR_MODE_IWRITE, 0);
 	ret = flashdrv_erase_internal(minor, offs, len);
 	xspi_regcom_sync(minor);
-	flashdrv_changeCtrlMode(minor, prev_mode);
+	flashdrv_changeCtrlMode(minor, prev_mode, 0);
 	return ret;
 }
 
@@ -829,7 +866,7 @@ int xspi_regcom_init(unsigned int minor)
 	}
 
 	/* Initialize Flash memory based on details read */
-	flashdrv_changeCtrlMode(minor, XSPI_CR_MODE_IWRITE);
+	flashdrv_changeCtrlMode(minor, XSPI_CR_MODE_IWRITE, 0);
 	if (mp->init_fn != NULL) {
 		ret = mp->init_fn(minor);
 		if (ret < 0) {
@@ -838,7 +875,7 @@ int xspi_regcom_init(unsigned int minor)
 	}
 
 	/* Configure higher clocks */
-	flashdrv_changeCtrlMode(minor, XSPI_CR_MODE_IWRITE);
+	flashdrv_changeCtrlMode(minor, XSPI_CR_MODE_IWRITE, 0);
 	xspi_setHigherClock(minor);
 
 	if (fp->log_chipSize > 31) {
@@ -863,7 +900,7 @@ int xspi_regcom_init(unsigned int minor)
 	v |= ((fp->log_chipSize - 1) << 16) | mp->memoryType;
 	*(p->ctrl + xspi_dcr1) = v;
 
-	flashdrv_changeCtrlMode(minor, XSPI_CR_MODE_MEMORY);
+	flashdrv_changeCtrlMode(minor, XSPI_CR_MODE_MEMORY, 0);
 	xspi_regcom_sync(minor);
 
 	lib_printf("\ndev/flash: Configured %s %dMB NOR flash(%d.%d)",

@@ -81,6 +81,13 @@
 #define XSPI_CR_MODE_AUTOPOLL (2UL << 28) /* Auto-polling mode */
 #define XSPI_CR_MODE_MEMORY   (3UL << 28) /* Memory-mapped mode */
 #define XSPI_CR_MODE_MASK     (3UL << 28) /* Mask of mode bits */
+#define XSPI_CR_NOPREF_AXI    (1UL << 26) /* Disable prefetch when the AXI transaction is signaled as not-prefetchable */
+#define XSPI_CR_NOPREF        (1UL << 25) /* Disable prefetch always */
+#define XSPI_CR_TCEN          (1UL << 3)  /* Enable timeout in memory-mapped mode */
+
+/* Default settings for prefetch and timeout */
+#define XSPI_DEFAULT_PREFETCH (XSPI_CR_NOPREF_AXI)
+#define XSPI_DEFAULT_TIMEOUT  (XSPI_CR_TCEN)
 
 #define XSPI_DCR1_MTYP_MICRON       (0UL << 24) /* In DDR 8-bit data mode: D0 comes before D1, DQS polarity inverted */
 #define XSPI_DCR1_MTYP_MACRONIX     (1UL << 24) /* In DDR 8-bit data mode: D1 comes before D0 */
@@ -150,6 +157,7 @@ typedef struct {
 	void *start;
 	u32 size;
 	volatile u32 *ctrl;
+	volatile u32 *dmaCtrl;
 	struct {
 		u16 sel; /* Clock mux (ipclk_xspi?sel) */
 		u8 val;  /* Clock source (one of ipclk_sel_*) */
@@ -157,12 +165,14 @@ typedef struct {
 	u16 divider_slow; /* Divider used for initialization - resulting clock must be under 50 MHz */
 	u16 divider;      /* Divider used for normal operation - can be as fast as Flash can handle */
 	u16 dev;
+	u16 dmaDev;
 	u16 rst;
 	xspi_pin_t resetPin; /* Hardware reset pin for device (set to -1 if unused) */
 	u8 enabled;
 	u8 spiPort;
 	u8 chipSelect;
 	u8 isHyperbus;
+	u8 dmaChannel;
 } xspi_ctrlParams_t;
 
 
@@ -188,6 +198,10 @@ int xspi_transferFifo(unsigned int minor, u8 *data, size_t len, u8 isRead);
 
 /* Switch to higher clock speed (defined by `xspi_ctrlParams_t::divider`)*/
 void xspi_setHigherClock(unsigned int minor);
+
+
+/* Perform a DMA-driven memory copy operation with up to 16 byte burst (depending on length alignment) */
+int xspi_dmaMemcpy(int minor, void *dst, const void *src, size_t l);
 
 
 /* Functions for regular-command SPI devices */

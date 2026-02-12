@@ -30,6 +30,10 @@
 #define XSPI3_IRQ      172
 #define XSPIM_BASE     ((void *)0x5802b400)
 
+/* At this point we can only use GPDMA - HPDMA requires RISAFs to be configured */
+#define GPDMA1_BASE     ((void *)0x50021000)
+#define CHAN_OFFS(chan) (0x14 + ((chan) * 0x20))
+
 #define MAX_PINS 22
 
 
@@ -38,6 +42,31 @@ enum {
 	ipclk_sel_per_ck = 0x1,
 	ipclk_sel_ic3_ck = 0x2,
 	ipclk_sel_ic4_ck = 0x3,
+};
+
+enum xpdma_regs {
+	xpdma_seccfgr = 0x0,
+	xpdma_privcfgr,
+	xpdma_rcfglockr,
+	xpdma_misr,
+	xpdma_smisr,
+};
+
+enum xpdma_cx_regs {
+	xpdma_cxlbar = 0x0,
+	hpdma_cxcidcfgr, /* HPDMA instances only */
+	hpdma_cxsemcr,   /* HPDMA instances only */
+	xpdma_cxfcr,
+	xpdma_cxsr,
+	xpdma_cxcr,
+	xpdma_cxtr1 = 0x10,
+	xpdma_cxtr2,
+	xpdma_cxbr1,
+	xpdma_cxsar,
+	xpdma_cxdar,
+	xpdma_cxtr3, /* 2D DMA only */
+	xpdma_cxbr2, /* 2D DMA only */
+	xpdma_cxllr = 0x1f,
 };
 
 
@@ -61,6 +90,9 @@ const xspi_ctrlParams_t xspi_ctrlParams[XSPI_N_CONTROLLERS] = {
 		.spiPort = XSPIM_PORT2,
 		.chipSelect = XSPI_CHIPSELECT_NCS1,
 		.isHyperbus = XSPI2_IS_HYPERBUS,
+		.dmaDev = dev_gpdma1,
+		.dmaCtrl = GPDMA1_BASE,
+		.dmaChannel = 15, /* Must select one of the upper channels to achieve 16-byte bursts */
 	},
 	{
 		.start = XSPI1_REG_BASE,
@@ -76,6 +108,9 @@ const xspi_ctrlParams_t xspi_ctrlParams[XSPI_N_CONTROLLERS] = {
 		.spiPort = XSPIM_PORT1,
 		.chipSelect = XSPI_CHIPSELECT_NCS2,
 		.isHyperbus = XSPI1_IS_HYPERBUS,
+		.dmaDev = dev_gpdma1,
+		.dmaCtrl = GPDMA1_BASE,
+		.dmaChannel = 15, /* Use the same channel - this is a single-thread application, so no mutex necessary */
 	},
 };
 
@@ -322,6 +357,62 @@ static void xspi_commonInit(void)
 }
 
 
+int xspi_dmaMemcpy(int minor, void *dst, const void *src, size_t l)
+{
+	volatile u32 *chn_base = &xspi_ctrlParams[minor].dmaCtrl[CHAN_OFFS(xspi_ctrlParams[minor].dmaChannel)];
+	int ret = EOK;
+	/* Here we optimize the transfer - we pick a maximum data width for both source and destination
+	 * depending on pointer alignment and transfer length (up to 4 bytes).
+	 * Transfer length must be a multiple of burst length and AXI supports max 16 data units.
+	 * If MCE is in block mode we assume that destination and length are multiples of 16
+	 * (it should have been verified previously), so log_dstElem == 2, dstBurst == 3.
+	 */
+	size_t log_dstElem = min(__builtin_ctz((addr_t)dst | l), 2);
+	size_t log_srcElem = min(__builtin_ctz((addr_t)src | l), 2);
+	size_t log_burst = min(__builtin_ctz(l), 4);
+	/* Calculate how many data units are to a burst. */
+	u32 dstBurst = (1UL << (log_burst - log_dstElem));
+	u32 srcBurst = (1UL << (log_burst - log_srcElem));
+
+	u32 cxtr1_val =
+			0xc0009000 | /* Both source and destination are secure, PAM == 2 (packed FIFO) */
+			((dstBurst - 1) << 20) |
+			(1UL << 19) | /* Incrementing burst */
+			(log_dstElem << 16) |
+			((srcBurst - 1) << 4) |
+			(1UL << 3) | /* Incrementing burst */
+			log_srcElem;
+
+	if (l == 0) {
+		return ret;
+	}
+
+	hal_cleanInvalDCacheAddr((void *)src, l);
+	chn_base[xpdma_cxcr] |= (3UL << 22); /* Highest priority */
+	chn_base[xpdma_cxtr1] = cxtr1_val;
+	chn_base[xpdma_cxtr2] = (1UL << 9); /* Software triggered mode */
+	chn_base[xpdma_cxbr1] = l;
+	chn_base[xpdma_cxsar] = (u32)src;
+	chn_base[xpdma_cxdar] = (u32)dst;
+	chn_base[xpdma_cxllr] = 0;
+	hal_cpuDataSyncBarrier();
+	chn_base[xpdma_cxcr] |= 1;
+	hal_cpuDataSyncBarrier();
+	/* Wait for transfer complete */
+	while ((chn_base[xpdma_cxsr] & (1UL << 8)) == 0) {
+		if ((chn_base[xpdma_cxsr] & 0x7c00) != 0) {
+			/* An error occurred, trigger reset */
+			chn_base[xpdma_cxcr] |= 1UL << 1;
+			ret = -EIO;
+			break;
+		}
+	}
+
+	chn_base[xpdma_cxfcr] = 0xff00; /* Clear status flags */
+	return ret;
+}
+
+
 /* Below are functions for device's public interface */
 
 
@@ -497,11 +588,11 @@ static int xspidrv_init(unsigned int minor)
 
 	/* NOTE: we set the NOPREF_AXI bit, during testing clearing it resulted in data corruption in some situations */
 	*(p->ctrl + xspi_cr) =
-			(1UL << 26) | /* Prefetch is disabled when the AXI transaction is signaled as not-prefetchable */
+			XSPI_DEFAULT_PREFETCH |
 			(p->chipSelect << 24) |
 			(1UL << 22) | /* Stop auto-polling on match */
 			(3UL << 8) |  /* FIFO threshold = 4 bytes */
-			(1UL << 3);   /* Enable timeout for memory-mapped mode */
+			XSPI_DEFAULT_TIMEOUT;
 
 	*(p->ctrl + xspi_lptr) = 64; /* Timeout for memory-mapped mode */
 	xspi_waitBusy(minor);
@@ -511,6 +602,10 @@ static int xspidrv_init(unsigned int minor)
 			((p->divider_slow - 1) & 0xff); /* Clock prescaler */
 	*(p->ctrl + xspi_dcr3) = 0;
 	*(p->ctrl + xspi_dcr4) = 0;
+
+	_stm32_rccSetDevClock(p->dmaDev, 1);
+	p->dmaCtrl[xpdma_seccfgr] |= (1UL << p->dmaChannel);
+	p->dmaCtrl[xpdma_privcfgr] |= (1UL << p->dmaChannel);
 
 	if (p->isHyperbus != 0) {
 		return xspi_hb_init(minor);
@@ -527,6 +622,7 @@ static int xspidrv_done(unsigned int minor)
 		return -EINVAL;
 	}
 
+	_stm32_rccSetDevClock(xspi_ctrlParams[minor].dmaDev, 0);
 	return EOK;
 }
 
