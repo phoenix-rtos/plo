@@ -284,6 +284,18 @@ ssize_t xspi_hb_erase(unsigned int minor, addr_t offs, size_t len, unsigned int 
 }
 
 
+size_t xspi_hb_getBlockSize(unsigned int minor)
+{
+	if (hb_memParams[minor].isRAM != 0) {
+		return 1;
+	}
+	else {
+		/* Flash not currently supported */
+		return 0;
+	}
+}
+
+
 int xspi_hb_init(unsigned int minor)
 {
 	int ret;

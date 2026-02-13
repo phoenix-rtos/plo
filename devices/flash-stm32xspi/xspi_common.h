@@ -208,6 +208,9 @@ ssize_t xspi_regcom_write(unsigned int minor, addr_t offs, const void *buff, siz
 ssize_t xspi_regcom_erase(unsigned int minor, addr_t offs, size_t len, unsigned int flags);
 
 
+size_t xspi_regcom_getBlockSize(unsigned int minor);
+
+
 /* Functions for HyperBus devices */
 
 
@@ -224,5 +227,8 @@ ssize_t xspi_hb_write(unsigned int minor, addr_t offs, const void *buff, size_t 
 
 
 ssize_t xspi_hb_erase(unsigned int minor, addr_t offs, size_t len, unsigned int flags);
+
+
+size_t xspi_hb_getBlockSize(unsigned int minor);
 
 #endif

@@ -817,7 +817,7 @@ int _stm32_pwrSupplyValidateRange(unsigned int supply)
 }
 
 
-static void _stm32_initPowerSupply(unsigned int supply)
+void _stm32_pwrSupplyInit(unsigned int supply)
 {
 	volatile int i;
 	if (supply >= pwr_supplies_count) {
@@ -1038,13 +1038,8 @@ static void _stm32_initSRAM(void)
 }
 
 
-void _stm32_init(void)
+void _stm32_initHalOnly(void)
 {
-	u32 i, v;
-	static const int gpioDevs[] = { dev_gpioa, dev_gpiob, dev_gpioc, dev_gpiod, dev_gpioe, dev_gpiof, dev_gpiog,
-		dev_gpioh, dev_gpion, dev_gpioo, dev_gpiop, dev_gpioq };
-
-	/* Base addresses init */
 	stm32_common.iwdg = IWDG_BASE;
 	stm32_common.pwr = PWR_BASE;
 	stm32_common.ramcfg = RAMCFG_BASE;
@@ -1070,6 +1065,16 @@ void _stm32_init(void)
 	stm32_common.gpio[14] = GPIOO_BASE;
 	stm32_common.gpio[15] = GPIOP_BASE;
 	stm32_common.gpio[16] = GPIOQ_BASE;
+}
+
+
+void _stm32_init(void)
+{
+	u32 i, v;
+	static const int gpioDevs[] = { dev_gpioa, dev_gpiob, dev_gpioc, dev_gpiod, dev_gpioe, dev_gpiof, dev_gpiog,
+		dev_gpioh, dev_gpion, dev_gpioo, dev_gpiop, dev_gpioq };
+
+	_stm32_initHalOnly();
 
 	/* Store reset flags and then clear them */
 	stm32_common.resetFlags = (*(stm32_common.rcc + rcc_rsr) >> 21);
@@ -1105,14 +1110,14 @@ void _stm32_init(void)
 	_stm32_initSRAM();
 
 	/* Enable independent power supplies for GPIOs. */
-	_stm32_initPowerSupply(pwr_supply_vddio2); /* PO[5:0], PP[15:0] */
-	_stm32_initPowerSupply(pwr_supply_vddio3); /* PN[12:0] */
-	_stm32_initPowerSupply(pwr_supply_vddio4); /* PC[1], PC[12:6], PH[9:2] */
-	_stm32_initPowerSupply(pwr_supply_vddio5); /* PC[0], PC[5:2], PE[4] */
+	_stm32_pwrSupplyInit(pwr_supply_vddio2); /* PO[5:0], PP[15:0] */
+	_stm32_pwrSupplyInit(pwr_supply_vddio3); /* PN[12:0] */
+	_stm32_pwrSupplyInit(pwr_supply_vddio4); /* PC[1], PC[12:6], PH[9:2] */
+	_stm32_pwrSupplyInit(pwr_supply_vddio5); /* PC[0], PC[5:2], PE[4] */
 	/* Enable independent power supply for ADCs */
-	_stm32_initPowerSupply(pwr_supply_vdda);
+	_stm32_pwrSupplyInit(pwr_supply_vdda);
 	/* Enable independent power supply for USB */
-	_stm32_initPowerSupply(pwr_supply_vusb33);
+	_stm32_pwrSupplyInit(pwr_supply_vusb33);
 
 	/* Disable all RCC interrupts */
 	*(stm32_common.rcc + rcc_cier) = 0;
