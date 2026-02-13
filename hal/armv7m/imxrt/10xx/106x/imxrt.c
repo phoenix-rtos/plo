@@ -819,7 +819,7 @@ u32 _imxrt_ccmGetPllFreq(int pll)
 			break;
 
 		case clk_pll_enet1:
-			divSel = *(imxrt_common.ccm_analog + ccm_analog_pll_enet) & (0x3 << 2);
+			divSel = (*(imxrt_common.ccm_analog + ccm_analog_pll_enet) >> 2) & 0x3;
 
 			switch (divSel) {
 				case 0:
