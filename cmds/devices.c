@@ -31,7 +31,7 @@ static void cmd_devsInfo(void)
 static const char *devClassName(unsigned int major)
 {
 	static const char *className[] = {
-		"uart", "usb", "storage", "tty", "ram", "nand-data", "nand-meta", "nand-raw", "pipe"
+		"uart", "usb", "storage", "tty", "ram", "nand-data", "nand-meta", "nand-raw", "pipe", "encrypted", "rng"
 	};
 
 	return (major < (sizeof(className) / sizeof(className[0]))) ?
