@@ -18,15 +18,17 @@
 
 #include <hal/hal.h>
 
-#define DEV_UART      0
-#define DEV_USB       1
-#define DEV_STORAGE   2
-#define DEV_TTY       3
-#define DEV_RAM       4
-#define DEV_NAND_DATA 5
-#define DEV_NAND_META 6
-#define DEV_NAND_RAW  7
-#define DEV_PIPE      8
+#define DEV_UART         0
+#define DEV_USB          1
+#define DEV_STORAGE      2
+#define DEV_TTY          3
+#define DEV_RAM          4
+#define DEV_NAND_DATA    5
+#define DEV_NAND_META    6
+#define DEV_NAND_RAW     7
+#define DEV_PIPE         8
+#define DEV_CRYP_STORAGE 9
+#define DEV_RNG          10
 
 #define DEVS_ITER_STOP ((const dev_t *)-1)
 
@@ -34,6 +36,24 @@
 #define DEV_CONTROL_GETBAUD         2
 #define DEV_CONTROL_GETPROP_TOTALSZ 3
 #define DEV_CONTROL_GETPROP_BLOCKSZ 4
+#define DEV_CONTROL_MEMCRYPT        5
+
+#define DEV_MEMCRYPT_ALGO_NONE    0UL
+#define DEV_MEMCRYPT_ALGO_AES128  1UL
+#define DEV_MEMCRYPT_ALGO_NOEKEON 2UL
+#define DEV_MEMCRYPT_ALGO_AES256  3UL
+
+
+typedef struct {
+	addr_t start;  /* Start offset of encryption region */
+	addr_t end;    /* Past-the-end offset of encryption region */
+	u32 algo;      /* Encryption algorithm, one of DEV_MEMCRYPT_ALGO_* */
+	u32 mode;      /* Encryption mode, device-dependent */
+	const u8 *key; /* Encryption key, size depends on algorithm */
+	const u8 *iv;  /* Initial value, size is variable */
+	size_t ivSize;
+} dev_memcrypt_args_t;
+
 
 /* clang-format off */
 enum { dev_isMappable = 0, dev_isNotMappable };
