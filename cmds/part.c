@@ -22,7 +22,7 @@
 
 static void cmd_partInfo(void)
 {
-	lib_printf("creates partition, usage: part <name> [flags] <allocmap1;allocmap2...> <accessmap1;accessmap2...> <schedwindowNr1;schedwindowNr2...>");
+	lib_printf("creates partition, usage: part <name> [flags] <allocmap1;allocmap2...> <accessmap1;accessmap2...> <schedwindowNr1;schedwindowNr2...> <memlimit>");
 }
 
 
@@ -92,7 +92,7 @@ static int cmd_part(int argc, char *argv[])
 {
 	int res, argvID = 0;
 
-	char *allocMaps, *accessMaps, *schedWindows;
+	char *allocMaps, *accessMaps, *schedWindows, *availableMem;
 	size_t allocSz, accessSz, schedWinSz;
 	u32 schedWindowsMask;
 
@@ -102,7 +102,7 @@ static int cmd_part(int argc, char *argv[])
 	syspage_part_t *part, *other;
 
 	/* Parse command arguments */
-	if ((argc < 5) || (argc > 6)) {
+	if ((argc < 6) || (argc > 7)) {
 		log_error("\n%s: Wrong argument count", argv[0]);
 		return CMD_EXIT_FAILURE;
 	}
@@ -137,7 +137,10 @@ static int cmd_part(int argc, char *argv[])
 	accessMaps = argv[argvID++];
 
 	/* ARG_5: scheduler windows */
-	schedWindows = argv[argvID];
+	schedWindows = argv[argvID++];
+
+	/* ARG_6: memory allocation limit */
+	availableMem = argv[argvID];
 
 	allocSz = cmd_listParse(allocMaps, ';');
 	accessSz = cmd_listParse(accessMaps, ';');
@@ -185,6 +188,15 @@ static int cmd_part(int argc, char *argv[])
 
 	part->allocMapSz = allocSz;
 	part->accessMapSz = accessSz;
+	part->availableMem = lib_strtoul(availableMem, &availableMem, 0);
+	if (*availableMem != '\0') {
+		log_error("\n%s: Invalid arguments", argv[0]);
+		return -EINVAL;
+	}
+	if (part->availableMem == 0) {
+		part->availableMem = (size_t)-1;
+	}
+	part->usedMem = 0;
 	part->flags = flags;
 	hal_strcpy(part->name, name);
 

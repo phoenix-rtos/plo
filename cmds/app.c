@@ -107,6 +107,8 @@ static int cmd_partitionCreate(const char *name, syspage_part_t **part, char *im
 	cmd_mapsAdd2Prog(partition->accessMaps + dmapSz - 1, imapSz, imaps);
 	partition->allocMapSz = 1;
 	partition->accessMapSz = imapSz + dmapSz - 1;
+	partition->availableMem = (size_t)-1;
+	partition->usedMem = 0;
 	partition->flags = pFlagIPCAll | pFlagSpawnAll; /* For backwards compatibility */
 	partition->schedWindowsMask = 1U;
 	hal_strcpy(partition->name, name);
