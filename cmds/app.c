@@ -98,6 +98,7 @@ static int cmd_partitionCreate(const char *name, syspage_part_t **part, char *im
 	cmd_mapsAdd2Prog(partition->accessMaps, imapSz, imaps);
 	partition->allocMapSz = 1;
 	partition->accessMapSz = imapSz + dmapSz + 1;
+	partition->availableMem = (unsigned long)-1;
 	hal_strcpy(partition->name, name);
 
 	partition->schedWindowsMask = 1U;
