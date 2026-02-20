@@ -23,6 +23,7 @@
 
 #include <board_config.h>
 #include <hal/armv8m/stm32/n6/stm32n6.h>
+#include "mce.h"
 
 
 /* It's not practical to automatically determine if a given XSPI bus uses HyperBus protocol
@@ -68,6 +69,7 @@
 
 #define XSPI_FIFO_SIZE     64 /* Size of hardware FIFO */
 #define XSPI_N_CONTROLLERS 2
+#define XSPI_MCE_REGIONS   1 /* Hardware supports up to 4 */
 
 #define XSPI_SR_BUSY (1UL << 5) /* Controller busy */
 #define XSPI_SR_TOF  (1UL << 4) /* Timeout */
@@ -81,6 +83,13 @@
 #define XSPI_CR_MODE_AUTOPOLL (2UL << 28) /* Auto-polling mode */
 #define XSPI_CR_MODE_MEMORY   (3UL << 28) /* Memory-mapped mode */
 #define XSPI_CR_MODE_MASK     (3UL << 28) /* Mask of mode bits */
+#define XSPI_CR_NOPREF_AXI    (1UL << 26) /* Disable prefetch when the AXI transaction is signaled as not-prefetchable */
+#define XSPI_CR_NOPREF        (1UL << 25) /* Disable prefetch always */
+#define XSPI_CR_TCEN          (1UL << 3)  /* Enable timeout in memory-mapped mode */
+
+/* Default settings for prefetch and timeout */
+#define XSPI_DEFAULT_PREFETCH (XSPI_CR_NOPREF_AXI)
+#define XSPI_DEFAULT_TIMEOUT  (XSPI_CR_TCEN)
 
 #define XSPI_DCR1_MTYP_MICRON       (0UL << 24) /* In DDR 8-bit data mode: D0 comes before D1, DQS polarity inverted */
 #define XSPI_DCR1_MTYP_MACRONIX     (1UL << 24) /* In DDR 8-bit data mode: D1 comes before D0 */
@@ -157,6 +166,7 @@ typedef struct {
 	u16 divider_slow; /* Divider used for initialization - resulting clock must be under 50 MHz */
 	u16 divider;      /* Divider used for normal operation - can be as fast as Flash can handle */
 	u16 dev;
+	u16 mceDev;
 	u16 rst;
 	xspi_pin_t resetPin; /* Hardware reset pin for device (set to -1 if unused) */
 	u8 enabled;

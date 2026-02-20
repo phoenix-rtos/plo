@@ -511,7 +511,7 @@ int _stm32_rccGetDevClock(unsigned int dev, u32 *status)
 		return -1;
 	}
 
-	reg += rcc_ahb1enr;
+	reg += rcc_busenr;
 	*status = (*(stm32_common.rcc + reg) >> shift) & 1;
 	return 0;
 }
