@@ -8,4 +8,4 @@
 
 include hal/armv8m/stm32/n6/Makefile
 CFLAGS += -I../plo/hal/armv8m/stm32/n6
-OBJS += $(addprefix $(PREFIX_O)hal/$(TARGET_SUFF)/stm32/, hal.o)
+OBJS += $(addprefix $(PREFIX_O)hal/$(TARGET_SUFF)/stm32/, hal.o console.o timer.o)

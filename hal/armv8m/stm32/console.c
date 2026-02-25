@@ -6,7 +6,8 @@
  * Console
  *
  * Copyright 2021, 2025 Phoenix Systems
- * Authors: Aleksander Kaminski, Jacek Maksymowicz
+ * Copyright 2026 Apator Metrix
+ * Authors: Aleksander Kaminski, Jacek Maksymowicz, Mateusz Karcz
  *
  * This file is part of Phoenix-RTOS.
  *
@@ -18,7 +19,7 @@
 
 #include <board_config.h>
 
-#include "stm32n6.h"
+#include "stm32.h"
 
 #if !ISEMPTY(UART_CONSOLE_PLO)
 
