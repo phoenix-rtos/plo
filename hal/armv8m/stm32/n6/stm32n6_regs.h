@@ -353,6 +353,7 @@ enum iwdg_regs {
 	iwdg_icr,
 };
 
+
 enum syscfg_regs {
 	syscfg_bootcr = 0x0,
 	syscfg_cm55cr,
@@ -387,6 +388,7 @@ enum syscfg_regs {
 	syscfg_smpshdpcr = 0x100,
 	syscfg_nonsec_aidcr = 0x200,
 };
+
 
 enum ramcfg_regs {
 	ramcfg_axisram1cr = 0x0,
@@ -460,6 +462,39 @@ enum bsec_regs {
 	bsec_woscr0 = 0x3d0,
 	bsec_hrcr = 0x3fa,
 	bsec_wrcr,
+};
+
+
+enum rng_regs {
+	rng_cr,
+	rng_sr,
+	rng_dr,
+	rng_nscr,
+	rng_htcr,
+};
+
+
+enum pka_regs {
+	pka_cr,
+	pka_sr,
+	pka_clrfr,
+	pka_ram = 0x100, /* pka ram base address */
+};
+
+
+enum hash_regs {
+	hash_cr,
+	hash_din,
+	hash_str,
+	hash_hra0,
+	hash_hra1,
+	hash_hra2,
+	hash_hra3,
+	hash_hra4,
+	hash_imr,
+	hash_sr,
+	hash_csr0 = 0x3e,
+	hash_hr0 = 0xc4,
 };
 
 #endif /* _STM32N6_REGS_H_ */

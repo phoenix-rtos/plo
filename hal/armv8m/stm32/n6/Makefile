@@ -17,4 +17,4 @@ PLO_COMMANDS ?= alias app blob call console copy devices dump echo erase go help
 
 PLO_ALLDEVICES := pipe-rtt ram-storage uart-stm32 flash-stm32xspi
 
-OBJS += $(addprefix $(PREFIX_O)hal/$(TARGET_SUFF)/stm32/n6/, _init.o stm32n6.o timer.o console.o otp.o)
+OBJS += $(addprefix $(PREFIX_O)hal/$(TARGET_SUFF)/stm32/n6/, _init.o stm32n6.o timer.o console.o otp.o pka.o hash.o)
