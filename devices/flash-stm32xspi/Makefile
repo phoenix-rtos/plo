@@ -6,4 +6,4 @@
 # %LICENSE%
 #
 
-OBJS += $(addprefix $(PREFIX_O)devices/flash-stm32xspi/, xspi_common.o xspi_hyperbus.o xspi_regcom.o flash_params.o)
+OBJS += $(addprefix $(PREFIX_O)devices/flash-stm32xspi/, xspi_common.o xspi_hyperbus.o xspi_regcom.o flash_params.o mce.o)
