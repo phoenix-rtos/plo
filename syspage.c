@@ -627,6 +627,50 @@ void syspage_progShow(void)
 }
 
 
+void *syspage_progAllocateAndAdd(const char *map, size_t size, const char *argv, u32 flags, int allowOverwrite)
+{
+	syspage_prog_t *prog;
+	const mapent_t *entry;
+	const syspage_prog_t *iter;
+	const char *iterArgv;
+
+	if (allowOverwrite == 0) {
+		iter = syspage_common.syspage->progs;
+		if (iter != NULL) {
+			do {
+				iterArgv = (iter->argv[0] == 'X') ? (iter->argv + 1) : iter->argv;
+				if (hal_strcmp(argv, iterArgv) == 0) {
+					return NULL;
+				}
+
+				iter = iter->next;
+			} while (iter != syspage_common.syspage->progs);
+		}
+	}
+
+	entry = syspage_entryAdd(map, (addr_t)-1, size, SIZE_PAGE);
+	if (entry == NULL) {
+		log_error("\nCannot allocate memory for %s", argv);
+		return NULL;
+	}
+
+	prog = syspage_progAdd(argv, flags);
+	if (prog == NULL) {
+		log_error("\nCannot add syspage program for %s", argv);
+		return NULL;
+	}
+
+	prog->imaps = NULL;
+	prog->imapSz = 0;
+	prog->dmaps = NULL;
+	prog->dmapSz = 0;
+	prog->start = entry->start;
+	prog->end = entry->end;
+
+	return (void *)entry->start;
+}
+
+
 /* TODO: function get value from hal-specific struct, consider move to target-specific code */
 #if defined(HAS_GRAPHICS) && HAS_GRAPHICS != 0
 void syspage_graphmodeSet(graphmode_t graphmode)
