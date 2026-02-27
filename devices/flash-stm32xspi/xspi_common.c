@@ -618,12 +618,20 @@ static int xspidrv_init(unsigned int minor)
 
 static int xspidrv_done(unsigned int minor)
 {
+	int ret = EOK;
 	if (xspidrv_isValidMinor(minor) == 0) {
 		return -EINVAL;
 	}
 
+	if (xspi_ctrlParams[minor].isHyperbus != 0) {
+		ret = xspi_hb_done(minor);
+	}
+	else {
+		ret = xspi_regcom_done(minor);
+	}
+
 	_stm32_rccSetDevClock(xspi_ctrlParams[minor].dmaDev, 0);
-	return EOK;
+	return ret;
 }
 
 

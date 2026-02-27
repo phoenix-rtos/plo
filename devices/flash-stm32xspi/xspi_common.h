@@ -210,6 +210,9 @@ int xspi_dmaMemcpy(int minor, void *dst, const void *src, size_t l);
 int xspi_regcom_init(unsigned int minor);
 
 
+int xspi_regcom_done(unsigned int minor);
+
+
 int xspi_regcom_sync(unsigned int minor);
 
 
@@ -229,6 +232,9 @@ size_t xspi_regcom_getBlockSize(unsigned int minor);
 
 
 int xspi_hb_init(unsigned int minor);
+
+
+int xspi_hb_done(unsigned int minor);
 
 
 int xspi_hb_sync(unsigned int minor);
