@@ -374,3 +374,10 @@ int xspi_hb_init(unsigned int minor)
 	/* Non-RAM HyperBus devices currently not supported */
 	return -EINVAL;
 }
+
+
+int xspi_hb_done(unsigned int minor)
+{
+	/* Nothing to do; keep the device running */
+	return EOK;
+}
