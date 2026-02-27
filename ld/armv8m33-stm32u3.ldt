@@ -1,0 +1,65 @@
+/*
+ * Phoenix-RTOS
+ *
+ * Operating system loader
+ *
+ * Linker Template and Platform Config for ARMv8-M33 STM32U3
+ *
+ * Copyright 2021-2022 Phoenix Systems
+ * Copyright 2026 Apator Metrix
+ * Author: Gerard Swiderski, Damian Loewnau, Mateusz Karcz
+ *
+ * This file is part of Phoenix-RTOS.
+ *
+ * %LICENSE%
+ */
+
+
+#ifndef ARMV8M33_STM32U3_LDT
+#define ARMV8M33_STM32U3_LDT
+
+
+/* Platform specific definitions */
+#define SIZE_PAGE  0x200
+#define SIZE_STACK (8 * SIZE_PAGE)
+#define SIZE_HEAP  (8 * SIZE_PAGE)
+
+#ifndef FLASH_PROGRAM_BANK_SIZE
+#define FLASH_PROGRAM_BANK_SIZE (512 * 1024) /* STM32U385xx */
+#endif
+#define FLASH_PROGRAM_1_ADDR    (0x08000000)
+#define FLASH_PROGRAM_2_ADDR    (FLASH_PROGRAM_1_ADDR + FLASH_PROGRAM_BANK_SIZE)
+
+/* Space reserved for kernel data */
+#define AREA_KERNEL 0x10000
+
+/* RAM-disk configuration */
+#define RAM_ADDR      0x20000000
+#ifndef RAM_BANK_SIZE
+#define RAM_BANK_SIZE (256 * 1024) /* STM32U385xx */
+#endif
+
+
+#if defined(__LINKER__)
+
+/* Memory map setup */
+MEMORY
+{
+	m_sram   (rwx) : ORIGIN = 0x20000000 + AREA_KERNEL, LENGTH = RAM_BANK_SIZE - AREA_KERNEL
+	m_flash  (rx)  : ORIGIN = 0x08000000, LENGTH = FLASH_PROGRAM_BANK_SIZE
+}
+
+/* FLASH image */
+REGION_ALIAS("PLO_IMAGE", m_flash);
+REGION_ALIAS("TCM_TEXT", m_flash);
+REGION_ALIAS("DATA", m_sram);
+REGION_ALIAS("BSS", m_sram);
+REGION_ALIAS("HEAP", m_sram);
+REGION_ALIAS("STACK", m_sram);
+
+#include "common/plo-arm.lds"
+
+#endif /* end of __LINKER__ */
+
+
+#endif /* end of ARMV8M33_STM32U3_LDT */

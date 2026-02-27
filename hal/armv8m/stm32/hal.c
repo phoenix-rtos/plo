@@ -101,6 +101,8 @@ const char *hal_cpuInfo(void)
 {
 #if defined(__CPU_STM32N6)
 	return "Cortex-M55 STM32N6";
+#elif defined(__CPU_STM32U3)
+	return "Cortex-M33 STM32U3";
 #else
 #error "Unsupported platform"
 #endif
