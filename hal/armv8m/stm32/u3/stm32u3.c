@@ -16,6 +16,7 @@
 
 #include <hal/hal.h>
 #include <board_config.h>
+#include <lib/errno.h>
 #include "stm32u3.h"
 
 
@@ -45,6 +46,7 @@ static struct {
 	volatile u32 *ramcfg;
 
 	u32 cpuclk;
+	u32 hsiRefs;
 
 	u32 resetFlags;
 } stm32_common;
@@ -58,6 +60,34 @@ enum {
 	icb_syst_calib,
 };
 
+/* Clock owners */
+typedef enum {
+	clko_sysclk = 0,
+	clko_booster,
+} clock_owner_t;
+
+
+/* MSIS clock range mappings */
+typedef struct {
+	u32 hz;
+	int range;
+} range_mapping_t;
+
+#define FREQUENCY_RANGE_COUNT 7
+static const range_mapping_t frequency_ranges[FREQUENCY_RANGE_COUNT] = {
+	{ 3000000, 7 }, { 6000000, 6 }, { 12000000, 5 }, /* MSIRC1 */
+	{ 16000000, -1 },                                /* HSI */
+	{ 24000000, 4 },                                 /* MSIRC1 */
+	{ 48000000, 1 }, { 96000000, 0 },                /* MSIRC0 */
+};
+
+#define BOOSTEN             (1 << 8)
+#define VOLTAGE_RANGE_COUNT 3
+static const range_mapping_t voltage_ranges[VOLTAGE_RANGE_COUNT] = {
+	{ 24000000, 2 },
+	{ 48000000, 2 - BOOSTEN },
+	{ 96000000, 1 - BOOSTEN },
+};
 
 unsigned int hal_getBootReason(void)
 {
@@ -89,21 +119,13 @@ unsigned int hal_getBootReason(void)
  */
 static void _stm32_configureClocks(void)
 {
-	u32 v, clock_source;
+	u32 v;
 
 	/* Disable HSE */
 	*(stm32_common.rcc + rcc_cr) &= ~(1 << 16); /* HSEON off */
 
-	/* Select the system clock source */
-	clock_source = 0; /* MSIS */
-	v = *(stm32_common.rcc + rcc_cfgr1);
-	v |= (clock_source << 0); /* Set SW */
-	*(stm32_common.rcc + rcc_cfgr1) = v;
-
-	while (((*(stm32_common.rcc + rcc_cfgr1) >> 2) & 0x3) != clock_source) {
-		/* Wait for SWS */
-	}
-	stm32_common.cpuclk = 12 * 1000 * 1000;
+	/* Select the system clock frequency */
+	_stm32_rccSetCPUClock(24 * 1000 * 1000);
 
 	/* Set peripheral bus clock prescalers */
 	v = *(stm32_common.rcc + rcc_cfgr2);
@@ -115,6 +137,113 @@ static void _stm32_configureClocks(void)
 	v &= ~(0x7 << 4); /* Clear PPRE3 */
 	v |= (0x4 << 4);  /* Set PPRE3 to 2 */
 	*(stm32_common.rcc + rcc_cfgr3) = v;
+}
+
+
+static const range_mapping_t *_stm32_findRange(u32 hz, const range_mapping_t *ranges, int length)
+{
+	int i;
+
+	for (i = 0; i < length; i++) {
+		if (hz <= ranges[i].hz) {
+			return ranges + i;
+		}
+	}
+
+	return NULL;
+}
+
+
+static void _stm32_acquireHsi(clock_owner_t owner)
+{
+	if (stm32_common.hsiRefs == 0) {
+		*(stm32_common.rcc + rcc_cr) |= (1 << 11); /* Set HSION */
+		hal_cpuDataMemoryBarrier();
+
+		while ((*(stm32_common.rcc + rcc_cr) & (1 << 13)) == 0) {
+			/* Wait for HSIRDY */
+		}
+	}
+
+	stm32_common.hsiRefs |= 1 << owner;
+}
+
+
+static void _stm32_releaseHsi(clock_owner_t owner)
+{
+	if (stm32_common.hsiRefs == 0) {
+		return;
+	}
+
+	stm32_common.hsiRefs &= ~(1 << owner);
+
+	if (stm32_common.hsiRefs == 0) {
+		*(stm32_common.rcc + rcc_cr) &= ~(1 << 11); /* Clear HSION */
+		hal_cpuDataMemoryBarrier();
+
+		while ((*(stm32_common.rcc + rcc_cr) & (1 << 13)) != 0) {
+			/* Wait for HSIRDY */
+		}
+	}
+}
+
+
+int _stm32_rccSetCPUClock(u32 hz)
+{
+	u32 v, clock_source = 0;
+	const range_mapping_t *frequency_range, *voltage_range;
+
+	if (!(frequency_range = _stm32_findRange(hz, frequency_ranges, FREQUENCY_RANGE_COUNT))) {
+		return -ERANGE;
+	}
+
+	if (!(voltage_range = _stm32_findRange(hz, voltage_ranges, VOLTAGE_RANGE_COUNT))) {
+		return -ERANGE;
+	}
+
+	/* Step up */
+	if (voltage_range->range < _stm32_pwrGetCPUVolt()) {
+		_stm32_pwrSetCPUVolt(voltage_range->range);
+	}
+
+	if (frequency_range->range >= 0) {
+		/* Configure MSIS */
+		v = *(stm32_common.rcc + rcc_icscr1) & ~(0x7 << 29);
+		v |= ((frequency_range->range & 0x7) << 29) | (1 << 23); /* Set MSISSEL | MSISDIV | MSIRGSEL */
+		*(stm32_common.rcc + rcc_icscr1) = v;
+		hal_cpuDataMemoryBarrier();
+
+		while ((*(stm32_common.rcc + rcc_cr) & (1 << 2)) == 0) {
+			/* Wait for MSISRDY */
+		}
+		_stm32_releaseHsi(clko_sysclk);
+	}
+	else {
+		/* Configure HSI */
+		clock_source = 1;
+		_stm32_acquireHsi(clko_sysclk);
+	}
+	hal_cpuDataMemoryBarrier();
+
+	/* Configure SYSCLK source */
+	v = *(stm32_common.rcc + rcc_cfgr1);
+	v &= ~(0x3 << 0);
+	v |= (clock_source << 0); /* Set SW */
+	*(stm32_common.rcc + rcc_cfgr1) = v;
+	hal_cpuDataMemoryBarrier();
+
+	while (((*(stm32_common.rcc + rcc_cfgr1) >> 2) & 0x3) != clock_source) {
+		/* Wait for SWS */
+	}
+
+	/* Step down */
+	if (voltage_range->range > _stm32_pwrGetCPUVolt()) {
+		_stm32_pwrSetCPUVolt(voltage_range->range);
+	}
+
+	/* Update the current frequency */
+	stm32_common.cpuclk = frequency_range->hz;
+	return 0;
 }
 
 
@@ -252,6 +381,43 @@ static void _stm32_initPowerSupply(unsigned int supply)
 
 	*(stm32_common.pwr + pwr_svmcr) |= validBit;   /* Set xV */
 	*(stm32_common.pwr + pwr_svmcr) &= ~enableBit; /* Clear xVMyEN */
+}
+
+
+int _stm32_pwrGetCPUVolt(void)
+{
+	u32 range = *(stm32_common.pwr + pwr_vosr) & (BOOSTEN | 0x3);
+	return (range & BOOSTEN) ? ((int)range - 2 * BOOSTEN) : range;
+}
+
+
+void _stm32_pwrSetCPUVolt(int range)
+{
+	u32 t, boosten = range < 0;
+	range += boosten ? BOOSTEN : 0;
+
+	if ((range < 1) || (range > 2))
+		return;
+
+	t = *(stm32_common.rcc + rcc_cfgr4) & ~((0xf << 12) | (0x3 << 0)); /* Clear BOOSTDIV (bypass) */
+	if (boosten) {
+		_stm32_acquireHsi(clko_booster);
+		*(stm32_common.rcc + rcc_cfgr4) = t | 2; /* Set BOOSTSEL to HSI16 */
+		range |= BOOSTEN;
+	}
+	else {
+		*(stm32_common.rcc + rcc_cfgr4) = t; /* Clear BOOSTSEL */
+		_stm32_releaseHsi(clko_booster);
+	}
+	hal_cpuDataMemoryBarrier();
+
+	t = *(stm32_common.pwr + pwr_vosr) & ~(BOOSTEN | 0x3);
+	*(stm32_common.pwr + pwr_vosr) = t | range;
+	hal_cpuDataMemoryBarrier();
+
+	while (((*(stm32_common.pwr + pwr_vosr) >> 16) & (BOOSTEN | 0x3)) != range) {
+		/* Wait for BOOSTRDY and RxRDY */
+	}
 }
 
 
@@ -409,6 +575,7 @@ void _stm32_init(void)
 	stm32_common.gpio[5] = GPIOF_BASE;
 	stm32_common.gpio[6] = GPIOG_BASE;
 	stm32_common.gpio[7] = GPIOH_BASE;
+	stm32_common.hsiRefs = 0;
 
 	/* Store reset flags and then clear them */
 	stm32_common.resetFlags = (*(stm32_common.rcc + rcc_csr) >> 25); /* LPWRRSTF ~ OBLRSTF */
