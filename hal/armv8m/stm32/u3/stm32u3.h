@@ -245,6 +245,10 @@ enum gpio_pupds {
 extern int _stm32_rccSetDevClock(unsigned int dev, u32 status);
 
 
+/* Set frequency of CPU clock in Hz */
+extern int _stm32_rccSetCPUClock(u32 hz);
+
+
 /* Sets independent peripheral clock configuration */
 extern int _stm32_rccSetIPClk(unsigned int ipclk, u8 setting);
 
@@ -261,6 +265,18 @@ extern u32 _stm32_rccGetPclkClock(void);
 
 
 extern int _stm32_gpioConfig(unsigned int d, u8 pin, u8 mode, u8 af, u8 otype, u8 ospeed, u8 pupd);
+
+
+/* Get CPU core voltage range
+ * 1 - 0.9 V, 2 - 0.75 V, subtracted 256 - EPOD booster is enabled
+ */
+extern int _stm32_pwrGetCPUVolt(void);
+
+
+/* Set CPU core voltage range
+ * 1 - 0.9 V, 2 - 0.75 V, subtracted 256 - enable EPOD booster
+ */
+extern void _stm32_pwrSetCPUVolt(int range);
 
 
 extern int _stm32_systickInit(u32 interval);
