@@ -18,6 +18,7 @@
 
 #include "../types.h"
 
+/* clang-format off */
 /* STM32L4 peripherals */
 enum {
 	/* AHB1 */
@@ -62,6 +63,7 @@ enum { wwdq_irq = 16, pvd_pvm_irq, rtc_tamper_stamp_irq, rtc_wkup_irq, flash_irq
 	quadspi_irq, i2c3_ev_irq, i2c3_er_irq, sai1_irq, sai2_irq, swpmi1_irq, tsc_irq, lcd_irq,
 	aes_irq, rng_irq, fpu_irq, hash_irq, i2c4_ev_irq, i2c4_er_irq, dcmi_irq, can2_tx_irq,
 	can2_rx0_irq, can2_rx1_irq, can2_sce_irq, dma2d_irq };
+/* clang-format on */
 
 
 /* Sets peripheral clock */
@@ -99,7 +101,7 @@ extern int _stm32_gpioGetPort(unsigned int d, u16 *val);
 extern int _stm32_getFlashBank(void);
 
 
-extern void _stm32_switchFlashBank(int bank);
+extern int _stm32_switchFlashBank(int bank);
 
 
 /* Range = 0 - forbidden, 1 - 1.8V, 2 - 1.5V, 3 - 1.2V */

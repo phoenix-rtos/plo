@@ -425,7 +425,7 @@ int _stm32_getFlashBank(void)
 }
 
 
-void _stm32_switchFlashBank(int bank)
+int _stm32_switchFlashBank(int bank)
 {
 	if (bank == 0) {
 		*(stm32_common.syscfg + syscfg_memrmp) &= ~(1 << 8);
@@ -433,6 +433,8 @@ void _stm32_switchFlashBank(int bank)
 	else {
 		*(stm32_common.syscfg + syscfg_memrmp) |= 1 << 8;
 	}
+
+	return 0;
 }
 
 
