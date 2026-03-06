@@ -6,7 +6,8 @@
  * Switch Flash Banks
  *
  * Copyright 2022 Phoenix Systems
- * Author: Aleksander Kaminski
+ * Copyright 2026 Apator Metrix
+ * Author: Aleksander Kaminski, Mateusz Karcz
  *
  * This file is part of Phoenix-RTOS.
  *
@@ -27,7 +28,7 @@ static void cmd_bankswitchInfo(void)
 
 static int cmd_bankswitch(int argc, char *argv[])
 {
-	int targetBank, err = CMD_EXIT_SUCCESS;
+	int targetBank, err = CMD_EXIT_SUCCESS, switchErr = 0;
 
 	if (argc == 1) {
 		targetBank = (_stm32_getFlashBank() == 0) ? 1 : 0;
@@ -41,9 +42,16 @@ static int cmd_bankswitch(int argc, char *argv[])
 	}
 
 	if (err == CMD_EXIT_SUCCESS) {
-		_stm32_switchFlashBank(targetBank);
+		switchErr = _stm32_switchFlashBank(targetBank);
+		if (switchErr < 0) {
+			log_error("\n%s: Bank switch failed (%d)", argv[0], switchErr);
+			err = CMD_EXIT_FAILURE;
+		}
+	}
+
+	if (err == CMD_EXIT_SUCCESS) {
 		log_info("\n%s: Bank switch successful (%d -> %d)", argv[0],
-			(targetBank == 0) ? 1 : 0, targetBank);
+				(targetBank == 0) ? 1 : 0, targetBank);
 	}
 
 	return err;
