@@ -35,6 +35,14 @@
 #define SYSCFG_BASE ((void *)0x40040400)
 #define RAMCFG_BASE ((void *)0x40026000)
 #define ICB_BASE    ((void *)0xe000e000)
+#define FLASH_BASE  ((void *)0x40022000)
+
+/* OPTWERR | PGSERR | SIZERR | PGAERR | WRPERR | PROGERR | OPERR */
+#define FLASH_ERROR_MASK ((1 << 13) | (1 << 7) | (1 << 6) | (1 << 5) | (1 << 4) | (1 << 3) | (1 << 1))
+#define FLASH_KEY1       0x45670123
+#define FLASH_KEY2       0xcdef89ab
+#define FLASH_OPTKEY1    0x08192a3b
+#define FLASH_OPTKEY2    0x4c5d6e7f
 
 static struct {
 	volatile u32 *rcc;
@@ -44,6 +52,7 @@ static struct {
 	volatile u32 *syscfg;
 	volatile u32 *iwdg;
 	volatile u32 *ramcfg;
+	volatile u32 *flash;
 
 	u32 cpuclk;
 	u32 hsiRefs;
@@ -494,6 +503,95 @@ int _stm32_gpioConfig(unsigned int d, u8 pin, u8 mode, u8 af, u8 otype, u8 ospee
 }
 
 
+/* Flash banks */
+
+
+int _stm32_getFlashBank(void)
+{
+	return (*(stm32_common.flash + flash_optr) >> 20) & 1;
+}
+
+
+int _stm32_switchFlashBank(int bank)
+{
+	int err = -EIO, vrange;
+	time_t start;
+	u32 optr;
+
+	if (bank == _stm32_getFlashBank()) {
+		return 0;
+	}
+
+	if ((bank < 0) || (bank > 1)) {
+		return -EINVAL;
+	}
+
+	if (*(stm32_common.flash + flash_sr) & (1 << 16)) { /* BSY */
+		return -EBUSY;
+	}
+
+	/* Unlock Flash control registers */
+	*(stm32_common.flash + flash_keyr) = FLASH_KEY1;
+	*(stm32_common.flash + flash_keyr) = FLASH_KEY2;
+	if (*(stm32_common.flash + flash_cr) & (1 << 31)) { /* LOCK */
+		return -EPERM;
+	}
+
+	/* Unlock Flash option-byte */
+	*(stm32_common.flash + flash_optkeyr) = FLASH_OPTKEY1;
+	*(stm32_common.flash + flash_optkeyr) = FLASH_OPTKEY2;
+	if (*(stm32_common.flash + flash_cr) & (1 << 30)) { /* OPTLOCK */
+		return -EPERM;
+	}
+
+	/* Modify bank selection */
+	optr = *(stm32_common.flash + flash_optr) & ~(1 << 20);
+	if (bank != 0) {
+		optr |= (1 << 20); /* Set SWAP_BANK */
+	}
+	*(stm32_common.flash + flash_optr) = optr;
+
+	/* Clear previous errors */
+	*(stm32_common.flash + flash_sr) |= FLASH_ERROR_MASK;
+
+	/* Ensure proper voltage range for Flash programming */
+	vrange = _stm32_pwrGetCPUVolt();
+	if ((vrange == 2) || (vrange == 2 - BOOSTEN)) {
+		_stm32_pwrSetCPUVolt(vrange - 1);
+	}
+
+	/* Commit option-byte */
+	start = hal_timerGet();
+	*(stm32_common.flash + flash_cr) |= (1 << 17); /* OPTSTRT */
+	while (*(stm32_common.flash + flash_sr) & (1 << 16)) {
+		/* Wait for BSY to clear */
+		if ((hal_timerGet() - start) > 100) {
+			_stm32_pwrSetCPUVolt(vrange);
+			return -ETIME;
+		}
+	}
+
+	if ((*(stm32_common.flash + flash_sr) & FLASH_ERROR_MASK) == 0) {
+		/* Reload option-byte */
+		start = hal_timerGet();
+		*(stm32_common.flash + flash_cr) |= (1 << 27); /* OBL_LAUNCH */
+		while (*(stm32_common.flash + flash_cr) & (1 << 27)) {
+			/* Wait for reset to happen (no return on success) */
+			if ((hal_timerGet() - start) > 100) {
+				err = -ETIME;
+				break;
+			}
+		}
+
+		/* On success, option byte loader reset should've happened by this point */
+	}
+
+	/* We only reach this point in case of failure */
+	_stm32_pwrSetCPUVolt(vrange);
+	return err;
+}
+
+
 /* Watchdog */
 
 
@@ -567,6 +665,7 @@ void _stm32_init(void)
 	stm32_common.iwdg = IWDG_BASE;
 	stm32_common.syscfg = SYSCFG_BASE;
 	stm32_common.ramcfg = RAMCFG_BASE;
+	stm32_common.flash = FLASH_BASE;
 	stm32_common.gpio[0] = GPIOA_BASE;
 	stm32_common.gpio[1] = GPIOB_BASE;
 	stm32_common.gpio[2] = GPIOC_BASE;
