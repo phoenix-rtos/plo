@@ -267,6 +267,24 @@ extern u32 _stm32_rccGetPclkClock(void);
 extern int _stm32_gpioConfig(unsigned int d, u8 pin, u8 mode, u8 af, u8 otype, u8 ospeed, u8 pupd);
 
 
+/* Get the active Flash bank index */
+extern int _stm32_getFlashBank(void);
+
+
+/* Set the active Flash bank (0 or 1) and trigger option-byte reload.
+ *
+ * Returns:
+ *   no return - new bank selected, system reset triggered
+ *   0         - requested bank already active
+ *   -EBUSY    - Flash controller busy
+ *   -EINVAL   - invalid bank index
+ *   -EIO      - Flash controller error during operation
+ *   -EPERM    - Flash option registers could not be unlocked
+ *   -ETIME    - Flash operation did not complete in time
+ */
+extern int _stm32_switchFlashBank(int bank);
+
+
 /* Get CPU core voltage range
  * 1 - 0.9 V, 2 - 0.75 V, subtracted 256 - EPOD booster is enabled
  */
