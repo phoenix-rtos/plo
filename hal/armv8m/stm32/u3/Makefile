@@ -13,6 +13,13 @@ LDFLAGS := $(filter-out -Tdata% , $(LDFLAGS))
 CFLAGS := $(filter-out -mfloat-abi% , $(CFLAGS))
 CFLAGS += -mfloat-abi=soft
 
+ifneq (,$(FLASH_SIZE))
+  CFLAGS += -DFLASH_PROGRAM_BANK_SIZE=$(FLASH_SIZE)
+endif
+ifneq (,$(RAM_SIZE))
+  CFLAGS += -DRAM_BANK_SIZE=$(RAM_SIZE)
+endif
+
 PLO_COMMANDS ?= alias app bankswitch blob call console copy devices dump echo go help kernelimg \
   map mem phfs reboot script stop wait
 
