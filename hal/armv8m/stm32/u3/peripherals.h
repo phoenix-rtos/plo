@@ -51,23 +51,43 @@
 #define UART_MAX_CNT 5
 
 #ifndef UART1
+#ifdef TTY1
+#define UART1 TTY1
+#else
 #define UART1 1
 #endif
+#endif
 
-#ifndef UART2
-#define UART2 0 /* STM32U396xx / STM32U3A6xx / STM32U3C5xx */
+#ifndef UART2 /* STM32U396xx / STM32U3A6xx / STM32U3B5xx / STM32U3C5xx */
+#ifdef TTY2
+#define UART2 TTY2
+#else
+#define UART2 0
+#endif
 #endif
 
 #ifndef UART3
+#ifdef TTY3
+#define UART3 TTY3
+#else
 #define UART3 0
+#endif
 #endif
 
 #ifndef UART4
+#ifdef TTY4
+#define UART4 TTY4
+#else
 #define UART4 0
+#endif
 #endif
 
 #ifndef UART5
+#ifdef TTY5
+#define UART5 TTY5
+#else
 #define UART5 0
+#endif
 #endif
 
 #define UART_BAUDRATE 115200
