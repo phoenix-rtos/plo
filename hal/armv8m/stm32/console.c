@@ -14,10 +14,9 @@
  * %LICENSE%
  */
 
+#include <board_config.h>
 #include <hal/hal.h>
 #include <lib/helpers.h>
-
-#include <board_config.h>
 
 #include "stm32.h"
 

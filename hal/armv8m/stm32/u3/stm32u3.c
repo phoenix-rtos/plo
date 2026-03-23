@@ -14,8 +14,8 @@
  * %LICENSE%
  */
 
-#include <hal/hal.h>
 #include <board_config.h>
+#include <hal/hal.h>
 #include <lib/errno.h>
 #include "stm32u3.h"
 
