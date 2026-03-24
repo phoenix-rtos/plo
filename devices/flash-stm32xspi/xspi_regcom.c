@@ -549,8 +549,8 @@ static int flashdrv_detectMacronixOcta(int minor, flash_opParameters_t *res, uns
 	res->writeDummy = 0;
 	res->addrMode = ADDRMODE_4B;
 	res->eraseIoType = operation_io_888d;
-	res->eraseOpcode = 0xdc;
-	res->log_eraseSize = 16;
+	res->eraseOpcode = 0x21; /* Sector erase 4B */
+	res->log_eraseSize = 12;
 	return 0;
 }
 

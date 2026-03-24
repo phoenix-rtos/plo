@@ -94,7 +94,7 @@ int flashdrv_parseSfdp(const u32 *data, flash_opParameters_t *res, int tryMultiI
 	unsigned n_headers = 0, i;
 	const u32 *header_table = &data[2];
 	u32 ptable_len = 0, ptable_offset, log_sizeBits;
-	u8 log_eraseSize = 0, eraseOpcode = 0, eraseTimeShift = 0;
+	u8 log_eraseSize = 0xff, eraseOpcode = 0, eraseTimeShift = 0;
 	u8 candidate_size, eraseTimeValue, eraseTimeoutMultiplier;
 	const u32 *ptable = NULL;
 	if (data[0] != SFDP_SIGNATURE) {
@@ -166,10 +166,10 @@ int flashdrv_parseSfdp(const u32 *data, flash_opParameters_t *res, int tryMultiI
 	}
 
 	if (ptable_len >= 9) {
-		/* Find largest available erase operation */
+		/* Find smallest available erase operation */
 		for (i = 0; i < 4; i++) {
 			candidate_size = (ptable[sfdpEraseLookup[i].sizeIdx] >> sfdpEraseLookup[i].sizeShift) & 0xff;
-			if (candidate_size > log_eraseSize) {
+			if (candidate_size != 0 && candidate_size < log_eraseSize) {
 				eraseOpcode = (ptable[sfdpEraseLookup[i].sizeIdx] >> sfdpEraseLookup[i].opcodeShift) & 0xff;
 				log_eraseSize = candidate_size;
 				eraseTimeShift = sfdpEraseLookup[i].timeShift;
@@ -177,7 +177,7 @@ int flashdrv_parseSfdp(const u32 *data, flash_opParameters_t *res, int tryMultiI
 		}
 	}
 
-	if (log_eraseSize != 0) {
+	if (log_eraseSize != 0xff) {
 		res->log_eraseSize = log_eraseSize;
 		res->eraseOpcode = eraseOpcode;
 		if (ptable_len >= 10) {
