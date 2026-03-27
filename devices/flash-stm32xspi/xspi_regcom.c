@@ -41,10 +41,10 @@ static struct flash_memParams {
 	flash_xspiSetup_t read;
 	flash_xspiSetup_t write;
 	flash_xspiSetup_t erase;
-	const flash_opDefinition_t *chipErase;
-	const flash_opDefinition_t *status;
-	const flash_opDefinition_t *wrEn;
-	const flash_opDefinition_t *wrDis;
+	flash_opDefinition_t chipErase;
+	flash_opDefinition_t status;
+	flash_opDefinition_t wrEn;
+	flash_opDefinition_t wrDis;
 	const char *name;
 	u8 paramsStored;
 } memParams[XSPI_N_CONTROLLERS];
@@ -72,6 +72,12 @@ static struct flash_memParams {
 		(((dqs) & 0x1) << 29))
 
 /* Definitions of default SPI Flash commands */
+
+#define WRITE_DISABLE_OPCODE 0x04U
+#define READ_STATUS_OPCODE   0x05U
+#define WRITE_ENABLE_OPCODE  0x06U
+#define CHIP_ERASE_OPCODE    0x60U
+
 
 static const flash_opDefinition_t opDef_read_id = {
 	.reg = {
@@ -101,7 +107,7 @@ static const flash_opDefinition_t opDef_read_status = {
 	.reg = {
 		.ccr = MAKE_CCR_VALUE(S1, NO, NO, S1, 1, 0, 0, 0),
 		.tcr = 0,
-		.ir = 0x05,
+		.ir = READ_STATUS_OPCODE,
 	},
 	.dataLen = 1,
 	.addr = 0,
@@ -113,7 +119,7 @@ static const flash_opDefinition_t opDef_write_enable = {
 	.reg = {
 		.ccr = MAKE_CCR_VALUE(S1, NO, NO, NO, 1, 0, 0, 0),
 		.tcr = 0,
-		.ir = 0x06,
+		.ir = WRITE_ENABLE_OPCODE,
 	},
 	.dataLen = 0,
 	.addr = 0,
@@ -125,70 +131,7 @@ static const flash_opDefinition_t opDef_write_disable = {
 	.reg = {
 		.ccr = MAKE_CCR_VALUE(S1, NO, NO, NO, 1, 0, 0, 0),
 		.tcr = 0,
-		.ir = 0x04,
-	},
-	.dataLen = 0,
-	.addr = 0,
-	.isRead = 0,
-};
-
-
-static const flash_opDefinition_t opDef_chip_erase = {
-	.reg = {
-		.ccr = MAKE_CCR_VALUE(S1, NO, NO, NO, 1, 0, 0, 0),
-		.tcr = 0,
-		.ir = 0x60,
-	},
-	.dataLen = 0,
-	.addr = 0,
-	.isRead = 0,
-};
-
-
-/* Definitions of octal-SPI Flash commands */
-
-
-static const flash_opDefinition_t opDef_octa_read_status = {
-	.reg = {
-		.ccr = MAKE_CCR_VALUE(D8, D8, NO, S8, 2, 4, 0, 1),
-		.tcr = 4,
-		.ir = 0x05fa,
-	},
-	.dataLen = 2,
-	.addr = 0,
-	.isRead = 1,
-};
-
-
-static const flash_opDefinition_t opDef_octa_write_enable = {
-	.reg = {
-		.ccr = MAKE_CCR_VALUE(D8, NO, NO, NO, 2, 0, 0, 0),
-		.tcr = 0,
-		.ir = 0x06f9,
-	},
-	.dataLen = 0,
-	.addr = 0,
-	.isRead = 0,
-};
-
-
-static const flash_opDefinition_t opDef_octa_write_disable = {
-	.reg = {
-		.ccr = MAKE_CCR_VALUE(D8, NO, NO, NO, 2, 0, 0, 0),
-		.tcr = 0,
-		.ir = 0x04fb,
-	},
-	.dataLen = 0,
-	.addr = 0,
-	.isRead = 0,
-};
-
-
-static const flash_opDefinition_t opDef_octa_chip_erase = {
-	.reg = {
-		.ccr = MAKE_CCR_VALUE(D8, NO, NO, NO, 2, 0, 0, 0),
-		.tcr = 0,
-		.ir = 0x609f,
+		.ir = WRITE_DISABLE_OPCODE,
 	},
 	.dataLen = 0,
 	.addr = 0,
@@ -383,7 +326,7 @@ static int flashdrv_writeEnable(unsigned int minor, int enable)
 	/* Depending on command status may be 1 or 2 bytes long.
 	 * We only care about the first byte, but need to allocate a large enough buffer. */
 	u8 status[2];
-	const flash_opDefinition_t *opDef = enable ? memParams[minor].wrEn : memParams[minor].wrDis;
+	const flash_opDefinition_t *opDef = enable ? &memParams[minor].wrEn : &memParams[minor].wrDis;
 	unsigned retries = 10;
 	int ret;
 	enable = (enable != 0) ? 1 : 0;
@@ -400,7 +343,7 @@ static int flashdrv_writeEnable(unsigned int minor, int enable)
 			return ret;
 		}
 
-		ret = flashdrv_performOp(minor, memParams[minor].status, status);
+		ret = flashdrv_performOp(minor, &memParams[minor].status, status);
 		if (ret < 0) {
 			return ret;
 		}
@@ -427,7 +370,7 @@ static ssize_t flashdrv_performWriteOp(
 		return ret;
 	}
 
-	return flashdrv_waitForWriteCompletion(minor, memParams[minor].status, timeout);
+	return flashdrv_waitForWriteCompletion(minor, &memParams[minor].status, timeout);
 }
 
 
@@ -479,6 +422,7 @@ static void flashdrv_fillOperations(struct flash_memParams *mp)
 {
 	flash_opParameters_t *fp = &mp->params;
 	u32 readModeBytes = 0, v;
+	int modeIsOctalDDR = fp->otherIoType == operation_io_888d;
 
 	if (fp->readModeCyc != 0) {
 		v = flashdrv_modeCyclesToBits(fp->readIoType, fp->readModeCyc);
@@ -506,9 +450,35 @@ static void flashdrv_fillOperations(struct flash_memParams *mp)
 	mp->write.ir = flashdrv_makeIRValue(fp->opcodeType, fp->writeOpcode);
 
 	mp->erase.ccr = flashdrv_makeCCRValue(
-			fp->eraseIoType, fp->opcodeType, (fp->addrMode == ADDRMODE_3B) ? 3 : 4, 0, 0);
+			fp->otherIoType, fp->opcodeType, (fp->addrMode == ADDRMODE_3B) ? 3 : 4, 0, 0);
 	mp->erase.tcr = 0;
 	mp->erase.ir = flashdrv_makeIRValue(fp->opcodeType, fp->eraseOpcode);
+
+	/* The following 3 commands all have no address, mode bytes, dummy cycles or data;
+	 * their definitions will be identical except for instruction register value */
+	mp->wrEn.reg.ccr = flashdrv_makeCCRValue(fp->otherIoType, fp->opcodeType, 0, 0, 0);
+	mp->wrEn.reg.tcr = 0;
+	mp->wrEn.reg.ir = flashdrv_makeIRValue(fp->opcodeType, WRITE_ENABLE_OPCODE);
+	mp->wrEn.addr = 0;
+	mp->wrEn.dataLen = 0;
+	mp->wrEn.isRead = 0;
+
+	mp->wrDis = mp->wrEn; /* Copy data over from write enable command */
+	mp->wrDis.reg.ir = flashdrv_makeIRValue(fp->opcodeType, WRITE_DISABLE_OPCODE);
+
+	mp->chipErase = mp->wrEn; /* Copy data over from write enable command */
+	mp->chipErase.reg.ir = flashdrv_makeIRValue(fp->opcodeType, CHIP_ERASE_OPCODE);
+
+	mp->status.reg.ccr = flashdrv_makeCCRValue(fp->otherIoType, fp->opcodeType, 0, 0, 1);
+	/* Note: the number of dummy cycles in DDR mode doesn't matter so much because:
+	 * 1. we use DQS to allow memory to signal that it's ready
+	 * 2. Flash will output status register byte over and over, so skipping a few bytes during dummy cycles
+	 *    doesn't change the result */
+	mp->status.reg.tcr = (modeIsOctalDDR != 0) ? 8 : 0;
+	mp->status.reg.ir = flashdrv_makeIRValue(fp->opcodeType, READ_STATUS_OPCODE);
+	mp->status.addr = 0;
+	mp->status.dataLen = (modeIsOctalDDR != 0) ? 2 : 1; /* In octal DDR mode we need to read at least 2 bytes */
+	mp->status.isRead = 1;
 }
 
 
@@ -548,7 +518,7 @@ static int flashdrv_detectMacronixOcta(int minor, flash_opParameters_t *res, uns
 	res->writeOpcode = 0x12; /* Page program 4B */
 	res->writeDummy = 0;
 	res->addrMode = ADDRMODE_4B;
-	res->eraseIoType = operation_io_888d;
+	res->otherIoType = operation_io_888d;
 	res->eraseOpcode = 0x21; /* Sector erase 4B */
 	res->log_eraseSize = 12;
 	return 0;
@@ -557,7 +527,8 @@ static int flashdrv_detectMacronixOcta(int minor, flash_opParameters_t *res, uns
 
 static int flashdrv_initMacronixOcta(int minor)
 {
-	static const flash_opDefinition_t opDef_writeWRCR2 = {
+	/* Write configuration register 2 command */
+	static const flash_opDefinition_t opDef_write_cr2 = {
 		.reg = {
 			.ccr = MAKE_CCR_VALUE(S1, S1, NO, S1, 1, 4, 0, 0),
 			.tcr = 0,
@@ -568,15 +539,28 @@ static int flashdrv_initMacronixOcta(int minor)
 		.isRead = 0,
 	};
 
+	/* For this memory you have to send out a 4-byte address of 0 to read status */
+	static const flash_opDefinition_t opDef_octa_read_status = {
+		.reg = {
+			.ccr = MAKE_CCR_VALUE(D8, D8, NO, S8, 2, 4, 0, 1),
+			.tcr = 4,
+			.ir = 0x05fa,
+		},
+		.dataLen = 2,
+		.addr = 0,
+		.isRead = 1,
+	};
+
 	struct flash_memParams *mp = &memParams[minor];
 	u8 value = 0x02; /* Value to put Flash into DTR mode */
 	int ret;
 
-	if (flashdrv_writeEnable(minor, 1) < 0) {
-		return -EIO;
+	ret = flashdrv_writeEnable(minor, 1);
+	if (ret < 0) {
+		return ret;
 	}
 
-	ret = flashdrv_performOp(minor, &opDef_writeWRCR2, &value);
+	ret = flashdrv_performOp(minor, &opDef_write_cr2, &value);
 	if (ret < 0) {
 		return ret;
 	}
@@ -587,10 +571,7 @@ static int flashdrv_initMacronixOcta(int minor)
 	}
 
 	flashdrv_fillOperations(mp);
-	mp->chipErase = &opDef_octa_chip_erase;
-	mp->status = &opDef_octa_read_status;
-	mp->wrEn = &opDef_octa_write_enable;
-	mp->wrDis = &opDef_octa_write_disable;
+	mp->status = opDef_octa_read_status; /* Overwrite status command, as it is non-standard */
 	mp->memoryType = XSPI_DCR1_MTYP_MACRONIX;
 	return 0;
 }
@@ -604,14 +585,68 @@ static int flashdrv_detectMT35X(int minor, flash_opParameters_t *res, unsigned c
 		return ret;
 	}
 
-	/* Temporary workaround - with a more advanced SFDP parser we can get this data from the chip itself. */
-	res->readIoType = operation_io_188d;
-	res->readOpcode = 0xfd; /* (1S-8D-8D) DTR_READ */
-	res->readDummy = 16;
+	/* Update info with operations compatible with octal DDR mode */
+	res->opcodeType = flash_opcode_8b_repeat;
+	res->readIoType = operation_io_888d;
+	res->readOpcode = 0x0b; /* FAST READ */
+	res->readDummy = 0;     /* Not necessary, DQS line signals that Flash is ready */
 	res->readModeCyc = 0;
-	res->writeIoType = operation_io_188;
-	res->writeOpcode = 0x8e; /* (1S-8S-8S) Page Program */
-	res->writeDummy = 0;
+	res->writeIoType = operation_io_888d;
+	res->otherIoType = operation_io_888d;
+	return 0;
+}
+
+
+static int flashdrv_initMT35X(int minor)
+{
+	/* Write volatile control register command */
+	static const flash_opDefinition_t opDef_write_vcr = {
+		.reg = {
+			.ccr = MAKE_CCR_VALUE(S1, S1, NO, S1, 1, 4, 0, 0),
+			.tcr = 0,
+			.ir = 0x81,
+		},
+		.dataLen = 1,
+		.addr = 0,
+		.isRead = 0,
+	};
+
+	static const flash_opDefinition_t opDef_octa_read_status = {
+		.reg = {
+			.ccr = MAKE_CCR_VALUE(D8, NO, NO, D8, 2, 0, 0, 1),
+			.tcr = 8,
+			.ir = 0x0505,
+		},
+		.dataLen = 2,
+		.addr = 0,
+		.isRead = 1,
+	};
+
+	struct flash_memParams *mp = &memParams[minor];
+	u8 value = 0xe7; /* Value to put Flash into octal DDR mode */
+	int ret;
+
+	ret = flashdrv_performWriteOp(minor, &opDef_enter_4byte, NULL, 1000);
+	if (ret < 0) {
+		return ret;
+	}
+
+	ret = flashdrv_writeEnable(minor, 1);
+	if (ret < 0) {
+		return ret;
+	}
+
+	ret = flashdrv_performOp(minor, &opDef_write_vcr, &value);
+	if (ret < 0) {
+		return ret;
+	}
+
+	ret = flashdrv_waitForWriteCompletion(minor, &opDef_octa_read_status, 1000);
+	if (ret < 0) {
+		return ret;
+	}
+
+	flashdrv_fillOperations(mp);
 	return 0;
 }
 
@@ -633,7 +668,7 @@ static int flashdrv_detectFlashType(unsigned int minor, flash_opParameters_t *re
 	}
 	else if ((device_id[0] == 0x2c) && (device_id[1] == 0x5b)) {
 		memParams[minor].name = "Micron MT35X";
-		memParams[minor].init_fn = flashdrv_initGeneric;
+		memParams[minor].init_fn = flashdrv_initMT35X;
 		return flashdrv_detectMT35X(minor, res, device_id);
 	}
 
@@ -706,7 +741,7 @@ static int xspi_writePage(unsigned int minor, void *dest, const void *src, size_
 		return ret;
 	}
 
-	ret = flashdrv_waitForWriteCompletion(minor, memParams[minor].status, timeout);
+	ret = flashdrv_waitForWriteCompletion(minor, &memParams[minor].status, timeout);
 	if (ret < 0) {
 		return ret;
 	}
@@ -775,7 +810,7 @@ static ssize_t flashdrv_erase_internal(unsigned int minor, addr_t offs, size_t l
 	int ret = 0;
 	ssize_t len_ret = (ssize_t)len;
 	if (len == (size_t)-1) {
-		ret = flashdrv_performWriteOp(minor, mp->chipErase, NULL, mp->params.eraseChipTimeout);
+		ret = flashdrv_performWriteOp(minor, &mp->chipErase, NULL, mp->params.eraseChipTimeout);
 		return (ret < 0) ? ret : (ssize_t)xspi_memSize[minor];
 	}
 	else {
@@ -842,10 +877,9 @@ int xspi_regcom_init(unsigned int minor)
 	hal_memset(mp, 0, sizeof(*mp));
 	fp = &mp->params;
 
-	mp->chipErase = &opDef_chip_erase;
-	mp->status = &opDef_read_status;
-	mp->wrEn = &opDef_write_enable;
-	mp->wrDis = &opDef_write_disable;
+	mp->status = opDef_read_status;
+	mp->wrEn = opDef_write_enable;
+	mp->wrDis = opDef_write_disable;
 
 	mp->memoryType = XSPI_DCR1_MTYP_STANDARD;
 	*(p->ctrl + xspi_dcr1) =
@@ -944,12 +978,12 @@ static void xspi_regcom_serializeConfig(int minor, void *ptr)
 	xspi_regcom_serializeCommand(&cs->read, &mp->read);
 	xspi_regcom_serializeCommand(&cs->write, &mp->write);
 	xspi_regcom_serializeCommand(&cs->erase, &mp->erase);
-	xspi_regcom_serializeCommand(&cs->chipErase, &mp->chipErase->reg);
-	xspi_regcom_serializeCommand(&cs->writeEnable, &mp->wrEn->reg);
-	xspi_regcom_serializeCommand(&cs->writeDisable, &mp->wrDis->reg);
-	xspi_regcom_serializeCommand(&cs->readStatus, &mp->status->reg);
-	cs->readStatus_dataLen = mp->status->dataLen;
-	cs->readStatus_addr = mp->status->addr;
+	xspi_regcom_serializeCommand(&cs->chipErase, &mp->chipErase.reg);
+	xspi_regcom_serializeCommand(&cs->writeEnable, &mp->wrEn.reg);
+	xspi_regcom_serializeCommand(&cs->writeDisable, &mp->wrDis.reg);
+	xspi_regcom_serializeCommand(&cs->readStatus, &mp->status.reg);
+	cs->readStatus_dataLen = mp->status.dataLen;
+	cs->readStatus_addr = mp->status.addr;
 }
 
 
