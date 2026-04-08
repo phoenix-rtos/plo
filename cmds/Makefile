@@ -12,6 +12,11 @@ PLO_ALLCOMMANDS = alias app bankswitch bitstream blob bootcm4 bootrom bridge cal
 
 PLO_COMMANDS ?= $(PLO_ALLCOMMANDS)
 PLO_APPLETS = $(filter $(PLO_ALLCOMMANDS), $(PLO_COMMANDS))
+PLO_UNKNOWN_COMMANDS = $(filter-out $(PLO_ALLCOMMANDS), $(PLO_COMMANDS))
+
+ifneq ($(PLO_UNKNOWN_COMMANDS),)
+  $(error Unrecognised entries in PLO_COMMANDS: $(PLO_UNKNOWN_COMMANDS))
+endif
 
 PLO_OBJS += $(foreach cmd, $(PLO_APPLETS), $(patsubst %.c, %.o, $(wildcard cmds/$(cmd).c)))
 
