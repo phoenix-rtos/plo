@@ -41,8 +41,10 @@ static int cmd_wait(int argc, char *argv[])
 			for (i = 0; i < 3; ++i) {
 				lib_printf(".");
 				if (lib_consoleGetc(&c, 500) > 0) {
-					/* FIXME: this is not an error, break to console */
-					return -1;
+					if (c == 'c') {
+						/* FIXME: this is not an error, break to console */
+						return -1;
+					}
 				}
 			}
 		}
@@ -60,8 +62,10 @@ static int cmd_wait(int argc, char *argv[])
 		time -= step;
 		lib_printf("\r%*s \r%s, %5d [ms]", sizeof(prompt) + 14, "", prompt, time);
 		if (lib_consoleGetc(&c, step) > 0) {
-			/* FIXME: this is not an error, break to console */
-			return -1;
+			if (c == 'c') {
+				/* FIXME: this is not an error, break to console */
+				return -1;
+			}
 		}
 	}
 	lib_printf("\r%*s \r%s, %5d [ms]\n", sizeof(prompt) + 14, "", prompt, 0);
