@@ -92,7 +92,7 @@ static int cmd_part(int argc, char *argv[])
 {
 	int res, argvID = 0;
 
-	char *allocMaps, *accessMaps, *schedWindows, *availableMem;
+	char *allocMaps, *accessMaps, *schedWindows, *availableMem, *availableKMem;
 	size_t allocSz, accessSz, schedWinSz;
 	u32 schedWindowsMask;
 
@@ -102,7 +102,7 @@ static int cmd_part(int argc, char *argv[])
 	syspage_part_t *part, *other;
 
 	/* Parse command arguments */
-	if ((argc < 6) || (argc > 7)) {
+	if ((argc < 7) || (argc > 8)) {
 		log_error("\n%s: Wrong argument count", argv[0]);
 		return CMD_EXIT_FAILURE;
 	}
@@ -140,7 +140,10 @@ static int cmd_part(int argc, char *argv[])
 	schedWindows = argv[argvID++];
 
 	/* ARG_6: memory allocation limit */
-	availableMem = argv[argvID];
+	availableMem = argv[argvID++];
+
+	/* ARG_7: kernel memory allocation limit */
+	availableKMem = argv[argvID];
 
 	allocSz = cmd_listParse(allocMaps, ';');
 	accessSz = cmd_listParse(accessMaps, ';');
@@ -193,10 +196,19 @@ static int cmd_part(int argc, char *argv[])
 		log_error("\n%s: Invalid arguments", argv[0]);
 		return -EINVAL;
 	}
+	part->availableKMem = lib_strtoul(availableKMem, &availableKMem, 0);
+	if (*availableKMem != '\0') {
+		log_error("\n%s: Invalid arguments", argv[0]);
+		return -EINVAL;
+	}
 	if (part->availableMem == 0) {
 		part->availableMem = (size_t)-1;
 	}
+	if (part->availableKMem == 0) {
+		part->availableKMem = (size_t)-1;
+	}
 	part->usedMem = 0;
+	part->usedKMem = 0;
 	part->flags = flags;
 	hal_strcpy(part->name, name);
 
