@@ -186,6 +186,10 @@ static int cmd_appLoad(handler_t handler, size_t size, const char *name, char *i
 	prog->end = entry->end;
 	prog->partition = partition;
 
+	if (syspage_schedulerConfigGet() == NULL) {
+		return -ENOMEM;
+	}
+
 	return EOK;
 }
 

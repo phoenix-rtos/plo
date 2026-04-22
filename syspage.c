@@ -34,7 +34,6 @@ struct {
 
 void syspage_init(void)
 {
-	syspage_sched_window_t *schedWindow;
 	syspage_part_t *partition;
 
 	syspage_common.syspage = (syspage_t *)__heap_base;
@@ -42,7 +41,7 @@ void syspage_init(void)
 	syspage_common.syspage->maps = NULL;
 	syspage_common.syspage->partitions = NULL;
 	syspage_common.syspage->progs = NULL;
-	syspage_common.syspage->schedWindows = NULL;
+	syspage_common.syspage->sched = NULL;
 	syspage_common.syspage->console = console_default;
 
 	syspage_common.heapTop = (void *)ALIGN_ADDR((addr_t)__heap_base + sizeof(syspage_t), sizeof(long long));
@@ -52,19 +51,6 @@ void syspage_init(void)
 
 	hal_syspageSet(&syspage_common.syspage->hs);
 
-	/* Initialize background scheduler window */
-	schedWindow = (syspage_sched_window_t *)syspage_alloc(sizeof(syspage_sched_window_t));
-	if (schedWindow != NULL) {
-		schedWindow->next = schedWindow;
-		schedWindow->prev = schedWindow;
-		schedWindow->stop = 0;
-		schedWindow->id = 0;
-		syspage_common.syspage->schedWindows = schedWindow;
-	}
-	else {
-		log_error("\nsyspage: Cannot allocate memory for background scheduler window");
-	}
-
 	/* Initialize background partition */
 	partition = syspage_alloc(sizeof(syspage_part_t) + sizeof(NAME_PART_DEFAULT) + 1U);
 	if (partition != NULL) {
@@ -73,13 +59,13 @@ void syspage_init(void)
 		partition->name = (char *)partition + sizeof(syspage_part_t);
 		hal_strcpy(partition->name, NAME_PART_DEFAULT);
 		partition->availableMem = (size_t)-1;
-		partition->schedWindowsMask = 1U;
+		partition->schedWindow = 0U;
 		partition->hal = NULL;
 		partition->id = 0U;
 		syspage_common.syspage->partitions = partition;
 	}
 	else {
-		log_error("\nsyspage: Cannot allocate memory for background partition");
+		log_error("\nsyspage: Cannot allocate memory for default partition");
 	}
 }
 
@@ -537,46 +523,47 @@ const char *syspage_mapName(u8 id)
 
 /* Scheduler's functions */
 
-syspage_sched_window_t *syspage_schedWindowAdd(void)
+int syspage_schedulerConfigSet(syspage_sched_t *config)
 {
-	syspage_sched_window_t *window;
+	if (syspage_common.syspage->sched != NULL) {
+		return -EEXIST;
+	}
+	syspage_common.syspage->sched = config;
+	return EOK;
+}
 
-	window = syspage_alloc(sizeof(syspage_sched_window_t));
-	if (window == NULL) {
+
+static syspage_sched_t *syspage_schedulerCreateDefault(void)
+{
+	syspage_sched_t *config = syspage_alloc(sizeof(*config) + sizeof(syspage_sched_cycle_t) * 1);
+	if (config == NULL) {
+		log_error("\nCannot allocate memory for default scheduler configuration");
 		return NULL;
 	}
-
-	if (syspage_common.syspage->schedWindows == NULL) {
-		window->next = window;
-		window->prev = window;
-		syspage_common.syspage->schedWindows = window;
+	config->windowCnt = 0; /* Use kernel threads window */
+	config->cycleCnt = 1;
+	config->flags = sFlagCommonCycle;
+	config->cycles[0] = syspage_alloc(sizeof(syspage_sched_cycle_t));
+	if (config->cycles[0] == NULL) {
+		log_error("\nCannot allocate memory for default scheduler configuration");
+		return NULL;
 	}
-	else {
-		window->prev = syspage_common.syspage->schedWindows->prev;
-		syspage_common.syspage->schedWindows->prev->next = window;
-		window->next = syspage_common.syspage->schedWindows;
-		syspage_common.syspage->schedWindows->prev = window;
-	}
+	config->cycles[0]->bgId = 0U;
+	config->cycles[0]->len = 0U;
 
-	return window;
+	log_info("\nUsing default scheduler configuration");
+	return config;
 }
 
-size_t syspage_schedulerWindowCount(void)
+
+syspage_sched_t *syspage_schedulerConfigGet(void)
 {
-	size_t count = 0;
-	syspage_sched_window_t *window = syspage_common.syspage->schedWindows;
-
-	if (window == NULL) {
-		return 0;
+	if (syspage_common.syspage->sched == NULL) {
+		syspage_common.syspage->sched = syspage_schedulerCreateDefault();
 	}
-
-	do {
-		count++;
-		window = window->next;
-	} while (window != syspage_common.syspage->schedWindows);
-
-	return count;
+	return syspage_common.syspage->sched;
 }
+
 
 /* Partition's functions */
 
