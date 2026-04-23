@@ -3,9 +3,9 @@
  *
  * plo - operating system loader
  *
- * STM32L4x6 Serial driver
+ * STM32 Serial driver
  *
- * Copyright 2021 Phoenix Systems
+ * Copyright 2021, 2026 Phoenix Systems
  * Author: Aleksander Kaminski
  *
  * This file is part of Phoenix-RTOS.
@@ -48,6 +48,16 @@ enum {
 	uart_clk_sel_msi_ck,
 	uart_clk_sel_hsi_div_ck,
 };
+#elif defined(__CPU_STM32H5)
+/* Values for selecting the peripheral clock for an UART */
+enum {
+	uart_clk_sel_pclk1 = 0,
+	uart_clk_sel_pll2,
+	uart_clk_sel_pll3,
+	uart_clk_sel_hsi,
+	uart_clk_sel_csi,
+	uart_clk_sel_lse
+};
 #endif
 
 
@@ -56,6 +66,8 @@ static int uartLut[UART_MAX_CNT] = {
 	UART1, UART2, UART3, UART4, UART5
 #elif defined(__CPU_STM32N6)
 	UART1, UART2, UART3, UART4, UART5, UART6, UART7, UART8, UART9, UART10
+#elif defined(__CPU_STM32H5)
+	UART1, UART2, UART3, UART4, UART5, UART6, UART7, UART8, UART9, UART10, UART11, UART12
 #endif
 };
 
@@ -70,7 +82,7 @@ static const struct {
 	int txport;
 	unsigned char txpin;
 	unsigned char txaf;
-#if defined(__CPU_STM32N6)
+#if defined(__CPU_STM32N6) || defined(__CPU_STM32H5)
 	u16 ipclk_sel; /* Clock mux (one of ipclk_usart*sel) */
 #endif
 } uartInfo[UART_MAX_CNT] = {
@@ -91,6 +103,22 @@ static const struct {
 	{ UART8_BASE, UART8_CLK, UART8_IRQ, dev_gpioe, 0, 8, dev_gpioe, 1, 8, ipclk_uart8sel },
 	{ UART9_BASE, UART9_CLK, UART9_IRQ, dev_gpiof, 1, 7, dev_gpiof, 0, 7, ipclk_uart9sel },
 	{ UART10_BASE, UART10_CLK, UART10_IRQ, dev_gpiod, 3, 6, dev_gpiod, 15, 6, ipclk_usart10sel },
+#elif defined(__CPU_STM32H5)
+	/* This table makes a little sense - e.g. UART4 is available on pretty much
+	 * every port. We need DTB, for now I leave the table mostly not populated,
+	 * relevant entry may be added if needed. */
+	{ UART1_BASE, UART1_CLK, UART1_IRQ, 0, 0, 0, 0, 0, 0, ipclk_usart1sel },
+	{ UART2_BASE, UART2_CLK, UART2_IRQ, 0, 0, 0, 0, 0, 0, ipclk_usart2sel },
+	{ UART3_BASE, UART3_CLK, UART3_IRQ, 0, 0, 0, 0, 0, 0, ipclk_usart3sel },
+	{ UART4_BASE, UART4_CLK, UART4_IRQ, 0, 0, 0, 0, 0, 0, ipclk_uart4sel },
+	{ UART5_BASE, UART5_CLK, UART5_IRQ, dev_gpiob, 12, 14, dev_gpiob, 13, 14,  ipclk_uart5sel },
+	{ UART6_BASE, UART6_CLK, UART6_IRQ, 0, 0, 0, 0, 0, 0, ipclk_usart6sel },
+	{ UART7_BASE, UART7_CLK, UART7_IRQ, 0, 0, 0, 0, 0, 0, ipclk_uart7sel },
+	{ UART8_BASE, UART8_CLK, UART8_IRQ, 0, 0, 0, 0, 0, 0, ipclk_uart8sel },
+	{ UART9_BASE, UART9_CLK, UART9_IRQ, 0, 0, 0, 0, 0, 0, ipclk_uart9sel },
+	{ UART10_BASE, UART10_CLK, UART10_IRQ, 0, 0, 0, 0, 0, 0, ipclk_usart10sel },
+	{ UART11_BASE, UART11_CLK, UART11_IRQ, 0, 0, 0, 0, 0, 0, ipclk_usart11sel },
+	{ UART12_BASE, UART12_CLK, UART12_IRQ, 0, 0, 0, 0, 0, 0, ipclk_uart12sel },
 #else
 #error "Unknown platform"
 #endif
@@ -253,6 +281,12 @@ static u32 uart_configureRefclk(unsigned int minor)
 	/* Switch to PER clock */
 	_stm32_rccSetIPClk(uartInfo[minor].ipclk_sel, uart_clk_sel_per_ck);
 	return _stm32_rccGetPerClock();
+}
+#elif defined(__CPU_STM32H5)
+static u32 uart_configureRefclk(unsigned int minor)
+{
+	/* 32 MHz HSI only for now. Can be changed if needed */
+	return 32UL * 1000UL * 1000UL;
 }
 #endif
 

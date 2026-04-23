@@ -1,0 +1,71 @@
+/*
+ * Phoenix-RTOS
+ *
+ * Operating system loader
+ *
+ * Linker Template and Platform Config for ARMv8-M33 STM32H5
+ *
+ * Copyright 2021-2023, 2026 Phoenix Systems
+ * Author: Gerard Swiderski, Aleksander Kaminski
+ *
+ * This file is part of Phoenix-RTOS.
+ *
+ * %LICENSE%
+ */
+
+
+#ifndef ARMV8M55_STM32H5_LDT
+#define ARMV8M55_STM32H5_LDT
+
+
+
+/* Platform specific definitions */
+#define SIZE_PAGE   0x200
+#define SIZE_STACK  (8 * SIZE_PAGE)
+#define SIZE_HEAP   (8 * SIZE_PAGE)
+
+#define FLASH_PROGRAM_1_ADDR    0x08000000
+#define FLASH_PROGRAM_2_ADDR    0x08080000
+#define FLASH_PROGRAM_BANK_SIZE (512 * 1024)
+
+#define RAM_ADDR      0x20000000
+#define RAM_BANK_SIZE (320 * 1024)
+
+/* Space reserved for kernel data */
+#define AREA_KERNEL 0x10000
+
+#if defined(__LINKER__)
+
+/* Space reserved for RTT control block and buffers */
+#if defined(CUSTOM_RTT_MAP_SIZE)
+RTT_MAP_SIZE = CUSTOM_RTT_MAP_SIZE;
+#else
+RTT_MAP_SIZE = 0x4000;
+#endif
+
+/* Memory map setup */
+MEMORY
+{
+	m_sram    (rwx) : ORIGIN = RAM_ADDR + AREA_KERNEL, LENGTH = RAM_BANK_SIZE - AREA_KERNEL - RTT_MAP_SIZE
+	m_rttmem  (rw)  : ORIGIN = RAM_ADDR + RAM_BANK_SIZE - RTT_MAP_SIZE, LENGTH = RTT_MAP_SIZE
+	m_flash2  (rx)  : ORIGIN = FLASH_PROGRAM_2_ADDR, LENGTH = FLASH_PROGRAM_BANK_SIZE
+	m_flash1  (rx)  : ORIGIN = FLASH_PROGRAM_1_ADDR, LENGTH = FLASH_PROGRAM_BANK_SIZE
+}
+
+/* FLASH image */
+REGION_ALIAS("PLO_IMAGE", m_flash1);
+REGION_ALIAS("TCM_TEXT", m_flash1);
+REGION_ALIAS("DATA", m_sram);
+REGION_ALIAS("BSS", m_sram);
+REGION_ALIAS("HEAP", m_sram);
+REGION_ALIAS("STACK", m_sram);
+REGION_ALIAS("RTTMEM", m_rttmem);
+
+
+#include "common/plo-arm.lds"
+#include "common/plo-rtt.lds"
+
+#endif /* end of __LINKER__ */
+
+
+#endif /* end of ARMV8M55_STM32H5_LDT */

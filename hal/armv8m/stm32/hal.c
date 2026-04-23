@@ -98,7 +98,13 @@ void hal_syspageSet(hal_syspage_t *hs)
 
 const char *hal_cpuInfo(void)
 {
+#if defined(__CPU_STM32N6)
 	return "Cortex-M55 STM32N6";
+#elif defined(__CPU_STM32H5)
+	return "Cortex-M33 STM32H5";
+#else
+	return "Unknown";
+#endif
 }
 
 
