@@ -17,15 +17,14 @@
 #include <lib/errno.h>
 #include <devices/devs.h>
 
-#define FLASH_NO 2
+#define FLASH_NO 1
 
 
 static const struct {
 	u32 start;
 	u32 end;
 } flashParams[FLASH_NO] = {
-	{ FLASH_PROGRAM_1_ADDR, FLASH_PROGRAM_1_ADDR + FLASH_PROGRAM_BANK_SIZE },
-	{ FLASH_PROGRAM_2_ADDR, FLASH_PROGRAM_2_ADDR + FLASH_PROGRAM_BANK_SIZE }
+	{ FLASH_PROGRAM_1_ADDR, FLASH_PROGRAM_1_ADDR + FLASH_PROGRAM_BANK_SIZE }
 };
 
 
