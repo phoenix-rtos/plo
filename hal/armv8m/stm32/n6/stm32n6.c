@@ -1038,6 +1038,22 @@ static void _stm32_initSRAM(void)
 }
 
 
+/* Zero out contents of DTCM using word size writes - this initializes ECC values in the memory */
+static void _stm32_initDTCM(void)
+{
+	u32 cfgdtcmsz, size, i;
+
+	volatile u32 *const dtcm = (volatile u32 *)0x30000000;
+
+	cfgdtcmsz = (*(stm32_common.syscfg + syscfg_cm55tcmcr) >> 4) & 0xf;
+	size = 1 << (cfgdtcmsz + 9);
+
+	for (i = 0; i < size / 4; i++) {
+		dtcm[i] = 0U;
+	}
+}
+
+
 void _stm32_initHalOnly(void)
 {
 	stm32_common.iwdg = IWDG_BASE;
@@ -1108,6 +1124,7 @@ void _stm32_init(void)
 	_stm32_rccSetDevClock(dev_per, 0);
 
 	_stm32_initSRAM();
+	_stm32_initDTCM();
 
 	/* Enable independent power supplies for GPIOs. */
 	_stm32_pwrSupplyInit(pwr_supply_vddio2); /* PO[5:0], PP[15:0] */
