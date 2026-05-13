@@ -37,6 +37,7 @@
 #define DEV_CONTROL_GETPROP_TOTALSZ 3
 #define DEV_CONTROL_GETPROP_BLOCKSZ 4
 #define DEV_CONTROL_MEMCRYPT        5
+#define DEV_CONTROL_NAND_ISBAD      6
 
 #define DEV_MEMCRYPT_ALGO_NONE    0UL
 #define DEV_MEMCRYPT_ALGO_AES128  1UL
@@ -54,6 +55,15 @@ typedef struct {
 	size_t ivSize;
 } dev_memcrypt_args_t;
 
+
+typedef struct {
+	union {
+		struct {
+			addr_t offs; /* Block in which `offs` lies will be checked */
+			int val;
+		} isBad;
+	} arg;
+} dev_nandCtrl_t;
 
 /* clang-format off */
 enum { dev_isMappable = 0, dev_isNotMappable };
