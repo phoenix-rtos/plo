@@ -70,6 +70,9 @@ extern mapent_t *syspage_entryAdd(const char *mapName, addr_t start, size_t size
 extern syspage_prog_t *syspage_progAdd(const char *argv, u32 flags);
 
 
+extern const syspage_prog_t *syspage_progFind(const char *name);
+
+
 /* This function allows syspage programs or blobs to be created at runtime.
  * Allocate `size` bytes in the memory map named `map`, then add a program named `argv` with `flags` into syspage.
  * If `allowOverwrite` is == 0, syspage will be checked for existing entries that match `argv` and allocation

@@ -530,6 +530,29 @@ syspage_prog_t *syspage_progAdd(const char *argv, u32 flags)
 }
 
 
+const syspage_prog_t *syspage_progFind(const char *name)
+{
+	const char *progName;
+	const syspage_prog_t *prog = syspage_common.syspage->progs;
+	size_t nameLen = hal_strlen(name);
+
+	if (prog == NULL) {
+		return NULL;
+	}
+
+	do {
+		progName = (prog->argv[0] == 'X') ? prog->argv + 1 : prog->argv;
+
+		if ((hal_strncmp(name, progName, nameLen) == 0) && (progName[nameLen] == '\0' || progName[nameLen] == ';')) {
+			return prog;
+		}
+
+		prog = prog->next;
+	} while (prog != syspage_common.syspage->progs);
+
+	return NULL;
+}
+
 
 /* Set console */
 
