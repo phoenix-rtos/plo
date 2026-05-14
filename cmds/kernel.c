@@ -35,7 +35,42 @@
 
 static void cmd_kernelInfo(void)
 {
-	lib_printf("loads Phoenix-RTOS, usage: kernel [<dev> [name]]");
+	lib_printf("loads Phoenix-RTOS with optional CRC32 verification, usage: kernel [-v <crc32>] <dev> [name]");
+}
+
+
+static int cmd_kernelVerifyCrc(handler_t handler, u32 expectedCrc)
+{
+	u8 buff[SIZE_MSG_BUFF];
+	ssize_t res;
+	u32 crc = 0xffffffffU;
+	size_t offs = 0;
+	phfs_stat_t stat;
+
+	res = phfs_stat(handler, &stat);
+	if (res < 0) {
+		log_error("\nCan't get file size for CRC verification (%d)", res);
+		return (int)res;
+	}
+
+	while (offs < stat.size) {
+		res = phfs_read(handler, offs, buff, min(sizeof(buff), stat.size - offs));
+		if (res <= 0) {
+			log_error("\nCan't read data for CRC verification (%d)", res);
+			return (int)res;
+		}
+		crc = lib_crc32(buff, res, crc);
+		offs += res;
+	}
+
+	crc = crc ^ 0xffffffffU;
+
+	if (crc != expectedCrc) {
+		log_error("\nCRC mismatch (expected 0x%08x, got 0x%08x)", expectedCrc, crc);
+		return -EIO;
+	}
+
+	return EOK;
 }
 
 
@@ -43,7 +78,10 @@ static int cmd_kernel(int argc, char *argv[])
 {
 	u8 buff[SIZE_MSG_BUFF];
 	ssize_t res;
+	int opt, posArgc;
 	addr_t kernelPAddr = (addr_t)-1;
+	u32 expectedCrc = 0;
+	int verifyCrc = 0;
 	const char *kname;
 	handler_t handler;
 
@@ -54,25 +92,60 @@ static int cmd_kernel(int argc, char *argv[])
 	ELF_PHDR phdr;
 
 	const mapent_t *entry;
+	char *endptr;
 
-	/* Parse arguments */
-	if ((argc == 1) || (argc > 3)) {
+	/* Parse optional arguments */
+	optind = 1;
+	for (;;) {
+		opt = lib_getopt(argc, argv, "v:");
+		if (opt == -1) {
+			break;
+		}
+
+		switch (opt) {
+			case 'v':
+				expectedCrc = (u32)lib_strtoul(optarg, &endptr, 0);
+				if ((optarg == endptr) || (*endptr != '\0')) {
+					log_error("\n%s: Invalid CRC32 value '%s'", argv[0], optarg);
+					return CMD_EXIT_FAILURE;
+				}
+				verifyCrc = 1;
+				break;
+
+			default:
+				log_error("\n%s: Unknown option", argv[0]);
+				return CMD_EXIT_FAILURE;
+		}
+	}
+
+	/* Parse positional arguments */
+	posArgc = argc - optind;
+	if ((posArgc < 1) || (posArgc > 2)) {
 		log_error("\n%s: Wrong argument count", argv[0]);
 		return CMD_EXIT_FAILURE;
 	}
 
-	kname = (argc == 3) ? argv[2] : PATH_KERNEL;
+	kname = (posArgc == 2) ? argv[optind + 1] : PATH_KERNEL;
 
-	res = phfs_open(argv[1], kname, 0, &handler);
+	res = phfs_open(argv[optind], kname, 0, &handler);
 	if (res < 0) {
-		log_error("\nCannot open %s, on %s (%d)", kname, argv[1], res);
+		log_error("\nCannot open %s, on %s (%d)", kname, argv[optind], res);
 		return CMD_EXIT_FAILURE;
+	}
+
+	/* Verify CRC32 of the raw file on disk before loading */
+	if (verifyCrc != 0) {
+		res = cmd_kernelVerifyCrc(handler, expectedCrc);
+		if (res < 0) {
+			phfs_close(handler);
+			return CMD_EXIT_FAILURE;
+		}
 	}
 
 	/* Read ELF header */
 	res = phfs_read(handler, elfOffs, &hdr, sizeof(ELF_EHDR));
 	if (res < 0) {
-		log_error("\nCan't read %s, on %s (%d)", kname, argv[1], res);
+		log_error("\nCan't read %s, on %s (%d)", kname, argv[optind], res);
 		phfs_close(handler);
 		return CMD_EXIT_FAILURE;
 	}
@@ -88,7 +161,7 @@ static int cmd_kernel(int argc, char *argv[])
 		elfOffs = hdr.e_phoff + i * sizeof(ELF_PHDR);
 		res = phfs_read(handler, elfOffs, &phdr, sizeof(ELF_PHDR));
 		if (res < 0) {
-			log_error("\nCan't read %s, on %s (%d)", kname, argv[1], res);
+			log_error("\nCan't read %s, on %s (%d)", kname, argv[optind], res);
 			phfs_close(handler);
 			return CMD_EXIT_FAILURE;
 		}
@@ -111,7 +184,7 @@ static int cmd_kernel(int argc, char *argv[])
 			for (segOffs = 0; segOffs < phdr.p_filesz; elfOffs += res, segOffs += res) {
 				res = phfs_read(handler, elfOffs, buff, min(sizeof(buff), phdr.p_filesz - segOffs));
 				if (res < 0) {
-					log_error("\nCan't read %s, on %s (%d)", kname, argv[1], res);
+					log_error("\nCan't read %s, on %s (%d)", kname, argv[optind], res);
 					phfs_close(handler);
 					return CMD_EXIT_FAILURE;
 				}
