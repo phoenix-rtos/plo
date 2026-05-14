@@ -1,0 +1,16 @@
+devices/flash-nandfctrl2/data.c
+  h_fc26ad17182140 84
+devices/flash-nandfctrl2/nandfctrl2.c
+  h_fc26ad17182140 247,431
+---
+{
+  "schema_version": "authorship/3.0.0",
+  "git_ai_version": "1.4.8",
+  "base_commit_sha": "39d930d9418993331b5b130f0251ee3511915d47",
+  "prompts": {},
+  "humans": {
+    "h_fc26ad17182140": {
+      "author": "Lukasz Leczkowski <lukasz.leczkowski@phoenix-rtos.com>"
+    }
+  }
+}
