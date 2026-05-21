@@ -19,6 +19,8 @@
 
 #define ALIGN_ADDR(addr, align) (align ? ((addr + (align - 1)) & ~(align - 1)) : addr)
 
+#define PART_ID_MAX (sizeof(unsigned int) * 8 - 1)
+
 extern char __heap_base[], __heap_limit[];
 
 
@@ -35,11 +37,13 @@ struct {
 void syspage_init(void)
 {
 	syspage_part_t *partition;
+	syspage_named_port_t *port;
 
 	syspage_common.syspage = (syspage_t *)__heap_base;
 
 	syspage_common.syspage->maps = NULL;
 	syspage_common.syspage->partitions = NULL;
+	syspage_common.syspage->namedPorts = NULL;
 	syspage_common.syspage->progs = NULL;
 	syspage_common.syspage->sched = NULL;
 	syspage_common.syspage->console = console_default;
@@ -66,6 +70,14 @@ void syspage_init(void)
 	}
 	else {
 		log_error("\nsyspage: Cannot allocate memory for default partition");
+	}
+
+	port = syspage_namedPortAdd();
+	if (port != NULL) {
+		port->name = (char *)syspage_alloc(sizeof(USRV_PORT_NAME) + 1);
+		hal_strcpy(port->name, USRV_PORT_NAME);
+		port->recvMask = 0U;  /* Only kernel can receive */
+		port->sendMask = ~0U; /* All partitions can send */
 	}
 }
 
@@ -581,6 +593,10 @@ syspage_part_t *syspage_partAdd(void)
 	part->next = syspage_common.syspage->partitions;
 	syspage_common.syspage->partitions->prev = part;
 	part->id = part->prev->id + 1;
+	if (part->id > PART_ID_MAX) {
+		log_error("\nsyspage: Too many partitions!");
+		return NULL;
+	}
 
 	return part;
 }
@@ -611,6 +627,33 @@ int syspage_partResolve(const char *name, syspage_part_t **result)
 syspage_part_t *syspage_partsGet(void)
 {
 	return syspage_common.syspage->partitions;
+}
+
+
+/* Named Port's functions */
+
+syspage_named_port_t *syspage_namedPortAdd(void)
+{
+	syspage_named_port_t *port;
+
+	port = syspage_alloc(sizeof(syspage_named_port_t));
+	if (port == NULL) {
+		return NULL;
+	}
+
+	if (syspage_common.syspage->namedPorts == NULL) {
+		port->next = port;
+		port->prev = port;
+		syspage_common.syspage->namedPorts = port;
+	}
+	else {
+		port->prev = syspage_common.syspage->namedPorts->prev;
+		syspage_common.syspage->namedPorts->prev->next = port;
+		port->next = syspage_common.syspage->namedPorts;
+		syspage_common.syspage->namedPorts->prev = port;
+	}
+
+	return port;
 }
 
 
