@@ -89,6 +89,8 @@ extern syspage_part_t *syspage_partsGet(void);
 extern int syspage_partResolve(const char *partName, syspage_part_t **result);
 
 
+extern syspage_named_port_t *syspage_namedPortAdd(void);
+
 /* Program's functions */
 extern syspage_prog_t *syspage_progAdd(const char *argv, u32 flags);
 
