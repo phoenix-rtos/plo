@@ -223,6 +223,65 @@ set_loop:
 .globl hal_exitToEL1
 .type hal_exitToEL1, %function
 hal_exitToEL1:
+	// =========================================================================
+    // 1. DROP HARDWARE FIREWALLS (XPPU & TrustZone)
+    // =========================================================================
+    LDR     X0, =0xFF980000     // XPPU_CTRL
+    MOV     W1, #0
+    STR     W1, [X0]
+
+    LDR     X0, =0xFF240000     // IOU_SECURE_SLCR
+    LDR     W1, =0x04920492
+    STR     W1, [X0]
+    STR     W1, [X0, #4]
+    ISB
+
+    // =========================================================================
+    // 2. UN-GATE THE APB BUS CLOCK
+    // CRL_APB.LPD_LSBUS_CTRL (0xFF5E0018)
+    // You cannot talk to 0xFF260000 if the bus connecting to it is dead.
+    // =========================================================================
+    LDR     X0, =0xFF5E0018
+    LDR     W1, [X0]
+    ORR     W1, W1, #0x01000000 // Set CLKACT (bit 24)
+    STR     W1, [X0]
+    ISB
+
+    // =========================================================================
+    // 3. APPLY YOUR TRM FINDING TO THE TIMER CLOCK
+    // CRL_APB.TIMESTAMP_REF_CTRL (0xFF5E0128)
+    // Bit 24: CLKACT = 1
+    // Bits 13:8: DIVISOR0 = 1 (0x01)
+    // Bits 2:0: SRCSEL = 4 (100 in binary -> PS_REF_CLK)
+    // Result = 0x01000104
+    // =========================================================================
+    LDR     X0, =0xFF5E0128
+    LDR     W1, =0x01000104
+    STR     W1, [X0]
+    ISB
+
+    // =========================================================================
+    // 5. UNTRAP CNTVCT_EL0 FOR KVM
+    // =========================================================================
+    LDR     X0, =33333333       // Base frequency of PS_REF_CLK
+    MSR     CNTFRQ_EL0, X0
+
+    MRS     X0, SCR_EL3
+    ORR     X0, X0, #(1 << 11)  
+    MSR     SCR_EL3, X0
+
+    MRS     X0, CNTHCTL_EL2
+    ORR     X0, X0, #0x3        
+    MSR     CNTHCTL_EL2, X0
+
+    MSR     CNTVOFF_EL2, XZR
+    ISB
+
+    MRS     X0, CNTKCTL_EL1
+    ORR     X0, X0, #0x3        
+    MSR     CNTKCTL_EL1, X0
+    ISB
+
 	dsb sy
 	isb
 	adr x0, hal_common
