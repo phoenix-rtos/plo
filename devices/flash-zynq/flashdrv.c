@@ -336,7 +336,7 @@ static ssize_t flashdrv_read(unsigned int minor, addr_t offs, void *buff, size_t
 
 	flashdrv_serializeTxCmd(fdrv_common.cmdTx, cmd, offs);
 
-	dummySz = (cmd.dummyCyc * cmd.dataLines) / 8;
+	dummySz = ((cmd.dummyCyc+8) * cmd.dataLines) / 8;
 	cmdSz = cmd.size + dummySz;
 
 	/* Send 0xff as dummy byte as some flashes require dummy byte that starts with 0xf. */

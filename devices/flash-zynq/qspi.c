@@ -107,7 +107,7 @@ static unsigned int qspi_rxData(u8 *rxBuff, size_t size)
 
 static unsigned int qspi_txData(const u8 *txBuff, size_t size)
 {
-	const u8 dummy[sizeof(u32)] = { 0 };
+	const u8 dummy[sizeof(u32)] = { 0xff, 0xff, 0xff, 0xff };
 	const u8 *buff = (txBuff == NULL) ? dummy : txBuff;
 
 	switch (size) {
@@ -384,10 +384,10 @@ static void qspi_IOMode(void)
 	*(qspi_common.base + cr) |= (0x3 << 14);
 
 	/* Loopback clock is used for high-speed read data capturing (>40MHz) */
-	if (QSPI_FCLK >= 0) {
+	/*if (QSPI_FCLK >= 0) {
 		*(qspi_common.base + lpbk) = (*(qspi_common.base + lpbk)) & ~0x3f;
 		*(qspi_common.base + lpbk) = (1 << 5);
-	}
+	}*/
 
 	/* Disable linear mode */
 	*(qspi_common.base + lqspi_cr) = 0;

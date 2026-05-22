@@ -63,10 +63,13 @@ _start:
 	mov x29, #0
 	mov x30, #0
 
-	/* check current exception level and hang if not EL3 */
+	/* check current exception level and drop down to EL1 if necessary */
 	mrs	x0, currentEL
-	cmp x0, #0xc
-	b.ne error_loop
+	cbz x0, error_loop
+	cmp	x0, #0x4
+	beq	continue_el1
+	cmp x0, #0x8
+	beq continue_el2
 
 	/* Interesting bits:
 		EE == 0 => little-endian at EL3
@@ -85,6 +88,9 @@ _start:
 	mov x0, #0b1110011
 	msr actlr_el3, x0
 
+	/* Invalidate TLBs at EL3 */
+	tlbi alle3
+
 	/* Initialize EL2 registers to safe values */
 	msr cptr_el2, xzr
 	ldr x0, =0x30c00838
@@ -100,6 +106,12 @@ _start:
 
 	/* Secure GIC initialization */
 	ldr x0, =(GIC_BASE_ADDRESS)
+	mov w2, #3          /* Enable Grp0 and Grp1 routing */
+	str w2, [x0]        /* Write to GICD_CTLR (Offset 0x0) */
+
+	str w2, [x4], #4
+	subs x5, x5, #1
+	b.ne route_loop
 	ldr w1, [x0, #4]    /* GICD_TYPER */
 	and x1, x1, #0x1f   /* extract ITLinesNumber - how many bitfields we need to set */
 	add x3, x0, #0x80   /* GICD_IGROUPRn */
@@ -125,40 +137,119 @@ set_intr_group_1:
 	 * FPD_SLCR_SECURE seems to configure all peripherals for non-secure access so this shouldn't be a problem
 	 */
 
-	mov x0, #0x53e /* Allow SError, IRQ and FIQ routing to EL3 */
+	/* EL1 is AArch64, disable SMC instruction, allow HVC instruction,
+	 * disable exception routing to EL3 */
+#if EL1_SECURE
+	mov x2, #0x5b0
+#else
+	mov x2, #0x5b1
+#endif
 	msr scr_el3, x0
+
+	mov x0, #0b1111000101 /* state EL1h, DAIF=1111, AArch64 */
+	msr spsr_el3, x0
+	adr x0, continue_el1
+	msr elr_el3, x0
+	eret
+
+continue_el2:
+	msr cptr_el2, xzr
+	ldr x0, =0x30c00838
+	msr sctlr_el2, x0
+	/* Initialize to safe values */
+	msr sctlr_el1, xzr
+	msr vttbr_el2, xzr
+	/* Allow write access to various registers from EL1 */
+	mov x0, #0b1110011
+	msr actlr_el2, x0
+	mov x0, #((1 << 31) | (1 << 29)) /* EL1 Execution state is AArch64, disable HVC instruction */
+	msr hcr_el2, x0
+	mov x0, #0b1111000101 /* state EL1h, DAIF=1111, AArch64 */
+	msr spsr_el2, x0
+	adr x0, continue_el1
+	msr elr_el2, x0
+	eret
+
+continue_el1:
+	/* 3. Configure CPU Interface */
+	ldr x0, =0xF9020000         /* GIC CPU Interface Base */
+	mov w1, #1                  /* Enable CPU Interface (Non-secure) */
+	str w1, [x0]                /* GICC_CTLR */
+	mov w1, #0xFF               /* Allow all priority levels */
+	str w1, [x0, #4]            /* GICC_PMR */
+	/* ------------------------------------ */
+	/* Interesting bits:
+		EE == 0, E0E == 0 => little-endian at EL1 and EL0
+		WXN == 0 => write permission doesn't imply execute never
+		nTWE == 0, nTWI == 0 => trap WFE/WFI instructions at EL0
+		UMA == 0 => trap accesses to DAIF system reg. from EL0
+		SED == 0 => allow SETEND instruction in AArch32
+		SA0 == 1, SA == 1 => alignment checks for SP accesses
+		A == 0 => disable data alignment checks
+		C, I, M == 0 => disable D-cache, I-cache, MMU (for now)
+		TODO: we may want to set the below to 1, there are some userspace uses for them
+		UCI == 0 => trap cache maintenance instructions executed at EL0
+		UCT == 0 => trap accesses to CTR_EL0 (cache type reg.) from EL0
+		DZE == 0 => trap DC ZVA instructions from EL0
+	 */
+	ldr x0, =0x30c00838
+	msr sctlr_el1, x0
+
+	/* TODO: interrupt handling in PLO doesn't save FP/SIMD registers, maybe enable this? */
+	/* Don't trap floating point access */
+	mrs x0, cpacr_el1
+	orr x0, x0, #(0x3 << 20)
+	msr cpacr_el1, x0
+	isb
 
 	/* Set vector table */
 	adr	x0, _vector_table
-	msr	vbar_el3, x0
+	msr	vbar_el1, x0
 
 	/* Invalidate caches and TLB */
 	ic iallu
 	bl invalidate_dcache
-	tlbi alle3
+	tlbi vmalle1
 
 	dsb sy
 	isb
 
+	/* --- KVM (EL1) GIC INITIALIZATION --- */
+	ldr x0, =0xF9010000         /* GIC Distributor Base */
+
+	/* 1. Turn on the Distributor */
+	mov w1, #3                  /* Enable Grp0 and Grp1 */
+	str w1, [x0]                /* GICD_CTLR (Offset 0x0) */
+
+	/* 2. Route all SPIs to CPU 0 */
+	add x2, x0, #0x820          /* Base of GICD_ITARGETSRn */
+	mov w1, #0x01010101         /* Target CPU 0 mask */
+	mov x3, #56                 /* Loop 64 times (256 interrupts) */
+route_loop:
+	str w1, [x2]
+	add x2, x2, #4
+	subs x3, x3, #1
+	b.ne route_loop
+
 	/* Enable performance monitors */
-	mrs x0, pmcr_el0
-	orr x0, x0, #0x7 /* reset cycle counter, reset event counter, enable */
-	orr x0, x0, #0x40 /* activate 64-bit counting mode */
-	msr pmcr_el0, x0
-	mrs x0, pmcntenset_el0
-	orr x0, x0, #(1 << 31)
-	msr pmcntenset_el0, x0
+//	mrs x0, pmcr_el0
+//	orr x0, x0, #0x7 /* reset cycle counter, reset event counter, enable */
+//	orr x0, x0, #0x40 /* activate 64-bit counting mode */
+//	msr pmcr_el0, x0
+//	mrs x0, pmcntenset_el0
+//	orr x0, x0, #(1 << 31)
+//	msr pmcntenset_el0, x0
 
 #ifdef __TARGET_AARCH64A53
 	/* Enable SMP */
-	mrs x0, s3_1_c15_c2_1 /* CPUECTLR_EL1 */
-	orr x0, x0, #(0x1 << 6)
-	msr s3_1_c15_c2_1, x0
+//	mrs x0, s3_1_c15_c2_1 /* CPUECTLR_EL1 */
+//	orr x0, x0, #(0x1 << 6)
+//	msr s3_1_c15_c2_1, x0
 
 	/* L1 Data prefetch control - 5, Enable device split throttle, 2 independent data prefetch streams */
 	/* Set ENDCCASCI bit in CPUACTLR_EL1 register - needed due to Cortex-A53 erratum #855873 */
-	ldr	x0, =0x1000080CA000
-	msr	s3_1_c15_c2_0, x0 /* CPUACTLR_EL1 */
+//	ldr	x0, =0x1000080CA000
+//	msr	s3_1_c15_c2_0, x0 /* CPUACTLR_EL1 */
 #endif
 
 	adr	x1, _stack
@@ -227,17 +318,9 @@ hal_exitToEL1:
 	isb
 	adr x0, hal_common
 	ldp x9, x0, [x0] /* load syspage pointer, entry address */
-	msr elr_el3, x0
+	msr elr_el1, x0
 	mov x0, #0b1111000101 /* state EL1h, DAIF=1111, AArch64 */
-	msr spsr_el3, x0
-	/* EL1 is AArch64, disable SMC instruction, allow HVC instruction,
-	 * disable exception routing to EL3 */
-#if EL1_SECURE
-	mov x2, #0x5b0
-#else
-	mov x2, #0x5b1
-#endif
-	msr scr_el3, x2
+	msr spsr_el1, x0
 	eret
 .size hal_exitToEL1, .-hal_exitToEL1
 
@@ -251,7 +334,7 @@ hal_exitToEL1:
 /* Vector Table Definition */
 .globl _vector_table
 _vector_table:
-/* from EL3 with SP_EL0 */
+/* from EL1 with SP_EL0 */
 .org(_vector_table)
 	b .
 
@@ -264,7 +347,7 @@ _vector_table:
 .org (_vector_table + 0x180)
 	b .
 
-/* from EL3 with SP_EL3 */
+/* from EL1 with SP_EL1 */
 .org (_vector_table + 0x200)
 _synchronous_vector:
 	b _exceptions_dispatch
@@ -281,7 +364,7 @@ _fiq_vector:
 _serror_vector:
 	b _exceptions_dispatch
 
-/* from lower EL in AArch64 */
+/* from EL0 in AArch64 */
 .org (_vector_table + 0x400)
 	b .
 
@@ -294,7 +377,7 @@ _serror_vector:
 .org (_vector_table + 0x580)
 	b .
 
-/* from lower EL in AArch32 */
+/* from EL0 in AArch32 */
 .org (_vector_table + 0x600)
 	b .
 

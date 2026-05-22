@@ -302,7 +302,7 @@ int _zynqmp_setSysPll(const ctl_sys_pll_t *sys_pll)
 		hal_cpuDataMemoryBarrier();
 		*base &= ~(1 << 0); /* Activate PLL */
 		hal_cpuDataMemoryBarrier();
-		while ((*statusReg & lockBit) == 0) {
+		while (0 & *statusReg & lockBit) {
 			/* Wait for lock */
 		}
 
@@ -980,7 +980,7 @@ void _zynqmp_init(void)
 
 	_zynqmp_clocksInit();
 
-	ret = _zynqmp_ddrInit();
+	ret = 0; //_zynqmp_ddrInit();
 	if (ret < 0) {
 		_zynqmp_softRst();
 	}
