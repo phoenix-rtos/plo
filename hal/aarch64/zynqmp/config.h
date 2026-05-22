@@ -17,10 +17,20 @@
 #ifndef _CONFIG_H_
 #define _CONFIG_H_
 
+#include <board_config.h>
+
+#ifdef ZYNQMP_VIRT
+#define GIC_BASE_ADDRESS 0x08000000
+#else
 #define GIC_BASE_ADDRESS 0xf9010000
+#endif
 
 /* RAM storage configuration */
+#ifdef ZYNQMP_VIRT
+#define RAM_ADDR      0x49000000 /* 128 MB */
+#else
 #define RAM_ADDR      0x08000000 /* 128 MB */
+#endif
 #define RAM_BANK_SIZE 0x08000000 /* 128 MB */
 
 

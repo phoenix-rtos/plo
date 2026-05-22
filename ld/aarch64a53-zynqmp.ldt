@@ -17,15 +17,26 @@
 #ifndef AARCH64A53_ZYNQMP_LDT
 #define AARCH64A53_ZYNQMP_LDT
 
+#include <board_config.h>
+
 /* Platform specific definitions */
 #define SIZE_PAGE  0x1000
 #define SIZE_STACK (4 * SIZE_PAGE)
 #define SIZE_HEAP  (5 * SIZE_PAGE)
 
+#ifdef ZYNQMP_VIRT
+#define ADDR_OCRAM  0x40000000
+#else
 #define ADDR_OCRAM  0xfffc0000
+#endif
+
 #define SIZE_OCRAM  (256 * 1024)
 
+#ifdef ZYNQMP_VIRT
+#define ADDR_DDR 0x41000000
+#else
 #define ADDR_DDR 0x00000000
+#endif
 /* TODO: Size of DDR depends on board, so it should be configurable somehow */
 #define SIZE_DDR (512 * 1024 * 1024)
 

@@ -302,9 +302,14 @@ int _zynqmp_setSysPll(const ctl_sys_pll_t *sys_pll)
 		hal_cpuDataMemoryBarrier();
 		*base &= ~(1 << 0); /* Activate PLL */
 		hal_cpuDataMemoryBarrier();
+#ifndef ZYNQMP_VIRT
 		while ((*statusReg & lockBit) == 0) {
 			/* Wait for lock */
 		}
+#else
+		(void)statusReg;
+		(void)lockBit;
+#endif
 
 		hal_cpuDataMemoryBarrier();
 		*base &= ~(1 << 3); /* Disable bypass */
@@ -960,7 +965,10 @@ void _zynqmp_config_axi_width(void)
 
 void _zynqmp_init(void)
 {
-	int i, ret;
+	int i;
+#ifndef ZYNQMP_VIRT
+	int ret;
+#endif
 	zynq_common.csu = (void *)CSU_BASE_ADDRESS;
 	zynq_common.csudma = (void *)CSUDMA_BASE_ADDRESS;
 	zynq_common.pmu_global = (void *)PMU_GLOBAL_BASE_ADDRESS;
@@ -980,10 +988,12 @@ void _zynqmp_init(void)
 
 	_zynqmp_clocksInit();
 
+#ifndef ZYNQMP_VIRT
 	ret = _zynqmp_ddrInit();
 	if (ret < 0) {
 		_zynqmp_softRst();
 	}
+#endif
 
 	for (i = 1; i < 4; i++) {
 		_zynqmp_startApuCore(i, (addr_t)_start);

@@ -16,5 +16,11 @@ PLO_COMMANDS ?= alias app bitstream blob call console copy devices dump echo era
 
 PLO_ALLDEVICES := ram-storage gpio-zynq uart-zynq flash-zynq
 
-OBJS += $(addprefix $(PREFIX_O)hal/$(TARGET_SUFF)/$(TARGET_SUBFAMILY)/, _init.o hal.o zynqmp.o timer.o \
-  ddr_init.o interrupts.o console.o)
+OBJS += $(addprefix $(PREFIX_O)hal/$(TARGET_SUFF)/$(TARGET_SUBFAMILY)/, _init.o hal.o zynqmp.o  \
+        ddr_init.o interrupts.o )
+
+ifneq (, $(findstring virt, $(TARGET_PROJECT)))
+  OBJS += $(addprefix $(PREFIX_O)hal/$(TARGET_SUFF)/$(TARGET_SUBFAMILY)/, timer-virt.o console-virt.o )
+else
+  OBJS += $(addprefix $(PREFIX_O)hal/$(TARGET_SUFF)/$(TARGET_SUBFAMILY)/, timer.o console.o )
+endif

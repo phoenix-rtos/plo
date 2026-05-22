@@ -99,13 +99,13 @@ $(PREFIX_PROG_STRIPPED)%.img: $(PREFIX_PROG_STRIPPED)%.elf
 -include $(PREFIX_O)/$(TARGET_FAMILY)-$(TARGET_SUBFAMILY)*ld.d
 $(PREFIX_O)/$(TARGET_FAMILY)-$(TARGET_SUBFAMILY).ld: | $(PREFIX_O)/.
 	@echo "GEN $(@F)"
-	$(SIL)$(LDGEN) $(LDSFLAGS) -MP -MF $@.d -MMD -D__LINKER__ -undef -xc -E -P ld/$(TARGET_FAMILY)-$(TARGET_SUBFAMILY).ldt > $@
+	$(SIL)$(LDGEN) $(LDSFLAGS) -I$(PROJECT_PATH) -MP -MF $@.d -MMD -D__LINKER__ -undef -xc -E -P ld/$(TARGET_FAMILY)-$(TARGET_SUBFAMILY).ldt > $@
 	$(SIL)$(SED) -i.tmp -e 's`.*\.o[ \t]*:`$@:`' $@.d && rm $@.d.tmp
 
 
 $(PREFIX_O)/$(TARGET_FAMILY)-$(TARGET_SUBFAMILY)-%.ld: | $(PREFIX_O)/.
 	@echo "GEN $(@F)"
-	$(SIL)$(LDGEN) $(LDSFLAGS) -MP -MF $@.d -MMD -D__LINKER__ -D$* -undef -xc -E -P ld/$(TARGET_FAMILY)-$(TARGET_SUBFAMILY).ldt > $@
+	$(SIL)$(LDGEN) $(LDSFLAGS) -I$(PROJECT_PATH) -MP -MF $@.d -MMD -D__LINKER__ -D$* -undef -xc -E -P ld/$(TARGET_FAMILY)-$(TARGET_SUBFAMILY).ldt > $@
 	$(SIL)$(SED) -i.tmp -e 's`.*\.o[ \t]*:`$@:`' $@.d && rm $@.d.tmp
 
 
