@@ -1,0 +1,14 @@
+cmds/verify-crc32.c
+  h_fc26ad17182140 24,46
+---
+{
+  "schema_version": "authorship/3.0.0",
+  "git_ai_version": "1.5.2",
+  "base_commit_sha": "33c8706ac4f7889dbf7e6120ca2a75e33461fa05",
+  "prompts": {},
+  "humans": {
+    "h_fc26ad17182140": {
+      "author": "Lukasz Leczkowski <lukasz.leczkowski@phoenix-rtos.com>"
+    }
+  }
+}
