@@ -67,12 +67,13 @@ static ssize_t ramdrv_read(unsigned int minor, addr_t offs, void *buff, size_t l
 
 static ssize_t ramdrv_write(unsigned int minor, addr_t offs, const void *buff, size_t len)
 {
-	if (ramdrv_isValidMinor(minor) == 0) {
+	if ((ramdrv_isValidMinor(minor) == 0) || (ramdrv_isValidAddress(minor, offs, len) == 0)) {
 		return -EINVAL;
 	}
 
-	/* Not supported. TODO? */
-	return -ENOSYS;
+	hal_memcpy((void *)(ramParams[minor].start + offs), buff, len);
+
+	return (ssize_t)len;
 }
 
 
