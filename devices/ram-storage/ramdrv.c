@@ -29,13 +29,13 @@ static const struct {
 };
 
 
-static int ramdrv_isValidAddress(unsigned int minor, u32 off, size_t size)
+static int ramdrv_isValidAddress(unsigned int minor, addr_t off, size_t size)
 {
 	size_t rsize = ramParams[minor].end - ramParams[minor].start;
 
-	if (off < rsize && (off + size) <= rsize)
+	if ((off < rsize) && (size <= (rsize - off))) {
 		return 1;
-
+	}
 	return 0;
 }
 
