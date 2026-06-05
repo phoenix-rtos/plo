@@ -1,0 +1,14 @@
+devices/ram-storage/ramdrv.c
+  h_fc26ad17182140 32,36,38
+---
+{
+  "schema_version": "authorship/3.0.0",
+  "git_ai_version": "1.5.3",
+  "base_commit_sha": "ae89a4695f24f7be316e3f8c798a283d9429dd90",
+  "prompts": {},
+  "humans": {
+    "h_fc26ad17182140": {
+      "author": "Lukasz Leczkowski <lukasz.leczkowski@phoenix-rtos.com>"
+    }
+  }
+}
