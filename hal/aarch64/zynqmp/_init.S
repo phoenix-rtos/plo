@@ -172,7 +172,7 @@ continue_el2:
 
 continue_el1:
 	/* 3. Configure CPU Interface */
-	ldr x0, =0xF9020000         /* GIC CPU Interface Base */
+	ldr x0, =0x08010000         /* GIC CPU Interface Base */
 	mov w1, #1                  /* Enable CPU Interface (Non-secure) */
 	str w1, [x0]                /* GICC_CTLR */
 	mov w1, #0xFF               /* Allow all priority levels */
@@ -215,7 +215,7 @@ continue_el1:
 	isb
 
 	/* --- KVM (EL1) GIC INITIALIZATION --- */
-	ldr x0, =0xF9010000         /* GIC Distributor Base */
+	ldr x0, =0x08000000         /* GIC Distributor Base */
 
 	/* 1. Turn on the Distributor */
 	mov w1, #3                  /* Enable Grp0 and Grp1 */

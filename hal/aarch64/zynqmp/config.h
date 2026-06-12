@@ -17,10 +17,10 @@
 #ifndef _CONFIG_H_
 #define _CONFIG_H_
 
-#define GIC_BASE_ADDRESS 0xf9010000
+#define GIC_BASE_ADDRESS 0x08000000
 
 /* RAM storage configuration */
-#define RAM_ADDR      0x08000000 /* 128 MB */
+#define RAM_ADDR      0x49000000 /* 128 MB */
 #define RAM_BANK_SIZE 0x08000000 /* 128 MB */
 
 
