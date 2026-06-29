@@ -463,6 +463,14 @@ extern int _stm32_rccDevReset(unsigned int dev, u32 status);
 extern int _stm32_rccSetIPClk(unsigned int ipclk, u8 setting);
 
 
+/*
+ * Set frequency of CPU clock in Hz. Currently only supports 600 MHz and 800 MHz.
+ * Returns 0 on success, -1 on failure.
+ * Note: this also changes SysTick speed, but not other system timers.
+ */
+extern int _stm32_rccSetCPUClock(u32 hz);
+
+
 /* Get frequency of CPU clock in Hz */
 extern u32 _stm32_rccGetCPUClock(void);
 
@@ -491,6 +499,10 @@ extern int _stm32_gpioGetPort(unsigned int d, u16 *val);
 
 /* Range = 0 - VOS low, 1 - VOS high */
 extern void _stm32_pwrSetCPUVolt(u8 range);
+
+
+/* Return CPU voltage range. 0 - VOS low, 1 - VOS high */
+extern u8 _stm32_pwrGetCPUVolt(void);
 
 
 /* Perform an operation (pwr_supply_op_*) on a selected power supply (pwr_supply_*) */
