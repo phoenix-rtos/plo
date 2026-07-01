@@ -659,8 +659,10 @@ void lib_formatParse(void *ctx, void (*feed)(void *, char), const char *format, 
 
 			case 'X':
 				flags |= FLAG_LARGE_DIGITS;
+				/* fallthrough */
 			case 'x':
 				flags |= FLAG_HEX;
+				/* fallthrough */
 			case 'u':
 				GET_UNSIGNED(number, flags, args);
 				lib_formatSprintfNum(ctx, feed, number, flags, min_number_len, float_frac_len);
