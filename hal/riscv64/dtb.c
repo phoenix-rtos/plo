@@ -222,6 +222,7 @@ void dtb_parse(void *dtb)
 			switch (state) {
 				case stateCPU:
 					dtb_common.ncpus++;
+					/* fallthrough */
 				case stateMemory:
 					state = stateSystem;
 					break;
