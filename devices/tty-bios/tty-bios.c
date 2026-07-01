@@ -256,6 +256,7 @@ static ssize_t ttybios_write(unsigned int minor, addr_t offs, const void *buff, 
 					break;
 				case '\n':
 					row++;
+					/* fallthrough */
 				case '\r':
 					col = 0;
 					break;
@@ -382,6 +383,9 @@ static ssize_t ttybios_write(unsigned int minor, addr_t offs, const void *buff, 
 										break;
 								}
 							} while (i++ < tty->parmi);
+
+							tty->esc = esc_init;
+							break;
 
 						default:
 							tty->esc = esc_init;
