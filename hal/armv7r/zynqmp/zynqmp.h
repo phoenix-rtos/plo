@@ -19,6 +19,16 @@
 
 #include "hal/armv7r/types.h"
 
+#define PMU_ERR_DDR_ECC  (0x1U)
+#define PMU_ERR_OCM_ECC  (0x1U << 1)
+#define PMU_ERR_RPU0_RAM (0x1U << 2)
+#define PMU_ERR_RPU1_RAM (0x1U << 3)
+#define PMU_ERR_LPD_TMP  (0x1U << 4)
+#define PMU_ERR_FPD_TMP  (0x1U << 5)
+#define PMU_ERR_RPU_LS   (0x3U << 6)
+#define PMU_ERR_RPU_CCF  (0x1UL << 9)
+#define PMU_ERR_LPD_SWDT (0x1UL << 12)
+#define PMU_ERR_FPD_SWDT (0x1UL << 13)
 
 #define ZYNQ_RESET_REASON_EXT_POR   (1 << 0)
 #define ZYNQ_RESET_REASON_INT_POR   (1 << 1)
@@ -27,6 +37,10 @@
 #define ZYNQ_RESET_REASON_EXT_SRST  (1 << 4)
 #define ZYNQ_RESET_REASON_SOFT_SRST (1 << 5)
 #define ZYNQ_RESET_REASON_DEBUG     (1 << 6)
+
+/* R5 specific reset reasons, stored in the same reset reason variable passed to kernel */
+#define ZYNQ_RESET_REASON_R5_LS    (1 << 16)
+#define ZYNQ_RESET_REASON_LPD_SWDT (1 << 17)
 
 
 /* clang-format off */
