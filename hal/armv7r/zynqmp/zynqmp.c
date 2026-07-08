@@ -882,6 +882,7 @@ unsigned int hal_getBootReason(void)
 void _zynqmp_init(void)
 {
 	int ret;
+	u32 reg;
 	zynq_common.csu = (void *)CSU_BASE_ADDRESS;
 	zynq_common.csudma = (void *)CSUDMA_BASE_ADDRESS;
 	zynq_common.pmu_global = (void *)PMU_GLOBAL_BASE_ADDRESS;
@@ -893,6 +894,18 @@ void _zynqmp_init(void)
 	/* Read and clear reset flags */
 	zynq_common.resetFlags = *(zynq_common.crl_apb + crl_apb_reset_reason) & 0x7f;
 	*(zynq_common.crl_apb + crl_apb_reset_reason) = zynq_common.resetFlags;
+
+	/* Store and clear latched PMU error status registers */
+	/* Only RPU lock step (bits 7:6) and LPD_SWD (bit 12) are supported*/
+	reg = *(zynq_common.pmu_global + pmu_global_error_status_1);
+	if ((reg & PMU_ERR_RPU_LS) != 0) {
+		zynq_common.resetFlags |= ZYNQ_RESET_REASON_R5_LS; /* R5 lockstep error */
+	}
+	else if ((reg & PMU_ERR_LPD_SWDT) != 0) {
+		zynq_common.resetFlags |= ZYNQ_RESET_REASON_LPD_SWDT; /* LPD SWD error */
+	}
+	*(zynq_common.pmu_global + pmu_global_error_status_1) = 0xffffffff;
+	*(zynq_common.pmu_global + pmu_global_error_status_2) = 0xffffffff;
 
 	_zynqmp_pllInit();
 
