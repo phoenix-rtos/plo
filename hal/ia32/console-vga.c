@@ -120,6 +120,7 @@ static void hal_consoleVgaPrint(const char *s)
 
 				case '\n':
 					row++;
+					/* fallthrough */
 				case '\r':
 					col = 0;
 					break;
@@ -246,6 +247,8 @@ static void hal_consoleVgaPrint(const char *s)
 										break;
 								}
 							} while (i++ < halconsole_common.parmi);
+							halconsole_common.esc = esc_init;
+							break;
 
 						default:
 							halconsole_common.esc = esc_init;
