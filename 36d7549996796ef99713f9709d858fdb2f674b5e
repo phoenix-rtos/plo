@@ -1,0 +1,14 @@
+cmds/kernel.c
+  h_fc26ad17182140 38,42-73,81,83-84,95-118,120-122,127,129,131,135-141,147,163,186
+---
+{
+  "schema_version": "authorship/3.0.0",
+  "git_ai_version": "1.4.8",
+  "base_commit_sha": "36d7549996796ef99713f9709d858fdb2f674b5e",
+  "prompts": {},
+  "humans": {
+    "h_fc26ad17182140": {
+      "author": "Lukasz Leczkowski <lukasz.leczkowski@phoenix-rtos.com>"
+    }
+  }
+}
