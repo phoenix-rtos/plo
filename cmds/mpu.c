@@ -82,54 +82,58 @@ static void mpu_regionPrint(const char *name, u32 rbar, u32 rasr)
 
 static void cmd_mpuInfo(void)
 {
-	lib_printf("prints the use of MPU regions, usage: mpu [all]");
+	lib_printf("prints the use of MPU regions, usage: mpu [partition name]");
 }
 
 
 static int cmd_mpu(int argc, char *argv[])
 {
 	const char *name;
-	unsigned int i, regCnt;
-	const mpu_region_t *region;
-	const mpu_common_t *const mpu_common = mpu_getCommon();
+	unsigned int i;
+	const syspage_part_t *part = syspage_partsGet();
+	const syspage_part_t *firstPart = part;
+	const unsigned int regMax = mpu_getMaxRegionsCount();
 
-	if (argc == 1) {
-		regCnt = mpu_common->regCnt;
+	if (part == NULL) {
+		log_error("\nNo partitions in syspage!");
+		return CMD_EXIT_FAILURE;
 	}
-	else if (argc == 2) {
-		if (hal_strcmp(argv[1], "all") != 0) {
-			log_error("\n%s: Wrong arguments", argv[0]);
-			return CMD_EXIT_FAILURE;
-		}
 
-		regCnt = mpu_common->regMax;
-	}
-	else {
+	if (argc > 2) {
 		log_error("\n%s: Wrong argument count", argv[0]);
 		return CMD_EXIT_FAILURE;
 	}
 
-	if (mpu_common->regMax != sizeof(((hal_syspage_t *)0)->mpu.table) / sizeof(((hal_syspage_t *)0)->mpu.table[0])) {
-		log_error("\n%s: MPU hal is not initialized or unsupported type was detected", argv[0]);
-		return CMD_EXIT_FAILURE;
-	}
-
-	lib_printf(CONSOLE_BOLD "\n%-9s %-7s %-4s %-11s %-11s %-3s %-3s %-9s %-4s %-2s %-2s %-2s\n" CONSOLE_NORMAL,
-		"MAP NAME", "REGION", "SUB", "START", "END", "EN", "XN", "PERM P/U", "TEX", "S", "C", "B");
-
-	for (i = 0; i < regCnt; i++) {
-		region = &mpu_common->region[i];
-		name = syspage_mapName(mpu_common->mapId[i]);
-
-		if (name == NULL) {
-			name = "<none>";
+	do {
+		name = part->name;
+		if ((argc == 2) && (hal_strcmp(name, argv[1]) != 0)) {
+			part = part->next;
+			continue;
+		}
+		lib_printf("\n%-16s", name);
+		lib_printf(CONSOLE_BOLD "\n%-9s %-7s %-4s %-11s %-11s %-3s %-3s %-9s %-4s %-2s %-2s %-2s\n" CONSOLE_NORMAL,
+				"MAP NAME", "REGION", "SUB", "START", "END", "EN", "XN", "PERM P/U", "TEX", "S", "C", "B");
+		for (i = 0; i < part->hal->mpu.allocCnt; i++) {
+			name = syspage_mapName(part->hal->mpu.map[i]);
+			if (name == NULL) {
+				name = "<none>";
+			}
+			mpu_regionPrint(name, part->hal->mpu.table[i].rbar, part->hal->mpu.table[i].rasr);
 		}
 
-		mpu_regionPrint(name, region->rbar, region->rasr);
-	}
+		lib_printf("Configured %d of %d MPU regions.\n", part->hal->mpu.allocCnt, regMax);
 
-	lib_printf("\nConfigured %d of %d MPU regions based on %d map definitions.\n",
-		mpu_common->regCnt, mpu_common->regMax, mpu_common->mapCnt);
+		if (argc == 2) {
+			return CMD_EXIT_SUCCESS;
+		}
+
+		part = part->next;
+	} while (part != firstPart);
+
+	if (argc == 2) {
+		log_error("\nPartition %s not found in syspage!", argv[1]);
+		return CMD_EXIT_FAILURE;
+	}
 
 	return CMD_EXIT_SUCCESS;
 }

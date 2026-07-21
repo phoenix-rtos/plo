@@ -19,6 +19,8 @@
 
 #define ALIGN_ADDR(addr, align) (align ? ((addr + (align - 1)) & ~(align - 1)) : addr)
 
+#define PART_ID_MAX (sizeof(unsigned int) * 8 - 1)
+
 extern char __heap_base[], __heap_limit[];
 
 
@@ -27,16 +29,26 @@ struct {
 
 	void *heapTop;
 	void *heapEnd;
+
+	int defaultScheduler;
 } syspage_common;
+
+
+static syspage_sched_t *syspage_schedulerCreateDefault(void);
 
 
 /* General functions */
 
 void syspage_init(void)
 {
+	syspage_part_t *partition;
+	syspage_named_port_t *port;
+
 	syspage_common.syspage = (syspage_t *)__heap_base;
 
 	syspage_common.syspage->maps = NULL;
+	syspage_common.syspage->partitions = NULL;
+	syspage_common.syspage->namedPorts = NULL;
 	syspage_common.syspage->progs = NULL;
 	syspage_common.syspage->console = console_default;
 
@@ -46,6 +58,34 @@ void syspage_init(void)
 	syspage_common.syspage->size = (size_t)(syspage_common.heapTop - (void *)syspage_common.syspage);
 
 	hal_syspageSet(&syspage_common.syspage->hs);
+
+	/* Initialize background partition */
+	partition = syspage_alloc(sizeof(syspage_part_t) + sizeof(NAME_PART_DEFAULT) + 1U);
+	if (partition != NULL) {
+		partition->next = partition;
+		partition->prev = partition;
+		partition->name = (char *)partition + sizeof(syspage_part_t);
+		hal_strcpy(partition->name, NAME_PART_DEFAULT);
+		partition->availableMem = (size_t)-1;
+		partition->schedWindow = 0U;
+		partition->hal = NULL;
+		partition->id = 0U;
+		syspage_common.syspage->partitions = partition;
+	}
+	else {
+		log_error("\nsyspage: Cannot allocate memory for default partition");
+	}
+
+	syspage_common.syspage->sched = syspage_schedulerCreateDefault();
+	syspage_common.defaultScheduler = 1;
+
+	port = syspage_namedPortAdd();
+	if (port != NULL) {
+		port->name = (char *)syspage_alloc(sizeof(USRV_PORT_NAME) + 1);
+		hal_strcpy(port->name, USRV_PORT_NAME);
+		port->recvMask = 0U;  /* Only kernel can receive */
+		port->sendMask = ~0U; /* All partitions can send */
+	}
 }
 
 
@@ -285,10 +325,6 @@ int syspage_mapAdd(const char *name, addr_t start, addr_t end, const char *attr)
 		syspage_sortedInsert(map, entry);
 		start = entry->end;
 	}
-	res = hal_memoryAddMap(map->start, map->end, map->attr, map->id);
-	if (res < 0) {
-		return res;
-	}
 
 	return EOK;
 }
@@ -465,6 +501,28 @@ unsigned int syspage_mapRangeCheck(addr_t start, addr_t end, unsigned int *attrO
 }
 
 
+int syspage_mapAddrResolve(addr_t addr, const char **name)
+{
+	const syspage_map_t *map = syspage_common.syspage->maps;
+
+	if (map == NULL) {
+		log_error("\nsyspage: %x does not match any map", addr);
+		return -EINVAL;
+	}
+
+	do {
+		if ((addr < map->end) && (addr >= map->start)) {
+			*name = map->name;
+			return EOK;
+		}
+		map = map->next;
+	} while (map != syspage_common.syspage->maps);
+
+	log_error("\nsyspage: %x does not match any map", addr);
+	return -EINVAL;
+}
+
+
 const char *syspage_mapName(u8 id)
 {
 	const syspage_map_t *map = syspage_common.syspage->maps;
@@ -479,6 +537,127 @@ const char *syspage_mapName(u8 id)
 	}
 
 	return NULL;
+}
+
+
+/* Scheduler's functions */
+
+int syspage_schedulerConfigSet(syspage_sched_t *config)
+{
+	if (syspage_common.defaultScheduler == 0) {
+		return -EEXIST;
+	}
+	syspage_common.syspage->sched = config;
+	syspage_common.defaultScheduler = 0;
+	return EOK;
+}
+
+
+static syspage_sched_t *syspage_schedulerCreateDefault(void)
+{
+	syspage_sched_t *config = syspage_alloc(sizeof(*config) + sizeof(syspage_sched_cycle_t) * 1);
+	if (config == NULL) {
+		log_error("\nCannot allocate memory for default scheduler configuration");
+		return NULL;
+	}
+	config->windowCnt = 0; /* Use kernel threads window */
+	config->cycleCnt = 1;
+	config->flags = sFlagCommonCycle;
+	config->cycles[0] = syspage_alloc(sizeof(syspage_sched_cycle_t));
+	if (config->cycles[0] == NULL) {
+		log_error("\nCannot allocate memory for default scheduler configuration");
+		return NULL;
+	}
+	config->cycles[0]->bgId = 0U;
+	config->cycles[0]->len = 0U;
+
+	return config;
+}
+
+
+syspage_sched_t *syspage_schedulerConfigGet(void)
+{
+	return syspage_common.syspage->sched;
+}
+
+
+/* Partition's functions */
+
+syspage_part_t *syspage_partAdd(void)
+{
+	syspage_part_t *part;
+
+	part = syspage_alloc(sizeof(syspage_part_t));
+	if (part == NULL) {
+		return NULL;
+	}
+
+	part->prev = syspage_common.syspage->partitions->prev;
+	syspage_common.syspage->partitions->prev->next = part;
+	part->next = syspage_common.syspage->partitions;
+	syspage_common.syspage->partitions->prev = part;
+	part->id = part->prev->id + 1;
+	if (part->id > PART_ID_MAX) {
+		log_error("\nsyspage: Too many partitions!");
+		return NULL;
+	}
+
+	return part;
+}
+
+
+int syspage_partResolve(const char *name, syspage_part_t **result)
+{
+	syspage_part_t *part = syspage_common.syspage->partitions;
+
+	*result = NULL;
+
+	if (part == NULL) {
+		return -EINVAL;
+	}
+
+	do {
+		if (hal_strcmp(name, part->name) == 0) {
+			*result = part;
+			return EOK;
+		}
+		part = part->next;
+	} while (part != syspage_common.syspage->partitions);
+
+	return -EINVAL;
+}
+
+
+syspage_part_t *syspage_partsGet(void)
+{
+	return syspage_common.syspage->partitions;
+}
+
+
+/* Named Port's functions */
+
+syspage_named_port_t *syspage_namedPortAdd(void)
+{
+	syspage_named_port_t *port;
+
+	port = syspage_alloc(sizeof(syspage_named_port_t));
+	if (port == NULL) {
+		return NULL;
+	}
+
+	if (syspage_common.syspage->namedPorts == NULL) {
+		port->next = port;
+		port->prev = port;
+		syspage_common.syspage->namedPorts = port;
+	}
+	else {
+		port->prev = syspage_common.syspage->namedPorts->prev;
+		syspage_common.syspage->namedPorts->prev->next = port;
+		port->next = syspage_common.syspage->namedPorts;
+		syspage_common.syspage->namedPorts->prev = port;
+	}
+
+	return port;
 }
 
 
@@ -528,7 +707,6 @@ syspage_prog_t *syspage_progAdd(const char *argv, u32 flags)
 
 	return prog;
 }
-
 
 
 /* Set console */
