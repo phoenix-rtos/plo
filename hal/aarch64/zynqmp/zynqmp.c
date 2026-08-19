@@ -448,13 +448,21 @@ static void _zynqmp_setMIOControl(const ctl_mio_t *mio)
 {
 	u32 reg = (mio->pin / 26) * (iou_slcr_bank1_ctrl0 - iou_slcr_bank0_ctrl0) + iou_slcr_bank0_ctrl0;
 	u32 bit = mio->pin % 26;
-	u32 mask = 1 << bit;
+	u32 mask;
 	int i;
 
 	for (i = 0; i <= 6; i++) {
 		if (i == 2) {
 			/* ctrl2 registers don't exist, skip */
 			continue;
+		}
+
+		if (reg == iou_slcr_bank1_ctrl0 + 4) {
+			/* iou_slcr_bank1_ctrl5 is a register with special care. */
+			mask = 1 << ((bit >= 12) ? (bit - 12) : (bit + 14));
+		}
+		else {
+			mask = 1 << bit;
 		}
 
 		if ((mio->config & (1 << i)) != 0) {
@@ -507,13 +515,21 @@ static void _zynqmp_getMIOControl(ctl_mio_t *mio)
 {
 	u32 reg = (mio->pin / 26) * (iou_slcr_bank1_ctrl0 - iou_slcr_bank0_ctrl0) + iou_slcr_bank0_ctrl0;
 	u32 bit = mio->pin % 26;
-	u32 mask = 1 << bit;
+	u32 mask;
 	int i;
 
 	for (i = 0; i <= 6; i++) {
 		if (i == 2) {
 			/* ctrl2 registers don't exist, skip */
 			continue;
+		}
+
+		if (reg == iou_slcr_bank1_ctrl0 + 4) {
+			/* iou_slcr_bank1_ctrl5 is a register with special care. */
+			mask = 1 << ((bit >= 12) ? (bit - 12) : (bit + 14));
+		}
+		else {
+			mask = 1 << bit;
 		}
 
 		if ((*(zynq_common.iou_slcr + reg) & mask) != 0) {
