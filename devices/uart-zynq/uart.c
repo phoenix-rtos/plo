@@ -343,14 +343,10 @@ static int uart_sync(unsigned int minor)
 	while (!lib_cbufEmpty(&uart->cbuffTx))
 		;
 
-	/* Wait until TxFIFO is empty */
-	while (!(*(uart->base + sr) & (0x1 << 3)))
-		;
-
-	/* Although status register indicates that TxFIFO is empty, data is transmitted.
-	 * To not lose any data, wait 3 ms to clean up the fifo */
+	/* For whatever reason TX EMPTY flag is not going up.
+	 * To not lose any data, wait 10 ms to clean up the fifo */
 	start = hal_timerGet();
-	while (hal_timerGet() - start < 3)
+	while (hal_timerGet() - start < 10)
 		;
 
 	return EOK;
