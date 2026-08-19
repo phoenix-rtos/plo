@@ -454,11 +454,13 @@ static void _zynqmp_setMIOControl(const ctl_mio_t *mio)
 		}
 
 		if ((mio->config & (1 << i)) != 0) {
-			*(zynq_common.iou_slcr + reg + i) |= mask;
+			*(zynq_common.iou_slcr + reg) |= mask;
 		}
 		else {
-			*(zynq_common.iou_slcr + reg + i) &= ~mask;
+			*(zynq_common.iou_slcr + reg) &= ~mask;
 		}
+
+		reg++;
 	}
 }
 
@@ -510,9 +512,11 @@ static void _zynqmp_getMIOControl(ctl_mio_t *mio)
 			continue;
 		}
 
-		if ((*(zynq_common.iou_slcr + reg + i) & mask) != 0) {
+		if ((*(zynq_common.iou_slcr + reg) & mask) != 0) {
 			mio->config |= (1 << i);
 		}
+
+		reg++;
 	}
 }
 
