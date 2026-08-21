@@ -14,7 +14,6 @@
  */
 
 #include "xspi_common.h"
-#include "flash_params.h"
 #include <syspage.h>
 #include <phoenix/arch/armv8m/stm32/flash_chip_setup.h>
 
@@ -139,19 +138,19 @@ static const flash_opDefinition_t opDef_write_disable = {
 };
 
 
-static const u32 opModeToCCR[operation_io_types] = {
-	[operation_io_111] = MAKE_CCR_VALUE(S1, S1, S1, S1, 1, 1, 1, 0),
-	[operation_io_112] = MAKE_CCR_VALUE(S1, S1, S1, S2, 1, 1, 1, 0),
-	[operation_io_122] = MAKE_CCR_VALUE(S1, S2, S2, S2, 1, 1, 1, 0),
-	[operation_io_114] = MAKE_CCR_VALUE(S1, S1, S1, S4, 1, 1, 1, 0),
-	[operation_io_144] = MAKE_CCR_VALUE(S1, S4, S4, S4, 1, 1, 1, 0),
-	[operation_io_222] = MAKE_CCR_VALUE(S2, S2, S2, S2, 1, 1, 1, 0),
-	[operation_io_444] = MAKE_CCR_VALUE(S4, S4, S4, S4, 1, 1, 1, 0),
-	[operation_io_444d] = MAKE_CCR_VALUE(D4, D4, D4, D4, 1, 1, 1, 1),
-	[operation_io_188] = MAKE_CCR_VALUE(S1, S8, S8, S8, 1, 1, 1, 0),
-	[operation_io_188d] = MAKE_CCR_VALUE(S1, D8, D8, D8, 1, 1, 1, 1),
-	[operation_io_888] = MAKE_CCR_VALUE(S8, S8, S8, S8, 1, 1, 1, 0),
-	[operation_io_888d] = MAKE_CCR_VALUE(D8, D8, D8, D8, 1, 1, 1, 1),
+static const u32 opModeToCCR[OPERATION_IO_TYPES] = {
+	[OPERATION_IO_111] = MAKE_CCR_VALUE(S1, S1, S1, S1, 1, 1, 1, 0),
+	[OPERATION_IO_112] = MAKE_CCR_VALUE(S1, S1, S1, S2, 1, 1, 1, 0),
+	[OPERATION_IO_122] = MAKE_CCR_VALUE(S1, S2, S2, S2, 1, 1, 1, 0),
+	[OPERATION_IO_114] = MAKE_CCR_VALUE(S1, S1, S1, S4, 1, 1, 1, 0),
+	[OPERATION_IO_144] = MAKE_CCR_VALUE(S1, S4, S4, S4, 1, 1, 1, 0),
+	[OPERATION_IO_222] = MAKE_CCR_VALUE(S2, S2, S2, S2, 1, 1, 1, 0),
+	[OPERATION_IO_444] = MAKE_CCR_VALUE(S4, S4, S4, S4, 1, 1, 1, 0),
+	[OPERATION_IO_444d] = MAKE_CCR_VALUE(D4, D4, D4, D4, 1, 1, 1, 1),
+	[OPERATION_IO_188] = MAKE_CCR_VALUE(S1, S8, S8, S8, 1, 1, 1, 0),
+	[OPERATION_IO_188d] = MAKE_CCR_VALUE(S1, D8, D8, D8, 1, 1, 1, 1),
+	[OPERATION_IO_888] = MAKE_CCR_VALUE(S8, S8, S8, S8, 1, 1, 1, 0),
+	[OPERATION_IO_888d] = MAKE_CCR_VALUE(D8, D8, D8, D8, 1, 1, 1, 1),
 };
 
 
@@ -399,17 +398,17 @@ static int flashdrv_detectGeneric(int minor, flash_opParameters_t *res, unsigned
 static u8 flashdrv_modeCyclesToBits(u8 readIoType, u8 cycles)
 {
 	switch (readIoType) {
-		case operation_io_888: /* Fall-through */
-		case operation_io_888d:
+		case OPERATION_IO_888: /* Fall-through */
+		case OPERATION_IO_888d:
 			return cycles * 8;
 
-		case operation_io_144: /* Fall-through */
-		case operation_io_444: /* Fall-through */
-		case operation_io_444d:
+		case OPERATION_IO_144: /* Fall-through */
+		case OPERATION_IO_444: /* Fall-through */
+		case OPERATION_IO_444d:
 			return cycles * 4;
 
-		case operation_io_122: /* Fall-through */
-		case operation_io_222:
+		case OPERATION_IO_122: /* Fall-through */
+		case OPERATION_IO_222:
 			return cycles * 2;
 
 		default:
@@ -422,7 +421,7 @@ static void flashdrv_fillOperations(struct flash_memParams *mp)
 {
 	flash_opParameters_t *fp = &mp->params;
 	u32 readModeBytes = 0, v;
-	int modeIsOctalDDR = fp->otherIoType == operation_io_888d;
+	int modeIsOctalDDR = fp->otherIoType == OPERATION_IO_888d;
 
 	if (fp->readModeCyc != 0) {
 		v = flashdrv_modeCyclesToBits(fp->readIoType, fp->readModeCyc);
@@ -452,7 +451,7 @@ static void flashdrv_fillOperations(struct flash_memParams *mp)
 	mp->erase.ccr = flashdrv_makeCCRValue(
 			fp->otherIoType, fp->opcodeType, (fp->addrMode == ADDRMODE_3B) ? 3 : 4, 0, 0);
 	mp->erase.tcr = 0;
-	mp->erase.ir = flashdrv_makeIRValue(fp->opcodeType, fp->eraseOpcode);
+	mp->erase.ir = flashdrv_makeIRValue(fp->opcodeType, fp->smallestEraseOpcode);
 
 	/* The following 3 commands all have no address, mode bytes, dummy cycles or data;
 	 * their definitions will be identical except for instruction register value */
@@ -510,17 +509,17 @@ static int flashdrv_detectMacronixOcta(int minor, flash_opParameters_t *res, uns
 	/* This chip's SFDP data is almost useless because it only includes 3-byte address versions of commands.
 	 * We need to input the 4-byte versions of each command from the datasheet. */
 	res->opcodeType = flash_opcode_8b_inverse;
-	res->readIoType = operation_io_888d;
+	res->readIoType = OPERATION_IO_888d;
 	res->readOpcode = 0xee; /* OCTA DTR Read */
 	res->readDummy = 20;
 	res->readModeCyc = 0;
-	res->writeIoType = operation_io_888d;
+	res->writeIoType = OPERATION_IO_888d;
 	res->writeOpcode = 0x12; /* Page program 4B */
 	res->writeDummy = 0;
 	res->addrMode = ADDRMODE_4B;
-	res->otherIoType = operation_io_888d;
-	res->eraseOpcode = 0x21; /* Sector erase 4B */
-	res->log_eraseSize = 12;
+	res->otherIoType = OPERATION_IO_888d;
+	res->smallestEraseOpcode = 0x21; /* Sector erase 4B */
+	res->log_smallestEraseSize = 12;
 	return 0;
 }
 
@@ -587,12 +586,12 @@ static int flashdrv_detectMT35X(int minor, flash_opParameters_t *res, unsigned c
 
 	/* Update info with operations compatible with octal DDR mode */
 	res->opcodeType = flash_opcode_8b_repeat;
-	res->readIoType = operation_io_888d;
+	res->readIoType = OPERATION_IO_888d;
 	res->readOpcode = 0x0b; /* FAST READ */
 	res->readDummy = 0;     /* Not necessary, DQS line signals that Flash is ready */
 	res->readModeCyc = 0;
-	res->writeIoType = operation_io_888d;
-	res->otherIoType = operation_io_888d;
+	res->writeIoType = OPERATION_IO_888d;
+	res->otherIoType = OPERATION_IO_888d;
 	return 0;
 }
 
@@ -814,12 +813,12 @@ static ssize_t flashdrv_erase_internal(unsigned int minor, addr_t offs, size_t l
 		return (ret < 0) ? ret : (ssize_t)xspi_memSize[minor];
 	}
 	else {
-		if (mp->params.log_eraseSize > 31) {
+		if (mp->params.log_smallestEraseSize > 31) {
 			/* Erase size greater than 2 GB is very improbable - treat it as an error */
 			return -EINVAL;
 		}
 
-		eraseSize = 1UL << mp->params.log_eraseSize;
+		eraseSize = 1UL << mp->params.log_smallestEraseSize;
 		if ((offs & (eraseSize - 1)) != 0 || (len & (eraseSize - 1)) != 0) {
 			return -EINVAL;
 		}
@@ -829,7 +828,7 @@ static ssize_t flashdrv_erase_internal(unsigned int minor, addr_t offs, size_t l
 		op.dataLen = 0;
 		for (; len != 0; offs += eraseSize, len -= eraseSize) {
 			op.addr = offs;
-			ret = flashdrv_performWriteOp(minor, &op, NULL, mp->params.eraseBlockTimeout);
+			ret = flashdrv_performWriteOp(minor, &op, NULL, mp->params.smallestEraseBlockTimeout);
 			if (ret < 0) {
 				return ret;
 			}
@@ -856,11 +855,11 @@ ssize_t xspi_regcom_erase(unsigned int minor, addr_t offs, size_t len, unsigned 
 
 size_t xspi_regcom_getBlockSize(unsigned int minor)
 {
-	if (memParams[minor].params.log_eraseSize > 31) {
+	if (memParams[minor].params.log_smallestEraseSize > 31) {
 		return 0;
 	}
 
-	return 1UL << memParams[minor].params.log_eraseSize;
+	return 1UL << memParams[minor].params.log_smallestEraseSize;
 }
 
 
@@ -970,9 +969,9 @@ static void xspi_regcom_serializeConfig(int minor, void *ptr)
 	cs->name[sizeof(cs->name) - 1] = '\0';
 	hal_memcpy(cs->jedecID, mp->device_id, sizeof(cs->jedecID));
 	cs->log_chipSize = mp->params.log_chipSize;
-	cs->log_eraseSize = mp->params.log_eraseSize;
+	cs->log_eraseSize = mp->params.log_smallestEraseSize;
 	cs->log_pageSize = mp->params.log_pageSize;
-	cs->eraseTimeoutMs = mp->params.eraseBlockTimeout;
+	cs->eraseTimeoutMs = mp->params.smallestEraseBlockTimeout;
 	cs->chipEraseTimeoutMs = mp->params.eraseChipTimeout;
 	cs->writePageTimeoutUs = mp->params.programTimeout_us;
 	xspi_regcom_serializeCommand(&cs->read, &mp->read);
