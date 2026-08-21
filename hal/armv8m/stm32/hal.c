@@ -223,8 +223,8 @@ int hal_cpuJump(void)
 	hal_invalICache();
 	__asm__ volatile("mov r9, %1\n"
 					 "blx %0\n"
-					 :
-					 : "r"(hal_common.entry), "r"((addr_t)hal_common.hs));
+			:
+			: "r"(hal_common.entry), "r"((addr_t)hal_common.hs));
 
 	__builtin_unreachable();
 }

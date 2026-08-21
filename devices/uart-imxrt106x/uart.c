@@ -70,7 +70,18 @@ const struct {
 };
 
 
-enum { veridr = 0, paramr, globalr, pincfgr, baudr, statr, ctrlr, datar, matchr, modirr, fifor, waterr };
+enum { veridr = 0,
+	paramr,
+	globalr,
+	pincfgr,
+	baudr,
+	statr,
+	ctrlr,
+	datar,
+	matchr,
+	modirr,
+	fifor,
+	waterr };
 
 
 __attribute__((section(".noxip"))) static inline int uart_getRXcount(uart_t *uart)

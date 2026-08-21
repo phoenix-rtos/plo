@@ -18,7 +18,8 @@
 
 #include <hal/hal.h>
 
-enum { gpio_dir_in = 0, gpio_dir_out = 1 };
+enum { gpio_dir_in = 0,
+	gpio_dir_out = 1 };
 
 
 /* The Zynq 7000 has access to:
@@ -47,7 +48,6 @@ extern int gpio_readBank(u8 bank, u32 *val);
 extern int gpio_getBankDir(u8 bank, u32 *dir);
 
 extern int gpio_setBankDir(u8 bank, u32 dir);
-
 
 
 extern void gpio_init(void);

@@ -18,7 +18,16 @@
 
 #define TIMER_IRQN 87
 
-enum { gpt_cr = 0, gpt_pr, gpt_sr, gpt_ir, gpt_ocr1, gpt_ocr2, gpt_ocr3, gpt_icr1, gpt_icr2, gpt_cnt };
+enum { gpt_cr = 0,
+	gpt_pr,
+	gpt_sr,
+	gpt_ir,
+	gpt_ocr1,
+	gpt_ocr2,
+	gpt_ocr3,
+	gpt_icr1,
+	gpt_icr2,
+	gpt_cnt };
 
 struct {
 	volatile u32 *base;

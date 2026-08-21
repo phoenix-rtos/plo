@@ -21,8 +21,8 @@
 
 
 #define PRINT_CONV_BUFLEN 32
-#define MAX_CMDLINE 1024
-#define MAX_FILENAME 512
+#define MAX_CMDLINE       1024
+#define MAX_FILENAME      512
 
 #define PLO_VERSION "1"
 
@@ -60,7 +60,7 @@ static void efi_outputString(efi_params_t *efi, const wchar_t *s)
 
 static void efi_print(efi_params_t *efi, const char *s)
 {
-	wchar_t buf[PRINT_CONV_BUFLEN + 1], *p = buf, *end = buf + sizeof(buf)/sizeof(*buf) - 1;
+	wchar_t buf[PRINT_CONV_BUFLEN + 1], *p = buf, *end = buf + sizeof(buf) / sizeof(*buf) - 1;
 
 	while (*s) {
 		*p++ = (u8)*s++;
@@ -81,8 +81,8 @@ static void efi_print(efi_params_t *efi, const char *s)
 
 static void efi_printHex(efi_params_t *efi, u32 value)
 {
-	wchar_t buf[2+8+1];
-	wchar_t *p = buf + sizeof(buf)/sizeof(buf[0]);
+	wchar_t buf[2 + 8 + 1];
+	wchar_t *p = buf + sizeof(buf) / sizeof(buf[0]);
 
 	*--p = 0;
 
@@ -101,8 +101,7 @@ static void efi_printHex(efi_params_t *efi, u32 value)
 }
 
 
-__attribute__((sentinel))
-static void efi_println(efi_params_t *efi, ...)
+__attribute__((sentinel)) static void efi_println(efi_params_t *efi, ...)
 {
 	va_list ap;
 	char *s;
@@ -134,14 +133,13 @@ static void efi_printWstrln(efi_params_t *efi, const char *msg, const wchar_t *s
 }
 
 
-__attribute__((noreturn)) __attribute__((cold))
-static void efi_bail(efi_params_t *efi, EFI_STATUS err, const char *msg)
+__attribute__((noreturn)) __attribute__((cold)) static void efi_bail(efi_params_t *efi, EFI_STATUS err, const char *msg)
 {
 	efi_println(efi, "[PLO] ", msg, " failed", NULL);
 	efi->sys->BootServices->Exit(efi->img_handle, err, 0, NULL);
 
 	efi_print(efi, "Buggy firmware -- returned from Exit()\r\n");
-	for(;;)
+	for (;;)
 		efi->sys->BootServices->Exit(efi->img_handle, err, 0, NULL);
 }
 
@@ -284,28 +282,28 @@ static void efi_convertMemoryMap(efi_params_t *efi, multiboot_info_t *mb, UINTN 
 		last->len = (u64)map->NumberOfPages << 12;
 
 		switch (map->Type) {
-		case EfiLoaderCode:
-		case EfiLoaderData:
-		case EfiBootServicesCode:
-		case EfiBootServicesData:
-		case EfiConventionalMemory:
-			if (map->Attribute & EFI_MEMORY_WB)
-				last->type = MULTIBOOT_MEMORY_AVAILABLE;
-			else
+			case EfiLoaderCode:
+			case EfiLoaderData:
+			case EfiBootServicesCode:
+			case EfiBootServicesData:
+			case EfiConventionalMemory:
+				if (map->Attribute & EFI_MEMORY_WB)
+					last->type = MULTIBOOT_MEMORY_AVAILABLE;
+				else
+					last->type = MULTIBOOT_MEMORY_RESERVED;
+				break;
+			case EfiACPIReclaimMemory:
+				last->type = MULTIBOOT_MEMORY_ACPI_RECLAIMABLE;
+				break;
+			case EfiACPIMemoryNVS:
+				last->type = MULTIBOOT_MEMORY_NVS;
+				break;
+			case EfiUnusableMemory:
+				last->type = MULTIBOOT_MEMORY_BADRAM;
+				break;
+			default:
 				last->type = MULTIBOOT_MEMORY_RESERVED;
-			break;
-		case EfiACPIReclaimMemory:
-			last->type = MULTIBOOT_MEMORY_ACPI_RECLAIMABLE;
-			break;
-		case EfiACPIMemoryNVS:
-			last->type = MULTIBOOT_MEMORY_NVS;
-			break;
-                case EfiUnusableMemory:
-			last->type = MULTIBOOT_MEMORY_BADRAM;
-			break;
-		default:
-			last->type = MULTIBOOT_MEMORY_RESERVED;
-			break;
+				break;
 		}
 #ifdef ENABLE_DUMP_MEMMAP
 		efi_print(efi, "Block at ");
@@ -473,7 +471,7 @@ static void *efi_readFile(efi_params_t *efi, const wchar_t *fname, unsigned *fil
 static void *efi_readFileA(efi_params_t *efi, const char *fname, unsigned *file_sz)
 {
 	wchar_t fn[MAX_FILENAME], *p;
-	size_t n = MAX_FILENAME-1;
+	size_t n = MAX_FILENAME - 1;
 
 	p = fn;
 	while (*fname && n--)
@@ -589,7 +587,7 @@ static void plo_appendCmdline(efi_params_t *efi, multiboot_info_t *mb, const cha
 
 	p = (void *)mb->cmdline;
 	i = hal_strlen(p);
-	n = MAX_CMDLINE-1 - i;
+	n = MAX_CMDLINE - 1 - i;
 
 	if (i && n)
 		p[n--, i++] = ' ';
@@ -598,7 +596,7 @@ static void plo_appendCmdline(efi_params_t *efi, multiboot_info_t *mb, const cha
 
 	if (hal_strlen(cmdline) > n) {
 		efi_warn(efi, "kernel command line truncated");
-		p[MAX_CMDLINE-1] = 0;
+		p[MAX_CMDLINE - 1] = 0;
 	}
 }
 
@@ -627,29 +625,29 @@ static void plo_parseConfig(efi_params_t *efi, multiboot_info_t *mb, char *confi
 		}
 
 		switch (i) {
-		case 1: /* kernel */
-			if (kernel) {
-				efi_printHexln(efi, "Duplicate kernel at cmd #", n_cmds);
-				continue;
-			}
+			case 1: /* kernel */
+				if (kernel) {
+					efi_printHexln(efi, "Duplicate kernel at cmd #", n_cmds);
+					continue;
+				}
 
-			kernel = fn;
-			if (kernel[fn_len]) {
-				kernel_args = kernel + fn_len;
-				while (*kernel_args != '\n' && plo_isspace(*kernel_args))
-					++kernel_args;
-				kernel[fn_len] = 0;
-			}
-			break;
+				kernel = fn;
+				if (kernel[fn_len]) {
+					kernel_args = kernel + fn_len;
+					while (*kernel_args != '\n' && plo_isspace(*kernel_args))
+						++kernel_args;
+					kernel[fn_len] = 0;
+				}
+				break;
 
-		case 2: /* module */
-			mod->cmdline = (u32)fn;
-			mod->pad = fn_len;
-			++mod;
-			break;
+			case 2: /* module */
+				mod->cmdline = (u32)fn;
+				mod->pad = fn_len;
+				++mod;
+				break;
 
-		default:
-			__builtin_unreachable();
+			default:
+				__builtin_unreachable();
 		}
 	}
 
@@ -787,16 +785,19 @@ static void efi_run(efi_params_t *efi)
 	efi_println(efi, "Cmdline: ", (char *)mb->cmdline, NULL);
 	efi_releaseBoot(efi, mmap_key);
 	asm volatile(
-		"jmp *%0"
-	:
-	: "r" (entry), "a" (MULTIBOOT_BOOTLOADER_MAGIC), "b" (mb)
-	: "memory");
+			"jmp *%0"
+			:
+			: "r"(entry), "a"(MULTIBOOT_BOOTLOADER_MAGIC), "b"(mb)
+			: "memory");
 }
 
 
 EFIAPI EFI_STATUS efi_main(EFI_HANDLE my_handle, EFI_SYSTEM_TABLE *sys)
 {
-	efi_params_t efi = { sys, my_handle, };
+	efi_params_t efi = {
+		sys,
+		my_handle,
+	};
 
 	efi_init(&efi);
 	efi_run(&efi);

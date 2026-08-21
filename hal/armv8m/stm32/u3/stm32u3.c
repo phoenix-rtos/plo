@@ -84,10 +84,13 @@ typedef struct {
 
 #define FREQUENCY_RANGE_COUNT 7
 static const range_mapping_t frequency_ranges[FREQUENCY_RANGE_COUNT] = {
-	{ 3000000, 7 }, { 6000000, 6 }, { 12000000, 5 }, /* MSIRC1 */
-	{ 16000000, -1 },                                /* HSI */
-	{ 24000000, 4 },                                 /* MSIRC1 */
-	{ 48000000, 1 }, { 96000000, 0 },                /* MSIRC0 */
+	{ 3000000, 7 },
+	{ 6000000, 6 },
+	{ 12000000, 5 },  /* MSIRC1 */
+	{ 16000000, -1 }, /* HSI */
+	{ 24000000, 4 },  /* MSIRC1 */
+	{ 48000000, 1 },
+	{ 96000000, 0 }, /* MSIRC0 */
 };
 
 #define BOOSTEN             (1 << 8)

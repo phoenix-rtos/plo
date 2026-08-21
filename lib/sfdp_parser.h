@@ -30,11 +30,11 @@ enum operation_io_type {
 	OPERATION_IO_144,
 	OPERATION_IO_222,
 	OPERATION_IO_444,
-    OPERATION_IO_444d,
-    OPERATION_IO_188,
-    OPERATION_IO_188d,
-    OPERATION_IO_888,
-    OPERATION_IO_888d,
+	OPERATION_IO_444d,
+	OPERATION_IO_188,
+	OPERATION_IO_188d,
+	OPERATION_IO_888,
+	OPERATION_IO_888d,
 	OPERATION_IO_TYPES,
 };
 
@@ -51,26 +51,26 @@ enum flash_opcode_type {
 };
 
 typedef struct {
-	u16 readOpcode;                 /* Opcode to perform a read operation */
-	u16 writeOpcode;                /* Opcode to perform a program operation */
-	u8 opcodeType;                  /* One of enum flash_opcode_type */
-	u8 readIoType;                  /* One of enum operation_io_type */
-	u8 readModeCyc;                 /* Mode cycles needed for a read operation */
-	u8 readDummy;                   /* Dummy cycles needed for a read operation */
-	u8 writeIoType;                 /* One of enum operation_io_type */
-	u8 writeDummy;                  /* Dummy cycles needed for a program operation */
-	u8 otherIoType;                 /* IO type of other operations (erase, write enable, status). One of enum operation_io_type. */
-	u8 smallestEraseOpcode;         /* Opcode to perform smallest erase operation */
-    u8 largestEraseOpcode;          /* Opcode to perform largest erase operation */
-	u8 addrMode;                    /* One of ADDRMODE_* */
-	u8 log_chipSize;                /* log2 of chip size in bytes */
-	u8 log_smallestEraseSize;       /* log2 of smallest erase size in bytes */
-    u8 log_largestEraseSize;        /* log2 of largest erase size in bytes */
-	u8 log_pageSize;                /* log2 of page size in bytes */
-	u32 smallestEraseBlockTimeout;  /* Max time in ms to erase block of (1 << log_smallestEraseSize) bytes */
-	u32 largestEraseBlockTimeout;   /* Max time in ms to erase block of (1 << log_largestEraseSize) bytes */
-    u32 eraseChipTimeout;           /* Max time in ms to erase the whole chip */
-	u32 programTimeout_us;          /* Max time in us to write one page */
+	u16 readOpcode;                /* Opcode to perform a read operation */
+	u16 writeOpcode;               /* Opcode to perform a program operation */
+	u8 opcodeType;                 /* One of enum flash_opcode_type */
+	u8 readIoType;                 /* One of enum operation_io_type */
+	u8 readModeCyc;                /* Mode cycles needed for a read operation */
+	u8 readDummy;                  /* Dummy cycles needed for a read operation */
+	u8 writeIoType;                /* One of enum operation_io_type */
+	u8 writeDummy;                 /* Dummy cycles needed for a program operation */
+	u8 otherIoType;                /* IO type of other operations (erase, write enable, status). One of enum operation_io_type. */
+	u8 smallestEraseOpcode;        /* Opcode to perform smallest erase operation */
+	u8 largestEraseOpcode;         /* Opcode to perform largest erase operation */
+	u8 addrMode;                   /* One of ADDRMODE_* */
+	u8 log_chipSize;               /* log2 of chip size in bytes */
+	u8 log_smallestEraseSize;      /* log2 of smallest erase size in bytes */
+	u8 log_largestEraseSize;       /* log2 of largest erase size in bytes */
+	u8 log_pageSize;               /* log2 of page size in bytes */
+	u32 smallestEraseBlockTimeout; /* Max time in ms to erase block of (1 << log_smallestEraseSize) bytes */
+	u32 largestEraseBlockTimeout;  /* Max time in ms to erase block of (1 << log_largestEraseSize) bytes */
+	u32 eraseChipTimeout;          /* Max time in ms to erase the whole chip */
+	u32 programTimeout_us;         /* Max time in us to write one page */
 } flash_opParameters_t;
 
 /* Initializes structure with default or reasonable parameters of typical JEDEC Flash memory */

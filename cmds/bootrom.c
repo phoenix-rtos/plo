@@ -30,11 +30,11 @@ static void cmd_bootromInfo(void)
 static void print_usage(const char *name)
 {
 	lib_printf(
-		"Usage: %s <-b | -s imagenum>\n"
-		"where:\n"
-		"\t-b enters USB serial downloader mode\n"
-		"\t-s <imagenum> selects image <1, 2, 3 or 4> to boot from\n",
-		name);
+			"Usage: %s <-b | -s imagenum>\n"
+			"where:\n"
+			"\t-b enters USB serial downloader mode\n"
+			"\t-s <imagenum> selects image <1, 2, 3 or 4> to boot from\n",
+			name);
 }
 
 

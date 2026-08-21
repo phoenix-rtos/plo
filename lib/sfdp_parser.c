@@ -22,11 +22,11 @@
 
 #define SFDP_SIGNATURE 0x50444653
 
-/* Lookup table for checking support for different I/O types 
+/* Lookup table for checking support for different I/O types
 idx - DWORD index, shift - bit position */
 static const struct {
-	u8 checkIdx;        /* 1st DWORD in Basic Flash Parameter Table */
-	u8 checkShift;      /* 1st DWORD in Basic Flash Parameter Table */
+	u8 checkIdx;   /* 1st DWORD in Basic Flash Parameter Table */
+	u8 checkShift; /* 1st DWORD in Basic Flash Parameter Table */
 	u8 opcodeIdx;
 	u8 opcodeShift;
 	u8 dummyIdx;
@@ -48,10 +48,10 @@ static const struct {
 	u8 opcodeShift;
 	u8 timeShift;
 } sfdpEraseLookup[] = {
-	{ 7, 0, 8, 4 },     /* Erase Type 1, 8th DWORD in Basic Flash Parameter Table */
-	{ 7, 16, 24, 11 },  /* Erase Type 2, 8th DWORD in Basic Flash Parameter Table */
-	{ 8, 0, 8, 18 },    /* Erase Type 3, 9th DWORD in Basic Flash Parameter Table */
-	{ 8, 16, 24, 25 },  /* Erase Type 4, 9th DWORD in Basic Flash Parameter Table */
+	{ 7, 0, 8, 4 },    /* Erase Type 1, 8th DWORD in Basic Flash Parameter Table */
+	{ 7, 16, 24, 11 }, /* Erase Type 2, 8th DWORD in Basic Flash Parameter Table */
+	{ 8, 0, 8, 18 },   /* Erase Type 3, 9th DWORD in Basic Flash Parameter Table */
+	{ 8, 16, 24, 25 }, /* Erase Type 4, 9th DWORD in Basic Flash Parameter Table */
 };
 
 
@@ -68,15 +68,15 @@ void flashdrv_fillDefaultParams(flash_opParameters_t *res)
 	res->addrMode = ADDRMODE_3B;
 	res->log_chipSize = 24; /* 16 MB */
 	res->otherIoType = OPERATION_IO_111;
-	res->smallestEraseOpcode = 0xd8;        /* Sector erase */
-    res->largestEraseOpcode = 0xd8;
-	res->log_smallestEraseSize = 16;        /* 64 KB sector size */
-    res->log_largestEraseSize = 16;  
-	res->log_pageSize = 8;                  /* 256 B page size */
-	res->smallestEraseBlockTimeout = 1000;  /* 1 second to erase block */
-    res->largestEraseBlockTimeout = 1000; 
-	res->eraseChipTimeout = 60000;          /* 60 seconds to erase chip */
-	res->programTimeout_us = 65536;         /* 65 ms to write page */
+	res->smallestEraseOpcode = 0xd8; /* Sector erase */
+	res->largestEraseOpcode = 0xd8;
+	res->log_smallestEraseSize = 16; /* 64 KB sector size */
+	res->log_largestEraseSize = 16;
+	res->log_pageSize = 8;                 /* 256 B page size */
+	res->smallestEraseBlockTimeout = 1000; /* 1 second to erase block */
+	res->largestEraseBlockTimeout = 1000;
+	res->eraseChipTimeout = 60000;  /* 60 seconds to erase chip */
+	res->programTimeout_us = 65536; /* 65 ms to write page */
 }
 
 
@@ -99,7 +99,7 @@ int flashdrv_parseSfdp(const u32 *data, flash_opParameters_t *res, int tryMultiI
 	const u32 *header_table = &data[2];
 	u32 ptable_len = 0, ptable_offset, log_sizeBits;
 	u8 log_smallestEraseSize = 0, smallestEraseOpcode = 0, smallestEraseTimeShift = 0;
-    u8 log_largestEraseSize = 0, largestEraseOpcode = 0, largestEraseTimeShift = 0;
+	u8 log_largestEraseSize = 0, largestEraseOpcode = 0, largestEraseTimeShift = 0;
 	u8 smallestCandidate_size, largestCandidate_size, eraseTimeValue, eraseTimeoutMultiplier;
 	const u32 *ptable = NULL;
 	if (data[0] != SFDP_SIGNATURE) {
@@ -127,7 +127,7 @@ int flashdrv_parseSfdp(const u32 *data, flash_opParameters_t *res, int tryMultiI
 		return -EINVAL;
 	}
 
-    res->addrMode = (ptable[0] >> 17) & 0x3;
+	res->addrMode = (ptable[0] >> 17) & 0x3;
 	if (res->addrMode == 0x3) {
 		/* Reserved value - set to default 3-byte mode */
 		res->addrMode = ADDRMODE_3B;
@@ -151,7 +151,7 @@ int flashdrv_parseSfdp(const u32 *data, flash_opParameters_t *res, int tryMultiI
 		res->log_chipSize = log_sizeBits - 3;
 	}
 
-    res->readIoType = OPERATION_IO_111;
+	res->readIoType = OPERATION_IO_111;
 	res->readOpcode = 0x3;
 	res->readDummy = 0;
 	/* Determine fastest I/O mode */
@@ -170,9 +170,9 @@ int flashdrv_parseSfdp(const u32 *data, flash_opParameters_t *res, int tryMultiI
 		}
 	}
 
-    if (ptable_len >= 9) {
+	if (ptable_len >= 9) {
 		for (i = 0; i < 4; i++) {
-            /* Find smallest available erase operation */
+			/* Find smallest available erase operation */
 			smallestCandidate_size = (ptable[sfdpEraseLookup[i].sizeIdx] >> sfdpEraseLookup[i].sizeShift) & 0xff;
 			if (smallestCandidate_size != 0 && smallestCandidate_size < log_smallestEraseSize) {
 				smallestEraseOpcode = (ptable[sfdpEraseLookup[i].sizeIdx] >> sfdpEraseLookup[i].opcodeShift) & 0xff;
@@ -180,17 +180,17 @@ int flashdrv_parseSfdp(const u32 *data, flash_opParameters_t *res, int tryMultiI
 				smallestEraseTimeShift = sfdpEraseLookup[i].timeShift;
 			}
 
-            /* Find largest available erase operation */
-            largestCandidate_size = (ptable[sfdpEraseLookup[i].sizeIdx] >> sfdpEraseLookup[i].sizeShift) & 0xff;
+			/* Find largest available erase operation */
+			largestCandidate_size = (ptable[sfdpEraseLookup[i].sizeIdx] >> sfdpEraseLookup[i].sizeShift) & 0xff;
 			if (largestCandidate_size > log_largestEraseSize) {
 				largestEraseOpcode = (ptable[sfdpEraseLookup[i].sizeIdx] >> sfdpEraseLookup[i].opcodeShift) & 0xff;
 				log_largestEraseSize = largestCandidate_size;
 				largestEraseTimeShift = sfdpEraseLookup[i].timeShift;
 			}
 		}
-    }
+	}
 
-    if (log_smallestEraseSize != 0xff) {
+	if (log_smallestEraseSize != 0xff) {
 		res->log_smallestEraseSize = log_smallestEraseSize;
 		res->smallestEraseOpcode = smallestEraseOpcode;
 		if (ptable_len >= 10) {
@@ -200,7 +200,7 @@ int flashdrv_parseSfdp(const u32 *data, flash_opParameters_t *res, int tryMultiI
 		}
 	}
 
-    if (log_largestEraseSize != 0) {
+	if (log_largestEraseSize != 0) {
 		res->log_largestEraseSize = log_largestEraseSize;
 		res->largestEraseOpcode = largestEraseOpcode;
 		if (ptable_len >= 10) {

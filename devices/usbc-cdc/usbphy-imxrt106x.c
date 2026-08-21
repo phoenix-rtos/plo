@@ -17,21 +17,38 @@
 #include "usbphy.h"
 
 
-
 enum {
 	/* Power-Down Register */
-	usbphy_pwd, usbphy_pwd_set, usbphy_pwd_clr, usbphy_pwd_tog,
+	usbphy_pwd,
+	usbphy_pwd_set,
+	usbphy_pwd_clr,
+	usbphy_pwd_tog,
 	/* Transmitter & Receiver Control Registers */
-	usbphy_tx, usbphy_tx_set, usbphy_tx_clr, usbphy_tx_tog,
-	usbphy_rx, usbphy_rx_set, usbphy_rx_clr, usbphy_rx_tog,
+	usbphy_tx,
+	usbphy_tx_set,
+	usbphy_tx_clr,
+	usbphy_tx_tog,
+	usbphy_rx,
+	usbphy_rx_set,
+	usbphy_rx_clr,
+	usbphy_rx_tog,
 	/* General Control Register */
-	usbphy_ctrl, usbphy_ctrl_set, usbphy_ctrl_clr, usbphy_ctrl_tog,
+	usbphy_ctrl,
+	usbphy_ctrl_set,
+	usbphy_ctrl_clr,
+	usbphy_ctrl_tog,
 	/* USB Status & Debug Registers */
 	usbphy_status,
-	usbphy_debug = 20, usbphy_debug_set, usbphy_debug_clr, usbphy_debug_tog,
+	usbphy_debug = 20,
+	usbphy_debug_set,
+	usbphy_debug_clr,
+	usbphy_debug_tog,
 	/* UTMI Status & Debug Registers */
-	usbphy_debug0_status, usbphy_debug1 = 28,
-	usbphy_debug1_set, usbphy_debug1_clr, usbphy_debug1_tog,
+	usbphy_debug0_status,
+	usbphy_debug1 = 28,
+	usbphy_debug1_set,
+	usbphy_debug1_clr,
+	usbphy_debug1_tog,
 	/* UTMI RTL */
 	usbphy_version
 };

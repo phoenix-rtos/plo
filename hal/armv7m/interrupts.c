@@ -22,11 +22,16 @@ typedef struct {
 } intr_handler_t;
 
 
-enum { nvic_iser = 0, nvic_icer = 32, nvic_ispr = 64, nvic_icpr = 96, nvic_iabr = 128,
-	nvic_ip = 192, nvic_stir = 896 };
+enum { nvic_iser = 0,
+	nvic_icer = 32,
+	nvic_ispr = 64,
+	nvic_icpr = 96,
+	nvic_iabr = 128,
+	nvic_ip = 192,
+	nvic_stir = 896 };
 
 
-struct{
+struct {
 	intr_handler_t irqs[SIZE_INTERRUPTS];
 	volatile u32 *nvic;
 } irq_common;

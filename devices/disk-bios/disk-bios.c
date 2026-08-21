@@ -80,25 +80,25 @@ static int diskbios_lba(diskbios_t *disk)
 	int ret;
 
 	__asm__ volatile(
-		/* Extended installation check */
-		"pushl $0x13; "
-		"pushl $0x0; "
-		"pushl $0x0; "
-		"movw $0x55aa, %%bx; "
-		"movb $0x41, %%ah; "
-		"call _interrupts_bios; "
-		"jc 1f; "
-		"cmpw $0xaa55, %%bx; "
-		"jne 1f; "
-		"testb $0x1, %%cl; "
-		"jz 1f; "
-		"0: "
-		"xorl %%eax, %%eax; "
-		"1: "
-		"addl $0xc, %%esp; "
-	: "=a" (ret)
-	: "d" (disk->dn)
-	: "ebx", "ecx", "memory", "cc");
+			/* Extended installation check */
+			"pushl $0x13; "
+			"pushl $0x0; "
+			"pushl $0x0; "
+			"movw $0x55aa, %%bx; "
+			"movb $0x41, %%ah; "
+			"call _interrupts_bios; "
+			"jc 1f; "
+			"cmpw $0xaa55, %%bx; "
+			"jne 1f; "
+			"testb $0x1, %%cl; "
+			"jz 1f; "
+			"0: "
+			"xorl %%eax, %%eax; "
+			"1: "
+			"addl $0xc, %%esp; "
+			: "=a"(ret)
+			: "d"(disk->dn)
+			: "ebx", "ecx", "memory", "cc");
 
 	return ret;
 }
@@ -116,54 +116,54 @@ static int diskbios_geometry(diskbios_t *disk)
 		ret = ((unsigned int)&disk->geo & 0xffff0000) >> 4;
 
 		__asm__ volatile(
-			/* Extended read disk parameters */
-			"pushl $0x13; "
-			"pushl %%eax; "
-			"pushl $0x0; "
-			"movb $0x48, %%ah; "
-			"call _interrupts_bios; "
-			"jc 0f; "
-			"xorl %%eax, %%eax; "
-			"0: "
-			"addl $0xc, %%esp; "
-		: "+a" (ret)
-		: "d" (disk->dn), "S" (&disk->geo)
-		: "memory", "cc");
+				/* Extended read disk parameters */
+				"pushl $0x13; "
+				"pushl %%eax; "
+				"pushl $0x0; "
+				"movb $0x48, %%ah; "
+				"call _interrupts_bios; "
+				"jc 0f; "
+				"xorl %%eax, %%eax; "
+				"0: "
+				"addl $0xc, %%esp; "
+				: "+a"(ret)
+				: "d"(disk->dn), "S"(&disk->geo)
+				: "memory", "cc");
 	}
 	else {
 		__asm__ volatile(
-			/* CHS read disk parameters */
-			"pushl $0x13; "
-			"pushl $0x0; "
-			"pushl $0x0; "
-			"xorw %%di, %%di; "
-			"movb $0x8, %%ah; "
-			"call _interrupts_bios; "
-			"jc 0f; "
-			/* Store cylinders */
-			"xorl %%eax, %%eax; "
-			"movb %%ch, %%al; "
-			"movb %%cl, %%ah; "
-			"andb $0xc0, %%ah; "
-			"rolb $0x2, %%ah; "
-			"incl %%eax; "
-			"movl %%eax, 4(%%esi); "
-			/* Store heads */
-			"xorl %%eax, %%eax; "
-			"movb %%dh, %%al; "
-			"incl %%eax; "
-			"movl %%eax, 8(%%esi); "
-			/* Store sectors */
-			"xorl %%eax, %%eax; "
-			"movb %%cl, %%al; "
-			"andb $0x3f, %%al; "
-			"movl %%eax, 12(%%esi); "
-			"xorl %%eax, %%eax; "
-			"0: "
-			"addl $0xc, %%esp; "
-		: "=a" (ret)
-		: "d" (disk->dn), "S" (&disk->geo)
-		: "ebx", "ecx", "edi", "memory", "cc");
+				/* CHS read disk parameters */
+				"pushl $0x13; "
+				"pushl $0x0; "
+				"pushl $0x0; "
+				"xorw %%di, %%di; "
+				"movb $0x8, %%ah; "
+				"call _interrupts_bios; "
+				"jc 0f; "
+				/* Store cylinders */
+				"xorl %%eax, %%eax; "
+				"movb %%ch, %%al; "
+				"movb %%cl, %%ah; "
+				"andb $0xc0, %%ah; "
+				"rolb $0x2, %%ah; "
+				"incl %%eax; "
+				"movl %%eax, 4(%%esi); "
+				/* Store heads */
+				"xorl %%eax, %%eax; "
+				"movb %%dh, %%al; "
+				"incl %%eax; "
+				"movl %%eax, 8(%%esi); "
+				/* Store sectors */
+				"xorl %%eax, %%eax; "
+				"movb %%cl, %%al; "
+				"andb $0x3f, %%al; "
+				"movl %%eax, 12(%%esi); "
+				"xorl %%eax, %%eax; "
+				"0: "
+				"addl $0xc, %%esp; "
+				: "=a"(ret)
+				: "d"(disk->dn), "S"(&disk->geo)
+				: "ebx", "ecx", "edi", "memory", "cc");
 	}
 
 	return ret;
@@ -195,41 +195,41 @@ static int diskbios_access(diskbios_t *disk, unsigned char mode, unsigned int c,
 		ret = ((unsigned int)&dap & 0xffff0000) >> 4;
 
 		__asm__ volatile(
-			/* Extended read/write sectors */
-			"pushl $0x13; "
-			"pushl %%eax; "
-			"pushl $0x0; "
-			"movw %%di, %%ax; "
-			"addb $0x40, %%ah; "
-			"call _interrupts_bios; "
-			"jc 0f; "
-			"xorl %%eax, %%eax; "
-			"0: "
-			"addl $0xc, %%esp; "
-		: "+a" (ret)
-		: "d" (disk->dn), "S" (&dap), "D" ((unsigned int)mode << 8)
-		: "memory", "cc");
+				/* Extended read/write sectors */
+				"pushl $0x13; "
+				"pushl %%eax; "
+				"pushl $0x0; "
+				"movw %%di, %%ax; "
+				"addb $0x40, %%ah; "
+				"call _interrupts_bios; "
+				"jc 0f; "
+				"xorl %%eax, %%eax; "
+				"0: "
+				"addl $0xc, %%esp; "
+				: "+a"(ret)
+				: "d"(disk->dn), "S"(&dap), "D"((unsigned int)mode << 8)
+				: "memory", "cc");
 	}
 	else {
 		ret = ((unsigned int)buff & 0xffff0000) >> 4;
 
 		__asm__ volatile(
-			/* CHS read/write sectors */
-			"pushl $0x13; "
-			"pushl $0x0; "
-			"pushl %%eax; "
-			"xchgb %%cl, %%ch; "
-			"rorb $0x2, %%cl; "
-			"orw %%si, %%cx; "
-			"movw %%di, %%ax; "
-			"call _interrupts_bios; "
-			"jc 0f; "
-			"xorl %%eax, %%eax; "
-			"0: "
-			"addl $0xc, %%esp; "
-		: "+a" (ret)
-		: "b" ((unsigned int)buff & 0xffff), "c" (c & 0xffff), "d" ((h & 0xff) << 8 | disk->dn), "S" (s & 0xff), "D" (((unsigned int)mode << 8) | n)
-		: "memory", "cc");
+				/* CHS read/write sectors */
+				"pushl $0x13; "
+				"pushl $0x0; "
+				"pushl %%eax; "
+				"xchgb %%cl, %%ch; "
+				"rorb $0x2, %%cl; "
+				"orw %%si, %%cx; "
+				"movw %%di, %%ax; "
+				"call _interrupts_bios; "
+				"jc 0f; "
+				"xorl %%eax, %%eax; "
+				"0: "
+				"addl $0xc, %%esp; "
+				: "+a"(ret)
+				: "b"((unsigned int)buff & 0xffff), "c"(c & 0xffff), "d"((h & 0xff) << 8 | disk->dn), "S"(s & 0xff), "D"(((unsigned int)mode << 8) | n)
+				: "memory", "cc");
 	}
 
 	return ret;
@@ -328,10 +328,10 @@ static ssize_t diskbios_write(unsigned int minor, addr_t offs, const void *buff,
 
 		/* Write compact track segment from cache to disk */
 		if ((diskbios_common.lwb != diskbios_common.lwe) &&
-			((disk->dn != diskbios_common.lwdn) || (c != diskbios_common.lwc) || (h != diskbios_common.lwh) || (p != diskbios_common.lwp) || (b + 1 < diskbios_common.lwb) || (b > diskbios_common.lwe))) {
+				((disk->dn != diskbios_common.lwdn) || (c != diskbios_common.lwc) || (h != diskbios_common.lwh) || (p != diskbios_common.lwp) || (b + 1 < diskbios_common.lwb) || (b > diskbios_common.lwe))) {
 			if (diskbios_access(disk, DISK_WRITE,
-					diskbios_common.lwc, diskbios_common.lwh, diskbios_common.lwp + diskbios_common.lwb + 1,
-					diskbios_common.lwe - diskbios_common.lwb, wcache + diskbios_common.lwb * SIZE_BLOCK)) {
+						diskbios_common.lwc, diskbios_common.lwh, diskbios_common.lwp + diskbios_common.lwb + 1,
+						diskbios_common.lwe - diskbios_common.lwb, wcache + diskbios_common.lwb * SIZE_BLOCK)) {
 				return -EIO;
 			}
 
@@ -378,8 +378,8 @@ static int diskbios_sync(unsigned int minor)
 
 	if ((diskbios_common.lwb != diskbios_common.lwe) && (disk->dn == diskbios_common.lwdn)) {
 		if (diskbios_access(disk, DISK_WRITE,
-				diskbios_common.lwc, diskbios_common.lwh, diskbios_common.lwp + diskbios_common.lwb + 1,
-				diskbios_common.lwe - diskbios_common.lwb, wcache + diskbios_common.lwb * SIZE_BLOCK) != 0) {
+					diskbios_common.lwc, diskbios_common.lwh, diskbios_common.lwp + diskbios_common.lwb + 1,
+					diskbios_common.lwe - diskbios_common.lwb, wcache + diskbios_common.lwb * SIZE_BLOCK) != 0) {
 			return -EIO;
 		}
 

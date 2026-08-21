@@ -48,8 +48,8 @@ static int partPrint(ptable_t *p)
 	unsigned int j = 0;
 
 	lib_printf(
-		"\n" CSI_BOLD PTABLE_HEADER_FORMAT CSI_RESET,
-		"#", "Name", "Start", "End", "Blocks", "Size", "Type");
+			"\n" CSI_BOLD PTABLE_HEADER_FORMAT CSI_RESET,
+			"#", "Name", "Start", "End", "Blocks", "Size", "Type");
 
 	while (i-- != 0) {
 		ptable_part_t *entry = &p->parts[i];
@@ -139,7 +139,7 @@ static int cmd_ptable(int argc, char *argv[])
 	}
 
 	if ((devs_control(major, minor, DEV_CONTROL_GETPROP_TOTALSZ, &ptable_common.memsz) != EOK) ||
-		(devs_control(major, minor, DEV_CONTROL_GETPROP_BLOCKSZ, &ptable_common.blksz) != EOK)) {
+			(devs_control(major, minor, DEV_CONTROL_GETPROP_BLOCKSZ, &ptable_common.blksz) != EOK)) {
 		lib_printf("\n%s: Unable to get %s device properties: %s\n", argv[0], argv[1]);
 		return CMD_EXIT_FAILURE;
 	}

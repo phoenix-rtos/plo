@@ -152,13 +152,13 @@
 
 #ifndef UART1_TX_PIN
 #define UART1_TX_PIN ad_24
-//#define UART1_TX_PIN disp_b1_02
-//#define UART1_TX_PIN disp_b2_08
+// #define UART1_TX_PIN disp_b1_02
+// #define UART1_TX_PIN disp_b2_08
 #endif
 #ifndef UART1_RX_PIN
 #define UART1_RX_PIN ad_25
-//#define UART1_RX_PIN disp_b1_03
-//#define UART1_RX_PIN disp_b2_09
+// #define UART1_RX_PIN disp_b1_03
+// #define UART1_RX_PIN disp_b2_09
 #endif
 #define UART1_RTS_PIN ad_27
 #define UART1_CTS_PIN ad_26
@@ -190,22 +190,22 @@
 
 #ifndef UART7_TX_PIN
 #define UART7_TX_PIN disp_b2_06
-//#define UART7_TX_PIN ad_00
+// #define UART7_TX_PIN ad_00
 #endif
 #ifndef UART7_RX_PIN
 #define UART7_RX_PIN disp_b2_07
-//#define UART7_RX_PIN ad_01
+// #define UART7_RX_PIN ad_01
 #endif
 #define UART7_RTS_PIN ad_02
 #define UART7_CTS_PIN ad_03
 
 #ifndef UART8_TX_PIN
 #define UART8_TX_PIN disp_b2_08
-//#define UART8_TX_PIN ad_02
+// #define UART8_TX_PIN ad_02
 #endif
 #ifndef UART8_RX_PIN
 #define UART8_RX_PIN disp_b2_09
-//#define UART8_RX_PIN ad_03
+// #define UART8_RX_PIN ad_03
 #endif
 #define UART8_RTS_PIN ad_05
 #define UART8_CTS_PIN ad_04
@@ -217,35 +217,35 @@
 
 #ifndef UART10_TX_PIN
 #define UART10_TX_PIN ad_15
-//#define UART10_TX_PIN ad_32
+// #define UART10_TX_PIN ad_32
 #endif
 #ifndef UART10_RX_PIN
 #define UART10_RX_PIN ad_16
-//#define UART10_RX_PIN ad_33
+// #define UART10_RX_PIN ad_33
 #endif
 #define UART10_RTS_PIN ad_35
 #define UART10_CTS_PIN ad_34
 
 #ifndef UART11_TX_PIN
 #define UART11_TX_PIN lpsr_08
-//#define UART11_TX_PIN lpsr_04
+// #define UART11_TX_PIN lpsr_04
 #endif
 #ifndef UART11_RX_PIN
 #define UART11_RX_PIN lpsr_09
-//#define UART11_RX_PIN lpsr_05
+// #define UART11_RX_PIN lpsr_05
 #endif
 #define UART11_RTS_PIN lpsr_11
 #define UART11_CTS_PIN lpsr_10
 
 #ifndef UART12_TX_PIN
-//#define UART12_TX_PIN lpsr_06
+// #define UART12_TX_PIN lpsr_06
 #define UART12_TX_PIN lpsr_00
-//#define UART12_TX_PIN lpsr_10
+// #define UART12_TX_PIN lpsr_10
 #endif
 #ifndef UART12_RX_PIN
-//#define UART12_RX_PIN lpsr_07
+// #define UART12_RX_PIN lpsr_07
 #define UART12_RX_PIN lpsr_01
-//#define UART12_RX_PIN lpsr_11
+// #define UART12_RX_PIN lpsr_11
 #endif
 #define UART12_RTS_PIN lpsr_04
 #define UART12_CTS_PIN lpsr_05

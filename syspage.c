@@ -530,7 +530,6 @@ syspage_prog_t *syspage_progAdd(const char *argv, u32 flags)
 }
 
 
-
 /* Set console */
 
 void syspage_consoleSet(unsigned int id)
@@ -576,7 +575,7 @@ void syspage_mapShow(void)
 	do {
 		syspage_uiAttr2str(map->attr, attr);
 		lib_printf("%d%-3s %-8s 0x%08x%4s 0x%08x%4s %s\n", map->id, "", map->name,
-			map->start, "", map->end, "", attr);
+				map->start, "", map->end, "", attr);
 		syspage_entriesShow(map);
 		map = map->next;
 	} while (map != syspage_common.syspage->maps);

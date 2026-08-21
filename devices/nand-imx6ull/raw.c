@@ -87,7 +87,7 @@ static ssize_t raw_write(unsigned int minor, addr_t offs, const void *buff, size
 	rawPagesz = nand->cfg->writesz + nand->cfg->metasz;
 
 	if (((len != 0u) && (buff == NULL)) || (offs >= rawsz) ||
-		((rawsz % rawPagesz) != 0u) || ((offs % rawPagesz) != 0u)) {
+			((rawsz % rawPagesz) != 0u) || ((offs % rawPagesz) != 0u)) {
 		return -EINVAL;
 	}
 

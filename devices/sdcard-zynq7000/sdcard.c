@@ -28,18 +28,18 @@
 
 
 #define SDHOST_ERROR_REASONS ( \
-	SDHOST_INTR_CMD_ERRORS | \
-	SDHOST_INTR_DAT_ERRORS | \
-	SDHOST_INTR_OVERCURRENT_ERROR | \
-	SDHOST_INTR_AUTO_CMD12_ERROR | \
-	SDHOST_INTR_ADMA_ERROR | \
-	SDHOST_INTR_DMA_ERROR)
+		SDHOST_INTR_CMD_ERRORS | \
+		SDHOST_INTR_DAT_ERRORS | \
+		SDHOST_INTR_OVERCURRENT_ERROR | \
+		SDHOST_INTR_AUTO_CMD12_ERROR | \
+		SDHOST_INTR_ADMA_ERROR | \
+		SDHOST_INTR_DMA_ERROR)
 
 #define SDHOST_STATUS_MASK ( \
-	SDHOST_INTR_CMD_STATUS | \
-	SDHOST_INTR_CARD_IN | \
-	SDHOST_INTR_CARD_OUT | \
-	SDHOST_ERROR_REASONS)
+		SDHOST_INTR_CMD_STATUS | \
+		SDHOST_INTR_CARD_IN | \
+		SDHOST_INTR_CARD_OUT | \
+		SDHOST_ERROR_REASONS)
 
 /* configuration values */
 #define THREAD_STACK_SIZE 1024
@@ -228,9 +228,9 @@ static int _sdio_cmdSend(sdcard_hostData_t *host, u8 cmd, u32 arg, u32 *res, u16
 			}
 
 			*(host->base + SDHOST_REG_TRANSFER_BLOCK) =
-				((u32)blockCount << 16) |
-				TRANSFER_BLOCK_SDMA_BOUNDARY_4K |
-				blockLength;
+					((u32)blockCount << 16) |
+					TRANSFER_BLOCK_SDMA_BOUNDARY_4K |
+					blockLength;
 			*(host->base + SDHOST_REG_SDMA_ADDRESS) = host->dmaBufferPhys;
 		}
 
@@ -654,8 +654,8 @@ int sdcard_initHost(unsigned int slot, char *dataBuffer)
 
 	if (host->sdioInitialized == 1) {
 		return (initializedHosts < PLATFORM_SDIO_N_HOSTS) ?
-			(PLATFORM_SDIO_N_HOSTS - initializedHosts) :
-			0;
+				(PLATFORM_SDIO_N_HOSTS - initializedHosts) :
+				0;
 	}
 
 	/* Perform platform-specific configuration */
@@ -690,8 +690,8 @@ int sdcard_initHost(unsigned int slot, char *dataBuffer)
 	host->sdioInitialized = 1;
 	initializedHosts++;
 	return (initializedHosts < PLATFORM_SDIO_N_HOSTS) ?
-		(PLATFORM_SDIO_N_HOSTS - initializedHosts) :
-		0;
+			(PLATFORM_SDIO_N_HOSTS - initializedHosts) :
+			0;
 }
 
 
@@ -871,8 +871,8 @@ int sdcard_eraseBlocks(unsigned int slot, u32 blockOffset, u32 nBlocks)
 	}
 
 	u32 erasePerIteration = (host->card.eraseSizeBlocks > ERASE_N_BLOCKS) ?
-		host->card.eraseSizeBlocks :
-		ERASE_N_BLOCKS;
+			host->card.eraseSizeBlocks :
+			ERASE_N_BLOCKS;
 	while (nBlocks > 0) {
 		if (nBlocks < erasePerIteration) {
 			erasePerIteration = nBlocks;

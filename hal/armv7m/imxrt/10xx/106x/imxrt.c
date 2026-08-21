@@ -297,7 +297,6 @@ __attribute__((section(".noxip"))) int _imxrt_setDevClock(int dev, unsigned int 
 }
 
 
-
 static u32 _imxrt_ccmGetPeriphClkFreq(void)
 {
 	u32 freq;
@@ -719,7 +718,7 @@ u32 _imxrt_ccmGetPllFreq(int pll)
 			freq = _imxrt_ccmGetOscFreq();
 
 			/* PLL output frequency = Fref * (DIV_SELECT + NUM/DENOM). */
-			tmp = ((u64)freq * (u64)*(imxrt_common.ccm_analog + ccm_analog_pll_sys_num)) / (u64)*(imxrt_common.ccm_analog + ccm_analog_pll_sys_denom);
+			tmp = ((u64)freq * (u64) * (imxrt_common.ccm_analog + ccm_analog_pll_sys_num)) / (u64) * (imxrt_common.ccm_analog + ccm_analog_pll_sys_denom);
 
 			if ((*(imxrt_common.ccm_analog + ccm_analog_pll_sys) & 1) != 0) {
 				freq *= 22;
@@ -739,7 +738,7 @@ u32 _imxrt_ccmGetPllFreq(int pll)
 			freq = _imxrt_ccmGetOscFreq();
 
 			divSel = *(imxrt_common.ccm_analog + ccm_analog_pll_audio) & 0x7f;
-			tmp = ((u64)freq * (u64)*(imxrt_common.ccm_analog + ccm_analog_pll_audio_num)) / (u64)*(imxrt_common.ccm_analog + ccm_analog_pll_audio_denom);
+			tmp = ((u64)freq * (u64) * (imxrt_common.ccm_analog + ccm_analog_pll_audio_num)) / (u64) * (imxrt_common.ccm_analog + ccm_analog_pll_audio_denom);
 			freq = freq * divSel + (u32)tmp;
 
 			switch ((*(imxrt_common.ccm_analog + ccm_analog_pll_audio) >> 19) & 0x3) {
@@ -769,7 +768,7 @@ u32 _imxrt_ccmGetPllFreq(int pll)
 
 			divSel = *(imxrt_common.ccm_analog + ccm_analog_pll_video) & 0x7F;
 
-			tmp = ((u64)freq * (u64)*(imxrt_common.ccm_analog + ccm_analog_pll_video_num)) / (u64)*(imxrt_common.ccm_analog + ccm_analog_pll_video_denom);
+			tmp = ((u64)freq * (u64) * (imxrt_common.ccm_analog + ccm_analog_pll_video_num)) / (u64) * (imxrt_common.ccm_analog + ccm_analog_pll_video_denom);
 
 			freq = freq * divSel + (u32)tmp;
 

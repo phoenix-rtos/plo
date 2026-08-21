@@ -50,7 +50,18 @@ struct {
 } uart_common;
 
 
-enum { veridr = 0, paramr, globalr, pincfgr, baudr, statr, ctrlr, datar, matchr, modirr, fifor, waterr };
+enum { veridr = 0,
+	paramr,
+	globalr,
+	pincfgr,
+	baudr,
+	statr,
+	ctrlr,
+	datar,
+	matchr,
+	modirr,
+	fifor,
+	waterr };
 
 
 static const u32 fifoSzLut[] = { 1, 4, 8, 16, 32, 64, 128, 256 };

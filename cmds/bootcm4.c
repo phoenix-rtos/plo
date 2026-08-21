@@ -39,11 +39,11 @@ static void cmd_bootcm4Info(void)
 static void print_usage(const char *name)
 {
 	lib_printf(
-		"Usage: %s <options> [<device> <image>]\n"
-		"\t-b  boot CM4 core\n"
-		"\t-l  load binary image using phfs <device> and <image>\n"
-		"\t-o  optional offset to vectors table (default=0)\n",
-		name);
+			"Usage: %s <options> [<device> <image>]\n"
+			"\t-b  boot CM4 core\n"
+			"\t-l  load binary image using phfs <device> and <image>\n"
+			"\t-o  optional offset to vectors table (default=0)\n",
+			name);
 }
 
 

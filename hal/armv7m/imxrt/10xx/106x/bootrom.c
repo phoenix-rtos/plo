@@ -21,7 +21,7 @@ static const struct {
 	const u32 version;
 	const char *copyright;
 	void (*runBootloader)(void *arg);
-} * *volatile bootloaderTree;
+} **volatile bootloaderTree;
 
 
 int bootrom_init(void)

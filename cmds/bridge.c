@@ -93,15 +93,15 @@ static void cmd_bridgeInfo(void)
 static void print_usage(const char *name)
 {
 	lib_printf(
-		"Usage: %s <options>\n"
-		"\tConnects two serial devices (A)TX/RX <--> RX/TX(B)\n"
-		"\t-a <major:minor>  device A is required (L prefix enables A dump)\n"
-		"\t-b <major:minor>  device B is required (L prefix enables B dump)\n"
-		"\t-A <baud>         optional baud speed of device A\n"
-		"\t-B <baud>         optional baud speed of device B\n"
-		"\t-c <major:minor>  use device C as monitor device\n"
-		"\t-C                use console as default device '-c'\n",
-		name);
+			"Usage: %s <options>\n"
+			"\tConnects two serial devices (A)TX/RX <--> RX/TX(B)\n"
+			"\t-a <major:minor>  device A is required (L prefix enables A dump)\n"
+			"\t-b <major:minor>  device B is required (L prefix enables B dump)\n"
+			"\t-A <baud>         optional baud speed of device A\n"
+			"\t-B <baud>         optional baud speed of device B\n"
+			"\t-c <major:minor>  use device C as monitor device\n"
+			"\t-C                use console as default device '-c'\n",
+			name);
 }
 
 
@@ -192,7 +192,7 @@ static int cmd_bridge(int argc, char *argv[])
 	}
 
 	if ((validatePair(&deva) < 0) || (validatePair(&devb) < 0) ||
-		((devc.major >= 0) && (validatePair(&devc) < 0))) {
+			((devc.major >= 0) && (validatePair(&devc) < 0))) {
 
 		log_error("%s: Invalid device pair need to be UART, USB or PIPE\n", argv[0]);
 		print_usage(argv[0]);
@@ -209,7 +209,7 @@ static int cmd_bridge(int argc, char *argv[])
 
 	if (con != 0) {
 		lib_printf("Bridged devices: A (%d:%d @ %d) <---> (%d:%d @ %d) B\n",
-			deva.major, deva.minor, spda, devb.major, devb.minor, spdb);
+				deva.major, deva.minor, spda, devb.major, devb.minor, spdb);
 		lib_printf("Press '!' to terminate connection\n");
 	}
 

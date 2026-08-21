@@ -41,25 +41,25 @@
 
 static inline void hal_cpuDataMemoryBarrier(void)
 {
-	__asm__ volatile ("dmb");
+	__asm__ volatile("dmb");
 }
 
 
 static inline void hal_cpuDataSyncBarrier(void)
 {
-	__asm__ volatile ("dsb");
+	__asm__ volatile("dsb");
 }
 
 
 static inline void hal_cpuInstrBarrier(void)
 {
-	__asm__ volatile ("isb");
+	__asm__ volatile("isb");
 }
 
 
 static inline void hal_cpuHalt(void)
 {
-	__asm__ volatile ("wfi");
+	__asm__ volatile("wfi");
 }
 
 #endif

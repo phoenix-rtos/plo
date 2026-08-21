@@ -23,18 +23,51 @@
 
 enum {
 	/* Interrupt interface registers */
-	cicr = 0x40, cpmr, cbpr, ciar, ceoir, crpr, chpir, cabpr,
+	cicr = 0x40,
+	cpmr,
+	cbpr,
+	ciar,
+	ceoir,
+	crpr,
+	chpir,
+	cabpr,
 	/* Distributor registers */
-	ddcr = 0x400, dictr, diidr, disr0 = 0x420, /* 2 registers */	diser0 = 0x440, /* 2 registers */ dicer0 = 0x460, /* 2 registers */
-	dispr0 = 0x480, /* 2 registers */ dicpr0 = 0x4a0, /* 2 registers */ dabr0 = 0x4c0, /* 2 registers */ dipr0 = 0x500, /* 24 registers */
-	diptr0 = 0x600, /* 24 registers */ dicfr0 = 0x700, /* 6 registers */ ppi_st = 0x740, spi_st0, spi_st1, dsgir = 0x7c0, pidr4 = 0x7f4,
-	pidr5, pidr6, pidr7, pidr0, pidr1, pidr2, pidr3, cidr0, cidr1, cidr2, cidr3
+	ddcr = 0x400,
+	dictr,
+	diidr,
+	disr0 = 0x420,
+	/* 2 registers */ diser0 = 0x440,
+	/* 2 registers */ dicer0 = 0x460, /* 2 registers */
+	dispr0 = 0x480,
+	/* 2 registers */ dicpr0 = 0x4a0,
+	/* 2 registers */ dabr0 = 0x4c0,
+	/* 2 registers */ dipr0 = 0x500, /* 24 registers */
+	diptr0 = 0x600,
+	/* 24 registers */ dicfr0 = 0x700,
+	/* 6 registers */ ppi_st = 0x740,
+	spi_st0,
+	spi_st1,
+	dsgir = 0x7c0,
+	pidr4 = 0x7f4,
+	pidr5,
+	pidr6,
+	pidr7,
+	pidr0,
+	pidr1,
+	pidr2,
+	pidr3,
+	cidr0,
+	cidr1,
+	cidr2,
+	cidr3
 };
 
 
 /* Type of interrupt's configuration */
 enum {
-	reserved = 0, high_lvl = 1, rising_edge = 3
+	reserved = 0,
+	high_lvl = 1,
+	rising_edge = 3
 };
 
 
@@ -51,15 +84,14 @@ struct {
 
 
 /* Required configuration for SPI (Shared Peripheral Interrupts IRQID[32:95]) */
-static const u8 spiConf[] = {/* IRQID: 32-39 */ rising_edge, rising_edge, high_lvl, high_lvl, reserved, high_lvl, high_lvl, high_lvl,
-                             /* IRQID: 40-47 */ high_lvl, rising_edge, high_lvl, high_lvl, high_lvl, high_lvl, high_lvl, high_lvl,
-                             /* IRQID: 48-55 */ high_lvl, high_lvl, high_lvl, high_lvl, high_lvl, high_lvl, high_lvl, rising_edge,
-                             /* IRQID: 56-63 */ high_lvl, high_lvl, high_lvl, high_lvl, high_lvl, rising_edge, rising_edge, rising_edge,
-                             /* IRQID: 64-71 */ rising_edge, rising_edge, rising_edge, rising_edge, rising_edge, high_lvl, high_lvl, high_lvl,
-                             /* IRQID: 72-79 */ high_lvl, high_lvl, high_lvl, high_lvl, high_lvl, high_lvl, rising_edge, high_lvl,
-                             /* IRQID: 80-87 */ high_lvl, high_lvl, high_lvl, high_lvl, high_lvl, high_lvl, high_lvl, high_lvl,
-                             /* IRQID: 88-95 */ high_lvl, high_lvl, high_lvl, high_lvl, rising_edge, reserved, reserved, reserved };
-
+static const u8 spiConf[] = { /* IRQID: 32-39 */ rising_edge, rising_edge, high_lvl, high_lvl, reserved, high_lvl, high_lvl, high_lvl,
+	/* IRQID: 40-47 */ high_lvl, rising_edge, high_lvl, high_lvl, high_lvl, high_lvl, high_lvl, high_lvl,
+	/* IRQID: 48-55 */ high_lvl, high_lvl, high_lvl, high_lvl, high_lvl, high_lvl, high_lvl, rising_edge,
+	/* IRQID: 56-63 */ high_lvl, high_lvl, high_lvl, high_lvl, high_lvl, rising_edge, rising_edge, rising_edge,
+	/* IRQID: 64-71 */ rising_edge, rising_edge, rising_edge, rising_edge, rising_edge, high_lvl, high_lvl, high_lvl,
+	/* IRQID: 72-79 */ high_lvl, high_lvl, high_lvl, high_lvl, high_lvl, high_lvl, rising_edge, high_lvl,
+	/* IRQID: 80-87 */ high_lvl, high_lvl, high_lvl, high_lvl, high_lvl, high_lvl, high_lvl, high_lvl,
+	/* IRQID: 88-95 */ high_lvl, high_lvl, high_lvl, high_lvl, rising_edge, reserved, reserved, reserved };
 
 
 void hal_interruptsEnable(unsigned int irqn)

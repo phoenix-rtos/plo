@@ -166,7 +166,7 @@ int cmd_ddrBitCrossTalk(addr_t ddrAddr)
 }
 
 /* TODO: Don't hardcode BANK_COUNT, COLUMN_COUNT, ROW_COUNT and others.
-*        They should be defined separately for each memory. */
+ *        They should be defined separately for each memory. */
 int cmd_ddrBitChargeLeakage(addr_t ddrAddr)
 {
 	int bank, row, column, i;

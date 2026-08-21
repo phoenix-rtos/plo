@@ -473,7 +473,7 @@ static int _mcxn94x_sysconGetRegs(int dev, volatile u32 **selr, volatile u32 **d
 			*divr = n94x_common.syscon + syscon_sai1clkdiv;
 			break;
 
-		/* enet TODO */
+			/* enet TODO */
 
 		case pctl_micfil:
 			*selr = n94x_common.syscon + syscon_micfilfclksel;
@@ -568,7 +568,7 @@ u64 _mcxn94x_sysconGray2Bin(u64 gray)
 	hal_cpuDataMemoryBarrier();
 
 	ret = *(n94x_common.syscon + syscon_binarycodelsb);
-	ret |= ((u64)*(n94x_common.syscon + syscon_binarycodemsb)) << 32;
+	ret |= ((u64) * (n94x_common.syscon + syscon_binarycodemsb)) << 32;
 
 	return ret;
 }

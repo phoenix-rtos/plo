@@ -26,14 +26,14 @@ static void cmd_memInfo(void)
 static void cmd_memUsage(void)
 {
 	lib_printf(
-		"Usage: mem [options].. address\n"
-		"\t-F        Disable validation of memory (map) regions\n"
-		"\t-a align  Memory alignment (default=%u)\n"
-		"\t-s size   Size of write/read (1,2,4,8)\n"
-		"\t-c count  Number of repetitions with address step of (size)\n"
-		"\t-w value  Write (value) to memory address\n"
-		"\t-r        Read memory from address\n",
-		(unsigned int)sizeof(addr_t));
+			"Usage: mem [options].. address\n"
+			"\t-F        Disable validation of memory (map) regions\n"
+			"\t-a align  Memory alignment (default=%u)\n"
+			"\t-s size   Size of write/read (1,2,4,8)\n"
+			"\t-c count  Number of repetitions with address step of (size)\n"
+			"\t-w value  Write (value) to memory address\n"
+			"\t-r        Read memory from address\n",
+			(unsigned int)sizeof(addr_t));
 }
 
 

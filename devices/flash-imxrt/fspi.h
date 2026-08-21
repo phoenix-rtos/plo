@@ -23,7 +23,7 @@ static inline int isXIP(void *addr)
 {
 	u32 pc;
 	__asm__ volatile("mov %0, pc"
-					 : "=r"(pc));
+			: "=r"(pc));
 	return pc >= (u32)addr && pc < (u32)addr + 0x10000000;
 }
 

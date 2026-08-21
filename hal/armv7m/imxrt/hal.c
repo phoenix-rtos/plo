@@ -215,8 +215,8 @@ int hal_cpuJump(void)
 
 	__asm__ volatile("mov r9, %1; \
 		 blx %0"
-		:
-		: "r"(hal_common.entry), "r"((addr_t)hal_common.hs));
+			:
+			: "r"(hal_common.entry), "r"((addr_t)hal_common.hs));
 
 	return 0;
 }

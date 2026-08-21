@@ -186,11 +186,11 @@ int hal_cpuJump(void)
 	hal_interruptsDisableAll();
 
 	__asm__ volatile(
-		"jmp %0;"
-		"mov %1, %%g2;"
-		:
-		: "r"(hal_common.entry), "r"(hal_common.hs)
-		:);
+			"jmp %0;"
+			"mov %1, %%g2;"
+			:
+			: "r"(hal_common.entry), "r"(hal_common.hs)
+			:);
 
 	return 0;
 }

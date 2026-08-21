@@ -86,13 +86,13 @@ int interrupts_ack(unsigned int n)
 
 void hal_interruptsDisableAll(void)
 {
-	__asm__ volatile("cli":);
+	__asm__ volatile("cli" :);
 }
 
 
 void hal_interruptsEnableAll(void)
 {
-	__asm__ volatile("sti":);
+	__asm__ volatile("sti" :);
 }
 
 

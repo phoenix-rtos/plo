@@ -28,21 +28,19 @@ static inline void hal_memcpy(void *to, const void *from, unsigned int n)
 	rn = n % 4;
 	n /= 4;
 
-	__asm__ volatile
-	(" \
+	__asm__ volatile(" \
 		cld; \
 		rep; movsl"
-	: "+S" (from), "+D" (to), "+c" (n)
-	:
-	: "memory");
+			: "+S"(from), "+D"(to), "+c"(n)
+			:
+			: "memory");
 
 	if (!__builtin_constant_p(rn) || rn)
-		__asm__ volatile
-		(
-			"rep; movsb"
-		: "+S" (from), "+D" (to), "+c" (rn)
-		:
-		: "memory");
+		__asm__ volatile(
+				"rep; movsb"
+				: "+S"(from), "+D"(to), "+c"(rn)
+				:
+				: "memory");
 }
 
 
@@ -57,21 +55,19 @@ static inline void hal_memset(void *where, u8 v, unsigned int n)
 	vvvv = v | (v << 8);
 	vvvv |= vvvv << 16;
 
-	__asm__ volatile
-	(" \
+	__asm__ volatile(" \
 		cld; \
 		rep; stosl"
-	: "+D" (where), "+c" (n)
-	: "a" (vvvv)
-	: "memory");
+			: "+D"(where), "+c"(n)
+			: "a"(vvvv)
+			: "memory");
 
 	if (!__builtin_constant_p(rn) || rn)
-		__asm__ volatile
-		(
-			"rep; stosb"
-		: "+D" (where), "+c" (rn)
-		: "a" (vvvv)
-		: "memory");
+		__asm__ volatile(
+				"rep; stosb"
+				: "+D"(where), "+c"(rn)
+				: "a"(vvvv)
+				: "memory");
 }
 
 
@@ -85,21 +81,19 @@ static inline void hal_memsetw(void *where, u16 v, unsigned int n)
 
 	vv = v | (v << 16);
 
-	__asm__ volatile
-	(" \
+	__asm__ volatile(" \
 		cld; \
 		rep; stosl"
-	: "+D" (where), "+c" (n)
-	: "a" (vv)
-	: "memory");
+			: "+D"(where), "+c"(n)
+			: "a"(vv)
+			: "memory");
 
 	if (!__builtin_constant_p(rn) || rn)
-		__asm__ volatile
-		(
-			"rep; stosw"
-		: "+D" (where), "+c" (rn)
-		: "a" (vv)
-		: "memory");
+		__asm__ volatile(
+				"rep; stosw"
+				: "+D"(where), "+c"(rn)
+				: "a"(vv)
+				: "memory");
 }
 
 
@@ -107,7 +101,8 @@ static inline unsigned int hal_strlen(const char *s)
 {
 	unsigned int k;
 
-	for (k = 0; *s; s++, k++);
+	for (k = 0; *s; s++, k++)
+		;
 	return k;
 }
 
@@ -156,7 +151,7 @@ static inline char *hal_strcpy(char *dest, const char *src)
 
 	do {
 		dest[i] = src[i];
-	} while(src[i++] != '\0');
+	} while (src[i++] != '\0');
 
 	return dest;
 }

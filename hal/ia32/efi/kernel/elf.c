@@ -18,18 +18,18 @@
 #include "errno.h"
 #include "elf.h"
 
-#define ELFCLASS_VALUE 1	/* ELFCLASS32 */
+#define ELFCLASS_VALUE 1 /* ELFCLASS32 */
 
 #if __BYTE_ORDER__ == __ORDER_LITTLE_ENDIAN__
-#define ELFDATA_VALUE 1		/* ELFDATA2LSB */
+#define ELFDATA_VALUE 1 /* ELFDATA2LSB */
 #elif __BYTE_ORDER__ == __ORDER_BIG_ENDIAN__
-#define ELFDATA_VALUE 2		/* ELFDATA2MSB */
+#define ELFDATA_VALUE 2 /* ELFDATA2MSB */
 #else
 #error "No byte order defined"
 #endif
 
-#define ELFVER_VALUE 1		/* EV_CURRENT */
-#define EHDRVER_VALUE 1		/* EV_CURRENT (EV_SYSV) */
+#define ELFVER_VALUE  1 /* EV_CURRENT */
+#define EHDRVER_VALUE 1 /* EV_CURRENT (EV_SYSV) */
 
 /* NOTE: Don't use globals here, as this might be called from boot code
  *	 running w/o paging enabled or with 1:1 mapping */

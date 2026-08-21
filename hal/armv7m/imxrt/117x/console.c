@@ -170,12 +170,12 @@ void console_init(void)
 
 	/* tx */
 	_imxrt_setIOmux(CONSOLE_MUX(UART_CONSOLE_PLO, TX_PIN), 0,
-		console_muxVal((UART_CONSOLE_PLO) - 1, CONSOLE_MUX(UART_CONSOLE_PLO, TX_PIN)));
+			console_muxVal((UART_CONSOLE_PLO)-1, CONSOLE_MUX(UART_CONSOLE_PLO, TX_PIN)));
 	_imxrt_setIOpad(CONSOLE_PAD(UART_CONSOLE_PLO, TX_PIN), 0, 0, 0, 0, 0, 0);
 
 	/* rx */
 	_imxrt_setIOmux(CONSOLE_MUX(UART_CONSOLE_PLO, RX_PIN), 0,
-		console_muxVal((UART_CONSOLE_PLO) - 1, CONSOLE_MUX(UART_CONSOLE_PLO, RX_PIN)));
+			console_muxVal((UART_CONSOLE_PLO)-1, CONSOLE_MUX(UART_CONSOLE_PLO, RX_PIN)));
 	_imxrt_setIOpad(CONSOLE_PAD(UART_CONSOLE_PLO, RX_PIN), 0, 0, 1, 1, 0, 0);
 
 #if (UART_CONSOLE_PLO == 1) || (UART_CONSOLE_PLO == 12)

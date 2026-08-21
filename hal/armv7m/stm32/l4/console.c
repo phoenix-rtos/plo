@@ -27,7 +27,17 @@ static struct {
 } halconsole_common;
 
 
-enum { cr1 = 0, cr2, cr3, brr, gtpr, rtor, rqr, isr, icr, rdr, tdr };
+enum { cr1 = 0,
+	cr2,
+	cr3,
+	brr,
+	gtpr,
+	rtor,
+	rqr,
+	isr,
+	icr,
+	rdr,
+	tdr };
 
 
 void hal_consoleSetHooks(ssize_t (*writeHook)(int, const void *, size_t))

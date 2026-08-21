@@ -12,6 +12,6 @@
 
 #include "cpu.h"
 
-#define HAL_ELF_MACHINE	3	/* EM_386: i386 */
+#define HAL_ELF_MACHINE 3 /* EM_386: i386 */
 
 #endif

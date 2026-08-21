@@ -37,30 +37,30 @@ int sdcarddrv_init(unsigned int minor)
 	int ret = sdcard_initHost(SDCARD_SLOT, sdcard_common.dataBuffer);
 	if (ret < 0) {
 		lib_printf(
-			"\ndev/sdcard: Error initializing SD host: %d (%d.%d)",
-			ret,
-			DEV_STORAGE,
-			minor);
+				"\ndev/sdcard: Error initializing SD host: %d (%d.%d)",
+				ret,
+				DEV_STORAGE,
+				minor);
 		return ret;
 	}
 
 	ret = sdcard_initCard(SDCARD_SLOT, 0);
 	if (ret < 0) {
 		lib_printf(
-			"\ndev/sdcard: Error initializing SD card: %d (%d.%d)",
-			ret,
-			DEV_STORAGE,
-			minor);
+				"\ndev/sdcard: Error initializing SD card: %d (%d.%d)",
+				ret,
+				DEV_STORAGE,
+				minor);
 		return ret;
 	}
 
 	sdcard_common.sizeBl = sdcard_getSizeBlocks(SDCARD_SLOT);
 	sdcard_common.initialized = 1;
 	lib_printf(
-		"\ndev/sdcard: Configured SD card, size %uMB (%d.%d)",
-		sdcard_common.sizeBl / 2048,
-		DEV_STORAGE,
-		minor);
+			"\ndev/sdcard: Configured SD card, size %uMB (%d.%d)",
+			sdcard_common.sizeBl / 2048,
+			DEV_STORAGE,
+			minor);
 
 	return 0;
 }
