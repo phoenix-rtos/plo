@@ -22,8 +22,6 @@
 #include <hal/armv7r/tda4vm/tda4vm.h>
 #include <hal/armv7r/tda4vm/tda4vm_pins.h>
 
-#include "flash_params.h"
-
 
 enum {
 	ospi_reg_config = (0x0 / 4),
@@ -605,13 +603,13 @@ static ssize_t flashdrv_erase(unsigned int minor, addr_t offs, size_t len, unsig
 		return -EINVAL;
 	}
 	else {
-		eraseSize = 1 << p->log_eraseSize;
+		eraseSize = 1 << p->log_largestEraseSize;
 		if ((offs & (eraseSize - 1)) != 0 || (len & (eraseSize - 1)) != 0) {
 			return -EINVAL;
 		}
 
 		op.addrBytes = (p->addrMode == ADDRMODE_3B) ? 3 : 4;
-		op.opcode = p->eraseOpcode;
+		op.opcode = p->largestEraseOpcode;
 		op.dummyCycles = 0;
 		op.readBytes = 0;
 		op.writeBytes = 0;
@@ -619,7 +617,7 @@ static ssize_t flashdrv_erase(unsigned int minor, addr_t offs, size_t len, unsig
 			flashdrv_writeEnable(minor, 1);
 			op.addr = offs;
 			flashdrv_performSimpleOp(minor, &op, NULL);
-			if (flashdrv_waitForWriteCompletion(minor, p->eraseBlockTimeout) < 0) {
+			if (flashdrv_waitForWriteCompletion(minor, p->largestEraseBlockTimeout) < 0) {
 				return -ETIME;
 			}
 		}
@@ -744,7 +742,7 @@ static int flashdrv_init(unsigned int minor)
 		}
 	}
 
-	dev_size_config = (fp->log_eraseSize << 16) | ((1 << fp->log_pageSize) << 4);
+	dev_size_config = (fp->log_largestEraseSize << 16) | ((1 << fp->log_pageSize) << 4);
 	if (fp->log_chipSize <= 31) {
 		flashParams[minor].size = 1 << fp->log_chipSize;
 	}

@@ -6,4 +6,4 @@
 # %LICENSE%
 #
 
-OBJS += $(addprefix $(PREFIX_O)devices/flash-tda4vm/, flashdrv.o flash_params.o)
+OBJS += $(addprefix $(PREFIX_O)devices/flash-tda4vm/, flashdrv.o)
