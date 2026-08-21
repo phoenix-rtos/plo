@@ -59,6 +59,39 @@
 #endif
 #endif
 
+#define PWR_CORE_VOS_HIGH (1 << 0) /* VOS high (enable overdrive mode) */
+#define PWR_CORE_SMPS     (1 << 1) /* activate SMPS step-down converter */
+#define PWR_CORE_LPDS08V  (1 << 2) /* use high-efficiency SMPS mode in Stop mode */
+
+#ifndef PWR_CORE_CONFIG
+#define PWR_CORE_CONFIG (PWR_CORE_SMPS | PWR_CORE_LPDS08V)
+#endif
+
+#ifndef RCC_DEFAULT_CPU_CLOCK
+#define RCC_DEFAULT_CPU_CLOCK (600U * 1000U * 1000U)
+#endif
+
+_Static_assert(
+		((PWR_CORE_CONFIG & PWR_CORE_VOS_HIGH) != 0) || (RCC_DEFAULT_CPU_CLOCK <= 600U * 1000U * 1000U),
+		"Requested CPU clock not possible without enabling PWR_CORE_VOS_HIGH");
+
+_Static_assert(
+		(RCC_DEFAULT_CPU_CLOCK == 600U * 1000U * 1000U) || (RCC_DEFAULT_CPU_CLOCK == 800U * 1000U * 1000U),
+		"Currently only 600 MHz and 800 MHz frequencies are supported");
+
+/* These definitions are not imposed by hardware - this is our convention */
+#define RCC_PLL_CPU 1U /* PLL used for CPU */
+#define RCC_PLL_NPU 2U /* PLL used for NPU */
+#define RCC_PLL_PER 3U /* PLL used for buses and peripherals incl. timers */
+#define RCC_PLL_AUX 4U /* PLL reserved for auxiliary uses (e.g. video/audio) */
+
+/* These definitions are imposed by hardware */
+#define RCC_ICLK_SYSA 1U  /* CPU */
+#define RCC_ICLK_SYSB 2U  /* AXI, AHB, APB, timers, AXISRAM1/2 */
+#define RCC_ICLK_SYSC 6U  /* NPU */
+#define RCC_ICLK_SYSD 11U /* AXISRAM3/4/5/6 */
+
+
 #define GPIOA_BASE ((void *)0x56020000)
 #define GPIOB_BASE ((void *)0x56020400)
 #define GPIOC_BASE ((void *)0x56020800)
@@ -189,6 +222,97 @@ unsigned int hal_getBootReason(void)
 /* RCC (Reset and Clock Controller) */
 
 
+/* Pre-baked PLL setups */
+static const pll_config_t rcc_pllBypass = {
+	.bypass = 1,
+};
+
+
+#if USE_HSE_CLOCK_SOURCE
+/* On NUCLEO board HSE is 48 MHz */
+
+static const pll_config_t rcc_pll800Mhz = {
+	.src = pll_src_hse_ck,
+	.pre_div = 1,
+	.mul = 50,
+	.mul_frac = 0,
+	.post_div1 = 3,
+	.post_div2 = 1,
+	.bypass = 0,
+};
+
+static const pll_config_t rcc_pll1200Mhz = {
+	.src = pll_src_hse_ck,
+	.pre_div = 1,
+	.mul = 50,
+	.mul_frac = 0,
+	.post_div1 = 2,
+	.post_div2 = 1,
+	.bypass = 0,
+};
+
+static const pll_config_t rcc_pll1600Mhz = {
+	.src = pll_src_hse_ck,
+	.pre_div = 3,
+	.mul = 100,
+	.mul_frac = 0,
+	.post_div1 = 1,
+	.post_div2 = 1,
+	.bypass = 0,
+};
+
+static const pll_config_t rcc_pll2000Mhz = {
+	.src = pll_src_hse_ck,
+	.pre_div = 3,
+	.mul = 125,
+	.mul_frac = 0,
+	.post_div1 = 1,
+	.post_div2 = 1,
+	.bypass = 0,
+};
+#else
+static const pll_config_t rcc_pll800Mhz = {
+	.src = pll_src_hsi_ck,
+	.pre_div = 1,
+	.mul = 25,
+	.mul_frac = 0,
+	.post_div1 = 2,
+	.post_div2 = 1,
+	.bypass = 0,
+};
+
+static const pll_config_t rcc_pll1200Mhz = {
+	.src = pll_src_hsi_ck,
+	.pre_div = 4,
+	.mul = 75,
+	.mul_frac = 0,
+	.post_div1 = 1,
+	.post_div2 = 1,
+	.bypass = 0,
+};
+
+static const pll_config_t rcc_pll1600Mhz = {
+	.src = pll_src_hsi_ck,
+	.pre_div = 1,
+	.mul = 25,
+	.mul_frac = 0,
+	.post_div1 = 1,
+	.post_div2 = 1,
+	.bypass = 0,
+};
+
+static const pll_config_t rcc_pll2000Mhz = {
+	.src = pll_src_hsi_ck,
+	.pre_div = 4,
+	.mul = 125,
+	.mul_frac = 0,
+	.post_div1 = 1,
+	.post_div2 = 1,
+	.bypass = 0,
+};
+#endif
+
+
 static int _stm32_configurePLL(unsigned int pll, const pll_config_t *config)
 {
 	volatile u32 *reg;
@@ -289,12 +413,54 @@ static int _stm32_configureICLK(unsigned int ic, unsigned int src_pll, unsigned 
 }
 
 
+int _stm32_rccSetCPUClock(u32 hz)
+{
+	static const u32 mhz600 = 600U * 1000U * 1000U;
+	static const u32 mhz800 = 800U * 1000U * 1000U;
+	u8 vRange;
+
+	if ((hz != mhz600) && (hz != mhz800)) {
+		return -1;
+	}
+
+	vRange = _stm32_pwrGetCPUVolt();
+	if ((hz == mhz800) && (vRange == 0)) {
+		return -1;
+	}
+
+	int ret = 0;
+	/* Bypass both PLLs in case they have been configured previously */
+	ret = (ret < 0) ? ret : _stm32_configurePLL(RCC_PLL_CPU, &rcc_pllBypass);
+	ret = (ret < 0) ? ret : _stm32_configurePLL(RCC_PLL_NPU, &rcc_pllBypass);
+	ret = (ret < 0) ? ret : _stm32_configureICLK(RCC_ICLK_SYSA, RCC_PLL_CPU, 2);
+	ret = (ret < 0) ? ret : _stm32_configureICLK(RCC_ICLK_SYSC, RCC_PLL_NPU, 2);
+	if (hz == mhz600) {
+		/* In VOS low, max SYSD_CLK == max SYSC_CLK, so we can clock SYSD_CLK from NPU PLL */
+		ret = (ret < 0) ? ret : _stm32_configureICLK(RCC_ICLK_SYSD, RCC_PLL_NPU, 2);
+		ret = (ret < 0) ? ret : _stm32_configurePLL(RCC_PLL_CPU, &rcc_pll1200Mhz);
+		ret = (ret < 0) ? ret : _stm32_configurePLL(RCC_PLL_NPU, &rcc_pll1600Mhz);
+	}
+	else {
+		/* In VOS high, max SYSD_CLK < max SYSC_CLK, so we need to clock SYSD_CLK from the slower CPU PLL */
+		ret = (ret < 0) ? ret : _stm32_configureICLK(RCC_ICLK_SYSD, RCC_PLL_CPU, 2);
+		ret = (ret < 0) ? ret : _stm32_configurePLL(RCC_PLL_CPU, &rcc_pll1600Mhz);
+		ret = (ret < 0) ? ret : _stm32_configurePLL(RCC_PLL_NPU, &rcc_pll2000Mhz);
+	}
+
+	if (ret >= 0) {
+		stm32_common.cpuclk = hz;
+	}
+
+	return ret;
+}
+
+
 /* Clock system on STM32N6:
  *           ┌─┐        ┌─┐
  *      HSI ─┤M├─ PLL1 ─┤ ├─ IC1  → SYSA_CLK (for CPU)
- *      MSI ─┤U├─ PLL2 ─┤M├─ IC2  → SYSB_CLK (for internal buses)
+ *      MSI ─┤U├─ PLL2 ─┤M├─ IC2  → SYSB_CLK (for internal buses and AXISRAM1/2)
  *      HSE ─┤X├─ PLL3 ─┤U├─ IC6  → SYSC_CLK (for NPU)
- * I2S_CKIN ─┤ ├─ PLL4 ─┤X├─ IC11 → SYSD_CLK (for AXISRAM)
+ * I2S_CKIN ─┤ ├─ PLL4 ─┤X├─ IC11 → SYSD_CLK (for AXISRAM3/4/5/6)
  *           └─┘        │ ├─ ICx  → other peripherals (ipclk)
  *                      └─┘
  * HSI and MSI are internal RC oscillators (64 MHz and 16 MHz).
@@ -304,108 +470,7 @@ static int _stm32_configureICLK(unsigned int ic, unsigned int src_pll, unsigned 
  */
 static void _stm32_configureClocks(void)
 {
-#if USE_HSE_CLOCK_SOURCE
-	/* On NUCLEO board HSE is 48 MHz */
-	static const pll_config_t plls[NUM_PLLS] = {
-		{
-			/* PLL1: (48 MHz * 50) / 2 => 1200 MHz */
-			.src = pll_src_hse_ck,
-			.pre_div = 1,
-			.mul = 50,
-			.mul_frac = 0,
-			.post_div1 = 2,
-			.post_div2 = 1,
-			.bypass = 0,
-		},
-		{
-			/* PLL2: (48 MHz / 3) * 100  => 1600 MHz */
-			.src = pll_src_hse_ck,
-			.pre_div = 3,
-			.mul = 100,
-			.mul_frac = 0,
-			.post_div1 = 1,
-			.post_div2 = 1,
-			.bypass = 0,
-		},
-		{
-			/* PLL3: 48 MHz * 25 => 1200 MHz */
-			.src = pll_src_hse_ck,
-			.pre_div = 1,
-			.mul = 25,
-			.mul_frac = 0,
-			.post_div1 = 1,
-			.post_div2 = 1,
-			.bypass = 0,
-		},
-		{
-			/* PLL4: (48 MHz * 50) / 3 => 800 MHz */
-			.src = pll_src_hse_ck,
-			.pre_div = 1,
-			.mul = 50,
-			.mul_frac = 0,
-			.post_div1 = 3,
-			.post_div2 = 1,
-			.bypass = 0,
-		},
-	};
-#else
-	static const pll_config_t plls[NUM_PLLS] = {
-		{
-			/* PLL1: (64 MHz / 4) * 75 => 1200 MHz */
-			.src = pll_src_hsi_ck,
-			.pre_div = 4,
-			.mul = 75,
-			.mul_frac = 0,
-			.post_div1 = 1,
-			.post_div2 = 1,
-			.bypass = 0,
-		},
-		{
-			/* PLL2: 64 MHz * 25  => 1600 MHz */
-			.src = pll_src_hsi_ck,
-			.pre_div = 1,
-			.mul = 25,
-			.mul_frac = 0,
-			.post_div1 = 1,
-			.post_div2 = 1,
-			.bypass = 0,
-		},
-		{
-			/* PLL3: (64 MHz / 4) * 75 => 1200 MHz */
-			.src = pll_src_hsi_ck,
-			.pre_div = 4,
-			.mul = 75,
-			.mul_frac = 0,
-			.post_div1 = 1,
-			.post_div2 = 1,
-			.bypass = 0,
-		},
-		{
-			/* PLL4: (64 MHz * 25) / 2 => 800 MHz */
-			.src = pll_src_hsi_ck,
-			.pre_div = 1,
-			.mul = 25,
-			.mul_frac = 0,
-			.post_div1 = 2,
-			.post_div2 = 1,
-			.bypass = 0,
-		},
-	};
-#endif
-
-	static const struct {
-		u8 iclk;
-		u8 pll;
-		u16 div;
-	} iclks[] = {
-		{ .iclk = 1, .pll = 1, .div = 2 },  /* 1200 / 2 => 600 MHz (CPU) */
-		{ .iclk = 2, .pll = 1, .div = 3 },  /* 1200 / 3 => 400 MHz (buses) */
-		{ .iclk = 3, .pll = 1, .div = 3 },  /* 1200 / 3 => 400 MHz (currently unused) */
-		{ .iclk = 6, .pll = 2, .div = 2 },  /* 1600 / 2 => 800 MHz (NPU) */
-		{ .iclk = 11, .pll = 1, .div = 3 }, /* 1200 / 3 => 400 MHz (AXISRAM) */
-	};
-
-	int i;
+	int ret;
 	u32 v;
 
 	*(stm32_common.rcc + rcc_ccr) = (1 << 4); /* Turn off HSE */
@@ -430,14 +495,16 @@ static void _stm32_configureClocks(void)
 	v |= (1 << 10); /* Allow CSS to bypass HSE */
 	*(stm32_common.rcc + rcc_hsecfgr) = v;
 
-	for (i = 0; i < NUM_PLLS; i++) {
-		_stm32_configurePLL(i + 1, &plls[i]);
+	ret = _stm32_rccSetCPUClock(RCC_DEFAULT_CPU_CLOCK);
+	if (ret < 0) {
+		/* Panic, we don't have console yet so we can't do anything else */
+		hal_cpuReboot();
 	}
 
-	for (i = 0; i < (sizeof(iclks) / sizeof(iclks[0])); i++) {
-		_stm32_configureICLK(iclks[i].iclk, iclks[i].pll, iclks[i].div);
-	}
-
+	_stm32_configurePLL(RCC_PLL_PER, &rcc_pll800Mhz);
+	_stm32_configurePLL(RCC_PLL_AUX, &rcc_pll1200Mhz);
+	_stm32_configureICLK(RCC_ICLK_SYSB, RCC_PLL_PER, 2); /* 800 MHz / 2 = 400 MHz => SYSB */
+	_stm32_configureICLK(3, RCC_PLL_PER, 2);             /* 800 MHz / 2 = 400 MHz => IC3 (currently unused) */
 	v = *(stm32_common.rcc + rcc_cfgr2);
 	/* Set all PPREx to 1, HPRE to 2, TIMPRE to 1 */
 	v &= ~((0x7 << 0) | (0x7 << 4) | (0x7 << 12) | (0x7 << 16) | (0x7 << 20) | (0x3 << 24));
@@ -449,12 +516,10 @@ static void _stm32_configureClocks(void)
 	v |= (3 << 16); /* Set ic1_ck -> sysa_ck */
 	*(stm32_common.rcc + rcc_cfgr1) = v;
 
-	stm32_common.cpuclk = 600 * 1000 * 1000;
-
 	/* Set HSE or HSI as source for per_ck.
 	 * NOTE: DO NOT set this to any clock that depends on a PLL.
 	 * Doing so will cause a hang in BootROM after reset.
-	 * TODO: investigate why this happens, it shouldn't be like this */
+	 * See errata ES0620, "Boot ROM execution failure after system reset due to wrong clocking of peripherals" */
 #if USE_HSE_CLOCK_SOURCE
 	_stm32_rccSetIPClk(ipclk_persel, ipclk_persel_hse_ck);
 	stm32_common.perclk = 48 * 1000 * 1000;
@@ -695,6 +760,12 @@ void _stm32_pwrSetCPUVolt(u8 range)
 	while ((*(stm32_common.pwr + pwr_voscr) & (1 << 1)) == 0) {
 		/* Wait for VOSRDY flag */
 	}
+}
+
+
+u8 _stm32_pwrGetCPUVolt(void)
+{
+	return *(stm32_common.pwr + pwr_voscr) & 1;
 }
 
 
@@ -1092,6 +1163,17 @@ void _stm32_init(void)
 
 	_stm32_initHalOnly();
 
+	/* Enable power module */
+	_stm32_rccSetDevClock(dev_pwr, 1);
+
+	/* Configure power supply as requested */
+	v = *(stm32_common.pwr + pwr_cr1);
+	v &= ~((1 << 2) | (1 << 5));
+	v |= ((PWR_CORE_CONFIG & PWR_CORE_SMPS) != 0) ? (1 << 2) : 0;
+	v |= ((PWR_CORE_CONFIG & PWR_CORE_LPDS08V) != 0) ? (1 << 5) : 0;
+	*(stm32_common.pwr + pwr_cr1) = v;
+	_stm32_pwrSetCPUVolt(((PWR_CORE_CONFIG & PWR_CORE_VOS_HIGH) != 0) ? 1 : 0);
+
 	/* Store reset flags and then clear them */
 	stm32_common.resetFlags = (*(stm32_common.rcc + rcc_rsr) >> 21);
 	*(stm32_common.rcc + rcc_rsr) = 1 << 16;
@@ -1117,9 +1199,6 @@ void _stm32_init(void)
 	/* Enable System configuration controller */
 	_stm32_rccSetDevClock(dev_syscfg, 1);
 	_stm32_rccSetDevClock(dev_vrefbuf, 1);
-
-	/* Enable power module */
-	_stm32_rccSetDevClock(dev_pwr, 1);
 
 	_stm32_rccSetDevClock(dev_per, 0);
 
