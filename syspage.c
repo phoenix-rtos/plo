@@ -70,6 +70,7 @@ void syspage_init(void)
 		partition->schedWindow = 0U;
 		partition->hal = NULL;
 		partition->id = 0U;
+		partition->flags = pFlagIntr | pFlagTime | pFlagPctl | pFlagPerf | pFlagAllMem;
 		hal_memset(partition->maps, 0xff, sizeof(partition->maps));
 		syspage_common.syspage->partitions = partition;
 	}
