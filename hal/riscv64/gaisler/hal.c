@@ -90,7 +90,7 @@ void hal_kernelEntryPoint(addr_t addr)
 }
 
 
-int hal_memoryAddMap(addr_t start, addr_t end, u32 attr, u32 mapId)
+int hal_getPartData(hal_syspage_part_t *part, const char *imaps, size_t imapSz, const char *dmaps, size_t dmapSz)
 {
 	return 0;
 }
