@@ -22,7 +22,7 @@
 
 static void cmd_partInfo(void)
 {
-	lib_printf("creates partition, usage: part <name> <accessmap1;accessmap2...> <schedwindow> <memlimit>");
+	lib_printf("creates partition, usage: part <name> <accessmap1;accessmap2...> <schedwindow> <memlimit> [-itcp]");
 }
 
 
@@ -55,9 +55,10 @@ static int cmd_part(int argc, char *argv[])
 	hal_syspage_part_t *hal;
 	syspage_part_t *part;
 	syspage_sched_t *config;
+	unsigned int flags = 0;
 
 	/* Parse command arguments */
-	if (argc != 5) {
+	if (argc < 5 || argc > 6) {
 		log_error("\n%s: Wrong argument count", argv[0]);
 		return CMD_EXIT_FAILURE;
 	}
@@ -128,6 +129,36 @@ static int cmd_part(int argc, char *argv[])
 		availableMem = (size_t)-1;
 	}
 
+	argvID++;
+
+	/* Flags */
+	if (argvID < argc) {
+		if (argv[argvID][0] != '-') {
+			log_error("\n%s: Invalid arguments", argv[0]);
+			return -EINVAL;
+		}
+		i = 1;
+		while (argv[argvID][i] != '\0') {
+			switch (argv[argvID][i++]) {
+				case 'i':
+					flags |= pFlagIntr;
+					break;
+				case 't':
+					flags |= pFlagTime;
+					break;
+				case 'c':
+					flags |= pFlagPctl;
+					break;
+				case 'p':
+					flags |= pFlagPerf;
+					break;
+				default:
+					log_error("\n%s: Invalid arguments", argv[0]);
+					return -EINVAL;
+			}
+		}
+	}
+
 	part = syspage_partAdd();
 	if (part == NULL) {
 		log_error("\nCannot allocate memory for %s", name);
@@ -138,6 +169,7 @@ static int cmd_part(int argc, char *argv[])
 	part->hal = hal;
 	part->schedWindow = schedWindow;
 	part->availableMem = availableMem;
+	part->flags = flags;
 	for (i = 0; i < accessSz; ++i) {
 		syspage_mapNameResolve(accessMap, &part->maps[i]);
 		accessMap += hal_strlen(accessMap) + 1U;
