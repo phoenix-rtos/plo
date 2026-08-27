@@ -14,7 +14,7 @@ CFLAGS := $(filter-out -mfloat-abi% , $(CFLAGS))
 CFLAGS += -mfloat-abi=soft
 
 PLO_COMMANDS ?= alias app blob call console copy devices dump echo erase go help kernel kernelimg \
-  map mem memcrypt otp phfs reboot script stop wait test-dev
+  map mem memcrypt otp part port phfs reboot sched script stop wait test-dev
 
 
 PLO_ALLDEVICES := pipe-rtt ram-storage rng-stm32 uart-stm32 flash-stm32xspi
