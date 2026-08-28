@@ -77,7 +77,7 @@ static void console_initClock(void)
 	ctl.dev = UART_PLL;
 	ctl.active = 1;
 	ctl.src = 0;
-	ctl.div0 = 20;
+	ctl.div0 = 30;
 	ctl.div1 = 0;
 
 	_zynqmp_setCtlClock(&ctl);

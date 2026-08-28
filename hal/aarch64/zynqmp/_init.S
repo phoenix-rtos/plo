@@ -19,7 +19,7 @@
 #include "../cpu.h"
 
 /* If set to 1, PLO will run in EL1 secure mode, otherwise in non-secure mode */
-#define EL1_SECURE 0
+#define EL1_SECURE 1
 
 .section .init, "ax"
 

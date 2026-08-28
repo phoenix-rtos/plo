@@ -209,7 +209,7 @@ static void uart_initCtrlClock(void)
 	ctl.pll.clkact0 = 0x1;
 	ctl.pll.clkact1 = 0x1;
 	ctl.pll.srcsel = 0;
-	ctl.pll.divisor0 = 0x14;
+	ctl.pll.divisor0 = 0x1e;
 
 	_zynq_setCtlClock(&ctl);
 }
@@ -252,7 +252,7 @@ static void uart_initCtrlClock(void)
 	ctl.dev = ctl_clock_dev_lpd_uart0;
 	ctl.active = 1;
 	ctl.src = 0;
-	ctl.div0 = 20;
+	ctl.div0 = 30;
 	ctl.div1 = 0;
 	_zynqmp_setCtlClock(&ctl);
 

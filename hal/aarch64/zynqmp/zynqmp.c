@@ -698,12 +698,12 @@ void _zynqmp_pllInit(void)
 	 */
 	sys_pll.src_pll = ctl_clock_sys_pll_src_ps;
 	sys_pll.src_bypass = ctl_clock_sys_pll_src_ps;
-	sys_pll.frac = 0;
+	sys_pll.frac = 0x4de7;
 	sys_pll.use_bypass = 0;
 
-	/* Set up PLL for RPU - (33.33 * 72) / 2 = 1200 MHz */
+	/* Set up PLL for RPU - (33.33 * (69+19943/65536)) / 2 = 1155 MHz */
 	sys_pll.dev = ctl_sys_pll_rpll;
-	sys_pll.pll_mul = 72;
+	sys_pll.pll_mul = 69;
 	sys_pll.pll_div2 = 1;
 	_zynqmp_setSysPll(&sys_pll);
 
@@ -711,10 +711,11 @@ void _zynqmp_pllInit(void)
 	clk.src = 0;
 	_zynqmp_setCtlClock(&clk);
 
-	/* Set up PLL for IO - (33.33 * 60) / 2 = 1000 MHz */
+	/* Set up PLL for IO - (33.33 * 45) = 1500 MHz */
+	sys_pll.frac = 0;
 	sys_pll.dev = ctl_sys_pll_iopll;
-	sys_pll.pll_mul = 60;
-	sys_pll.pll_div2 = 1;
+	sys_pll.pll_mul = 45;
+	sys_pll.pll_div2 = 0;
 	_zynqmp_setSysPll(&sys_pll);
 
 	/* Set up PLL for APU - (33.33 * 72) / 2 = 1200 MHz */
@@ -729,9 +730,9 @@ void _zynqmp_pllInit(void)
 	sys_pll.pll_div2 = 1;
 	_zynqmp_setSysPll(&sys_pll);
 
-	/* Set up PLL for video - (33.33 * 90) / 2 = 1500 MHz */
+	/* Set up PLL for video - (33.33 * 71) / 2 = 1183 MHz */
 	sys_pll.dev = ctl_sys_pll_vpll;
-	sys_pll.pll_mul = 90;
+	sys_pll.pll_mul = 71;
 	sys_pll.pll_div2 = 1;
 	_zynqmp_setSysPll(&sys_pll);
 
@@ -739,14 +740,14 @@ void _zynqmp_pllInit(void)
 	clk.div1 = 0;
 	clk.active = 0;
 
-	/* Set RPLL_TO_FPD frequency to 600 MHz */
+	/* Set RPLL_TO_FPD frequency to 24.57 MHz */
 	clk.dev = ctl_clock_dev_rpll_to_fpd;
-	clk.div0 = 2;
+	clk.div0 = 47;
 	_zynqmp_setCtlClock(&clk);
 
 	/* Set IOPLL_TO_FPD frequency to 500 MHz */
 	clk.dev = ctl_clock_dev_iopll_to_fpd;
-	clk.div0 = 2;
+	clk.div0 = 3;
 	_zynqmp_setCtlClock(&clk);
 
 	/* Set APLL_TO_LPD frequency to 400 MHz */
@@ -754,12 +755,12 @@ void _zynqmp_pllInit(void)
 	clk.div0 = 3;
 	_zynqmp_setCtlClock(&clk);
 
-	/* Set DPLL_TO_LPD frequency to 533 MHz */
+	/* Set DPLL_TO_LPD frequency to 355 MHz */
 	clk.dev = ctl_clock_dev_dpll_to_lpd;
-	clk.div0 = 2;
+	clk.div0 = 3;
 	_zynqmp_setCtlClock(&clk);
 
-	/* Set VPLL_TO_LPD frequency to 500 MHz */
+	/* Set VPLL_TO_LPD frequency to 394 MHz */
 	clk.dev = ctl_clock_dev_vpll_to_lpd;
 	clk.div0 = 3;
 	_zynqmp_setCtlClock(&clk);
@@ -770,60 +771,60 @@ static void _zynqmp_clocksInit(void)
 {
 	int i;
 	static const ctl_clock_t clks[] = {
-		/* R5 CPU clock generator - RPLL / 2 => 600 MHz */
+		/* R5 CPU clock generator - IOPLL / 3 => 500 MHz */
 		{
 			.dev = ctl_clock_dev_lpd_cpu_r5,
-			.src = 0,
-			.div0 = 2,
+			.src = 2,
+			.div0 = 3,
 			.active = 0x1,
 		},
 
-		/* LPD In/Outbound Switches clock generator - IOPLL / 4 => 250 MHz */
+		/* LPD In/Outbound Switches clock generator - IOPLL / 6 => 250 MHz */
 		{
 			.dev = ctl_clock_dev_lpd_iou_switch,
 			.src = 2,
-			.div0 = 4,
+			.div0 = 6,
 			.active = 0x1,
 		},
 
-		/* LPD Main Switch clock generator - IOPLL / 2 => 500 MHz */
+		/* LPD Main Switch clock generator - RPLL / 8 => 144 MHz */
 		{
 			.dev = ctl_clock_dev_lpd_lpd_switch,
-			.src = 2,
-			.div0 = 2,
+			.src = 0,
+			.div0 = 8,
 			.active = 0x1,
 		},
 
-		/* LPD IOP In/Outbound Switches clock generator - IOPLL / 10 => 100 MHz */
+		/* LPD IOP In/Outbound Switches clock generator - IOPLL / 15 => 100 MHz */
 		{
 			.dev = ctl_clock_dev_lpd_lpd_lsbus,
 			.src = 2,
-			.div0 = 10,
+			.div0 = 15,
 			.active = 0x1,
 		},
 
-		/* LPD Debug clock generator - IOPLL / 4 => 250 MHz */
+		/* LPD Debug clock generator - IOPLL / 6 => 250 MHz */
 		{
 			.dev = ctl_clock_dev_lpd_dbg_lpd,
 			.src = 2,
-			.div0 = 4,
+			.div0 = 6,
 			.active = 0x1,
 		},
 
-		/* LPD DMA clock generator - IOPLL / 2 => 500 MHz */
+		/* LPD DMA clock generator - IOPLL / 3 => 500 MHz */
 		{
 			.dev = ctl_clock_dev_lpd_lpd_dma,
 			.src = 2,
-			.div0 = 2,
+			.div0 = 3,
 			.active = 0x1,
 		},
 
-		/* PS SYSMON clock generator - IOPLL / 10 => 100 MHz */
+		/* PS SYSMON clock generator - IOPLL / 29 => 51 MHz */
 		{
 			.dev = ctl_clock_dev_lpd_pssysmon,
 			.src = 2,
-			.div0 = 20,
-			.div1 = 1,
+			.div0 = 29,
+			.div1 = 17,
 			.active = 0x1,
 		},
 
@@ -834,27 +835,27 @@ static void _zynqmp_clocksInit(void)
 			.active = 0,
 		},
 
-		/* PCAP clock generator - IOPLL / 5 => 200 MHz */
+		/* PCAP clock generator - IOPLL / 8 => 187 MHz */
 		{
 			.dev = ctl_clock_dev_lpd_pcap,
 			.src = 0,
-			.div0 = 5,
+			.div0 = 8,
 			.active = 0x1,
 		},
 
-		/* Timestamp clock generator - IOPLL / 10 => 100 MHz */
+		/* Timestamp clock generator - IOPLL / 15 => 100 MHz */
 		{
 			.dev = ctl_clock_dev_lpd_timestamp,
 			.src = 0,
-			.div0 = 10,
+			.div0 = 15,
 			.active = 0x1,
 		},
 
-		/* ACPU clock generator - active full-speed and half-speed clocks, APLL / 2 => 600 MHz */
+		/* ACPU clock generator - active full-speed and half-speed clocks, APLL => 1200 MHz */
 		{
 			.dev = ctl_clock_dev_fpd_acpu,
 			.src = 0,
-			.div0 = 2,
+			.div0 = 1,
 			.active = 0x3,
 		},
 
@@ -877,7 +878,7 @@ static void _zynqmp_clocksInit(void)
 		/* FPD DMA clock generator - DPLL / 2 => 533 MHz */
 		{
 			.dev = ctl_clock_dev_fpd_fpd_dma,
-			.src = 3,
+			.src = 0,
 			.div0 = 2,
 			.active = 0x1,
 		},
@@ -906,11 +907,11 @@ static void _zynqmp_clocksInit(void)
 			.active = 0x1,
 		},
 
-		/* PL0 clock generator - IOPLL / 10 => 100 MHz */
+		/* PL0 clock generator - IOPLL / 15 => 100 MHz */
 		{
 			.dev = ctl_clock_dev_lpd_pl0,
 			.src = 0,
-			.div0 = 10,
+			.div0 = 15,
 			.div1 = 1,
 			.active = 0x1,
 		},
@@ -919,6 +920,11 @@ static void _zynqmp_clocksInit(void)
 	for (i = 0; i < (sizeof(clks) / sizeof(clks[0])); i++) {
 		_zynqmp_setCtlClock(&clks[i]);
 	}
+
+	*(u32 *)0x00FF260020 = 100000000; /* timestamp clock frequency */
+	hal_cpuDataSyncBarrier();
+	*(u32 *)0x00FF260000 = 1; /* enable timestamp clock */
+	hal_cpuDataSyncBarrier();
 
 	/* Select LPD_APB_CLK (lpd_lsbus) as interface clock for all TTC units */
 	*(zynq_common.iou_slcr + iou_slcr_iou_ttc_apb_clk) = 0;
@@ -985,7 +991,7 @@ void _zynqmp_init(void)
 	*(zynq_common.crl_apb + crl_apb_reset_reason) = zynq_common.resetFlags;
 
 	_zynqmp_pllInit();
-
+	_zynqmp_devReset(ctl_reset_lpd_timestamp, 0);
 	_zynqmp_clocksInit();
 
 #ifndef ZYNQMP_VIRT
