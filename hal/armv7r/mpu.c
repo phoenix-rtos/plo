@@ -114,8 +114,8 @@ static int mpu_regionCalculateAndSet(unsigned int *idx, addr_t start, addr_t end
 }
 
 
-/* Create up to 2 regions that will represent a given map */
-static int mpu_regionGenerate(unsigned int *idx, addr_t start, addr_t end, u32 rasrAttr)
+/* Create up to maxRegions that will represent a given map */
+static int mpu_regionGenerate(unsigned int *idx, addr_t start, addr_t end, u32 rasrAttr, u8 maxRegions)
 {
 	int res;
 	int commonTrailingZeroes, sigBits;
@@ -159,13 +159,15 @@ static int mpu_regionGenerate(unsigned int *idx, addr_t start, addr_t end, u32 r
 	}
 	else if (sigBits == 4) {
 		/* Can be represented with 2 regions + up to 8 subregions each */
+		/* FIXME: This condition overwrites maxRegions parameter, allowing to generate 'maxRegions + 1' region */
 		sizeBit = commonTrailingZeroes + 3;
 		diffMask = (1u << sizeBit) - 1;
 		reg1End = (start & (~diffMask)) + diffMask + 1;
 		res = mpu_regionCalculateAndSet(idx, start, reg1End, sizeBit, rasrAttr);
 		return (res == EOK) ? mpu_regionCalculateAndSet(idx, reg1End, end, sizeBit, rasrAttr) : res;
 	}
-	else if (rasrAttr == HOLE_ATTR(rasrAttr)) {
+
+	if (maxRegions <= 1) {
 		/* Cannot attempt another cutout - we are already trying to make a hole */
 		return -EPERM;
 	}
@@ -197,7 +199,7 @@ static int mpu_regionGenerate(unsigned int *idx, addr_t start, addr_t end, u32 r
 	}
 
 	res = mpu_regionCalculateAndSet(idx, alignedStart, alignedEnd, commonMsb, rasrAttr);
-	return (res == EOK) ? mpu_regionGenerate(idx, holeStart, holeEnd, HOLE_ATTR(rasrAttr)) : res;
+	return (res == EOK) ? mpu_regionGenerate(idx, holeStart, holeEnd, HOLE_ATTR(rasrAttr), maxRegions - 1) : res;
 }
 
 
@@ -257,7 +259,7 @@ int mpu_regionAlloc(addr_t addr, addr_t end, u32 attr, u32 mapId, unsigned int e
 	unsigned int regCur = mpu_common.regCnt;
 	u32 rasrAttr = mpu_regionAttrs(attr, enable);
 
-	res = mpu_regionGenerate(&regCur, addr, end, rasrAttr);
+	res = mpu_regionGenerate(&regCur, addr, end, rasrAttr, 2);
 	if (res != EOK) {
 		mpu_regionInvalidate(mpu_common.regCnt, regCur);
 		return res;
