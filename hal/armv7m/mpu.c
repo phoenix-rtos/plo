@@ -252,7 +252,12 @@ void mpu_init(void)
 	mpu_common.regMax = (u8)(mpu_common.type >> 8);
 	mpu_common.regCnt = mpu_common.mapCnt = 0;
 
-	mpu_regionInvalidate(0, sizeof(mpu_common.region) / sizeof(mpu_common.region[0]));
+	/* Hardware may support more regions than can be stored in our code. */
+	if (mpu_common.regMax > MPU_MAX_REGIONS) {
+		mpu_common.regMax = MPU_MAX_REGIONS;
+	}
+
+	mpu_regionInvalidate(0, MPU_MAX_REGIONS);
 }
 
 
