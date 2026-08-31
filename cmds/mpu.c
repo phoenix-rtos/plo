@@ -109,8 +109,8 @@ static int cmd_mpu(int argc, char *argv[])
 		return CMD_EXIT_FAILURE;
 	}
 
-	if (mpu_common->regMax != sizeof(((hal_syspage_t *)0)->mpu.table) / sizeof(((hal_syspage_t *)0)->mpu.table[0])) {
-		log_error("\n%s: MPU hal is not initialized or unsupported type was detected", argv[0]);
+	if (mpu_common->regMax == 0) {
+		log_error("\n%s: MPU hal is not initialized or unsupported", argv[0]);
 		return CMD_EXIT_FAILURE;
 	}
 
