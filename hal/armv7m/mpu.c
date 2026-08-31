@@ -212,7 +212,7 @@ static void mpu_regionInvalidate(u8 first, u8 last)
 {
 	unsigned int i;
 
-	for (i = first; i < last && i < mpu_common.regMax; i++) {
+	for (i = first; i < last; ++i) {
 		/* set multi-map to none */
 		mpu_common.mapId[i] = (u32)-1;
 
