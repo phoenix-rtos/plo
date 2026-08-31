@@ -20,10 +20,6 @@
 static mpu_common_t mpu_common;
 
 
-/* Removes all RASR attribute bits except ENABLE */
-#define HOLE_ATTR(rasrAttr) (0 | ((rasrAttr) & 0x1))
-
-
 /* Setup single MPU region entry in a local MPU context */
 static int mpu_regionSet(unsigned int *idx, u32 baseAddr, u8 srdMask, u8 sizeBit, u32 rasrAttr)
 {
@@ -199,7 +195,19 @@ static int mpu_regionGenerate(unsigned int *idx, addr_t start, addr_t end, u32 r
 	}
 
 	res = mpu_regionCalculateAndSet(idx, alignedStart, alignedEnd, commonMsb, rasrAttr);
-	return (res == EOK) ? mpu_regionGenerate(idx, holeStart, holeEnd, HOLE_ATTR(rasrAttr), maxRegions - 1) : res;
+	if (res != EOK) {
+		return res;
+	}
+
+	/*
+	 * Change AP to privileged mode only and clear the XN flag.
+	 * NOTE: TEX/C/B/S parameters are copied from the cut maps. It is assumed that an unaligned hole should have
+	 * similar parameters to the aligned map.
+	 * It is also assumed that privileged mode has full access to all memory areas. By granting full privileged
+	 * access and clearing the XN flag, this "hole" mimics the default behavior of the background system memory map.
+	 */
+	const u32 holeAttr = (rasrAttr & ~((0x7u << 24) | (1u << 28))) | (1u << 24);
+	return mpu_regionGenerate(idx, holeStart, holeEnd, holeAttr, maxRegions - 1);
 }
 
 
