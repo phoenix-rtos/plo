@@ -26,10 +26,6 @@ enum { mpu_type, mpu_ctrl, mpu_rnr, mpu_rbar, mpu_rasr, mpu_rbar_a1, mpu_rasr_a1
 /* clang-format on */
 
 
-/* Removes all RASR attribute bits except ENABLE */
-#define HOLE_ATTR(rasrAttr) (0 | ((rasrAttr) & 0x1))
-
-
 /* Setup single MPU region entry in a local MPU context */
 static int mpu_regionSet(unsigned int *idx, u32 baseAddr, u8 srdMask, u8 sizeBit, u32 rasrAttr)
 {
@@ -120,8 +116,8 @@ static int mpu_regionCalculateAndSet(unsigned int *idx, addr_t start, addr_t end
 }
 
 
-/* Create up to 2 regions that will represent a given map */
-static int mpu_regionGenerate(unsigned int *idx, addr_t start, addr_t end, u32 rasrAttr)
+/* Create up to maxRegions that will represent a given map */
+static int mpu_regionGenerate(unsigned int *idx, addr_t start, addr_t end, u32 rasrAttr, u8 maxRegions)
 {
 	int res;
 	int commonTrailingZeroes, sigBits;
@@ -165,13 +161,15 @@ static int mpu_regionGenerate(unsigned int *idx, addr_t start, addr_t end, u32 r
 	}
 	else if (sigBits == 4) {
 		/* Can be represented with 2 regions + up to 8 subregions each */
+		/* FIXME: This condition overwrites maxRegions parameter, allowing to generate 'maxRegions + 1' region */
 		sizeBit = commonTrailingZeroes + 3;
 		diffMask = (1u << sizeBit) - 1;
 		reg1End = (start & (~diffMask)) + diffMask + 1;
 		res = mpu_regionCalculateAndSet(idx, start, reg1End, sizeBit, rasrAttr);
 		return (res == EOK) ? mpu_regionCalculateAndSet(idx, reg1End, end, sizeBit, rasrAttr) : res;
 	}
-	else if (rasrAttr == HOLE_ATTR(rasrAttr)) {
+
+	if (maxRegions <= 1) {
 		/* Cannot attempt another cutout - we are already trying to make a hole */
 		return -EPERM;
 	}
@@ -203,7 +201,19 @@ static int mpu_regionGenerate(unsigned int *idx, addr_t start, addr_t end, u32 r
 	}
 
 	res = mpu_regionCalculateAndSet(idx, alignedStart, alignedEnd, commonMsb, rasrAttr);
-	return (res == EOK) ? mpu_regionGenerate(idx, holeStart, holeEnd, HOLE_ATTR(rasrAttr)) : res;
+	if (res != EOK) {
+		return res;
+	}
+
+	/*
+	 * Change AP to privileged mode only and clear the XN flag.
+	 * NOTE: TEX/C/B/S parameters are copied from the cut maps. It is assumed that an unaligned hole should have
+	 * similar parameters to the aligned map.
+	 * It is also assumed that privileged mode has full access to all memory areas. By granting full privileged
+	 * access and clearing the XN flag, this "hole" mimics the default behavior of the background system memory map.
+	 */
+	const u32 holeAttr = (rasrAttr & ~((0x7u << 24) | (1u << 28))) | (1u << 24);
+	return mpu_regionGenerate(idx, holeStart, holeEnd, holeAttr, maxRegions - 1);
 }
 
 
@@ -262,7 +272,7 @@ int mpu_regionAlloc(addr_t addr, addr_t end, u32 attr, u32 mapId, unsigned int e
 	unsigned int regCur = mpu_common.regCnt;
 	u32 rasrAttr = mpu_regionAttrs(attr, enable);
 
-	res = mpu_regionGenerate(&regCur, addr, end, rasrAttr);
+	res = mpu_regionGenerate(&regCur, addr, end, rasrAttr, 2);
 	if (res != EOK) {
 		mpu_regionInvalidate(mpu_common.regCnt, regCur);
 		return res;
