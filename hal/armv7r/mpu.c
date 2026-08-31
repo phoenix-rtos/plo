@@ -244,10 +244,15 @@ void mpu_init(void)
 
 	__asm__ volatile("mrc p15, 0, %0, c0, c0, 4" : "=r"(mpu_type));
 	mpu_common.type = mpu_type;
-	mpu_common.regMax = (u8)(mpu_common.type >> 8);
+	mpu_common.regMax = (mpu_common.type >> 8) & 0xff;
 	mpu_common.regCnt = mpu_common.mapCnt = 0;
 
-	mpu_regionInvalidate(0, sizeof(mpu_common.region) / sizeof(mpu_common.region[0]));
+	/* Hardware may support more regions than can be stored in our code. */
+	if (mpu_common.regMax > MPU_MAX_REGIONS) {
+		mpu_common.regMax = MPU_MAX_REGIONS;
+	}
+
+	mpu_regionInvalidate(0, MPU_MAX_REGIONS);
 }
 
 
@@ -274,16 +279,31 @@ int mpu_regionAlloc(addr_t addr, addr_t end, u32 attr, u32 mapId, unsigned int e
 
 void mpu_getHalData(hal_syspage_t *hal)
 {
+	const unsigned int syspageTableSize = sizeof(hal->mpu.table) / sizeof(hal->mpu.table[0]);
 	unsigned int i;
 
 	mpu_regionInvalidate(mpu_common.regCnt, mpu_common.regMax);
 
+	if (mpu_common.regCnt > syspageTableSize) {
+		/* TODO: We need a way to handle errors here that can happen due to misconfiguration
+		 * (size of table in syspage too small). This way to do it silently truncates the list
+		 * which may cause undesired behaviors. */
+		mpu_common.regCnt = syspageTableSize;
+	}
+
 	hal->mpu.type = mpu_common.type;
 	hal->mpu.allocCnt = mpu_common.regCnt;
 
-	for (i = 0; i < sizeof(hal->mpu.table) / sizeof(hal->mpu.table[0]); i++) {
+	for (i = 0; i < mpu_common.regCnt; i++) {
 		hal->mpu.table[i].rbar = mpu_common.region[i].rbar;
 		hal->mpu.table[i].rasr = mpu_common.region[i].rasr;
 		hal->mpu.map[i] = mpu_common.mapId[i];
+	}
+
+	/* Ensure all entries are initialized if mpu_common.regCnt or mpu_common.regMax is smaller than syspageTableSize */
+	for (; i < syspageTableSize; i++) {
+		hal->mpu.map[i] = (u32)-1;                          /* set multi-map to none */
+		hal->mpu.table[i].rbar = i & 0xfu;                  /* mark i-th region as disabled */
+		hal->mpu.table[i].rasr = (1u << 28) | (0x1fu << 1); /* set exec never */
 	}
 }
