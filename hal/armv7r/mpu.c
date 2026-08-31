@@ -115,7 +115,7 @@ static int mpu_regionCalculateAndSet(unsigned int *idx, addr_t start, addr_t end
 
 
 /* Create up to 2 regions that will represent a given map */
-static int mpu_regionGenerate(unsigned int *idx, addr_t start, addr_t end, u32 rasrAttr)
+static int mpu_regionGenerate(unsigned int *idx, addr_t start, addr_t end, u32 rasrAttr, u8 creatingHole)
 {
 	int res;
 	int commonTrailingZeroes, sigBits;
@@ -160,7 +160,7 @@ static int mpu_regionGenerate(unsigned int *idx, addr_t start, addr_t end, u32 r
 
 	/* Code beyond this point attempts to create multiple regions */
 
-	if (rasrAttr == HOLE_ATTR(rasrAttr)) {
+	if (creatingHole != 0) {
 		/* Cannot attempt another cutout - we are already trying to make a hole */
 		return -EPERM;
 	}
@@ -201,7 +201,7 @@ static int mpu_regionGenerate(unsigned int *idx, addr_t start, addr_t end, u32 r
 	}
 
 	res = mpu_regionCalculateAndSet(idx, alignedStart, alignedEnd, commonMsb, rasrAttr);
-	return (res == EOK) ? mpu_regionGenerate(idx, holeStart, holeEnd, HOLE_ATTR(rasrAttr)) : res;
+	return (res == EOK) ? mpu_regionGenerate(idx, holeStart, holeEnd, HOLE_ATTR(rasrAttr), 1) : res;
 }
 
 
@@ -261,7 +261,7 @@ int mpu_regionAlloc(addr_t addr, addr_t end, u32 attr, u32 mapId, unsigned int e
 	unsigned int regCur = mpu_common.regCnt;
 	u32 rasrAttr = mpu_regionAttrs(attr, enable);
 
-	res = mpu_regionGenerate(&regCur, addr, end, rasrAttr);
+	res = mpu_regionGenerate(&regCur, addr, end, rasrAttr, 0);
 	if (res != EOK) {
 		mpu_regionInvalidate(mpu_common.regCnt, regCur);
 		return res;
