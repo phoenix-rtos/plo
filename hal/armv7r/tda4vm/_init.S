@@ -52,7 +52,16 @@ _vector_table:
 
 .global _start
 .type _start, %function
+.align 7
 _start:
+	ldr r0, =_start2 
+	mov pc, r0
+.size _start, .-_start
+.ltorg
+
+.global _start2
+.type _start, %function
+_start2:
 	mov r0, #0
 	mov r1, #0
 	mov r2, #0
