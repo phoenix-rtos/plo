@@ -16,7 +16,7 @@
 #include <hal/hal.h>
 
 #include "../cache.h"
-
+#include "hal/armv7r/tda4vm/sciclient/sciclient.h"
 
 struct {
 	/* These fields are used in assembly code in _init.S, don't reorder them */
@@ -49,6 +49,10 @@ extern void interrupts_init(void);
 /* Console */
 void console_init(void);
 
+/* sciclient */
+extern void Sciclient_init(void);
+extern void Sciclient_deinit(void);
+
 extern unsigned int hal_getBootReason(void);
 
 
@@ -60,6 +64,7 @@ void hal_init(void)
 	mpu_init();
 	timer_init();
 	console_init();
+	Sciclient_init();
 
 	hal_common.entry = (addr_t)-1;
 }
@@ -68,6 +73,7 @@ void hal_init(void)
 void hal_done(void)
 {
 	timer_done();
+	Sciclient_deinit();
 }
 
 
