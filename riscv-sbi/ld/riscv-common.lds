@@ -117,6 +117,15 @@ SECTIONS
 		__bss_end = .;
 	} > BSS
 
+	/* Boot state shared between the harts, outside of .bss/image */
+	.bootstate (NOLOAD) : ALIGN(8)
+	{
+		__bootstate_start = .;
+		*(.bootstate)
+		. = ALIGN(8);
+		__bootstate_end = .;
+	} > BSS
+
 	_end = .;
 	PROVIDE (end = .);
 
@@ -131,8 +140,9 @@ SECTIONS
 	PROVIDE(_stacksz = __stack_top - __stack_limit);
 	PROVIDE(_stack = __stack_top);
 
-	_sbi_size = LOADADDR(.data) + SIZEOF(.data) - ORIGIN(SBI_IMAGE);
-	_sbi_load_addr = ORIGIN(SBI_IMAGE);
+	/* Bounds of the loaded SBI image */
+	_sbi_start = ORIGIN(SBI_IMAGE);
+	_sbi_end = ALIGN(LOADADDR(.data) + SIZEOF(.data), 8);
 
 	.payload : ALIGN(0x1000)
 	{
