@@ -13,16 +13,14 @@
  * %LICENSE%
  */
 
+#include "config.h"
 #include "sbi.h"
 #include "types.h"
 
 
-volatile u32 bootHartId;
-
-
 void __attribute__((noreturn)) entry(u32 hartid, const void *fdt)
 {
-	if (hartid == bootHartId) {
+	if (hartid == BOOT_HART_ID) {
 		sbi_initCold(hartid, fdt);
 	}
 	else {
