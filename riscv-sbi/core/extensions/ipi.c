@@ -14,6 +14,7 @@
  */
 
 #include "csr.h"
+#include "config.h"
 #include "hart.h"
 #include "list.h"
 #include "sbi.h"
@@ -22,16 +23,6 @@
 
 #include "devices/clint.h"
 #include "extensions/ipi.h"
-
-#if defined(__CPU_GR765)
-#include "ld/gr765.ldt"
-#elif defined(__CPU_GRFPGA)
-#include "ld/grfpga.ldt"
-#elif defined(__CPU_GENERIC)
-#include "ld/generic.ldt"
-#else
-#error "Unsupported TARGET"
-#endif
 
 
 #define MAX_TASK_COUNT 16

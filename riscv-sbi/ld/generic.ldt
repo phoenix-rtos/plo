@@ -17,6 +17,7 @@
 #define RISCV64_GENERIC_LDT
 
 /* Platform specific definitions */
+#define BOOT_HART_ID   0
 #define MAX_HART_COUNT 8
 #define SIZE_PAGE     0x1000
 #define SIZE_STACK    (MAX_HART_COUNT * SIZE_PAGE)
