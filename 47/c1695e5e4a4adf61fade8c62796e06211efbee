@@ -1,0 +1,53 @@
+riscv-sbi/core/extensions/ipi.c
+  h_fc26ad17182140 17
+riscv-sbi/ld/riscv-common.lds
+  s_ab95e50b5019ad::t_749a7376d6296d 123-127,143
+  h_fc26ad17182140 120-122,128,144-145
+riscv-sbi/core/sbi.c
+  h_fc26ad17182140 17
+riscv-sbi/core/Makefile
+  s_ab95e50b5019ad::t_15a11f8c3119e9 18
+riscv-sbi/include/boot.h
+  h_fc26ad17182140 1-19,28,34
+  s_ab95e50b5019ad::t_15a11f8c3119e9 20-27,29-33
+riscv-sbi/include/config.h
+  h_fc26ad17182140 1-26
+riscv-sbi/ld/gr765.ldt
+  h_fc26ad17182140 20
+riscv-sbi/entry.c
+  h_fc26ad17182140 16,23
+riscv-sbi/ld/grfpga.ldt
+  h_fc26ad17182140 20
+riscv-sbi/core/extensions/hsm.c
+  s_ab95e50b5019ad::t_2f9c58f7d6d194 17,112-113,115,117
+  h_fc26ad17182140 18,20,108,114,116
+riscv-sbi/core/boot.c
+  h_fc26ad17182140 1-17,19-22,30-35
+  s_ab95e50b5019ad::t_15a11f8c3119e9 18,23-29
+riscv-sbi/ld/generic.ldt
+  h_fc26ad17182140 20
+riscv-sbi/core/_start.S
+  h_fc26ad17182140 19-20,50-55,78,81-99,101-103,105-134,138-139,141-147,157-159,164,184-185,187-188,190-200,202-217,221-223,225-235,237-244
+  s_ab95e50b5019ad::t_2bc992ba539ea7 201
+---
+{
+  "schema_version": "authorship/3.0.0",
+  "git_ai_version": "1.7.2",
+  "base_commit_sha": "47c1695e5e4a4adf61fade8c62796e06211efbee",
+  "prompts": {},
+  "humans": {
+    "h_fc26ad17182140": {
+      "author": "Lukasz Leczkowski <lukasz.leczkowski@phoenix-rtos.com>"
+    }
+  },
+  "sessions": {
+    "s_ab95e50b5019ad": {
+      "agent_id": {
+        "tool": "claude",
+        "id": "c367da7a-c81d-4c1f-89a3-eda26e5bcab1",
+        "model": "claude-opus-5"
+      },
+      "human_author": "Lukasz Leczkowski <lukasz.leczkowski@phoenix-rtos.com>"
+    }
+  }
+}
