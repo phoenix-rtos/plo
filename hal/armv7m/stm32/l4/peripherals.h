@@ -17,6 +17,8 @@
 #ifndef _PERIPHERALS_H_
 #define _PERIPHERALS_H_
 
+#include <board_config.h>
+
 /* Periperals configuration */
 
 /* Interrupts */
