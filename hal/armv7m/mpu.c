@@ -163,17 +163,21 @@ static int mpu_regionGenerate(unsigned int *idx, addr_t start, addr_t end, u32 r
 		sizeBit = commonTrailingZeroes + 3;
 		return mpu_regionCalculateAndSet(idx, start, end, sizeBit, rasrAttr);
 	}
-	else if (sigBits == 4) {
+
+	/* Code beyond this point attempts to create multiple regions */
+
+	if (rasrAttr == HOLE_ATTR(rasrAttr)) {
+		/* Cannot attempt another cutout - we are already trying to make a hole */
+		return -EPERM;
+	}
+
+	if (sigBits == 4) {
 		/* Can be represented with 2 regions + up to 8 subregions each */
 		sizeBit = commonTrailingZeroes + 3;
 		diffMask = (1u << sizeBit) - 1;
 		reg1End = (start & (~diffMask)) + diffMask + 1;
 		res = mpu_regionCalculateAndSet(idx, start, reg1End, sizeBit, rasrAttr);
 		return (res == EOK) ? mpu_regionCalculateAndSet(idx, reg1End, end, sizeBit, rasrAttr) : res;
-	}
-	else if (rasrAttr == HOLE_ATTR(rasrAttr)) {
-		/* Cannot attempt another cutout - we are already trying to make a hole */
-		return -EPERM;
 	}
 
 	/* Attempt to allocate larger region and mask start or end with another region */
