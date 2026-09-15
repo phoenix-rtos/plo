@@ -930,10 +930,15 @@ static void _zynqmp_clocksInit(void)
 			.active = 0x1,
 		},
 	};
+	_zynqmp_devReset(ctl_reset_lpd_timestamp, 0);
+
 
 	for (i = 0; i < (sizeof(clks) / sizeof(clks[0])); i++) {
 		_zynqmp_setCtlClock(&clks[i]);
 	}
+
+	*(u32 *)0x00FF260000 = 1; /* enable timestamp clock */
+	hal_cpuDataSyncBarrier();
 
 	/* Select LPD_APB_CLK (lpd_lsbus) as interface clock for all TTC units */
 	*(zynq_common.iou_slcr + iou_slcr_iou_ttc_apb_clk) = 0;
