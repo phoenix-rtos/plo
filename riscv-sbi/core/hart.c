@@ -72,4 +72,11 @@ void hart_init(void)
 
 	/* Enable IPI */
 	csr_set(CSR_MIE, MIP_MSIP);
+
+#ifdef __riscv_sstc
+	/* Enable stimecmp access in S-Mode */
+	csr_set(CSR_MENVCFG, MENVCFG_STCE);
+	/* Write stimecmp to make sure STIP is not pending */
+	csr_write(CSR_STIMECMP, -1);
+#endif
 }
