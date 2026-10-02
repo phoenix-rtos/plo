@@ -13,6 +13,7 @@
  * %LICENSE%
  */
 
+#include "csr.h"
 #include "sbi.h"
 
 #include "devices/clint.h"
@@ -32,7 +33,12 @@ static sbiret_t ecall_time_handler(sbi_param a0, sbi_param a1, sbi_param a2, sbi
 
 	switch (fid) {
 		case TIME_SET_TIMER:
+#ifdef __riscv_sstc
+			/* With Sstc STIP is driven by stimecmp */
+			csr_write(CSR_STIMECMP, a0);
+#else
 			clint_setTimecmp(a0);
+#endif
 			break;
 
 		default:
