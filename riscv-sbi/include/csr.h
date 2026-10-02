@@ -115,6 +115,8 @@ int csr_emulateWrite(u32 csr, u64 val);
 #define CSR_STVAL  0x143u
 #define CSR_SIP    0x144u
 
+#define CSR_STIMECMP 0x14du
+
 /* Machine CSRs */
 
 #define CSR_MSTATUS    0x300u
@@ -170,7 +172,9 @@ int csr_emulateWrite(u32 csr, u64 val);
 
 #define MCAUSE_ILLEGAL 0x2UL
 #define MCAUSE_S_ECALL 0x9UL
-#define MCAUSE_INTR    (1UL << 63)
+#define MCAUSE_INTR    (1ULL << 63)
+
+#define MENVCFG_STCE (1ULL << 63)
 
 /* Privilege levels */
 
