@@ -44,7 +44,7 @@ typedef u64 Elf64_Xword;
 #define DT_NEEDED 1
 #define DT_STRTAB 5
 
-#define ELF32_ST_TYPE(i) ((i) & 0xf)
+#define ELF32_ST_TYPE(i) ((i)&0xf)
 #define ELF32_R_SYM(i)   ((i) >> 8)
 #define ELF32_R_TYPE(i)  ((unsigned char)(i))
 

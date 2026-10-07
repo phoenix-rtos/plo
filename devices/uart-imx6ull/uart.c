@@ -41,23 +41,8 @@ typedef struct {
 } uart_ioctl_t;
 
 
-enum { urxd = 0,
-	utxd = 16,
-	ucr1 = 32,
-	ucr2,
-	ucr3,
-	ucr4,
-	ufcr,
-	usr1,
-	usr2,
-	uesc,
-	utim,
-	ubir,
-	ubmr,
-	ubrc,
-	onems,
-	uts,
-	umcr };
+enum { urxd = 0, utxd = 16, ucr1 = 32, ucr2, ucr3, ucr4, ufcr, usr1, usr2,
+	uesc, utim, ubir, ubmr, ubrc, onems, uts, umcr };
 
 
 static const uart_ioctl_t uart_mux[UARTS_MAX_CNT][4] = {

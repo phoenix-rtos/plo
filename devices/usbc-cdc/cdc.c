@@ -54,10 +54,7 @@ struct {
 
 
 /* Endpoints available in a CDC driver */
-enum { endpt_irq_acm0 = 0x01,
-	endpt_bulk_acm0,
-	endpt_irq_acm1,
-	endpt_bulk_acm1 };
+enum { endpt_irq_acm0 = 0x01, endpt_bulk_acm0, endpt_irq_acm1, endpt_bulk_acm1 };
 
 
 /* Device descriptor */
@@ -81,7 +78,15 @@ const usb_device_desc_t dDev = {
 
 /* Configuration descriptor */
 const usb_configuration_desc_t dConfig = {
-	.bLength = 9, .bDescriptorType = USB_DESC_CONFIG, .wTotalLength = sizeof(usb_configuration_desc_t) + (sizeof(usb_interface_desc_t) + sizeof(usb_desc_cdc_header_t) + sizeof(usb_desc_cdc_call_t) + sizeof(usb_desc_cdc_acm_t) + sizeof(usb_desc_cdc_union_t) + sizeof(usb_endpoint_desc_t) + sizeof(usb_interface_desc_t) + sizeof(usb_endpoint_desc_t) + sizeof(usb_endpoint_desc_t)) * PHFS_ACM_PORTS_NB, .bNumInterfaces = 2 * PHFS_ACM_PORTS_NB, .bConfigurationValue = 1, .iConfiguration = 0, .bmAttributes = 0xc0, .bMaxPower = 5
+	.bLength = 9, .bDescriptorType = USB_DESC_CONFIG,
+	.wTotalLength = sizeof(usb_configuration_desc_t) + (sizeof(usb_interface_desc_t) + sizeof(usb_desc_cdc_header_t) + sizeof(usb_desc_cdc_call_t)
+				+ sizeof(usb_desc_cdc_acm_t) + sizeof(usb_desc_cdc_union_t) + sizeof(usb_endpoint_desc_t) + sizeof(usb_interface_desc_t)
+				+ sizeof(usb_endpoint_desc_t) + sizeof(usb_endpoint_desc_t)) * PHFS_ACM_PORTS_NB,
+	.bNumInterfaces = 2 * PHFS_ACM_PORTS_NB,
+	.bConfigurationValue = 1,
+	.iConfiguration = 0,
+	.bmAttributes = 0xc0,
+	.bMaxPower = 5
 };
 
 
@@ -112,7 +117,8 @@ const usb_interface_association_desc_t dIad[] = {
 
 /* Communication Interface Descriptor */
 const usb_interface_desc_t dComIntf[] = {
-	{ .bLength = 9,
+	{
+		.bLength = 9,
 		.bDescriptorType = USB_DESC_INTERFACE,
 		.bInterfaceNumber = 0,
 		.bAlternateSetting = 0,
@@ -120,9 +126,11 @@ const usb_interface_desc_t dComIntf[] = {
 		.bInterfaceClass = 0x02,
 		.bInterfaceSubClass = 0x02,
 		.bInterfaceProtocol = 0x00,
-		.iInterface = 4 },
+		.iInterface = 4
+	},
 #if PHFS_ACM_PORTS_NB == 2
-	{ .bLength = 9,
+	{
+		.bLength = 9,
 		.bDescriptorType = USB_DESC_INTERFACE,
 		.bInterfaceNumber = 2,
 		.bAlternateSetting = 0,
@@ -130,93 +138,115 @@ const usb_interface_desc_t dComIntf[] = {
 		.bInterfaceClass = 0x02,
 		.bInterfaceSubClass = 0x02,
 		.bInterfaceProtocol = 0x00,
-		.iInterface = 4 }
+		.iInterface = 4
+	}
 #endif
 };
 
 
 const usb_desc_cdc_header_t dHeader[] = {
-	{ .bLength = 5,
+	{
+		.bLength = 5,
 		.bType = USB_DESC_TYPE_CDC_CS_INTERFACE,
 		.bSubType = 0,
-		.bcdCDC = 0x0110 },
+		.bcdCDC = 0x0110
+	},
 #if PHFS_ACM_PORTS_NB == 2
-	{ .bLength = 5,
+	{
+		.bLength = 5,
 		.bType = USB_DESC_TYPE_CDC_CS_INTERFACE,
 		.bSubType = 0,
-		.bcdCDC = 0x0110 }
+		.bcdCDC = 0x0110
+	}
 #endif
 };
 
 
 const usb_desc_cdc_call_t dCall[] = {
-	{ .bLength = 5,
+	{
+		.bLength = 5,
 		.bType = USB_DESC_TYPE_CDC_CS_INTERFACE,
 		.bSubType = 0x01,
 		.bmCapabilities = 0x01,
-		.bDataInterface = 0x1 },
+		.bDataInterface = 0x1
+	},
 #if PHFS_ACM_PORTS_NB == 2
-	{ .bLength = 5,
+	{
+		.bLength = 5,
 		.bType = USB_DESC_TYPE_CDC_CS_INTERFACE,
 		.bSubType = 0x01,
 		.bmCapabilities = 0x01,
-		.bDataInterface = 0x1 }
+		.bDataInterface = 0x1
+	}
 #endif
 };
 
 
 const usb_desc_cdc_acm_t dAcm[] = {
-	{ .bLength = 4,
+	{
+		.bLength = 4,
 		.bType = USB_DESC_TYPE_CDC_CS_INTERFACE,
 		.bSubType = 0x02,
-		.bmCapabilities = 0x03 },
+		.bmCapabilities = 0x03
+	},
 #if PHFS_ACM_PORTS_NB == 2
-	{ .bLength = 4,
+	{
+		.bLength = 4,
 		.bType = USB_DESC_TYPE_CDC_CS_INTERFACE,
 		.bSubType = 0x02,
-		.bmCapabilities = 0x03 }
+		.bmCapabilities = 0x03
+	}
 #endif
 };
 
 
 const usb_desc_cdc_union_t dUnion[] = {
-	{ .bLength = 5,
+	{
+		.bLength = 5,
 		.bType = USB_DESC_TYPE_CDC_CS_INTERFACE,
 		.bSubType = 0x06,
 		.bControlInterface = 0x0,
-		.bSubordinateInterface = 0x1 },
+		.bSubordinateInterface = 0x1
+	},
 #if PHFS_ACM_PORTS_NB == 2
-	{ .bLength = 5,
+	{
+		.bLength = 5,
 		.bType = USB_DESC_TYPE_CDC_CS_INTERFACE,
 		.bSubType = 0x06,
 		.bControlInterface = 0x2,
-		.bSubordinateInterface = 0x3 }
+		.bSubordinateInterface = 0x3
+	}
 #endif
 };
 
 
 /* Communication Interrupt Endpoint IN */
 const usb_endpoint_desc_t dComEp[] = {
-	{ .bLength = 7,
+	{
+		.bLength = 7,
 		.bDescriptorType = USB_DESC_ENDPOINT,
 		.bEndpointAddress = 0x80 | endpt_irq_acm0, /* direction IN */
 		.bmAttributes = 0x03,
 		.wMaxPacketSize = 0x20,
-		.bInterval = 0x08 },
+		.bInterval = 0x08
+	},
 #if PHFS_ACM_PORTS_NB == 2
-	{ .bLength = 7,
+	{
+		.bLength = 7,
 		.bDescriptorType = USB_DESC_ENDPOINT,
 		.bEndpointAddress = 0x80 | endpt_irq_acm1, /* direction IN */
 		.bmAttributes = 0x03,
 		.wMaxPacketSize = 0x20,
-		.bInterval = 0x08 }
+		.bInterval = 0x08
+	}
 #endif
 };
 
 
 /* CDC Data Interface Descriptor */
 const usb_interface_desc_t dDataIntf[] = {
-	{ .bLength = 9,
+	{
+		.bLength = 9,
 		.bDescriptorType = USB_DESC_INTERFACE,
 		.bInterfaceNumber = 1,
 		.bAlternateSetting = 0,
@@ -224,9 +254,11 @@ const usb_interface_desc_t dDataIntf[] = {
 		.bInterfaceClass = 0x0a,
 		.bInterfaceSubClass = 0x00,
 		.bInterfaceProtocol = 0x00,
-		.iInterface = 0 },
+		.iInterface = 0
+	},
 #if PHFS_ACM_PORTS_NB == 2
-	{ .bLength = 9,
+	{
+		.bLength = 9,
 		.bDescriptorType = USB_DESC_INTERFACE,
 		.bInterfaceNumber = 3,
 		.bAlternateSetting = 0,
@@ -234,45 +266,54 @@ const usb_interface_desc_t dDataIntf[] = {
 		.bInterfaceClass = 0x0a,
 		.bInterfaceSubClass = 0x00,
 		.bInterfaceProtocol = 0x00,
-		.iInterface = 0 }
+		.iInterface = 0
+	}
 #endif
 };
 
 
 /* Data Bulk Endpoint OUT */
 const usb_endpoint_desc_t dEpOUT[] = {
-	{ .bLength = 7,
+	{
+		.bLength = 7,
 		.bDescriptorType = USB_DESC_ENDPOINT,
 		.bEndpointAddress = endpt_bulk_acm0, /* direction OUT */
 		.bmAttributes = 0x02,
 		.wMaxPacketSize = 0x0200,
-		.bInterval = 0 },
+		.bInterval = 0
+	},
 #if PHFS_ACM_PORTS_NB == 2
-	{ .bLength = 7,
+	{
+		.bLength = 7,
 		.bDescriptorType = USB_DESC_ENDPOINT,
 		.bEndpointAddress = endpt_bulk_acm1, /* direction OUT */
 		.bmAttributes = 0x02,
 		.wMaxPacketSize = 0x0200,
-		.bInterval = 0 }
+		.bInterval = 0
+	}
 #endif
 };
 
 
 /* Data Bulk Endpoint IN */
 const usb_endpoint_desc_t dEpIN[] = {
-	{ .bLength = 7,
+	{
+		.bLength = 7,
 		.bDescriptorType = USB_DESC_ENDPOINT,
 		.bEndpointAddress = 0x80 | endpt_bulk_acm0, /* direction IN */
 		.bmAttributes = 0x02,
 		.wMaxPacketSize = 0x0200,
-		.bInterval = 1 },
+		.bInterval = 1
+	},
 #if PHFS_ACM_PORTS_NB == 2
-	{ .bLength = 7,
+	{
+		.bLength = 7,
 		.bDescriptorType = USB_DESC_ENDPOINT,
 		.bEndpointAddress = 0x80 | endpt_bulk_acm1, /* direction IN */
 		.bmAttributes = 0x02,
 		.wMaxPacketSize = 0x0200,
-		.bInterval = 1 }
+		.bInterval = 1
+	}
 #endif
 };
 

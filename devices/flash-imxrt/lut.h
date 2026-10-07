@@ -25,8 +25,8 @@
 #define LUT_OPERAND(op) (op & 0xff)
 
 #define LUT_SEQ(cmd0, pad0, op0, cmd1, pad1, op1) ( \
-		((LUT_OPCODE(cmd1) | LUT_PAD(pad1) | LUT_OPERAND(op1)) << 16) | \
-		((LUT_OPCODE(cmd0) | LUT_PAD(pad0) | LUT_OPERAND(op0))))
+	((LUT_OPCODE(cmd1) | LUT_PAD(pad1) | LUT_OPERAND(op1)) << 16) | \
+	((LUT_OPCODE(cmd0) | LUT_PAD(pad0) | LUT_OPERAND(op0))))
 
 /* TODO: Use command enum (IDX/NUM sequence mapping) as per device implementation */
 #define LUT_SEQIDX(seq) (seq)

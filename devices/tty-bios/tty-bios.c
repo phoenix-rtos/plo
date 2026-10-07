@@ -115,16 +115,17 @@ static int ttybios_checkc(void)
 	int ret;
 
 	__asm__ volatile(
-			"movb $0x1, %%ah; "
-			"pushl $0x16; "
-			"pushl $0x0; "
-			"pushl $0x0; "
-			"call _interrupts_bios; "
-			"jnz 0f; "
-			"xorl %%eax, %%eax; "
-			"0: "
-			"addl $0xc, %%esp; "
-			: "=a"(ret)::"memory", "cc");
+		"movb $0x1, %%ah; "
+		"pushl $0x16; "
+		"pushl $0x0; "
+		"pushl $0x0; "
+		"call _interrupts_bios; "
+		"jnz 0f; "
+		"xorl %%eax, %%eax; "
+		"0: "
+		"addl $0xc, %%esp; "
+	: "=a" (ret)
+	:: "memory", "cc");
 
 	return ret;
 }
@@ -136,13 +137,14 @@ static void ttybios_getc(char *sc, char *c)
 	unsigned short key;
 
 	__asm__ volatile(
-			"xorb %%ah, %%ah; "
-			"pushl $0x16; "
-			"pushl $0x0; "
-			"pushl $0x0; "
-			"call _interrupts_bios; "
-			"addl $0xc, %%esp; "
-			: "=a"(key)::"memory", "cc");
+		"xorb %%ah, %%ah; "
+		"pushl $0x16; "
+		"pushl $0x0; "
+		"pushl $0x0; "
+		"call _interrupts_bios; "
+		"addl $0xc, %%esp; "
+	: "=a" (key)
+	:: "memory", "cc");
 
 	*sc = key >> 8;
 	*c = key;

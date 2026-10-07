@@ -38,10 +38,10 @@ static void cmd_lspciInfo(void)
 static void print_usage(const char *name)
 {
 	lib_printf(
-			"Usage: %s <options>\n"
-			"\t-d bus:dev:func  dump pci device config data\n"
-			"\t-h               prints help\n",
-			name);
+		"Usage: %s <options>\n"
+		"\t-d bus:dev:func  dump pci device config data\n"
+		"\t-h               prints help\n",
+		name);
 }
 
 
@@ -118,9 +118,9 @@ static void listDevices(void)
 				}
 
 				lib_printf("0x%02x\t0x%02x\t0x%x\t0x%04x\t0x%04x\t0x%02x%02x\t",
-						bdf.bus, bdf.device, bdf.function,
-						pciDevice.vendorID, pciDevice.deviceID,
-						pciDevice.classCode, pciDevice.subclass);
+					bdf.bus, bdf.device, bdf.function,
+					pciDevice.vendorID, pciDevice.deviceID,
+					pciDevice.classCode, pciDevice.subclass);
 
 				name = pciClassName(pciDevice.classCode);
 				lib_printf("%.*s\n", 30, (name != NULL) ? name : "Unknown device class");

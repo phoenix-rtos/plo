@@ -34,9 +34,9 @@ int hal_pciDetect(void)
 u32 hal_pciAddrBDF(hal_pciAddr_t *bdf)
 {
 	return PCI_ENABLE |
-			(((u32)bdf->bus & 0xffu) << 16) |
-			(((u32)bdf->device & 0x1fu) << 11) |
-			(((u32)bdf->function & 7u) << 8);
+		(((u32)bdf->bus & 0xffu) << 16) |
+		(((u32)bdf->device & 0x1fu) << 11) |
+		(((u32)bdf->function & 7u) << 8);
 }
 
 

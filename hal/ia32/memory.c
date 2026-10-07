@@ -71,23 +71,23 @@ int hal_memoryGetEntry(unsigned int *offs, mapent_t *entry, unsigned int *biosTy
 	hal_memset(entry, 0, sizeof(mapent_t));
 
 	__asm__ volatile(
-			"pushl $0x15; "
-			"pushl $0x0; "
-			"pushl %%eax; "
-			"movl $0x534d4150, %%edx; "
-			"movl $0x14, %%ecx; "
-			"movl $0xe820, %%eax; "
-			"call _interrupts_bios; "
-			"jc 0f; "
-			"xorl %%eax, %%eax; "
-			"jmp 1f; "
-			"0: "
-			"movl $0x1, %%eax; "
-			"1: "
-			"addl $0xc, %%esp; "
-			: "+a"(ret), "+b"(next)
-			: "D"(&mem)
-			: "ecx", "edx", "memory", "cc");
+		"pushl $0x15; "
+		"pushl $0x0; "
+		"pushl %%eax; "
+		"movl $0x534d4150, %%edx; "
+		"movl $0x14, %%ecx; "
+		"movl $0xe820, %%eax; "
+		"call _interrupts_bios; "
+		"jc 0f; "
+		"xorl %%eax, %%eax; "
+		"jmp 1f; "
+		"0: "
+		"movl $0x1, %%eax; "
+		"1: "
+		"addl $0xc, %%esp; "
+	: "+a" (ret), "+b" (next)
+	: "D" (&mem)
+	: "ecx", "edx", "memory", "cc");
 
 	*offs = next;
 

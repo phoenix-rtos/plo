@@ -16,16 +16,7 @@
 #include <hal/hal.h>
 
 
-enum { gpt_cr,
-	gpt_pr,
-	gpt_sr,
-	gpt_ir,
-	gpt_ocr1,
-	gpt_ocr2,
-	gpt_ocr3,
-	gpt_icr1,
-	gpt_icr2,
-	gpt_cnt };
+enum { gpt_cr, gpt_pr, gpt_sr, gpt_ir, gpt_ocr1, gpt_ocr2, gpt_ocr3, gpt_icr1, gpt_icr2, gpt_cnt };
 
 
 struct {
@@ -86,8 +77,7 @@ void timer_init(void)
 
 	*(timer_common.base + gpt_cr) |= 1 << 15;
 
-	while (((*(timer_common.base + gpt_cr) >> 15) & 0x1))
-		;
+	while (((*(timer_common.base + gpt_cr) >> 15) & 0x1));
 
 	/* Disable GPT and it's interrupts */
 	*(timer_common.base + gpt_cr) = 0;

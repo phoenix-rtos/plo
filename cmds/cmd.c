@@ -91,8 +91,8 @@ int cmd_run(void)
 const cmd_t *cmd_getCmd(unsigned int id)
 {
 	return ((size_t)id < (__cmd_end - __cmd_start)) ?
-			&__cmd_start[id] :
-			NULL;
+		&__cmd_start[id] :
+		NULL;
 }
 
 

@@ -109,8 +109,8 @@ static void hal_exceptionsDumpContext(char *buff, unsigned int n, exc_context_t 
 	unsigned int cr2, i = 0;
 
 	__asm__ volatile(
-			"movl %%cr2, %%eax; "
-			: "=a"(cr2));
+		"movl %%cr2, %%eax; "
+	: "=a" (cr2));
 
 	hal_strcpy(buff, "\nException: ");
 	hal_strcpy(buff += hal_strlen(buff), mnemonics[n]);

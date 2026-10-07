@@ -407,7 +407,7 @@ static int flashdrv_init(unsigned int minor)
 		qspi_setFlashSize(&dev->qspi, flashSz);
 
 		lib_printf("\ndev/flash/nor: Configured %s %s %dMB nor flash(%d.%d)",
-				vendor, dev->nor->name, dev->nor->totalSz >> 20, DEV_STORAGE, minor);
+			vendor, dev->nor->name, dev->nor->totalSz >> 20, DEV_STORAGE, minor);
 
 		return EOK;
 	}

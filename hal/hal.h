@@ -22,8 +22,7 @@
 #include "string.h"
 
 
-enum { hal_cpuICache = 0,
-	hal_cpuDCache };
+enum { hal_cpuICache = 0, hal_cpuDCache };
 
 
 /* Function initializes clocks, peripherals and basic controllers */

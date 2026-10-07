@@ -265,12 +265,12 @@ static int vbe_videoModeParse(char *str, video_mode_t *video_mode)
 static void cmd_usage(const char *name)
 {
 	lib_printf(
-			"Usage: %s <options>\n"
-			"\t-p W:H:BPP   preferred mode (default: %dx%dx%d)\n"
-			"\t-f W:H:BPP   fallback mode (default: %dx%dx%d)\n"
-			"\t-h           prints help\n",
-			name, vbe_common.preferred.width, vbe_common.preferred.height, vbe_common.preferred.bpp,
-			vbe_common.fallback.width, vbe_common.fallback.height, vbe_common.fallback.bpp);
+		"Usage: %s <options>\n"
+		"\t-p W:H:BPP   preferred mode (default: %dx%dx%d)\n"
+		"\t-f W:H:BPP   fallback mode (default: %dx%dx%d)\n"
+		"\t-h           prints help\n",
+		name, vbe_common.preferred.width, vbe_common.preferred.height, vbe_common.preferred.bpp,
+		vbe_common.fallback.width, vbe_common.fallback.height, vbe_common.fallback.bpp);
 }
 
 

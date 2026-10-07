@@ -36,22 +36,8 @@ struct {
 
 
 enum {
-	cr = 0,
-	mr,
-	ier,
-	idr,
-	imr,
-	isr,
-	baudgen,
-	rxtout,
-	rxwm,
-	modemcr,
-	modemsr,
-	sr,
-	fifo,
-	baud_rate_divider_reg0,
-	flow_delay_reg0,
-	tx_fifo_trigger_level0,
+	cr = 0, mr, ier, idr, imr, isr, baudgen, rxtout, rxwm, modemcr, modemsr, sr, fifo,
+	baud_rate_divider_reg0, flow_delay_reg0, tx_fifo_trigger_level0,
 };
 
 
@@ -136,8 +122,8 @@ void console_init(void)
 
 	*(halconsole_common.uart + idr) = 0xfff;
 	/* Uart Mode Register
-	 * normal mode, 1 stop bit, no parity, 8 bits, uart_ref_clk as source clock
-	 * PAR = 0x4 */
+	* normal mode, 1 stop bit, no parity, 8 bits, uart_ref_clk as source clock
+	* PAR = 0x4 */
 	*(halconsole_common.uart + mr) = (*(halconsole_common.uart + mr) & ~0x000003ff) | 0x00000020;
 
 	/* Disable TX and RX */
@@ -151,6 +137,6 @@ void console_init(void)
 	*(halconsole_common.uart + baud_rate_divider_reg0) = 6;
 
 	/* Uart Control Register
-	 * TXEN = 0x1; RXEN = 0x1; TXRES = 0x1; RXRES = 0x1 */
+	* TXEN = 0x1; RXEN = 0x1; TXRES = 0x1; RXRES = 0x1 */
 	*(halconsole_common.uart + cr) = (*(halconsole_common.uart + cr) & ~0x000001ff) | 0x00000017;
 }

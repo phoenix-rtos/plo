@@ -19,8 +19,7 @@
 #include <hal/hal.h>
 
 
-enum { flagSyspageExec = 0x01,
-	flagSyspageNoCopy = 0x02 };
+enum { flagSyspageExec = 0x01, flagSyspageNoCopy = 0x02 };
 
 
 typedef struct {

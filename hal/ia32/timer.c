@@ -29,8 +29,8 @@ static u64 timer_cycles(void)
 	u32 lo, hi;
 
 	__asm__ volatile(
-			"rdtsc; "
-			: "=a"(lo), "=d"(hi));
+		"rdtsc; "
+	: "=a" (lo), "=d" (hi));
 
 	return ((u64)hi << 32) | lo;
 }

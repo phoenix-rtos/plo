@@ -118,7 +118,7 @@ int phfs_devReg(const char *alias, unsigned int major, unsigned int minor, const
 	pd = &phfs_common.devices[phfs_common.dCnt];
 	if (phfs_setProt(pd, prot) < 0) {
 		log_error("\nphfs: %s - wrong protocol name\n\t use: \"%s\", \"%s\"", prot,
-				phfs_getProtName(phfs_prot_raw), phfs_getProtName(phfs_prot_phoenixd));
+			phfs_getProtName(phfs_prot_raw), phfs_getProtName(phfs_prot_phoenixd));
 		return -EINVAL;
 	}
 

@@ -21,7 +21,7 @@ static u32 ttl1[0x1000] __attribute__((section(".uncached_ddr"), aligned(0x4000)
 
 static inline void mmu_invalTLB(void)
 {
-	__asm__ volatile(" \
+	__asm__ volatile (" \
 		dsb; \
 		mcr p15, 0, r1, c8, c7, 0; \
 		dsb; \
@@ -31,7 +31,7 @@ static inline void mmu_invalTLB(void)
 
 static inline void mmu_setTTBR0(addr_t addr)
 {
-	__asm__ volatile(" \
+	__asm__ volatile (" \
 		dsb; \
 		mov r1, #1; \
 		mcr p15, 0, r1, c2, c0, 2; \
@@ -39,48 +39,50 @@ static inline void mmu_setTTBR0(addr_t addr)
 		mcr p15, 0, %0, c2, c0, 1; \
 		dsb; \
 		isb"
-			:
-			: "r"(addr)
-			: "r1");
+		:
+		: "r" (addr)
+		: "r1");
 }
 
 
 static inline void mmu_setDACR(u32 val)
 {
-	__asm__ volatile(" \
+	__asm__ volatile (" \
 		dsb; \
 		mcr p15, 0, %0, c3, c0, 0; \
 		dsb; \
 		isb"
-			:
-			: "r"(val)
-			:);
+		:
+		: "r" (val)
+		: );
 }
 
 
 void mmu_enable(void)
 {
-	__asm__ volatile(" \
+	__asm__ volatile (" \
 		dsb; \
 		mrc p15, 0, r1, c1, c0, 0; \
 		orr r1, r1, #1; \
 		mcr p15, 0, r1, c1, c0, 0; \
 		dsb; \
 		isb"
-			: : : "r1");
+		: : : "r1"
+	);
 }
 
 
 void mmu_disable(void)
 {
-	__asm__ volatile(" \
+	__asm__ volatile (" \
 		dsb; \
 		mrc p15, 0, r1, c1, c0, 0; \
 		bic r1, r1, #1; \
 		mcr p15, 0, r1, c1, c0, 0; \
 		dsb; \
 		isb"
-			: : : "r1");
+		: : : "r1"
+	);
 
 	mmu_invalTLB();
 }

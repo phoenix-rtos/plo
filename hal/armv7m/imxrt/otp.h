@@ -19,7 +19,7 @@
 
 #define OTP_VERSION_MAJOR(v) (((v) >> 24) & 0xff)
 #define OTP_VERSION_MINOR(v) (((v) >> 16) & 0xff)
-#define OTP_VERSION_STEP(v)  ((v) & 0xffff)
+#define OTP_VERSION_STEP(v)  ((v)&0xffff)
 
 
 u32 otp_getVersion(void);

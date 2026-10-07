@@ -95,8 +95,8 @@ const dev_t *devs_iterNext(unsigned int *ctx, unsigned int *major, unsigned int 
 static const dev_t *devs_get(unsigned int major, unsigned int minor)
 {
 	return ((major < SIZE_MAJOR) && (minor < SIZE_MINOR)) ?
-			devs_common.devs[major][minor] :
-			NULL;
+		devs_common.devs[major][minor] :
+		NULL;
 }
 
 
@@ -105,8 +105,8 @@ static const dev_ops_t *devs_ops(unsigned int major, unsigned int minor)
 	const dev_t *dev = devs_get(major, minor);
 
 	return (dev != NULL) ?
-			dev->ops :
-			NULL;
+		dev->ops :
+		NULL;
 }
 
 
@@ -115,8 +115,8 @@ int devs_check(unsigned int major, unsigned int minor)
 	const dev_t *dev = devs_get(major, minor);
 
 	return ((dev != NULL) && (dev->name != NULL) && (dev->init != NULL) && (dev->done != NULL)) ?
-			EOK :
-			-ENODEV;
+		EOK :
+		-ENODEV;
 }
 
 
@@ -125,8 +125,8 @@ ssize_t devs_read(unsigned int major, unsigned int minor, addr_t offs, void *buf
 	const dev_ops_t *ops = devs_ops(major, minor);
 
 	return ((ops != NULL) && (ops->read != NULL)) ?
-			ops->read(minor, offs, buff, len, timeout) :
-			-ENOSYS;
+		ops->read(minor, offs, buff, len, timeout) :
+		-ENOSYS;
 }
 
 
@@ -135,8 +135,8 @@ ssize_t devs_write(unsigned int major, unsigned int minor, addr_t offs, const vo
 	const dev_ops_t *ops = devs_ops(major, minor);
 
 	return ((ops != NULL) && (ops->write != NULL)) ?
-			ops->write(minor, offs, buff, len) :
-			-ENOSYS;
+		ops->write(minor, offs, buff, len) :
+		-ENOSYS;
 }
 
 
@@ -145,8 +145,8 @@ ssize_t devs_erase(unsigned int major, unsigned int minor, addr_t offs, size_t l
 	const dev_ops_t *ops = devs_ops(major, minor);
 
 	return ((ops != NULL) && (ops->erase != NULL)) ?
-			ops->erase(minor, offs, len, flags) :
-			-ENOSYS;
+		ops->erase(minor, offs, len, flags) :
+		-ENOSYS;
 }
 
 
@@ -155,8 +155,8 @@ int devs_sync(unsigned int major, unsigned int minor)
 	const dev_ops_t *ops = devs_ops(major, minor);
 
 	return ((ops != NULL) && (ops->sync != NULL)) ?
-			ops->sync(minor) :
-			-ENOSYS;
+		ops->sync(minor) :
+		-ENOSYS;
 }
 
 
@@ -165,8 +165,8 @@ int devs_map(unsigned int major, unsigned int minor, addr_t addr, size_t sz, int
 	const dev_ops_t *ops = devs_ops(major, minor);
 
 	return ((ops != NULL) && (ops->map != NULL)) ?
-			ops->map(minor, addr, sz, mode, memaddr, memsz, memmode, a) :
-			-ENOSYS;
+		ops->map(minor, addr, sz, mode, memaddr, memsz, memmode, a) :
+		-ENOSYS;
 }
 
 
@@ -175,8 +175,8 @@ int devs_control(unsigned int major, unsigned int minor, int cmd, void *args)
 	const dev_ops_t *ops = devs_ops(major, minor);
 
 	return ((ops != NULL) && (ops->control != NULL)) ?
-			ops->control(minor, cmd, args) :
-			-ENOSYS;
+		ops->control(minor, cmd, args) :
+		-ENOSYS;
 }
 
 

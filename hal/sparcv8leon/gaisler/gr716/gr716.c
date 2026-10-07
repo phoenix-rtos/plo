@@ -102,7 +102,7 @@ static void _gr716_setSysClk(u32 freq)
 	u8 div = PLL_FREQ / freq;
 	u8 duty = div / 2;
 	*(gr716_common.pll_base + sys_ref) = (duty << PLL_DUTY_SHFT) |
-			(PLL_SEL << PLL_SEL_SHFT) | div;
+		(PLL_SEL << PLL_SEL_SHFT) | div;
 }
 
 
@@ -137,17 +137,17 @@ int gaisler_iomuxCfg(iomux_cfg_t *ioCfg)
 	oldCfg = *(gr716_common.grgpreg_base + cfg_gp0 + (ioCfg->pin / 8));
 
 	*(gr716_common.grgpreg_base + cfg_gp0 + (ioCfg->pin / 8)) =
-			(oldCfg & ~(0xf << ((ioCfg->pin % 8) << 2))) | (ioCfg->opt << ((ioCfg->pin % 8) << 2));
+		(oldCfg & ~(0xf << ((ioCfg->pin % 8) << 2))) | (ioCfg->opt << ((ioCfg->pin % 8) << 2));
 
 	oldCfg = *(gr716_common.grgpreg_base + cfg_pullup0 + (ioCfg->pin / 32));
 
 	*(gr716_common.grgpreg_base + cfg_pullup0 + (ioCfg->pin / 32)) =
-			(oldCfg & ~(1 << (ioCfg->pin % 32))) | (ioCfg->pullup << (ioCfg->pin % 32));
+		(oldCfg & ~(1 << (ioCfg->pin % 32))) | (ioCfg->pullup << (ioCfg->pin % 32));
 
 	oldCfg = *(gr716_common.grgpreg_base + cfg_pulldn0 + (ioCfg->pin / 32));
 
 	*(gr716_common.grgpreg_base + cfg_pulldn0 + (ioCfg->pin / 32)) =
-			(oldCfg & ~(1 << (ioCfg->pin % 32))) | (ioCfg->pulldn << (ioCfg->pin % 32));
+		(oldCfg & ~(1 << (ioCfg->pin % 32))) | (ioCfg->pulldn << (ioCfg->pin % 32));
 
 	return 0;
 }

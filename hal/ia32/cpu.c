@@ -39,11 +39,11 @@ int hal_cpuJump(void)
 		return -1;
 
 	__asm__ volatile(
-			"cli; "
-			"movl 24(%0), %%esp; "
-			"pushl %0; "
-			"jmpl *%1; " ::"g"(syspage),
-			"r"(cpu_common.entry));
+		"cli; "
+		"movl 24(%0), %%esp; "
+		"pushl %0; "
+		"jmpl *%1; "
+	:: "g" (syspage), "r" (cpu_common.entry));
 
 	return 0;
 }
@@ -73,8 +73,8 @@ void hal_cpuReboot(void)
 
 	/* 3. Triple fault (interrupt with null idt) */
 	__asm__ volatile(
-			"lidt _plo_idtr_empty; "
-			"int3; ");
+		"lidt _plo_idtr_empty; "
+		"int3; ");
 
 	/* 4. Nothing worked, halt */
 	for (;;)
@@ -86,7 +86,7 @@ void hal_cpuReboot(void)
 
 void hal_cpuHalt(void)
 {
-	__asm__ volatile("hlt" :);
+	__asm__ volatile("hlt":);
 }
 
 

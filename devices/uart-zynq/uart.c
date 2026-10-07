@@ -41,22 +41,8 @@ typedef struct {
 
 
 enum {
-	cr = 0,
-	mr,
-	ier,
-	idr,
-	imr,
-	isr,
-	baudgen,
-	rxtout,
-	rxwm,
-	modemcr,
-	modemsr,
-	sr,
-	fifo,
-	baud_rate_divider_reg0,
-	flow_delay_reg0,
-	tx_fifo_trigger_level0,
+	cr = 0, mr, ier, idr, imr, isr, baudgen, rxtout, rxwm, modemcr, modemsr, sr, fifo,
+	baud_rate_divider_reg0, flow_delay_reg0, tx_fifo_trigger_level0,
 };
 
 
@@ -142,9 +128,9 @@ static int uart_irqHandler(unsigned int n, void *data)
 
 
 /* According to TRM:
- *  baud_rate = ref_clk / (bgen * (bdiv + 1))
- *  bgen: 2 - 65535
- *  bdiv: 4 - 255                             */
+*  baud_rate = ref_clk / (bgen * (bdiv + 1))
+*  bgen: 2 - 65535
+*  bdiv: 4 - 255                             */
 static int uart_calcBaudarate(uart_t *uart, int baudrate)
 {
 	u32 bestDiff, diff;

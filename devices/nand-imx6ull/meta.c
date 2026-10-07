@@ -39,7 +39,7 @@ static ssize_t meta_read(unsigned int minor, addr_t offs, void *buff, size_t len
 	metasz = (nand->cfg->size / nand->cfg->erasesz) * nand->cfg->oobsz;
 
 	if (((len != 0u) && (buff == NULL)) ||
-			(offs >= metasz) || ((offs % nand->cfg->writesz) != 0u)) {
+		(offs >= metasz) || ((offs % nand->cfg->writesz) != 0u)) {
 		return -EINVAL;
 	}
 
@@ -86,7 +86,7 @@ static ssize_t meta_write(unsigned int minor, addr_t offs, const void *buff, siz
 	metasz = (nand->cfg->size / nand->cfg->erasesz) * nand->cfg->oobsz;
 
 	if (((len != 0u) && (buff == NULL)) ||
-			(offs >= metasz) || ((offs % nand->cfg->writesz) != 0u)) {
+		(offs >= metasz) || ((offs % nand->cfg->writesz) != 0u)) {
 		return -EINVAL;
 	}
 

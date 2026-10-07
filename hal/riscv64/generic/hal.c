@@ -178,13 +178,13 @@ int hal_cpuJump(void)
 	hal_interruptsDisableAll();
 
 	__asm__ volatile(
-			"mv a0, tp\n\t"
-			"mv a2, %0\n\t"
-			"mv a1, %1\n\t"
-			"jr %2\n\t"
-			:
-			: "r"(dtbAddr), "r"(hal_common.hs), "r"(hal_common.entry)
-			:);
+		"mv a0, tp\n\t"
+		"mv a2, %0\n\t"
+		"mv a1, %1\n\t"
+		"jr %2\n\t"
+		:
+		: "r"(dtbAddr), "r"(hal_common.hs), "r"(hal_common.entry)
+		:);
 
 	return 0;
 }

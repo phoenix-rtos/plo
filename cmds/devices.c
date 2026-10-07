@@ -35,8 +35,8 @@ static const char *devClassName(unsigned int major)
 	};
 
 	return (major < (sizeof(className) / sizeof(className[0]))) ?
-			className[major] :
-			"unknown";
+		className[major] :
+		"unknown";
 }
 
 

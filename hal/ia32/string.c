@@ -21,7 +21,8 @@ void *hal_memcpy(void *dst, const void *src, size_t n)
 {
 	void *ret = dst;
 
-	__asm__ volatile(" \
+	__asm__ volatile
+	(" \
 		cld; \
 		movl %0, %%ecx; \
 		movl %%ecx, %%edx; \
@@ -32,9 +33,9 @@ void *hal_memcpy(void *dst, const void *src, size_t n)
 		rep; movsl; \
 		movl %%edx, %%ecx; \
 		rep; movsb"
-			:
-			: "g"(n), "g"(dst), "g"(src)
-			: "ecx", "edx", "esi", "edi", "cc", "memory");
+	:
+	: "g" (n), "g" (dst), "g" (src)
+	: "ecx", "edx", "esi", "edi", "cc", "memory");
 	return ret;
 }
 
@@ -56,7 +57,8 @@ int hal_memcmp(const void *ptr1, const void *ptr2, size_t num)
 
 void hal_memset(void *dst, int v, size_t l)
 {
-	__asm__ volatile(" \
+	__asm__ volatile
+	(" \
 		cld; \
 		movl %0, %%ecx; \
 		movl %%ecx, %%edx; \
@@ -76,9 +78,9 @@ void hal_memset(void *dst, int v, size_t l)
 		rep; stosl; \
 		movl %%edx, %%ecx; \
 		rep; stosb"
-			: "+d"(l)
-			: "m"(v), "m"(dst)
-			: "eax", "ebx", "cc", "ecx", "edi", "memory");
+	: "+d" (l)
+	: "m" (v), "m" (dst)
+	: "eax", "ebx", "cc", "ecx", "edi" ,"memory");
 }
 
 

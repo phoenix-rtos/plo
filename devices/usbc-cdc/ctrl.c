@@ -34,58 +34,22 @@ static struct {
 /* device cotroller register offsets */
 enum {
 	/* identification regs */
-	id = 0x0,
-	hwgeneral,
-	hwhost,
-	hwdevice,
-	hwtxbuf,
-	hwrxbuf,
+	id = 0x0, hwgeneral, hwhost, hwdevice, hwtxbuf, hwrxbuf,
 
 	/* operational regs */
-	gptimer0ld = 0x20,
-	gptimer0ctrl,
-	gptimer1ld,
-	gptimer1ctrl,
-	sbuscfg,
+	gptimer0ld  = 0x20, gptimer0ctrl, gptimer1ld, gptimer1ctrl, sbuscfg,
 
 	/* capability regs */
-	caplength = 0x40,
-	hciversion = 0x40,
-	hcsparams,
-	hccparams,
-	dciversion = 0x48,
-	dccparams,
+	caplength = 0x40, hciversion = 0x40, hcsparams, hccparams,
+	dciversion = 0x48, dccparams,
 
 	/* operational regs cont. */
-	usbcmd = 0x50,
-	usbsts,
-	usbintr,
-	frindex,
-	periodiclistbase = 0x55,
-	deviceaddr = 0x55,
-	asynclistaddr = 0x56,
-	endpointlistaddr = 0x56,
-	burstsize = 0x58,
-	txfilltunning,
-	endptnak = 0x5E,
-	endptnaken,
-	configflag,
-	portsc1,
-	otgsc = 0x69,
-	usbmode,
-	endptsetupstat,
-	endptprime,
-	endptflush,
-	endptstat,
-	endptcomplete,
-	endptctrl0,
-	endptctrl1,
-	endptctrl2,
-	endptctrl3,
-	endptctrl4,
-	endptctrl5,
-	endptctrl6,
-	endptctrl7
+	usbcmd = 0x50, usbsts, usbintr, frindex,
+	periodiclistbase = 0x55, deviceaddr = 0x55, asynclistaddr = 0x56,
+	endpointlistaddr = 0x56, burstsize = 0x58, txfilltunning, endptnak = 0x5E,
+	endptnaken, configflag, portsc1, otgsc = 0x69, usbmode, endptsetupstat,
+	endptprime, endptflush, endptstat, endptcomplete, endptctrl0, endptctrl1,
+	endptctrl2, endptctrl3, endptctrl4, endptctrl5, endptctrl6, endptctrl7
 };
 
 
@@ -351,8 +315,8 @@ dtd_t *ctrl_execTransfer(int endpt, u32 paddr, u32 sz, int dir)
 
 		endts = hal_timerGet() + USBCTRL_TIMEOUT;
 		while ((*(ctrl_common.dc->base + endptprime) & (1U << shift)) == 0 &&
-				(*(ctrl_common.dc->base + endptstat) & (1U << shift)) != 0 &&
-				(*(ctrl_common.dc->base + portsc1) & 1) != 0) {
+			(*(ctrl_common.dc->base + endptstat) & (1U << shift)) != 0 &&
+			(*(ctrl_common.dc->base + portsc1) & 1) != 0) {
 			if (hal_timerGet() > endts) {
 				return NULL;
 			}
@@ -360,8 +324,8 @@ dtd_t *ctrl_execTransfer(int endpt, u32 paddr, u32 sz, int dir)
 
 		/* wait to finish transaction while device is attached to the host */
 		while (DTD_ACTIVE(dtd) != 0 &&
-				DTD_ERROR(dtd) == 0 &&
-				(*(ctrl_common.dc->base + portsc1) & 1) != 0) {
+			DTD_ERROR(dtd) == 0 &&
+			(*(ctrl_common.dc->base + portsc1) & 1) != 0) {
 			if (hal_timerGet() > endts) {
 				return NULL;
 			}
