@@ -98,7 +98,7 @@ int flashdrv_parseSfdp(const u32 *data, flash_opParameters_t *res, int tryMultiI
 	unsigned n_headers = 0, i;
 	const u32 *header_table = &data[2];
 	u32 ptable_len = 0, ptable_offset, log_sizeBits;
-	u8 log_smallestEraseSize = 0, smallestEraseOpcode = 0, smallestEraseTimeShift = 0;
+	u8 log_smallestEraseSize = 0xff, smallestEraseOpcode = 0, smallestEraseTimeShift = 0;
 	u8 log_largestEraseSize = 0, largestEraseOpcode = 0, largestEraseTimeShift = 0;
 	u8 smallestCandidate_size, largestCandidate_size, eraseTimeValue, eraseTimeoutMultiplier;
 	const u32 *ptable = NULL;
