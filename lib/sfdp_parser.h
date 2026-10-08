@@ -23,19 +23,19 @@
  * "d" suffix means that DTR is used.
  */
 enum operation_io_type {
-	OPERATION_IO_111 = 0,
-	OPERATION_IO_112,
-	OPERATION_IO_122,
-	OPERATION_IO_114,
-	OPERATION_IO_144,
-	OPERATION_IO_222,
-	OPERATION_IO_444,
-	OPERATION_IO_444d,
-	OPERATION_IO_188,
-	OPERATION_IO_188d,
-	OPERATION_IO_888,
-	OPERATION_IO_888d,
-	OPERATION_IO_TYPES,
+	operation_io_111 = 0,
+	operation_io_112,
+	operation_io_122,
+	operation_io_114,
+	operation_io_144,
+	operation_io_222,
+	operation_io_444,
+	operation_io_444d,
+	operation_io_188,
+	operation_io_188d,
+	operation_io_888,
+	operation_io_888d,
+	operation_io_types,
 };
 
 #define ADDRMODE_3B  0 /* 3-byte only mode */
@@ -71,17 +71,17 @@ typedef struct {
 	u32 largestEraseBlockTimeout;  /* Max time in ms to erase block of (1 << log_largestEraseSize) bytes */
 	u32 eraseChipTimeout;          /* Max time in ms to erase the whole chip */
 	u32 programTimeout_us;         /* Max time in us to write one page */
-} flash_opParameters_t;
+} lib_sfdpParseResult_t;
 
 /* Initializes structure with default or reasonable parameters of typical JEDEC Flash memory */
-void flashdrv_fillDefaultParams(flash_opParameters_t *res);
+void lib_sfdpInit(lib_sfdpParseResult_t *res);
 
 
 /* Parses SFDP data block from pointer `data`. Results will be stored in `res`.
  * If `tryMultiIoCmd` is set to 1, will attempt to find support for 2-2-2 and 4-4-4 I/O modes,
  * otherwise only 1-*-* modes will be considered.
  */
-int flashdrv_parseSfdp(const u32 *data, flash_opParameters_t *res, int tryMultiIoCmd);
+int lib_sfdpParse(const u32 *data, lib_sfdpParseResult_t *res, int tryMultiIoCmd);
 
 
 #endif /* _SFDP_PARSER_H */

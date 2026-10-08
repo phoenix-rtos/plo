@@ -35,7 +35,7 @@ typedef struct {
 static struct flash_memParams {
 	unsigned char device_id[6];
 	int (*init_fn)(int minor);
-	flash_opParameters_t params;
+	lib_sfdpParseResult_t params;
 	u32 memoryType;
 	flash_xspiSetup_t read;
 	flash_xspiSetup_t write;
@@ -138,19 +138,19 @@ static const flash_opDefinition_t opDef_write_disable = {
 };
 
 
-static const u32 opModeToCCR[OPERATION_IO_TYPES] = {
-	[OPERATION_IO_111] = MAKE_CCR_VALUE(S1, S1, S1, S1, 1, 1, 1, 0),
-	[OPERATION_IO_112] = MAKE_CCR_VALUE(S1, S1, S1, S2, 1, 1, 1, 0),
-	[OPERATION_IO_122] = MAKE_CCR_VALUE(S1, S2, S2, S2, 1, 1, 1, 0),
-	[OPERATION_IO_114] = MAKE_CCR_VALUE(S1, S1, S1, S4, 1, 1, 1, 0),
-	[OPERATION_IO_144] = MAKE_CCR_VALUE(S1, S4, S4, S4, 1, 1, 1, 0),
-	[OPERATION_IO_222] = MAKE_CCR_VALUE(S2, S2, S2, S2, 1, 1, 1, 0),
-	[OPERATION_IO_444] = MAKE_CCR_VALUE(S4, S4, S4, S4, 1, 1, 1, 0),
-	[OPERATION_IO_444d] = MAKE_CCR_VALUE(D4, D4, D4, D4, 1, 1, 1, 1),
-	[OPERATION_IO_188] = MAKE_CCR_VALUE(S1, S8, S8, S8, 1, 1, 1, 0),
-	[OPERATION_IO_188d] = MAKE_CCR_VALUE(S1, D8, D8, D8, 1, 1, 1, 1),
-	[OPERATION_IO_888] = MAKE_CCR_VALUE(S8, S8, S8, S8, 1, 1, 1, 0),
-	[OPERATION_IO_888d] = MAKE_CCR_VALUE(D8, D8, D8, D8, 1, 1, 1, 1),
+static const u32 opModeToCCR[operation_io_types] = {
+	[operation_io_111] = MAKE_CCR_VALUE(S1, S1, S1, S1, 1, 1, 1, 0),
+	[operation_io_112] = MAKE_CCR_VALUE(S1, S1, S1, S2, 1, 1, 1, 0),
+	[operation_io_122] = MAKE_CCR_VALUE(S1, S2, S2, S2, 1, 1, 1, 0),
+	[operation_io_114] = MAKE_CCR_VALUE(S1, S1, S1, S4, 1, 1, 1, 0),
+	[operation_io_144] = MAKE_CCR_VALUE(S1, S4, S4, S4, 1, 1, 1, 0),
+	[operation_io_222] = MAKE_CCR_VALUE(S2, S2, S2, S2, 1, 1, 1, 0),
+	[operation_io_444] = MAKE_CCR_VALUE(S4, S4, S4, S4, 1, 1, 1, 0),
+	[operation_io_444d] = MAKE_CCR_VALUE(D4, D4, D4, D4, 1, 1, 1, 1),
+	[operation_io_188] = MAKE_CCR_VALUE(S1, S8, S8, S8, 1, 1, 1, 0),
+	[operation_io_188d] = MAKE_CCR_VALUE(S1, D8, D8, D8, 1, 1, 1, 1),
+	[operation_io_888] = MAKE_CCR_VALUE(S8, S8, S8, S8, 1, 1, 1, 0),
+	[operation_io_888d] = MAKE_CCR_VALUE(D8, D8, D8, D8, 1, 1, 1, 1),
 };
 
 
@@ -388,27 +388,27 @@ static const u32 *flashdrv_mountSfdp(int minor)
 }
 
 
-static int flashdrv_detectGeneric(int minor, flash_opParameters_t *res, unsigned char *device_id)
+static int flashdrv_detectGeneric(int minor, lib_sfdpParseResult_t *res, unsigned char *device_id)
 {
 	(void)device_id;
-	return flashdrv_parseSfdp(flashdrv_mountSfdp(minor), res, 0);
+	return lib_sfdpParse(flashdrv_mountSfdp(minor), res, 0);
 }
 
 
 static u8 flashdrv_modeCyclesToBits(u8 readIoType, u8 cycles)
 {
 	switch (readIoType) {
-		case OPERATION_IO_888: /* Fall-through */
-		case OPERATION_IO_888d:
+		case operation_io_888: /* Fall-through */
+		case operation_io_888d:
 			return cycles * 8;
 
-		case OPERATION_IO_144: /* Fall-through */
-		case OPERATION_IO_444: /* Fall-through */
-		case OPERATION_IO_444d:
+		case operation_io_144: /* Fall-through */
+		case operation_io_444: /* Fall-through */
+		case operation_io_444d:
 			return cycles * 4;
 
-		case OPERATION_IO_122: /* Fall-through */
-		case OPERATION_IO_222:
+		case operation_io_122: /* Fall-through */
+		case operation_io_222:
 			return cycles * 2;
 
 		default:
@@ -419,9 +419,9 @@ static u8 flashdrv_modeCyclesToBits(u8 readIoType, u8 cycles)
 
 static void flashdrv_fillOperations(struct flash_memParams *mp)
 {
-	flash_opParameters_t *fp = &mp->params;
+	lib_sfdpParseResult_t *fp = &mp->params;
 	u32 readModeBytes = 0, v;
-	int modeIsOctalDDR = fp->otherIoType == OPERATION_IO_888d;
+	int modeIsOctalDDR = fp->otherIoType == operation_io_888d;
 
 	if (fp->readModeCyc != 0) {
 		v = flashdrv_modeCyclesToBits(fp->readIoType, fp->readModeCyc);
@@ -498,10 +498,10 @@ static int flashdrv_initGeneric(int minor)
 }
 
 
-static int flashdrv_detectMacronixOcta(int minor, flash_opParameters_t *res, unsigned char *device_id)
+static int flashdrv_detectMacronixOcta(int minor, lib_sfdpParseResult_t *res, unsigned char *device_id)
 {
 	(void)device_id;
-	int ret = flashdrv_parseSfdp(flashdrv_mountSfdp(minor), res, 0);
+	int ret = lib_sfdpParse(flashdrv_mountSfdp(minor), res, 0);
 	if (ret < 0) {
 		return ret;
 	}
@@ -509,15 +509,15 @@ static int flashdrv_detectMacronixOcta(int minor, flash_opParameters_t *res, uns
 	/* This chip's SFDP data is almost useless because it only includes 3-byte address versions of commands.
 	 * We need to input the 4-byte versions of each command from the datasheet. */
 	res->opcodeType = flash_opcode_8b_inverse;
-	res->readIoType = OPERATION_IO_888d;
+	res->readIoType = operation_io_888d;
 	res->readOpcode = 0xee; /* OCTA DTR Read */
 	res->readDummy = 20;
 	res->readModeCyc = 0;
-	res->writeIoType = OPERATION_IO_888d;
+	res->writeIoType = operation_io_888d;
 	res->writeOpcode = 0x12; /* Page program 4B */
 	res->writeDummy = 0;
 	res->addrMode = ADDRMODE_4B;
-	res->otherIoType = OPERATION_IO_888d;
+	res->otherIoType = operation_io_888d;
 	res->smallestEraseOpcode = 0x21; /* Sector erase 4B */
 	res->log_smallestEraseSize = 12;
 	return 0;
@@ -576,22 +576,22 @@ static int flashdrv_initMacronixOcta(int minor)
 }
 
 
-static int flashdrv_detectMT35X(int minor, flash_opParameters_t *res, unsigned char *device_id)
+static int flashdrv_detectMT35X(int minor, lib_sfdpParseResult_t *res, unsigned char *device_id)
 {
 	(void)device_id;
-	int ret = flashdrv_parseSfdp(flashdrv_mountSfdp(minor), res, 0);
+	int ret = lib_sfdpParse(flashdrv_mountSfdp(minor), res, 0);
 	if (ret < 0) {
 		return ret;
 	}
 
 	/* Update info with operations compatible with octal DDR mode */
 	res->opcodeType = flash_opcode_8b_repeat;
-	res->readIoType = OPERATION_IO_888d;
+	res->readIoType = operation_io_888d;
 	res->readOpcode = 0x0b; /* FAST READ */
 	res->readDummy = 0;     /* Not necessary, DQS line signals that Flash is ready */
 	res->readModeCyc = 0;
-	res->writeIoType = OPERATION_IO_888d;
-	res->otherIoType = OPERATION_IO_888d;
+	res->writeIoType = operation_io_888d;
+	res->otherIoType = operation_io_888d;
 	return 0;
 }
 
@@ -650,11 +650,11 @@ static int flashdrv_initMT35X(int minor)
 }
 
 
-static int flashdrv_detectFlashType(unsigned int minor, flash_opParameters_t *res)
+static int flashdrv_detectFlashType(unsigned int minor, lib_sfdpParseResult_t *res)
 {
 	unsigned char *device_id = memParams[minor].device_id;
 	int ret;
-	flashdrv_fillDefaultParams(res);
+	lib_sfdpInit(res);
 	ret = flashdrv_performOp(minor, &opDef_read_id, device_id);
 	if (ret < 0) {
 		return ret;
@@ -869,7 +869,7 @@ int xspi_regcom_init(unsigned int minor)
 	u32 v;
 	const xspi_ctrlParams_t *p;
 	struct flash_memParams *mp;
-	flash_opParameters_t *fp;
+	lib_sfdpParseResult_t *fp;
 
 	p = &xspi_ctrlParams[minor];
 	mp = &memParams[minor];

@@ -171,7 +171,7 @@ static struct {
 	unsigned char device_id[6];
 	int (*init_fn)(int minor);
 	u32 size;
-	flash_opParameters_t params;
+	lib_sfdpParseResult_t params;
 	const char *name;
 } flashParams[N_CONTROLLERS];
 
@@ -338,7 +338,7 @@ static const u32 *flashdrv_mountSfdp(int minor)
 }
 
 
-static int flashdrv_detectMicron(int minor, flash_opParameters_t *res, unsigned char *device_id)
+static int flashdrv_detectMicron(int minor, lib_sfdpParseResult_t *res, unsigned char *device_id)
 {
 	/* Memory capacity is BCD-encoded */
 	if (((device_id[2] >> 4) >= 10) || ((device_id[2] & 0xf) >= 10)) {
@@ -347,28 +347,28 @@ static int flashdrv_detectMicron(int minor, flash_opParameters_t *res, unsigned 
 
 	res->log_chipSize = ((device_id[2] >> 4) * 10) + (device_id[2] & 0xf) + 6;
 
-	if (flashdrv_parseSfdp(flashdrv_mountSfdp(minor), res, 1) < 0) {
+	if (lib_sfdpParse(flashdrv_mountSfdp(minor), res, 1) < 0) {
 		return -EINVAL;
 	}
 
 	res->writeIoType = res->readIoType;
 	res->writeDummy = 0;
 	switch (res->writeIoType) {
-		case OPERATION_IO_111:
-		case OPERATION_IO_222:
-		case OPERATION_IO_444:
+		case operation_io_111:
+		case operation_io_222:
+		case operation_io_444:
 			res->writeOpcode = 0x2;
 			break;
-		case OPERATION_IO_112:
+		case operation_io_112:
 			res->writeOpcode = 0xa2;
 			break;
-		case OPERATION_IO_122:
+		case operation_io_122:
 			res->writeOpcode = 0xd2;
 			break;
-		case OPERATION_IO_114:
+		case operation_io_114:
 			res->writeOpcode = 0x32;
 			break;
-		case OPERATION_IO_144:
+		case operation_io_144:
 			res->writeOpcode = 0x38;
 			break;
 	}
@@ -379,18 +379,18 @@ static int flashdrv_detectMicron(int minor, flash_opParameters_t *res, unsigned 
 
 static int flashdrv_initMicron(int minor)
 {
-	flash_opParameters_t *fp = &flashParams[minor].params;
+	lib_sfdpParseResult_t *fp = &flashParams[minor].params;
 	if (fp->addrMode == ADDRMODE_4BO) {
 		flashdrv_writeEnable(minor, 1);
 		flashdrv_performSimpleOp(minor, &opDef_enter_4byte, NULL);
 	}
 
 	/* Set Enhanced Volatile Configuration Register */
-	if (fp->readIoType == OPERATION_IO_222) {
+	if (fp->readIoType == operation_io_222) {
 		flashdrv_writeEnable(minor, 1);
 		flashdrv_modifyRegister(minor, 0x65, 0x61, 0x40, 0x0);
 	}
-	else if (fp->readIoType == OPERATION_IO_444) {
+	else if (fp->readIoType == operation_io_444) {
 		flashdrv_writeEnable(minor, 1);
 		flashdrv_modifyRegister(minor, 0x65, 0x61, 0x80, 0x0);
 	}
@@ -401,15 +401,15 @@ static int flashdrv_initMicron(int minor)
 }
 
 
-static int flashdrv_detectGeneric(int minor, flash_opParameters_t *res, unsigned char *device_id)
+static int flashdrv_detectGeneric(int minor, lib_sfdpParseResult_t *res, unsigned char *device_id)
 {
-	return flashdrv_parseSfdp(flashdrv_mountSfdp(minor), res, 0);
+	return lib_sfdpParse(flashdrv_mountSfdp(minor), res, 0);
 }
 
 
 static int flashdrv_initGeneric(int minor)
 {
-	flash_opParameters_t *fp = &flashParams[minor].params;
+	lib_sfdpParseResult_t *fp = &flashParams[minor].params;
 	if (fp->addrMode == ADDRMODE_4BO) {
 		flashdrv_writeEnable(minor, 1);
 		flashdrv_performSimpleOp(minor, &opDef_enter_4byte, NULL);
@@ -419,7 +419,7 @@ static int flashdrv_initGeneric(int minor)
 }
 
 
-static int flashdrv_detectFlashType(unsigned int minor, flash_opParameters_t *res)
+static int flashdrv_detectFlashType(unsigned int minor, lib_sfdpParseResult_t *res)
 {
 	static const flash_opDefinition_t opDef_readId = {
 		.opcode = 0x9f,
@@ -430,7 +430,7 @@ static int flashdrv_detectFlashType(unsigned int minor, flash_opParameters_t *re
 		.dummyCycles = 0,
 	};
 
-	flashdrv_fillDefaultParams(res);
+	lib_sfdpInit(res);
 	unsigned char *device_id = flashParams[minor].device_id;
 	flashdrv_performSimpleOp(minor, &opDef_readId, device_id);
 
@@ -496,12 +496,12 @@ static void flashdrv_initPins(const flash_ctrlParams_t *p)
 static u8 flashdrv_modeCyclesToBits(u8 readIoType, u8 cycles)
 {
 	switch (readIoType) {
-		case OPERATION_IO_144: /* Fall-through */
-		case OPERATION_IO_444:
+		case operation_io_144: /* Fall-through */
+		case operation_io_444:
 			return cycles * 4;
 
-		case OPERATION_IO_122: /* Fall-through */
-		case OPERATION_IO_222:
+		case operation_io_122: /* Fall-through */
+		case operation_io_222:
 			return cycles * 2;
 
 		default:
@@ -514,23 +514,23 @@ static inline u32 flashdrv_makeInstructionRegister(u8 ioType, u8 opcode, u8 dumm
 {
 	u32 res = opcode;
 	switch (ioType) {
-		case OPERATION_IO_222:
+		case operation_io_222:
 			res |= isWrite ? 0 : (1 << 8);
 			/* Fall-through */
-		case OPERATION_IO_122:
+		case operation_io_122:
 			res |= 1 << 12;
 			/* Fall-through */
-		case OPERATION_IO_112:
+		case operation_io_112:
 			res |= 1 << 16;
 			break;
 
-		case OPERATION_IO_444:
+		case operation_io_444:
 			res |= isWrite ? 0 : (2 << 8);
 			/* Fall-through */
-		case OPERATION_IO_144:
+		case operation_io_144:
 			res |= 2 << 12;
 			/* Fall-through */
-		case OPERATION_IO_114:
+		case operation_io_114:
 			res |= 2 << 16;
 			break;
 
@@ -582,7 +582,7 @@ static ssize_t flashdrv_erase(unsigned int minor, addr_t offs, size_t len, unsig
 	};
 
 	flash_opDefinition_t op;
-	const flash_opParameters_t *p;
+	const lib_sfdpParseResult_t *p;
 	u32 eraseSize;
 	ssize_t len_ret = (ssize_t)len;
 	if (flashdrv_isValidMinor(minor) == 0) {
@@ -686,7 +686,7 @@ static int flashdrv_init(unsigned int minor)
 	int ret;
 	u32 v, dev_size_config;
 	const flash_ctrlParams_t *p;
-	flash_opParameters_t *fp;
+	lib_sfdpParseResult_t *fp;
 
 	if (flashdrv_isValidMinor(minor) == 0) {
 		return -EINVAL;

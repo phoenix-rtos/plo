@@ -33,13 +33,13 @@ static const struct {
 	u8 dummyShift;
 	u8 modeCycIdx;
 	u8 modeCycShift;
-} sfdpOperationLookup[OPERATION_IO_TYPES] = {
-	[OPERATION_IO_112] = { 0, 16, 3, 8, 3, 0, 3, 5 },
-	[OPERATION_IO_122] = { 0, 20, 3, 24, 3, 16, 3, 21 },
-	[OPERATION_IO_114] = { 0, 22, 2, 24, 2, 16, 2, 21 },
-	[OPERATION_IO_144] = { 0, 21, 2, 8, 2, 0, 2, 5 },
-	[OPERATION_IO_222] = { 4, 0, 5, 24, 5, 16, 5, 21 },
-	[OPERATION_IO_444] = { 4, 4, 6, 24, 6, 16, 6, 21 },
+} sfdpOperationLookup[operation_io_types] = {
+	[operation_io_112] = { 0, 16, 3, 8, 3, 0, 3, 5 },
+	[operation_io_122] = { 0, 20, 3, 24, 3, 16, 3, 21 },
+	[operation_io_114] = { 0, 22, 2, 24, 2, 16, 2, 21 },
+	[operation_io_144] = { 0, 21, 2, 8, 2, 0, 2, 5 },
+	[operation_io_222] = { 4, 0, 5, 24, 5, 16, 5, 21 },
+	[operation_io_444] = { 4, 4, 6, 24, 6, 16, 6, 21 },
 };
 
 static const struct {
@@ -55,19 +55,19 @@ static const struct {
 };
 
 
-void flashdrv_fillDefaultParams(flash_opParameters_t *res)
+void lib_sfdpInit(lib_sfdpParseResult_t *res)
 {
 	res->opcodeType = flash_opcode_8b;
-	res->readIoType = OPERATION_IO_111;
+	res->readIoType = operation_io_111;
 	res->readOpcode = 0x03; /* READ opcode */
 	res->readDummy = 0;
 	res->readModeCyc = 0;
-	res->writeIoType = OPERATION_IO_111;
+	res->writeIoType = operation_io_111;
 	res->writeOpcode = 0x02; /* PAGE PROGRAM opcode */
 	res->writeDummy = 0;
 	res->addrMode = ADDRMODE_3B;
 	res->log_chipSize = 24; /* 16 MB */
-	res->otherIoType = OPERATION_IO_111;
+	res->otherIoType = operation_io_111;
 	res->smallestEraseOpcode = 0xd8; /* Sector erase */
 	res->largestEraseOpcode = 0xd8;
 	res->log_smallestEraseSize = 16; /* 64 KB sector size */
@@ -80,7 +80,7 @@ void flashdrv_fillDefaultParams(flash_opParameters_t *res)
 }
 
 
-static u32 flashdrv_calcEraseTime(u8 timeValue, int isChipErase)
+static u32 calcEraseTime(u8 timeValue, int isChipErase)
 {
 	static const u16 eraseChipUnits[4] = { 16, 256, 4000, 64000 };
 	static const u16 eraseBlockUnits[4] = { 1, 16, 128, 1000 };
@@ -93,7 +93,7 @@ static u32 flashdrv_calcEraseTime(u8 timeValue, int isChipErase)
 }
 
 
-int flashdrv_parseSfdp(const u32 *data, flash_opParameters_t *res, int tryMultiIoCmd)
+int lib_sfdpParse(const u32 *data, lib_sfdpParseResult_t *res, int tryMultiIoCmd)
 {
 	unsigned n_headers = 0, i;
 	const u32 *header_table = &data[2];
@@ -151,12 +151,12 @@ int flashdrv_parseSfdp(const u32 *data, flash_opParameters_t *res, int tryMultiI
 		res->log_chipSize = log_sizeBits - 3;
 	}
 
-	res->readIoType = OPERATION_IO_111;
+	res->readIoType = operation_io_111;
 	res->readOpcode = 0x3;
 	res->readDummy = 0;
 	/* Determine fastest I/O mode */
-	i = (tryMultiIoCmd == 0) ? OPERATION_IO_144 : OPERATION_IO_444;
-	for (; i >= OPERATION_IO_112; i--) {
+	i = (tryMultiIoCmd == 0) ? operation_io_144 : operation_io_444;
+	for (; i >= operation_io_112; i--) {
 		if (sfdpOperationLookup[i].checkIdx >= ptable_len) {
 			continue;
 		}
@@ -196,7 +196,7 @@ int flashdrv_parseSfdp(const u32 *data, flash_opParameters_t *res, int tryMultiI
 		if (ptable_len >= 10) {
 			eraseTimeoutMultiplier = 2 * ((ptable[9] & 0xf) + 1);
 			eraseTimeValue = ptable[9] >> smallestEraseTimeShift;
-			res->smallestEraseBlockTimeout = eraseTimeoutMultiplier * flashdrv_calcEraseTime(eraseTimeValue, 0);
+			res->smallestEraseBlockTimeout = eraseTimeoutMultiplier * calcEraseTime(eraseTimeValue, 0);
 		}
 	}
 
@@ -206,14 +206,14 @@ int flashdrv_parseSfdp(const u32 *data, flash_opParameters_t *res, int tryMultiI
 		if (ptable_len >= 10) {
 			eraseTimeoutMultiplier = 2 * ((ptable[9] & 0xf) + 1);
 			eraseTimeValue = ptable[9] >> largestEraseTimeShift;
-			res->largestEraseBlockTimeout = eraseTimeoutMultiplier * flashdrv_calcEraseTime(eraseTimeValue, 0);
+			res->largestEraseBlockTimeout = eraseTimeoutMultiplier * calcEraseTime(eraseTimeValue, 0);
 		}
 	}
 
 	if (ptable_len >= 11) {
 		eraseTimeoutMultiplier = 2 * ((ptable[9] & 0xf) + 1);
 		eraseTimeValue = ptable[10] >> 24;
-		res->eraseChipTimeout = eraseTimeoutMultiplier * flashdrv_calcEraseTime(eraseTimeValue, 1);
+		res->eraseChipTimeout = eraseTimeoutMultiplier * calcEraseTime(eraseTimeValue, 1);
 		res->log_pageSize = (ptable[10] >> 4) & 0xf;
 		res->programTimeout_us = ((ptable[10] >> 8) & 0x1f) + 1;
 		res->programTimeout_us *= (((ptable[10] >> 13) & 0x1) != 0) ? 64 : 8;
