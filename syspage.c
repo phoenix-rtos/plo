@@ -176,6 +176,9 @@ static int syspage_strAttr2ui(const char *str, unsigned int *attr)
 			case 'b':
 				*attr |= mAttrBufferable;
 				break;
+			case 'k':
+				*attr |= mAttrKernelDmap;
+				break;
 			default:
 				log_error("\nsyspage: Wrong attribute - '%c'", str[i]);
 				return -EINVAL;
