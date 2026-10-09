@@ -15,6 +15,7 @@
 
 #include <lib/lib.h>
 #include <syspage.h>
+#include <limits.h>
 
 
 #define ALIGN_ADDR(addr, align) (align ? ((addr + (align - 1)) & ~(align - 1)) : addr)
@@ -71,6 +72,7 @@ void syspage_init(void)
 		partition->hal = NULL;
 		partition->id = 0U;
 		partition->flags = pFlagIntr | pFlagTime | pFlagPctl | pFlagPerf | pFlagAllMem;
+		partition->minPriority = INT_MIN;
 		hal_memset(partition->maps, 0xff, sizeof(partition->maps));
 		syspage_common.syspage->partitions = partition;
 	}

@@ -22,7 +22,7 @@
 
 static void cmd_partInfo(void)
 {
-	lib_printf("creates partition, usage: part <name> <accessmap1;accessmap2...> <schedwindow> <memlimit> [-itcp]");
+	lib_printf("creates partition, usage: part <name> <accessmap1;accessmap2...> <schedwindow> <memlimit> <minPriority> [-itcp]");
 }
 
 
@@ -50,6 +50,7 @@ static int cmd_part(int argc, char *argv[])
 	char *name;
 	unsigned char schedWindow;
 	size_t availableMem, i;
+	int minPriority;
 	char *accessMap;
 	u8 id;
 	hal_syspage_part_t *hal;
@@ -58,7 +59,7 @@ static int cmd_part(int argc, char *argv[])
 	unsigned int flags = 0;
 
 	/* Parse command arguments */
-	if (argc < 5 || argc > 6) {
+	if (argc < 6 || argc > 7) {
 		log_error("\n%s: Wrong argument count", argv[0]);
 		return CMD_EXIT_FAILURE;
 	}
@@ -131,6 +132,15 @@ static int cmd_part(int argc, char *argv[])
 
 	argvID++;
 
+	/* ARG_5: minimum priority */
+	minPriority = lib_strtol(argv[argvID], &argv[argvID], 0);
+	if (*argv[argvID] != '\0') {
+		log_error("\n%s: Invalid arguments", argv[0]);
+		return -EINVAL;
+	}
+
+	argvID++;
+
 	/* Flags */
 	if (argvID < argc) {
 		if (argv[argvID][0] != '-') {
@@ -170,6 +180,7 @@ static int cmd_part(int argc, char *argv[])
 	part->schedWindow = schedWindow;
 	part->availableMem = availableMem;
 	part->flags = flags;
+	part->minPriority = minPriority;
 	for (i = 0; i < accessSz; ++i) {
 		syspage_mapNameResolve(accessMap, &part->maps[i]);
 		accessMap += hal_strlen(accessMap) + 1U;
