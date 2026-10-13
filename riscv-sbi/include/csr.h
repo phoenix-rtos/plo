@@ -125,6 +125,7 @@ int csr_emulateWrite(u32 csr, u64 val);
 #define CSR_MTVEC      0x305u
 #define CSR_MCOUNTEREN 0x306u
 #define CSR_MENVCFG    0x30au
+#define CSR_MSTATEEN0  0x30cu
 
 #define CSR_MSCRATCH 0x340u
 #define CSR_MEPC     0x341u
