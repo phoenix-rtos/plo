@@ -146,6 +146,10 @@ int csr_emulateWrite(u32 csr, u64 val);
 #define CSR_PMPCFG0  0x3a0u
 #define CSR_PMPADDR0 0x3b0u
 
+/* Machine state enable */
+
+#define CSR_MSTATEEN0 0x30cU
+
 /* CSR bits */
 
 #define MSTATUS_MPP_SHIFT 11
