@@ -133,6 +133,8 @@ int csr_emulateWrite(u32 csr, u64 val);
 #define CSR_MIP      0x344u
 #define CSR_MTINST   0x34au
 
+#define CSR_MNSTATUS 0x744u
+
 #define CSR_MCYCLE   0xb00u
 #define CSR_MINSTRET 0xb02u
 
