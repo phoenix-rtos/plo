@@ -29,4 +29,6 @@ void platform_cpuEarlyInit(void)
 	csr_write(CSR_PMPADDR0, 0x3FFFFFFFFFFFFFFFULL);
 	/* NAPOT mode (A=0b11), RWX for S/U */
 	csr_write(CSR_PMPCFG0, 0x1f);
+	/* Set NMIE - with Smrnmi extension NMIE=0 disables ALL interrupts */
+	csr_write(CSR_MNSTATUS, (1 << 3));
 }
