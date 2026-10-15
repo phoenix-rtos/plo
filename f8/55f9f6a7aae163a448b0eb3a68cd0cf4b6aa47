@@ -1,0 +1,16 @@
+riscv-sbi/include/csr.h
+  h_fc26ad17182140 136-137
+riscv-sbi/platform/gaisler/gr765/platform.c
+  h_fc26ad17182140 32-33
+---
+{
+  "schema_version": "authorship/3.0.0",
+  "git_ai_version": "1.7.5",
+  "base_commit_sha": "f855f9f6a7aae163a448b0eb3a68cd0cf4b6aa47",
+  "prompts": {},
+  "humans": {
+    "h_fc26ad17182140": {
+      "author": "Lukasz Leczkowski <lukasz.leczkowski@phoenix-rtos.com>"
+    }
+  }
+}
