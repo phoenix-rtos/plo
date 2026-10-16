@@ -31,4 +31,6 @@ void platform_cpuEarlyInit(void)
 	csr_write(CSR_PMPCFG0, 0x1f);
 	/* Set NMIE - with Smrnmi extension NMIE=0 disables ALL interrupts */
 	csr_write(CSR_MNSTATUS, (1 << 3));
+	/* Enable access to senvcfg */
+	csr_write(CSR_MSTATEEN0, (1ULL << 62));
 }
