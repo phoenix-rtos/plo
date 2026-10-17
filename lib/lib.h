@@ -27,6 +27,7 @@
 #include "prompt.h"
 #include "crc32.h"
 #include "ptable.h"
+#include "sfdp_parser.h"
 
 
 #define min(a, b) ({ \
