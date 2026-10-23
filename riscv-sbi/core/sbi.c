@@ -14,6 +14,7 @@
  */
 
 
+#include "config.h"
 #include "csr.h"
 #include "fdt.h"
 #include "hart.h"
@@ -24,16 +25,6 @@
 
 #include "extensions/hsm.h"
 #include "extensions/ipi.h"
-
-#if defined(__CPU_GR765)
-#include "ld/gr765.ldt"
-#elif defined(__CPU_GRFPGA)
-#include "ld/grfpga.ldt"
-#elif defined(__CPU_GENERIC)
-#include "ld/generic.ldt"
-#else
-#error "Unsupported TARGET"
-#endif
 
 
 extern const void *__payload_start;
