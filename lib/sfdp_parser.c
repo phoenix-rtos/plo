@@ -1,38 +1,39 @@
 /*
  * Phoenix-RTOS
  *
- * plo - operating system loader
+ * Operating system loader
  *
- * STM32 XSPI Flash driver
- * SFDP parameter table parser
+ * SFDP Parser (JEDEC Standard, JESD216H)
  *
- * Copyright 2025 Phoenix Systems
- * Author: Jacek Maksymowicz
+ * Copyright 2026 Phoenix Systems
+ * Author: Jacek Maksymowicz, Amelia Waszkowska
  *
  * This file is part of Phoenix-RTOS.
  *
  * %LICENSE%
  */
 
+
 #include <hal/hal.h>
 #include <lib/errno.h>
 
-#include "flash_params.h"
+#include "sfdp_parser.h"
 
 
 #define SFDP_SIGNATURE 0x50444653
 
-/* Lookup table for checking support for different I/O types */
+/* Lookup table for checking support for different I/O types
+idx - DWORD index, shift - bit position */
 static const struct {
-	u8 checkIdx;
-	u8 checkShift;
+	u8 checkIdx;   /* 1st DWORD in Basic Flash Parameter Table */
+	u8 checkShift; /* 1st DWORD in Basic Flash Parameter Table */
 	u8 opcodeIdx;
 	u8 opcodeShift;
 	u8 dummyIdx;
 	u8 dummyShift;
 	u8 modeCycIdx;
 	u8 modeCycShift;
-} sfdpOperationLookup[] = {
+} sfdpOperationLookup[operation_io_types] = {
 	[operation_io_112] = { 0, 16, 3, 8, 3, 0, 3, 5 },
 	[operation_io_122] = { 0, 20, 3, 24, 3, 16, 3, 21 },
 	[operation_io_114] = { 0, 22, 2, 24, 2, 16, 2, 21 },
@@ -47,14 +48,14 @@ static const struct {
 	u8 opcodeShift;
 	u8 timeShift;
 } sfdpEraseLookup[] = {
-	{ 7, 0, 8, 4 },
-	{ 7, 16, 24, 11 },
-	{ 8, 0, 8, 18 },
-	{ 8, 16, 24, 25 },
+	{ 7, 0, 8, 4 },    /* Erase Type 1, 8th DWORD in Basic Flash Parameter Table */
+	{ 7, 16, 24, 11 }, /* Erase Type 2, 8th DWORD in Basic Flash Parameter Table */
+	{ 8, 0, 8, 18 },   /* Erase Type 3, 9th DWORD in Basic Flash Parameter Table */
+	{ 8, 16, 24, 25 }, /* Erase Type 4, 9th DWORD in Basic Flash Parameter Table */
 };
 
 
-void flashdrv_fillDefaultParams(flash_opParameters_t *res)
+void lib_sfdpInit(lib_sfdpParseResult_t *res)
 {
 	res->opcodeType = flash_opcode_8b;
 	res->readIoType = operation_io_111;
@@ -67,16 +68,19 @@ void flashdrv_fillDefaultParams(flash_opParameters_t *res)
 	res->addrMode = ADDRMODE_3B;
 	res->log_chipSize = 24; /* 16 MB */
 	res->otherIoType = operation_io_111;
-	res->eraseOpcode = 0xd8;        /* Sector erase */
-	res->log_eraseSize = 16;        /* 64 KB sector size */
-	res->log_pageSize = 8;          /* 256 B page size */
-	res->eraseBlockTimeout = 1000;  /* 1 second to erase block */
+	res->smallestEraseOpcode = 0xd8; /* Sector erase */
+	res->largestEraseOpcode = 0xd8;
+	res->log_smallestEraseSize = 16; /* 64 KB sector size */
+	res->log_largestEraseSize = 16;
+	res->log_pageSize = 8;                 /* 256 B page size */
+	res->smallestEraseBlockTimeout = 1000; /* 1 second to erase block */
+	res->largestEraseBlockTimeout = 1000;
 	res->eraseChipTimeout = 60000;  /* 60 seconds to erase chip */
 	res->programTimeout_us = 65536; /* 65 ms to write page */
 }
 
 
-static u32 flashdrv_calcEraseTime(u8 timeValue, int isChipErase)
+static u32 calcEraseTime(u8 timeValue, int isChipErase)
 {
 	static const u16 eraseChipUnits[4] = { 16, 256, 4000, 64000 };
 	static const u16 eraseBlockUnits[4] = { 1, 16, 128, 1000 };
@@ -89,13 +93,14 @@ static u32 flashdrv_calcEraseTime(u8 timeValue, int isChipErase)
 }
 
 
-int flashdrv_parseSfdp(const u32 *data, flash_opParameters_t *res, int tryMultiIoCmd)
+int lib_sfdpParse(const u32 *data, lib_sfdpParseResult_t *res, int tryMultiIoCmd)
 {
 	unsigned n_headers = 0, i;
 	const u32 *header_table = &data[2];
 	u32 ptable_len = 0, ptable_offset, log_sizeBits;
-	u8 log_eraseSize = 0xff, eraseOpcode = 0, eraseTimeShift = 0;
-	u8 candidate_size, eraseTimeValue, eraseTimeoutMultiplier;
+	u8 log_smallestEraseSize = 0xff, smallestEraseOpcode = 0, smallestEraseTimeShift = 0;
+	u8 log_largestEraseSize = 0, largestEraseOpcode = 0, largestEraseTimeShift = 0;
+	u8 smallestCandidate_size, largestCandidate_size, eraseTimeValue, eraseTimeoutMultiplier;
 	const u32 *ptable = NULL;
 	if (data[0] != SFDP_SIGNATURE) {
 		return -EINVAL;
@@ -166,31 +171,49 @@ int flashdrv_parseSfdp(const u32 *data, flash_opParameters_t *res, int tryMultiI
 	}
 
 	if (ptable_len >= 9) {
-		/* Find smallest available erase operation */
 		for (i = 0; i < 4; i++) {
-			candidate_size = (ptable[sfdpEraseLookup[i].sizeIdx] >> sfdpEraseLookup[i].sizeShift) & 0xff;
-			if (candidate_size != 0 && candidate_size < log_eraseSize) {
-				eraseOpcode = (ptable[sfdpEraseLookup[i].sizeIdx] >> sfdpEraseLookup[i].opcodeShift) & 0xff;
-				log_eraseSize = candidate_size;
-				eraseTimeShift = sfdpEraseLookup[i].timeShift;
+			/* Find smallest available erase operation */
+			smallestCandidate_size = (ptable[sfdpEraseLookup[i].sizeIdx] >> sfdpEraseLookup[i].sizeShift) & 0xff;
+			if (smallestCandidate_size != 0 && smallestCandidate_size < log_smallestEraseSize) {
+				smallestEraseOpcode = (ptable[sfdpEraseLookup[i].sizeIdx] >> sfdpEraseLookup[i].opcodeShift) & 0xff;
+				log_smallestEraseSize = smallestCandidate_size;
+				smallestEraseTimeShift = sfdpEraseLookup[i].timeShift;
+			}
+
+			/* Find largest available erase operation */
+			largestCandidate_size = (ptable[sfdpEraseLookup[i].sizeIdx] >> sfdpEraseLookup[i].sizeShift) & 0xff;
+			if (largestCandidate_size > log_largestEraseSize) {
+				largestEraseOpcode = (ptable[sfdpEraseLookup[i].sizeIdx] >> sfdpEraseLookup[i].opcodeShift) & 0xff;
+				log_largestEraseSize = largestCandidate_size;
+				largestEraseTimeShift = sfdpEraseLookup[i].timeShift;
 			}
 		}
 	}
 
-	if (log_eraseSize != 0xff) {
-		res->log_eraseSize = log_eraseSize;
-		res->eraseOpcode = eraseOpcode;
+	if (log_smallestEraseSize != 0xff) {
+		res->log_smallestEraseSize = log_smallestEraseSize;
+		res->smallestEraseOpcode = smallestEraseOpcode;
 		if (ptable_len >= 10) {
 			eraseTimeoutMultiplier = 2 * ((ptable[9] & 0xf) + 1);
-			eraseTimeValue = ptable[9] >> eraseTimeShift;
-			res->eraseBlockTimeout = eraseTimeoutMultiplier * flashdrv_calcEraseTime(eraseTimeValue, 0);
+			eraseTimeValue = ptable[9] >> smallestEraseTimeShift;
+			res->smallestEraseBlockTimeout = eraseTimeoutMultiplier * calcEraseTime(eraseTimeValue, 0);
+		}
+	}
+
+	if (log_largestEraseSize != 0) {
+		res->log_largestEraseSize = log_largestEraseSize;
+		res->largestEraseOpcode = largestEraseOpcode;
+		if (ptable_len >= 10) {
+			eraseTimeoutMultiplier = 2 * ((ptable[9] & 0xf) + 1);
+			eraseTimeValue = ptable[9] >> largestEraseTimeShift;
+			res->largestEraseBlockTimeout = eraseTimeoutMultiplier * calcEraseTime(eraseTimeValue, 0);
 		}
 	}
 
 	if (ptable_len >= 11) {
 		eraseTimeoutMultiplier = 2 * ((ptable[9] & 0xf) + 1);
 		eraseTimeValue = ptable[10] >> 24;
-		res->eraseChipTimeout = eraseTimeoutMultiplier * flashdrv_calcEraseTime(eraseTimeValue, 1);
+		res->eraseChipTimeout = eraseTimeoutMultiplier * calcEraseTime(eraseTimeValue, 1);
 		res->log_pageSize = (ptable[10] >> 4) & 0xf;
 		res->programTimeout_us = ((ptable[10] >> 8) & 0x1f) + 1;
 		res->programTimeout_us *= (((ptable[10] >> 13) & 0x1) != 0) ? 64 : 8;
