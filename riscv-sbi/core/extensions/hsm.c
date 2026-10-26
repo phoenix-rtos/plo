@@ -14,14 +14,13 @@
  */
 
 #include "atomic.h"
-#include "hart.h"
+#include "boot.h"
+#include "config.h"
 #include "csr.h"
+#include "hart.h"
 
 #include "extensions/hsm.h"
 #include "extensions/ipi.h"
-
-
-extern u32 bootHartId;
 
 
 static struct {
@@ -105,12 +104,22 @@ static void hsm_hartWait(u32 hartid)
 void hsm_init(u32 hartid)
 {
 	sbi_perHartData_t *data;
+	u32 hartCount;
 
-	if (hartid == bootHartId) {
+	if (hartid == BOOT_HART_ID) {
 		atomic_add32(&hsm_common.hartsStarted, 1);
 		data = sbi_getPerHartData(hartid);
 		ATOMIC_WRITE(&data->state, SBI_HSM_START_PENDING);
-		while (ATOMIC_READ(&hsm_common.hartsStarted) < sbi_getHartCount()) { }
+		hartCount = sbi_getHartCount();
+		if (hartCount > MAX_HART_COUNT) {
+			hartCount = MAX_HART_COUNT;
+		}
+		while (ATOMIC_READ(&hsm_common.hartsStarted) < hartCount) {
+			/* A hart may have announced itself in .bootstate after the
+			 * initial sweep in _start and might still be waiting in flash.
+			 * We cannot make progress until it arrives anyway. */
+			boot_release(hartid);
+		}
 	}
 	else {
 		hsm_hartWait(hartid);
