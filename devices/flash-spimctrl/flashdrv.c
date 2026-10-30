@@ -148,6 +148,7 @@ static int flashdrv_sync(unsigned int minor)
 
 static ssize_t flashdrv_write(unsigned int minor, addr_t offs, const void *buff, size_t len)
 {
+	log_error("\ndev/flash: write program");
 	ssize_t res;
 	addr_t sectorOfs, currAddr;
 	const u8 *src = buff;

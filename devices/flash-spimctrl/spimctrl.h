@@ -21,10 +21,16 @@
 #include "nor/nor.h"
 
 
+#ifndef SPIMCTRL0_BASE
+#define SPIMCTRL0_BASE ((void *)0xFFF00000)
+#endif
+
+
 typedef struct _spimctrl_t {
 	vu32 *base;
 	addr_t maddr; /* Address where flash is mapped in AHB */
 	struct nor_device dev;
+	u8 extendedAddress;
 } spimctrl_t;
 
 

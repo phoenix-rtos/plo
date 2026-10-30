@@ -73,6 +73,9 @@ struct _spimctrl_t;
 /* All addresses are relative to NOR base address */
 
 
+int nor_eraseDie(struct _spimctrl_t *spimctrl, time_t timeout, u8 selDie);
+
+
 int nor_eraseChip(struct _spimctrl_t *spimctrl, time_t timeout);
 
 

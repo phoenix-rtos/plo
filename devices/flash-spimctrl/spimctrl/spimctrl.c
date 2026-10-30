@@ -20,6 +20,11 @@
 
 #define FLASH_CMD_NOP 0x00u
 
+/* Configuration register */
+#define EXTENDED_ADDRESS (1 << 14)
+#define READ_CMD_MASK    (0xFFu)
+#define WRITE_CMD_MASK   (0xFFu << 24)
+
 /* Control register */
 
 #define USR_CTRL (1 << 0)
@@ -79,10 +84,33 @@ static int spimctrl_cguClkStatus(unsigned int minor)
 #endif
 
 
-static void spimctrl_userCtrl(vu32 *spimctrlBase)
+static void spimctrl_enterUserCtrl(vu32 *spimctrlBase)
 {
-	*(spimctrlBase + flash_ctrl) = USR_CTRL;
-	*(spimctrlBase + flash_ctrl) &= ~CHIP_SEL;
+	u32 ctrl = *(spimctrlBase + flash_ctrl);
+
+	/* assert CS high before entering user control */
+	ctrl |= CHIP_SEL;
+	*(spimctrlBase + flash_ctrl) = ctrl;
+
+	/* add a few cycles of a delay */
+	__asm__ volatile("nop");
+	__asm__ volatile("nop");
+	__asm__ volatile("nop");
+
+	/* enter user control */
+	ctrl |= USR_CTRL;
+	ctrl &= ~CHIP_SEL;
+	*(spimctrlBase + flash_ctrl) = ctrl;
+}
+
+
+static void spimctrl_exitUserCtrl(vu32 *spimctrlBase)
+{
+	u32 ctrl = *(spimctrlBase + flash_ctrl);
+
+	ctrl &= ~USR_CTRL;
+	ctrl |= CHIP_SEL;
+	*(spimctrlBase + flash_ctrl) = ctrl;
 }
 
 
@@ -100,6 +128,28 @@ static int spimctrl_ready(spimctrl_t *spimctrl)
 }
 
 
+static void spimctrl_addressMode(spimctrl_t *spimctrl)
+{
+	u32 cfg = *(spimctrl->base + flash_cfg);
+
+#if defined(USE_4BYTE_MODE) && (USE_4BYTE_MODE != 0)
+	u8 readcmd = 0x13u;
+	spimctrl->extendedAddress = 1;
+	cfg &= ~READ_CMD_MASK;
+	cfg |= readcmd;
+	cfg |= EXTENDED_ADDRESS;
+#else
+	u8 readcmd = 0x03u;
+	cfg &= ~READ_CMD_MASK;
+	cfg |= readcmd;
+	spimctrl->extendedAddress = 0;
+	cfg &= ~EXTENDED_ADDRESS;
+#endif /* USE_4BYTE_MODE */
+
+	*(spimctrl->base + flash_cfg) = cfg;
+}
+
+
 static void spimctrl_tx(vu32 *spimctrlBase, u8 cmd)
 {
 	*(spimctrlBase + flash_tx) = cmd;
@@ -110,7 +160,11 @@ static void spimctrl_tx(vu32 *spimctrlBase, u8 cmd)
 
 static u8 spimctrl_rx(vu32 *spimctrlBase)
 {
-	return *(spimctrlBase + flash_rx) & 0xff;
+	// return *(spimctrlBase + flash_rx) & 0xff;
+
+	u32 val = *(spimctrlBase + flash_rx) & 0xff;
+	*(spimctrlBase + flash_stat) |= OPER_DONE;
+	return val;
 }
 
 
@@ -118,7 +172,7 @@ static void spimctrl_read(spimctrl_t *spimctrl, struct xferOp *op)
 {
 	size_t i;
 
-	spimctrl_userCtrl(spimctrl->base);
+	spimctrl_enterUserCtrl(spimctrl->base);
 
 	/* send command */
 	for (i = 0; i < op->cmdLen; i++) {
@@ -131,15 +185,14 @@ static void spimctrl_read(spimctrl_t *spimctrl, struct xferOp *op)
 		op->rxData[i] = spimctrl_rx(spimctrl->base);
 	}
 
-	*(spimctrl->base + flash_ctrl) &= ~USR_CTRL;
+	spimctrl_exitUserCtrl(spimctrl->base);
 }
 
 
 static void spimctrl_write(spimctrl_t *spimctrl, struct xferOp *op)
 {
 	size_t i;
-
-	spimctrl_userCtrl(spimctrl->base);
+	spimctrl_enterUserCtrl(spimctrl->base);
 
 	/* Send command */
 	for (i = 0; i < op->cmdLen; i++) {
@@ -151,7 +204,7 @@ static void spimctrl_write(spimctrl_t *spimctrl, struct xferOp *op)
 		spimctrl_tx(spimctrl->base, op->txData[i]);
 	}
 
-	*(spimctrl->base + flash_ctrl) &= ~USR_CTRL;
+	spimctrl_exitUserCtrl(spimctrl->base);
 }
 
 
@@ -190,4 +243,6 @@ void spimctrl_init(spimctrl_t *spimctrl, unsigned int minor)
 
 	/* Reset core */
 	spimctrl_reset(spimctrl);
+
+	spimctrl_addressMode(spimctrl);
 }
