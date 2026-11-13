@@ -19,7 +19,12 @@
 #include <hal/hal.h>
 
 
+#define NAME_PART_DEFAULT "default"
+
+
+/* clang-format off */
 enum { flagSyspageExec = 0x01, flagSyspageNoCopy = 0x02 };
+/* clang-format on */
 
 
 typedef struct {
@@ -57,6 +62,9 @@ extern int syspage_mapRangeResolve(const char *name, addr_t *start, addr_t *end)
 extern unsigned int syspage_mapRangeCheck(addr_t start, addr_t end, unsigned int *attrOut);
 
 
+extern int syspage_mapAddrResolve(addr_t addr, const char **name);
+
+
 extern const char *syspage_mapName(u8 id);
 
 
@@ -65,6 +73,23 @@ extern void syspage_mapShow(void);
 
 extern mapent_t *syspage_entryAdd(const char *mapName, addr_t start, size_t size, unsigned int align);
 
+/* Scheduler's functions */
+extern int syspage_schedulerConfigSet(syspage_sched_t *config);
+
+
+extern syspage_sched_t *syspage_schedulerConfigGet(void);
+
+/* Partition's functions */
+extern syspage_part_t *syspage_partAdd(void);
+
+
+extern syspage_part_t *syspage_partsGet(void);
+
+
+extern int syspage_partResolve(const char *partName, syspage_part_t **result);
+
+
+extern syspage_named_port_t *syspage_namedPortAdd(void);
 
 /* Program's functions */
 extern syspage_prog_t *syspage_progAdd(const char *argv, u32 flags);
