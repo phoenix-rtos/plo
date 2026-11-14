@@ -37,19 +37,31 @@
 
 
 /* Values for selecting the peripheral clock for an UART */
+#if defined(__CPU_STM32N6)
 enum {
 	uart_clk_sel_pclk = 0, /* pclk1 or pclk2 depending on peripheral */
-#if defined(__CPU_STM32N6)
 	uart_clk_sel_per_ck,
 	uart_clk_sel_ic9_ck,
 	uart_clk_sel_ic14_ck,
 	uart_clk_sel_lse_ck,
 	uart_clk_sel_msi_ck,
 	uart_clk_sel_hsi_div_ck,
-#elif defined(__CPU_STM32U3)
-	uart_clk_sel_hsi_ck,
-#endif
 };
+#elif defined(__CPU_STM32U3)
+enum {
+	uart_clk_sel_pclk = 0, /* pclk1 or pclk2 depending on peripheral */
+	uart_clk_sel_hsi_ck,
+};
+#elif defined(__CPU_STM32H5)
+enum {
+	uart_clk_sel_pclk1 = 0,
+	uart_clk_sel_pll2,
+	uart_clk_sel_pll3,
+	uart_clk_sel_hsi,
+	uart_clk_sel_csi,
+	uart_clk_sel_lse
+};
+#endif
 
 
 /* clang-format off */
@@ -104,12 +116,16 @@ void console_init(void)
 		{ UART3_BASE, UART3_CLK, ipclk_usart3sel },
 		{ UART4_BASE, UART4_CLK, ipclk_uart4sel },
 		{ UART5_BASE, UART5_CLK, ipclk_uart5sel },
-#if defined(__CPU_STM32N6)
+#if defined(__CPU_STM32N6) || defined(__CPU_STM32H5)
 		{ UART6_BASE, UART6_CLK, ipclk_usart6sel },
 		{ UART7_BASE, UART7_CLK, ipclk_uart7sel },
 		{ UART8_BASE, UART8_CLK, ipclk_uart8sel },
 		{ UART9_BASE, UART9_CLK, ipclk_uart9sel },
 		{ UART10_BASE, UART10_CLK, ipclk_usart10sel },
+#endif
+#if defined(__CPU_STM32H5)
+		{ UART11_BASE, UART11_CLK, ipclk_usart11sel },
+		{ UART12_BASE, UART12_CLK, ipclk_uart12sel },
 #endif
 	};
 
@@ -131,6 +147,9 @@ void console_init(void)
 #elif defined(__CPU_STM32U3)
 	_stm32_rccSetIPClk(uarts[uart].ipclk_sel, uart_clk_sel_pclk);
 	halconsole_common.refclkfreq = _stm32_rccGetPclkClock();
+#elif defined(__CPU_STM32H5)
+	_stm32_rccSetIPClk(uarts[uart].ipclk_sel, uart_clk_sel_hsi);
+	halconsole_common.refclkfreq = 32 * 1000 * 1000;
 #endif
 
 	/* Enable uart clock */
