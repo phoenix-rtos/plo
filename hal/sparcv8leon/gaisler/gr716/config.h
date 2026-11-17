@@ -5,12 +5,12 @@
  *
  * Platform configuration
  *
- * Copyright 2022 Phoenix Systems
+ * Copyright 2022, 2026 Phoenix Systems
  * Author: Lukasz Leczkowski
  *
  * This file is part of Phoenix-RTOS.
  *
- * %LICENSE%
+# SPDX-License-Identifier: BSD-3-Clause
  */
 
 #ifndef _CONFIG_H_
@@ -28,7 +28,7 @@
 #include <phoenix/arch/sparcv8leon/syspage.h>
 #include <phoenix/syspage.h>
 
-#include <devices/gpio-gr716/gpio.h>
+#include <devices/gpio-grlib/gpio.h>
 
 #define PATH_KERNEL "phoenix-sparcv8leon-gr716.elf"
 
