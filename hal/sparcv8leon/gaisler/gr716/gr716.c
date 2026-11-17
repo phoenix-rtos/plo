@@ -5,18 +5,18 @@
  *
  * GR716 specific functions
  *
- * Copyright 2022 Phoenix Systems
+ * Copyright 2022, 2026 Phoenix Systems
  * Author: Lukasz Leczkowski
  *
  * This file is part of Phoenix-RTOS.
  *
- * %LICENSE%
+ * SPDX-License-Identifier: BSD-3-Clause
  */
 
 #include "gr716.h"
 #include "../../cpu.h"
 
-#include <devices/gpio-gr716/gpio.h>
+#include <devices/gpio-grlib/gpio.h>
 
 
 #define GRGPREG_BASE ((void *)0x8000D000)
