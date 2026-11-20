@@ -149,6 +149,10 @@ set_intr_group_1:
 	orr x0, x0, #(1 << 31)
 	msr pmcntenset_el0, x0
 
+	/* Set generic timer frequency */
+	ldr x0, =(TIMESTAMP_REF_CLK)
+	msr cntfrq_el0, x0
+
 #ifdef __TARGET_AARCH64A53
 	/* Enable SMP */
 	mrs x0, s3_1_c15_c2_1 /* CPUECTLR_EL1 */

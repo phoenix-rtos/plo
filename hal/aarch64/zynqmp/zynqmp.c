@@ -23,6 +23,7 @@
 
 #define CSU_BASE_ADDRESS        0xffca0000
 #define IOU_SLCR_BASE_ADDRESS   0xff180000
+#define IOU_SCNTRS_BASE_ADDRESS 0xff260000
 #define CRF_APB_BASE_ADDRESS    0xfd1a0000
 #define CRL_APB_BASE_ADDRESS    0xff5e0000
 #define APU_BASE_ADDRESS        0xfd5c0000
@@ -44,6 +45,7 @@ static struct {
 	volatile u32 *csudma;
 	volatile u32 *pmu_global;
 	volatile u32 *iou_slcr;
+	volatile u32 *iou_scntrs;
 	volatile u32 *apu;
 	volatile u32 *crf_apb;
 	volatile u32 *crl_apb;
@@ -935,6 +937,12 @@ static void _zynqmp_clocksInit(void)
 		_zynqmp_setCtlClock(&clks[i]);
 	}
 
+	/* Enable system timestamp counter used by the generic timer */
+	_zynqmp_devReset(ctl_reset_lpd_timestamp, 0);
+	*(zynq_common.iou_scntrs + iou_scntrs_base_frequency_id) = TIMESTAMP_REF_CLK;
+	*(zynq_common.iou_scntrs + iou_scntrs_counter_control) = 0x1;
+	hal_cpuDataSyncBarrier();
+
 	/* Select LPD_APB_CLK (lpd_lsbus) as interface clock for all TTC units */
 	*(zynq_common.iou_slcr + iou_slcr_iou_ttc_apb_clk) = 0;
 }
@@ -985,6 +993,7 @@ void _zynqmp_init(void)
 	zynq_common.csudma = (void *)CSUDMA_BASE_ADDRESS;
 	zynq_common.pmu_global = (void *)PMU_GLOBAL_BASE_ADDRESS;
 	zynq_common.iou_slcr = (void *)IOU_SLCR_BASE_ADDRESS;
+	zynq_common.iou_scntrs = (void *)IOU_SCNTRS_BASE_ADDRESS;
 	zynq_common.apu = (void *)APU_BASE_ADDRESS;
 	zynq_common.crf_apb = (void *)CRF_APB_BASE_ADDRESS;
 	zynq_common.crl_apb = (void *)CRL_APB_BASE_ADDRESS;

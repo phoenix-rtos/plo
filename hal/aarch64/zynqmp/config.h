@@ -19,6 +19,9 @@
 
 #define GIC_BASE_ADDRESS 0xf9010000
 
+/* System timestamp counter clock (IOPLL / 10), also used as generic timer frequency */
+#define TIMESTAMP_REF_CLK 100000000
+
 /* RAM storage configuration */
 #define RAM_ADDR      0x08000000 /* 128 MB */
 #define RAM_BANK_SIZE 0x08000000 /* 128 MB */
