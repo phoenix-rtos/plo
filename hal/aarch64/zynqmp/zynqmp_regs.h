@@ -65,6 +65,14 @@ enum {
 };
 
 enum {
+	iou_scntrs_counter_control = 0x0,
+	iou_scntrs_counter_status,
+	iou_scntrs_current_counter_value_lower,
+	iou_scntrs_current_counter_value_upper,
+	iou_scntrs_base_frequency_id = 0x8,
+};
+
+enum {
 	apu_err_ctrl = 0x0,
 	apu_isr = 0x4,
 	apu_imr,
